@@ -77,12 +77,13 @@ jobs:
         if: hashFiles('App/ggchat.xcodeproj/project.pbxproj') != ''
         run: |
           set -o pipefail
+          # Warnings-as-errors is set on the app target in App/project.yml, not
+          # here: on the command line it would also apply to the package
+          # dependencies, and swift-markdown compiles with warnings suppressed.
           xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat \
-            -destination 'platform=macOS' \
-            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES CODE_SIGNING_ALLOWED=NO -quiet
+            -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO -quiet
           xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat \
-            -destination 'generic/platform=iOS Simulator' \
-            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES CODE_SIGNING_ALLOWED=NO -quiet
+            -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO -quiet
 
   test:
     name: Test
