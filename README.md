@@ -136,6 +136,13 @@ docs/adr/             decisions, each with a kill criterion that names a reading
 scripts/              the checks CI runs; `make ci` runs the same ones
 ```
 
+## The seam
+
+The pipe path stops at two protocols, `PipeConnector` and `PipeSession`.
+[docs/ffi-seam.md](docs/ffi-seam.md) states what `modelpipe-ffi` must
+provide in their terms, and which tests already assert each behaviour
+against the mock.
+
 ## Decisions
 
 - [ADR 0001](docs/adr/0001-loopback-port-at-the-ffi-seam.md): a loopback
