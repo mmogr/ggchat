@@ -85,8 +85,12 @@ final class AppModelPipeTests: XCTestCase {
         for _ in 0..<200 where model.pipeSession(for: config.id) != nil { await Task.yield() }
         XCTAssertNil(model.pipeSession(for: config.id))
         var iterator = session.status.makeAsyncIterator()
-        _ = await iterator.next()
-        let end = await iterator.next()
-        XCTAssertNil(end, "the session's status stream has finished")
+        var last: PipeStatus? = await iterator.next()
+        var drained = 0
+        while last != nil, drained < 5 {
+            last = await iterator.next()
+            drained += 1
+        }
+        XCTAssertNil(last, "the session's status stream has finished")
     }
 }

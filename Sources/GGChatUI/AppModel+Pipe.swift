@@ -50,8 +50,11 @@ extension AppModel {
     public func disconnectPipe(for providerID: UUID) async {
         statusTasks[providerID]?.cancel()
         statusTasks[providerID] = nil
-        if let session = pipeSessions.removeValue(forKey: providerID) {
+        // Shut down before forgetting the session, so "no session" also
+        // means "its status stream has finished".
+        if let session = pipeSessions[providerID] {
             await session.shutdown()
+            pipeSessions[providerID] = nil
         }
         pipeStatuses[providerID] = nil
     }
