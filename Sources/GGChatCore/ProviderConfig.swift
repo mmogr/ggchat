@@ -27,3 +27,26 @@ public struct ProviderConfig: Identifiable, Codable, Sendable, Equatable, Hashab
         return false
     }
 }
+
+extension ProviderConfig {
+    /// A pasted address becomes a base URL: http or https only, a host is
+    /// required, and a bare host or trailing slash gets `/v1` appended, which
+    /// is what every OpenAI-compatible server serves.
+    public static func normalizedBaseURL(from text: String) -> URL? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard var components = URLComponents(string: trimmed),
+            let scheme = components.scheme?.lowercased(), scheme == "http" || scheme == "https",
+            let host = components.host, !host.isEmpty
+        else { return nil }
+        components.scheme = scheme
+        var path = components.path
+        while path.hasSuffix("/") { path.removeLast() }
+        if path.isEmpty { path = "/v1" }
+        components.path = path
+        components.query = nil
+        components.fragment = nil
+        components.user = nil
+        components.password = nil
+        return components.url
+    }
+}

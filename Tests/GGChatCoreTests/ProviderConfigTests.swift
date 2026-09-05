@@ -35,3 +35,27 @@ final class ProviderConfigTests: XCTestCase {
         XCTAssertNil(try secrets.secret(.apiKey, for: id))
     }
 }
+
+final class BaseURLNormalizationTests: XCTestCase {
+    func testBareHostGetsV1AndTrailingSlashIsDropped() {
+        XCTAssertEqual(
+            ProviderConfig.normalizedBaseURL(from: "http://127.0.0.1:8080")?.absoluteString, "http://127.0.0.1:8080/v1")
+        XCTAssertEqual(
+            ProviderConfig.normalizedBaseURL(from: "http://127.0.0.1:8080/")?.absoluteString, "http://127.0.0.1:8080/v1"
+        )
+        XCTAssertEqual(
+            ProviderConfig.normalizedBaseURL(from: " http://mac.local:8080/v1/ ")?.absoluteString,
+            "http://mac.local:8080/v1")
+        XCTAssertEqual(
+            ProviderConfig.normalizedBaseURL(from: "HTTPS://api.example.com/openai/v1")?.absoluteString,
+            "https://api.example.com/openai/v1")
+    }
+
+    func testNonHTTPOrHostlessIsRejectedAndSecretsAreStripped() {
+        XCTAssertNil(ProviderConfig.normalizedBaseURL(from: "127.0.0.1:8080"))
+        XCTAssertNil(ProviderConfig.normalizedBaseURL(from: "ftp://x"))
+        XCTAssertNil(ProviderConfig.normalizedBaseURL(from: "http://"))
+        XCTAssertNil(ProviderConfig.normalizedBaseURL(from: ""))
+        XCTAssertEqual(ProviderConfig.normalizedBaseURL(from: "http://u:p@h/v1?k=1#f")?.absoluteString, "http://h/v1")
+    }
+}
