@@ -1,0 +1,50 @@
+name: Deploy Docs to GitHub Pages
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build DocC
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build static DocC for both modules
+        run: |
+          mkdir -p site
+          for target in GGChatCore GGChatUI; do
+            swift package --allow-writing-to-directory site generate-documentation \
+              --target "$target" --warnings-as-errors \
+              --transform-for-static-hosting --hosting-base-path "ggchat/$target" \
+              --output-path "site/$target"
+          done
+          cat > site/index.html <<'HTML'
+          <!doctype html><meta charset="utf-8"><title>ggchat docs</title>
+          <p><a href="GGChatCore/documentation/ggchatcore/">GGChatCore</a> ·
+             <a href="GGChatUI/documentation/ggchatui/">GGChatUI</a></p>
+          HTML
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,73 @@
+# Lint runs with --strict: every warning fails CI. Formatting is
+# swift-format's job, so the rules here are about correctness and clarity.
+included:
+  - Sources
+  - Tests
+  - App/ggchat
+excluded:
+  - .build
+  - App/ggchat.xcodeproj
+
+analyzer_rules:
+  - unused_declaration
+  - unused_import
+
+opt_in_rules:
+  - array_init
+  - closure_spacing
+  - contains_over_filter_count
+  - contains_over_filter_is_empty
+  - contains_over_first_not_nil
+  - discouraged_optional_boolean
+  - empty_collection_literal
+  - empty_count
+  - empty_string
+  - fatal_error_message
+  - first_where
+  - flatmap_over_map_reduce
+  - identical_operands
+  - implicit_return
+  - joined_default_parameter
+  - last_where
+  - legacy_multiple
+  - modifier_order
+  - overridden_super_call
+  - prefer_self_type_over_type_of_self
+  - redundant_nil_coalescing
+  - redundant_type_annotation
+  - sorted_first_last
+  - toggle_bool
+  - unneeded_parentheses_in_closure_argument
+  - yoda_condition
+
+disabled_rules:
+  - todo
+  - trailing_comma
+  - opening_brace
+  - discouraged_optional_boolean
+  # `String(decoding:as:)` is chosen on purpose: SSE and log bodies are
+  # rendered lossily rather than dropped when a byte is not UTF-8.
+  - optional_data_string_conversion
+
+line_length:
+  warning: 120
+  ignores_comments: true
+  ignores_urls: true
+file_length:
+  warning: 300
+  error: 300
+function_body_length:
+  warning: 60
+type_body_length:
+  warning: 250
+identifier_name:
+  min_length: 1
+  max_length: 50
+  excluded: [id, a, b, c, x, y]
+nesting:
+  type_level: 2
+cyclomatic_complexity:
+  warning: 15
+  ignores_case_statements: true
+force_cast: error
+force_try: warning

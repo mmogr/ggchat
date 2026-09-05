@@ -1,0 +1,40 @@
+name: Issue Labels
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+
+jobs:
+  apply:
+    name: Apply labels from the form
+    runs-on: ubuntu-latest
+    steps:
+      - name: Parse the Component and Kind sections
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const issue = context.payload.issue;
+            const body = issue.body || '';
+            const section = (heading) => {
+              const m = body.match(new RegExp(`### ${heading}\\s*\\n([\\s\\S]*?)(?:\\n### |$)`));
+              return m ? m[1].split(/[,\n]/).map(s => s.trim()).filter(Boolean) : [];
+            };
+            const components = ['core', 'ui', 'app', 'docs', 'ci', 'scripts', 'tests', 'deps'];
+            const kinds = ['bug', 'feature', 'question', 'decision'];
+            const wanted = new Set([
+              ...section('Component').filter(v => components.includes(v)),
+              ...section('Kind').filter(v => kinds.includes(v)),
+            ]);
+            if (![...wanted].some(v => components.includes(v))) wanted.add('needs-triage');
+            const current = new Set(issue.labels.map(l => l.name));
+            const add = [...wanted].filter(l => !current.has(l));
+            if (add.length) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number: issue.number, labels: add });
+            }
+            if (wanted.has('needs-triage') === false && current.has('needs-triage')) {
+              await github.rest.issues.removeLabel({ owner, repo, issue_number: issue.number, name: 'needs-triage' }).catch(() => {});
+            }

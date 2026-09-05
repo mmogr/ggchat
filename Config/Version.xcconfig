@@ -1,0 +1,4 @@
+// The app's version. release-please rewrites the annotated line when it
+// cuts a release; nothing else edits it by hand.
+MARKETING_VERSION = 0.0.0 // x-release-please-version
+CURRENT_PROJECT_VERSION = 1

@@ -1,1 +1,110 @@
 # ggchat
+
+![tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmmogr%2Fggchat%2Fbadges%2Ftests.json)
+![coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmmogr%2Fggchat%2Fbadges%2Fcoverage.json)
+
+A native Apple chat client for OpenAI-compatible model servers, built so
+that a server on your desk at home will be reachable from your phone
+anywhere, with no port forwarding, no VPN, no account, and no cloud in the
+path. That reach will come from [modelpipe](https://github.com/mmogr/modelpipe).
+The app is generic: any OpenAI-compatible provider works.
+[gglib](https://github.com/mmogr/gglib) is the provider it is built around.
+
+## Status
+
+v0.1 is in progress. What exists today is the core package: the provider
+protocol, the OpenAI-compatible implementation, the SSE parser, ticket
+shape validation, the pipe seam with its mock, and the tests that keep each
+of those honest. There is no app target yet. The pipe path is a mock until
+`modelpipe-ffi` exists; nothing here links Rust or iroh.
+
+## What is true today
+
+Each claim names the test that keeps it true.
+
+- A stream captured from a running gglib parses to the same events whether
+  it arrives whole or one byte at a time.
+  <!-- test: SSEParserTests.testFeedingOneByteAtATimeGivesTheSameItems -->
+- gglib's first chunks carry no `choices` key; reasoning arrives as
+  `reasoning_content`; the usage chunk has empty `choices`. All three decode.
+  <!-- test: WireTests.testFirstChunkHasNoChoicesKeyAndStillDecodes -->
+  <!-- test: WireTests.testReasoningArrivesAsReasoningContent -->
+  <!-- test: WireTests.testUsageChunkHasEmptyChoicesAndCachedTokens -->
+- A server's error sentence is shown verbatim, and every documented
+  modelpipe and gglib code says which machine to look at.
+  <!-- test: ErrorTests.testServerMessageIsRenderedVerbatim -->
+  <!-- test: ErrorTests.testEveryDocumentedCodeNamesWhereToLook -->
+- A ticket's shape is validated without decoding it: `pipe` prefix in any
+  ASCII case, base32 body, no padding, at most 1643 characters, and
+  non-ASCII is rejected before any case folding.
+  <!-- test: TicketTests.testLongestPossibleTicketIsAcceptedAndOneMoreIsNot -->
+  <!-- test: TicketTests.testNonASCIIIsRejectedBeforeCaseFolding -->
+- The mock pipe walks idle → relayed → direct, can be forced closed, and a
+  late subscriber gets the current status first.
+  <!-- test: MockPipeTests.testStatusWalksIdleRelayedDirectThenClosedOnDemand -->
+- A bearer token is sent on every request and never reaches a log line.
+  <!-- test: OpenAICompatibleProviderTests.testNoCredentialEverReachesALogLine -->
+- gglib's proxy status endpoint decodes when it answers and is `nil` on 404.
+  <!-- test: OpenAICompatibleProviderTests.testProxyStatusIsNilOn404AndDecodesOn200 -->
+- An unterminated code fence, as seen mid-stream, renders as a code block.
+  <!-- test: MarkdownTests.testUnterminatedFenceIsStillACodeBlock -->
+- A `ProviderConfig` holds no credential; a pipe config carries only a
+  digest of its ticket.
+  <!-- test: ProviderConfigTests.testPipeProviderRoundTripsAndHoldsOnlyADigest -->
+
+## Building and testing
+
+Requires Xcode 26 and Swift 6.2 or later.
+
+```sh
+swift build && swift test
+```
+
+Against a running gglib (or any OpenAI-compatible server) the live test
+lists models and streams one short reply:
+
+```sh
+GGCHAT_LIVE_BASE_URL=http://127.0.0.1:8080/v1 make test-live
+```
+
+`make ci` runs what CI runs: `make fmt-check`, `make lint`,
+`make boundaries`, `make enforce`, `make build`, `make test`,
+`make unused`, `make docs`. `make bootstrap` installs the Homebrew tools
+those need (xcodegen, swiftlint, periphery, actionlint).
+
+## Layout
+
+```
+Sources/GGChatCore/   no SwiftUI; the provider protocol, wire types, SSE, ticket, pipe seam, mocks
+Sources/GGChatUI/     SwiftUI (views arrive with the app shell)
+Tests/GGChatCoreTests XCTest; fixtures are real captures from gglib
+docs/adr/             decisions, each with a kill criterion that names a reading
+scripts/              the checks CI runs; `make ci` runs the same ones
+```
+
+## Decisions
+
+- [ADR 0001](docs/adr/0001-loopback-port-at-the-ffi-seam.md): a loopback
+  port, not a request API, at the ffi seam.
+- [ADR 0002](docs/adr/0002-an-in-flight-request-is-kept-not-re-sent.md): an
+  in-flight request on reconnect is kept, not re-sent.
+- [ADR 0003](docs/adr/0003-keychain-access-group.md): one Keychain access
+  group for both builds, once there is a signing team.
+
+## Releases
+
+Versions come from [release-please](https://github.com/googleapis/release-please):
+conventional commit titles on `main` accumulate into a release PR, and
+merging it tags the version and rewrites `Config/Version.xcconfig`.
+Documentation is built with DocC and deployed to GitHub Pages on release.
+
+## House rules
+
+- Commit messages and PR titles say what the system now does, as a
+  sentence: `feat(chat): the composer keeps its draft across a provider switch`.
+- Every sentence in this README is true, and where a claim can be tested a
+  test keeps it. `scripts/check_readme_claims.sh` checks that every marker
+  above names a test that exists.
+- No credential in any log line, ever.
+- Time is an argument: nothing in `GGChatCore` reads the clock except
+  `Clock.swift`.

@@ -1,0 +1,36 @@
+name: Check Issue Form Mapping
+
+on:
+  pull_request:
+    paths: [.github/ISSUE_TEMPLATE/issue.yml, .github/workflows/check-issue-form.yml]
+  push:
+    branches: [main]
+    paths: [.github/ISSUE_TEMPLATE/issue.yml, .github/workflows/check-issue-form.yml]
+
+permissions:
+  issues: read
+
+jobs:
+  check:
+    name: Every dropdown option is a label
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Compare form options with repo labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label list --limit 200 --json name --jq '.[].name' | sort > labels.txt
+          python3 - <<'PY' > options.txt
+          import re, yaml
+          form = yaml.safe_load(open(".github/ISSUE_TEMPLATE/issue.yml"))
+          for block in form["body"]:
+              if block.get("type") == "dropdown" and block.get("id") in ("component", "kind"):
+                  for option in block["attributes"]["options"]:
+                      print(option)
+          PY
+          sort options.txt -o options.txt
+          if missing=$(comm -23 options.txt labels.txt) && [ -n "$missing" ]; then
+            echo "form options with no repo label:"; echo "$missing"; exit 1
+          fi
+          echo "every form option has a label"

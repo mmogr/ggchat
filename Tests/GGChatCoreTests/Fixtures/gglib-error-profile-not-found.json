@@ -1,0 +1,1 @@
+{"error":{"message":"Model 'Qwen3.8-27B:coding' not found, and 'coding' is not an inference profile (no inference profiles are configured)","type":"invalid_request_error","code":"profile_not_found"}}

@@ -1,0 +1,6 @@
+# Unused-code scan over the package. The package's public API is consumed
+# by the App target, which lives outside the package build, so public
+# declarations are kept; Codable properties are read by the synthesized
+# coders, so they are kept too.
+retain_public: true
+retain_codable_properties: true

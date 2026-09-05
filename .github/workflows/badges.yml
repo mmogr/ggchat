@@ -1,0 +1,61 @@
+name: Update Badges
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  badges:
+    name: Publish badge JSON
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v5
+      - name: Download test results
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
+          path: results
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - name: Write shields.io endpoint JSON
+        run: |
+          mkdir -p badges-out
+          python3 - <<'PY'
+          import glob, json, re, xml.etree.ElementTree as ET
+          total = failed = 0
+          for path in glob.glob("results/test-results*.xml"):
+              root = ET.parse(path).getroot()
+              suites = [root] if root.tag == "testsuite" else root.iter("testsuite")
+              for suite in suites:
+                  total += int(suite.get("tests", 0))
+                  failed += int(suite.get("failures", 0)) + int(suite.get("errors", 0))
+          passed = total - failed
+          json.dump({"schemaVersion": 1, "label": "tests", "message": f"{passed}/{total} passing",
+                     "color": "brightgreen" if failed == 0 else "red"}, open("badges-out/tests.json", "w"))
+          pct = None
+          for line in open("results/coverage-summary.txt"):
+              if line.startswith("TOTAL"):
+                  pct = float(line.split()[-1].rstrip("%"))
+          color = "brightgreen" if (pct or 0) >= 80 else "yellow" if (pct or 0) >= 60 else "orange"
+          json.dump({"schemaVersion": 1, "label": "coverage",
+                     "message": f"{pct:.0f}%" if pct is not None else "n/a", "color": color},
+                    open("badges-out/coverage.json", "w"))
+          PY
+          cat badges-out/*.json
+      - name: Deploy to badges branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ github.token }}
+          publish_branch: badges
+          publish_dir: ./badges-out
+          keep_files: true
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com
+          commit_message: "ci(badges): the badges say what main just did"
