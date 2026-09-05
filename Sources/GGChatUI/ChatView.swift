@@ -1,31 +1,41 @@
 import GGChatCore
 import SwiftUI
 
-/// The transcript. Flat text on the scrolling background; the composer and
-/// the pills arrive with streaming.
+/// The transcript: flat text on the scrolling background, pinned to the
+/// bottom while a reply streams, with the composer floating over it.
 struct ChatView: View {
+    @Environment(AppModel.self) private var model
     let conversation: Conversation
 
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 16) {
+            LazyVStack(alignment: .leading, spacing: 20) {
                 ForEach(conversation.messages) { message in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(message.role == .user ? "You" : "Assistant")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(message.content)
-                            .textSelection(.enabled)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    MessageRow(
+                        message: message,
+                        isLast: message.id == conversation.messages.last?.id,
+                        error: message.id == conversation.messages.last?.id
+                            ? model.streamError(for: conversation.id) : nil
+                    )
+                }
+                if let live = model.liveReply, live.conversationID == conversation.id {
+                    LiveReplyRow(live: live)
                 }
             }
-            .padding()
+            .padding(.horizontal)
+            .padding(.top)
+            .padding(.bottom, 8)
+            .frame(maxWidth: 760)
+            .frame(maxWidth: .infinity)
         }
+        .defaultScrollAnchor(.bottom)
         .overlay {
-            if conversation.messages.isEmpty {
-                ContentUnavailableView("Empty conversation", systemImage: "text.bubble")
+            if conversation.messages.isEmpty, !model.isStreaming(conversation.id) {
+                ContentUnavailableView("Say something", systemImage: "text.bubble")
             }
+        }
+        .safeAreaInset(edge: .bottom) {
+            Composer(conversation: conversation)
         }
         .navigationTitle(title)
         #if os(iOS)
@@ -38,4 +48,34 @@ struct ChatView: View {
         let derived = conversation.derivedTitle
         return derived.isEmpty ? "New conversation" : derived
     }
+}
+
+/// Observes only the live reply, so each token redraws this row alone.
+struct LiveReplyRow: View {
+    let live: LiveReply
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            RoleLabel(role: .assistant)
+            if !live.reasoning.isEmpty {
+                ReasoningRow(text: live.reasoning, isThinking: live.content.isEmpty)
+            }
+            if live.content.isEmpty, live.reasoning.isEmpty {
+                ProgressView()
+                    .controlSize(.small)
+                    .accessibilityLabel("Waiting for the first token")
+            } else {
+                MarkdownBlocksView(blocks: MarkdownBlocks.parse(live.content))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .animation(.easeOut(duration: 0.12), value: live.content.count)
+    }
+}
+
+#Preview {
+    NavigationStack {
+        ChatView(conversation: AppModel.preview.conversations[0])
+    }
+    .environment(AppModel.preview)
 }

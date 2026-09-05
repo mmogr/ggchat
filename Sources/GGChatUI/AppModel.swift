@@ -11,22 +11,39 @@ public final class AppModel {
     public var selectedConversationID: UUID?
     /// The last failure worth telling the user about, as its own sentence.
     public var lastError: String?
+    /// The reply being streamed, if any.
+    public internal(set) var liveReply: LiveReply?
+    var streamTask: Task<Void, Never>?
+    var streamErrors: [UUID: ProviderError] = [:]
+    var modelsByProvider: [UUID: [ModelInfo]] = [:]
+    var pipeStatuses: [UUID: PipeStatus] = [:]
 
     let store: any Store
     let secrets: any Secrets
     let log: any LogSink
+    let registry: LoopbackProviderRegistry
     let now: () -> Date
+
+    /// Where the in-process mock provider answers in DEBUG builds, the same
+    /// address after every launch so a saved mock provider keeps working.
+    public static let mockBaseURL = URL(string: "http://127.0.0.1:49151/v1")!
 
     public init(
         store: any Store,
         secrets: any Secrets,
         log: any LogSink = OSLogSink(category: "app"),
+        registry: LoopbackProviderRegistry = .shared,
         now: @escaping () -> Date = { Date() }
     ) {
         self.store = store
         self.secrets = secrets
         self.log = log
+        self.registry = registry
         self.now = now
+        #if DEBUG
+            registry.register(
+                MockProvider(sleeper: ContinuousClockSleeper(), tokenDelay: .milliseconds(25)), at: Self.mockBaseURL)
+        #endif
     }
 
     public var selectedConversation: Conversation? {
@@ -129,10 +146,7 @@ extension AppModel {
     public static var preview: AppModel {
         let model = AppModel(store: InMemoryStore(), secrets: InMemorySecrets(), log: NoopLogSink())
         model.addProvider(
-            ProviderConfig(
-                name: "gglib on the Mac",
-                kind: .openAICompatible(baseURL: URL(string: "http://127.0.0.1:8080/v1")!),
-                defaultModel: "Qwen3.8-27B"),
+            ProviderConfig(name: "Mock", kind: .openAICompatible(baseURL: mockBaseURL), defaultModel: "mock-27b"),
             credentials: [:])
         model.addProvider(
             ProviderConfig(name: "Home", kind: .pipe(ticketDigest: "0123456789abcdef")),

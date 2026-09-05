@@ -17,8 +17,11 @@ protocol, the OpenAI-compatible implementation, the SSE parser, ticket
 shape validation, the pipe seam with its mock) and the app shell: a
 sidebar of conversations persisted with SwiftData, a providers sheet that
 adds a server by address or a pipe by ticket and token, and settings. The
-transcript does not stream yet. The pipe path is a mock until
-`modelpipe-ffi` exists; nothing here links Rust or iroh.
+transcript streams replies as markdown with copyable code blocks and
+collapsed reasoning, with a stop button and, when a reply stops early, a
+Continue button. In DEBUG builds a mock provider streams canned replies
+without a server. The pipe path is a mock until `modelpipe-ffi` exists;
+nothing here links Rust or iroh.
 
 ## What is true today
 
@@ -59,6 +62,13 @@ Each claim names the test that keeps it true.
 - Conversations, their messages in order, and providers survive a round
   trip through SwiftData; deleting a conversation cascades to its messages.
   <!-- test: SwiftDataStoreTests.testConversationsRoundTripWithMessagesInOrder -->
+- Sending streams the reply, with reasoning kept separately, into the
+  conversation; a dropped stream keeps the partial reply on screen and
+  Continue extends that same message rather than starting a new one.
+  <!-- test: AppModelStreamingTests.testSendStreamsAReplyIntoTheConversation -->
+  <!-- test: AppModelStreamingTests.testADroppedStreamKeepsThePartialAndContinueCarriesOn -->
+- Exactly three custom glass surfaces exist, all in one file inside one
+  `GlassEffectContainer`; `scripts/check_glass_sites.sh` counts them.
 
 ## Building and testing
 

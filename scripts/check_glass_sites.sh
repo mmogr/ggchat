@@ -5,7 +5,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-EXPECTED=0
+EXPECTED=3
 
 sites=$(grep -rn --include='*.swift' -E '\.glassEffect\(' "$ROOT/Sources" "$ROOT/App" 2>/dev/null || true)
 count=$(printf '%s' "$sites" | grep -c . || true)
