@@ -19,9 +19,12 @@ sidebar of conversations persisted with SwiftData, a providers sheet that
 adds a server by address or a pipe by ticket and token, and settings. The
 transcript streams replies as markdown with copyable code blocks and
 collapsed reasoning, with a stop button and, when a reply stops early, a
-Continue button. In DEBUG builds a mock provider streams canned replies
-without a server. The pipe path is a mock until `modelpipe-ffi` exists;
-nothing here links Rust or iroh.
+Continue button. A server added by address lists its models and streams;
+against gglib, a server status pane shows slots, context in use and recent
+requests, and it is hidden for servers that do not answer that endpoint.
+In DEBUG builds a mock provider streams canned replies without a server.
+The pipe path is a mock until `modelpipe-ffi` exists; nothing here links
+Rust or iroh.
 
 ## What is true today
 
@@ -69,6 +72,9 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelStreamingTests.testADroppedStreamKeepsThePartialAndContinueCarriesOn -->
 - Exactly three custom glass surfaces exist, all in one file inside one
   `GlassEffectContainer`; `scripts/check_glass_sites.sh` counts them.
+- With `GGCHAT_LIVE_BASE_URL` set, the app model adds that server by URL,
+  lists its models, streams a complete reply and probes the status endpoint.
+  <!-- test: LiveAppModelTests.testAddByURLListModelsStreamAndProbeStatus -->
 
 ## Building and testing
 

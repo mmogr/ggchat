@@ -17,6 +17,7 @@ public final class AppModel {
     var streamErrors: [UUID: ProviderError] = [:]
     var modelsByProvider: [UUID: [ModelInfo]] = [:]
     var pipeStatuses: [UUID: PipeStatus] = [:]
+    var proxyStatusAvailability: [UUID: Bool] = [:]
 
     let store: any Store
     let secrets: any Secrets

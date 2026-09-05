@@ -95,3 +95,23 @@ final class WireTests: XCTestCase {
         XCTAssertEqual((object["messages"] as? [[String: Any]])?.first?["role"] as? String, "user")
     }
 }
+
+final class ProxyStatusHelperTests: XCTestCase {
+    func testContextUsageIsAFractionOrNil() throws {
+        let status = try JSONDecoder().decode(ProxyStatus.self, from: try Fixtures.data("gglib-proxy-status.json"))
+        let slot = try XCTUnwrap(status.slots.first)
+        let usage = try XCTUnwrap(slot.contextUsage)
+        XCTAssertEqual(usage, Double(slot.promptTokens!) / Double(slot.contextSize!), accuracy: 0.0001)
+        let empty = try JSONDecoder().decode(ProxyStatus.self, from: Data(#"{"slots":[{"id":0}]}"#.utf8))
+        XCTAssertNil(empty.slots.first?.contextUsage)
+    }
+
+    func testRecentRequestFlags() throws {
+        let json =
+            #"{"recent_requests":[{"model_name":"m","loop_guard_tripped":true,"messages_truncated":2},"#
+            + #"{"model_name":"n"}]}"#
+        let status = try JSONDecoder().decode(ProxyStatus.self, from: Data(json.utf8))
+        XCTAssertEqual(status.recentRequests[0].flags, ["loop guard", "2 truncated"])
+        XCTAssertEqual(status.recentRequests[1].flags, [])
+    }
+}

@@ -5,7 +5,12 @@ import SwiftUI
 /// bottom while a reply streams, with the composer floating over it.
 struct ChatView: View {
     @Environment(AppModel.self) private var model
+    @State private var showingStatus = false
     let conversation: Conversation
+
+    private var provider: ProviderConfig? {
+        model.provider(for: conversation)
+    }
 
     var body: some View {
         ScrollView {
@@ -41,6 +46,25 @@ struct ChatView: View {
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
         #endif
+        .toolbar {
+            if let provider, model.proxyStatusAvailable(for: provider.id) {
+                ToolbarItem(placement: .automatic) {
+                    Button("Server status", systemImage: "gauge.with.dots.needle.33percent") {
+                        showingStatus = true
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showingStatus) {
+            if let provider {
+                ProxyStatusView(provider: provider)
+            }
+        }
+        .task(id: provider?.id) {
+            if let provider {
+                await model.probeProxyStatus(for: provider)
+            }
+        }
     }
 
     private var title: String {
