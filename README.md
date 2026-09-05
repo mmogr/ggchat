@@ -22,9 +22,14 @@ collapsed reasoning, with a stop button and, when a reply stops early, a
 Continue button. A server added by address lists its models and streams;
 against gglib, a server status pane shows slots, context in use and recent
 requests, and it is hidden for servers that do not answer that endpoint.
-In DEBUG builds a mock provider streams canned replies without a server.
-The pipe path is a mock until `modelpipe-ffi` exists; nothing here links
-Rust or iroh.
+A pipe provider is added by pasting a ticket and token, or on iOS by
+scanning a QR code; connecting goes through `PipeConnector`, whose only
+implementation today is a mock that walks idle → relayed → direct. The
+status pill follows it and becomes a reconnect button when the pipe
+closes. Settings shows the readings the ADRs name, each with its
+denominator. In DEBUG builds a mock provider streams canned replies
+without a server. The pipe path is a mock until `modelpipe-ffi` exists;
+nothing here links Rust or iroh.
 
 ## What is true today
 
@@ -75,6 +80,15 @@ Each claim names the test that keeps it true.
 - With `GGCHAT_LIVE_BASE_URL` set, the app model adds that server by URL,
   lists its models, streams a complete reply and probes the status endpoint.
   <!-- test: LiveAppModelTests.testAddByURLListModelsStreamAndProbeStatus -->
+- Connecting a pipe provider walks the status to direct, fires the one
+  haptic once, records the ticket's digest, and streams through the
+  session's loopback URL with the token as the key; a forced close is
+  counted and reconnecting dials again without counting the ticket twice.
+  <!-- test: AppModelPipeTests.testConnectWalksToDirectAndStreamsThroughTheSessionURL -->
+  <!-- test: AppModelPipeTests.testForceClosedIsCountedAndReconnectDialsAgain -->
+- The Diagnostics readings survive a relaunch, and only a transport error
+  within five seconds of a resume counts against ADR 0001.
+  <!-- test: DiagnosticsTests.testReadingsPersistWithTheirDenominators -->
 
 ## Building and testing
 

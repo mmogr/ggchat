@@ -18,6 +18,9 @@ struct AddProviderView: View {
     @State private var apiKey = ""
     @State private var ticket = ""
     @State private var token = ""
+    #if os(iOS)
+        @State private var scanning = false
+    #endif
 
     var body: some View {
         NavigationStack {
@@ -58,6 +61,11 @@ struct AddProviderView: View {
                                 .textInputAutocapitalization(.never)
                             #endif
                         SecureField("Token", text: $token)
+                        #if os(iOS)
+                            if ScanTicketView.isSupported {
+                                Button("Scan ticket", systemImage: "qrcode.viewfinder") { scanning = true }
+                            }
+                        #endif
                     } header: {
                         Text("Ticket and token")
                     } footer: {
@@ -67,6 +75,14 @@ struct AddProviderView: View {
             }
             .formStyle(.grouped)
             .navigationTitle("Add provider")
+            #if os(iOS)
+                .sheet(isPresented: $scanning) {
+                    ScanTicketView { scanned in
+                        ticket = scanned
+                        scanning = false
+                    }
+                }
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -133,6 +149,7 @@ struct AddProviderView: View {
                 name: trimmedName.isEmpty ? "Pipe" : trimmedName,
                 kind: .pipe(ticketDigest: Ticket.digest(cleaned)))
             model.addProvider(config, credentials: [.ticket: cleaned, .token: token])
+            Task { await model.connectPipe(for: config) }
         }
         dismiss()
     }

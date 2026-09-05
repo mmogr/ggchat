@@ -53,6 +53,7 @@ extension AppModel {
         guard let conversation = selectedConversation, !isStreaming,
             let last = conversation.messages.last, last.role == .assistant, last.isPartial
         else { return nil }
+        diagnostics.recordContinue()
         return stream(conversation, continuing: last.id)
     }
 
@@ -113,6 +114,7 @@ extension AppModel {
                     isPartial: !finished, createdAt: stamp))
         }
         conversation.updatedAt = stamp
+        diagnostics.recordStreamEnd(with: live.error, at: stamp)
         if let error = live.error {
             streamErrors[conversation.id] = error
             log.log(.error, "stream ended with \(error.code ?? "no code"): \(error.whereToLook)")
@@ -128,8 +130,7 @@ extension AppModel {
             let key = try? secrets.secret(.apiKey, for: config.id)
             return registry.makeProvider(baseURL: baseURL, apiKey: key, log: log)
         case .pipe:
-            lastError = "Pipe providers connect in a later step."
-            return nil
+            return makePipeProvider(for: config)
         }
     }
 
@@ -165,7 +166,7 @@ extension AppModel {
     }
 
     /// The status of the pipe behind this conversation, or nil for a server
-    /// added by address. Sessions arrive with the pipe flow.
+    /// added by address.
     public func pipeStatus(for conversation: Conversation) -> PipeStatus? {
         guard let config = provider(for: conversation), config.isPipe else { return nil }
         return pipeStatuses[config.id]

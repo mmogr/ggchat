@@ -17,12 +17,20 @@ public final class AppModel {
     var streamErrors: [UUID: ProviderError] = [:]
     var modelsByProvider: [UUID: [ModelInfo]] = [:]
     var pipeStatuses: [UUID: PipeStatus] = [:]
+    var pipeSessions: [UUID: any PipeSession] = [:]
+    var statusTasks: [UUID: Task<Void, Never>] = [:]
+    var connecting: Set<UUID> = []
     var proxyStatusAvailability: [UUID: Bool] = [:]
+    /// Changes once each time a pipe first reaches a connected state; the
+    /// one haptic in the app fires on it.
+    public internal(set) var connectedPulse = 0
 
+    public let diagnostics: Diagnostics
     let store: any Store
     let secrets: any Secrets
     let log: any LogSink
     let registry: LoopbackProviderRegistry
+    let pipeConnector: any PipeConnector
     let now: () -> Date
 
     /// Where the in-process mock provider answers in DEBUG builds, the same
@@ -34,12 +42,16 @@ public final class AppModel {
         secrets: any Secrets,
         log: any LogSink = OSLogSink(category: "app"),
         registry: LoopbackProviderRegistry = .shared,
+        pipeConnector: any PipeConnector = PipeConnectorFactory.make(),
+        diagnostics: Diagnostics = Diagnostics(),
         now: @escaping () -> Date = { Date() }
     ) {
         self.store = store
         self.secrets = secrets
         self.log = log
         self.registry = registry
+        self.pipeConnector = pipeConnector
+        self.diagnostics = diagnostics
         self.now = now
         #if DEBUG
             registry.register(
@@ -124,6 +136,7 @@ public final class AppModel {
 
     public func removeProvider(_ id: UUID) {
         providers.removeAll { $0.id == id }
+        Task { await disconnectPipe(for: id) }
         do {
             try secrets.removeAll(for: id)
             try store.deleteProvider(id: id)
@@ -145,7 +158,9 @@ public final class AppModel {
 extension AppModel {
     /// Seeded, in-memory, for previews.
     public static var preview: AppModel {
-        let model = AppModel(store: InMemoryStore(), secrets: InMemorySecrets(), log: NoopLogSink())
+        let model = AppModel(
+            store: InMemoryStore(), secrets: InMemorySecrets(), log: NoopLogSink(),
+            pipeConnector: MockPipeConnector(), diagnostics: Diagnostics(defaults: UserDefaults(suiteName: "preview")!))
         model.addProvider(
             ProviderConfig(name: "Mock", kind: .openAICompatible(baseURL: mockBaseURL), defaultModel: "mock-27b"),
             credentials: [:])

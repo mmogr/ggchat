@@ -5,6 +5,7 @@ import SwiftUI
 /// system draws the glass.
 public struct RootView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showingProviders = false
     @State private var showingSettings = false
 
@@ -38,6 +39,9 @@ public struct RootView: View {
             Text(model.lastError ?? "")
         }
         .task { model.load() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { model.didBecomeActive() }
+        }
     }
 }
 

@@ -37,10 +37,15 @@ struct Composer: View {
         .frame(maxWidth: 760)
         .frame(maxWidth: .infinity)
         .task(id: provider?.id) {
-            if let provider, model.models(for: provider.id).isEmpty {
+            guard let provider else { return }
+            if provider.isPipe, model.pipeSession(for: provider.id) == nil {
+                await model.connectPipe(for: provider)
+            }
+            if model.models(for: provider.id).isEmpty {
                 await model.refreshModels(for: provider)
             }
         }
+        .sensoryFeedback(.success, trigger: model.connectedPulse)
     }
 
     // MARK: - Composer capsule
@@ -164,16 +169,26 @@ struct Composer: View {
 
     // MARK: - Status pill
 
+    /// Quiet while connected; when the other machine is gone it becomes the
+    /// reconnect button.
     private func statusPill(_ status: PipeStatus) -> some View {
-        Label(statusText(status), systemImage: statusSymbol(status))
-            .font(.callout)
-            .symbolEffect(.variableColor.iterative, isActive: status == .idle)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
-            .glassEffect(.regular, in: .capsule)
-            .glassEffectID("status", in: glass)
-            .glassEffectTransition(.matchedGeometry)
-            .accessibilityLabel("Connection \(statusText(status))")
+        Button {
+            guard status == .closed, let provider else { return }
+            Task { await model.reconnectPipe(for: provider) }
+        } label: {
+            Label(statusText(status), systemImage: statusSymbol(status))
+                .font(.callout)
+                .symbolEffect(.variableColor.iterative, isActive: status == .idle)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+        }
+        .buttonStyle(.plain)
+        .disabled(status != .closed)
+        .glassEffect(.regular.interactive(status == .closed), in: .capsule)
+        .glassEffectID("status", in: glass)
+        .glassEffectTransition(.matchedGeometry)
+        .accessibilityLabel("Connection \(statusText(status))")
+        .accessibilityHint(status == .closed ? "Reconnects" : "")
     }
 
     private func statusText(_ status: PipeStatus) -> String {
@@ -181,7 +196,7 @@ struct Composer: View {
         case .idle: "Connecting"
         case .direct: "Direct"
         case .relayed: "Relayed"
-        case .closed: "Closed"
+        case .closed: "Reconnect"
         }
     }
 
