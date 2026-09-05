@@ -76,6 +76,7 @@ struct ChatView: View {
 
 /// Observes only the live reply, so each token redraws this row alone.
 struct LiveReplyRow: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let live: LiveReply
 
     var body: some View {
@@ -93,13 +94,23 @@ struct LiveReplyRow: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .animation(.easeOut(duration: 0.12), value: live.content.count)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: live.content.count)
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.updatesFrequently)
     }
 }
 
-#Preview {
+#Preview("Default") {
     NavigationStack {
         ChatView(conversation: AppModel.preview.conversations[0])
     }
     .environment(AppModel.preview)
+}
+
+#Preview("Accessibility 5") {
+    NavigationStack {
+        ChatView(conversation: AppModel.preview.conversations[0])
+    }
+    .environment(AppModel.preview)
+    .dynamicTypeSize(.accessibility5)
 }

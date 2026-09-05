@@ -70,6 +70,7 @@ struct ProviderRow: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .accessibilityElement(children: .combine)
     }
 
     private var detail: String {

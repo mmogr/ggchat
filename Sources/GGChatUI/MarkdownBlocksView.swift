@@ -75,7 +75,8 @@ struct CodeBlockView: View {
                         .contentTransition(.symbolEffect(.replace))
                 }
                 .buttonStyle(.borderless)
-                .accessibilityLabel(copied ? "Copied" : "Copy code")
+                .frame(minHeight: 28)
+                .accessibilityLabel(copied ? "Copied" : "Copy \(language ?? "code") block")
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
@@ -88,6 +89,8 @@ struct CodeBlockView: View {
             }
         }
         .background(.fill.tertiary, in: .rect(cornerRadius: 10))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(language ?? "Code") block")
     }
 
     private func copy() {

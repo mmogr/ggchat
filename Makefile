@@ -24,6 +24,7 @@ boundaries:
 
 enforce:
 	scripts/check_glass_sites.sh
+	scripts/check_no_hand_drawn_glass.sh
 	scripts/check_time_is_an_argument.sh
 	scripts/check_no_print.sh
 	scripts/check_log_calls.sh

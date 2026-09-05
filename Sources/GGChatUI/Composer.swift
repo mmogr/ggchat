@@ -6,6 +6,8 @@ import SwiftUI
 /// composer, the model pill, and the status pill.
 struct Composer: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
     @Namespace private var glass
     @State private var draft = ""
     @State private var pickingModel = false
@@ -22,13 +24,7 @@ struct Composer: View {
     var body: some View {
         GlassEffectContainer(spacing: 12) {
             VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 8) {
-                    modelPill
-                    if let status = model.pipeStatus(for: conversation) {
-                        statusPill(status)
-                    }
-                    Spacer(minLength: 0)
-                }
+                pills
                 composer
             }
         }
@@ -48,6 +44,24 @@ struct Composer: View {
         .sensoryFeedback(.success, trigger: model.connectedPulse)
     }
 
+    /// Side by side when they fit, stacked at accessibility sizes.
+    @ViewBuilder
+    private var pills: some View {
+        let status = model.pipeStatus(for: conversation)
+        if typeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 8) {
+                modelPill
+                if let status { statusPill(status) }
+            }
+        } else {
+            HStack(spacing: 8) {
+                modelPill
+                if let status { statusPill(status) }
+                Spacer(minLength: 0)
+            }
+        }
+    }
+
     // MARK: - Composer capsule
 
     private var composer: some View {
@@ -64,7 +78,7 @@ struct Composer: View {
             } label: {
                 Image(systemName: streaming ? "stop.fill" : "arrow.up")
                     .font(.body.weight(.semibold))
-                    .frame(width: 22, height: 22)
+                    .frame(minWidth: 28, minHeight: 28)
             }
             .buttonStyle(.glassProminent)
             .buttonBorderShape(.circle)
@@ -95,7 +109,7 @@ struct Composer: View {
     private var modelPill: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button {
-                withAnimation(.snappy) { pickingModel.toggle() }
+                withAnimation(reduceMotion ? nil : .snappy) { pickingModel.toggle() }
             } label: {
                 Label(modelLabel, systemImage: "cpu")
                     .labelStyle(.titleAndIcon)
@@ -129,7 +143,7 @@ struct Composer: View {
                     ForEach(models) { info in
                         Button {
                             model.select(model: info.id, for: conversation.id)
-                            withAnimation(.snappy) { pickingModel = false }
+                            withAnimation(reduceMotion ? nil : .snappy) { pickingModel = false }
                         } label: {
                             HStack {
                                 VStack(alignment: .leading, spacing: 1) {
@@ -178,7 +192,7 @@ struct Composer: View {
         } label: {
             Label(statusText(status), systemImage: statusSymbol(status))
                 .font(.callout)
-                .symbolEffect(.variableColor.iterative, isActive: status == .idle)
+                .symbolEffect(.variableColor.iterative, isActive: status == .idle && !reduceMotion)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 7)
         }

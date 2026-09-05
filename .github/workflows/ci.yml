@@ -48,6 +48,8 @@ jobs:
       - uses: actions/checkout@v5
       - name: Glass sites
         run: scripts/check_glass_sites.sh
+      - name: No hand-drawn glass
+        run: scripts/check_no_hand_drawn_glass.sh
       - name: Time is an argument
         run: scripts/check_time_is_an_argument.sh
       - name: No print

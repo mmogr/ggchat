@@ -76,7 +76,12 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelStreamingTests.testSendStreamsAReplyIntoTheConversation -->
   <!-- test: AppModelStreamingTests.testADroppedStreamKeepsThePartialAndContinueCarriesOn -->
 - Exactly three custom glass surfaces exist, all in one file inside one
-  `GlassEffectContainer`; `scripts/check_glass_sites.sh` counts them.
+  `GlassEffectContainer`; `scripts/check_glass_sites.sh` counts them, and
+  `scripts/check_no_hand_drawn_glass.sh` refuses any material or
+  translucent fill elsewhere, so Reduce Transparency and Increase Contrast
+  are the system's to honour. Symbol effects and the streaming animation
+  switch off under Reduce Motion, and the pills stack at accessibility
+  type sizes.
 - With `GGCHAT_LIVE_BASE_URL` set, the app model adds that server by URL,
   lists its models, streams a complete reply and probes the status endpoint.
   <!-- test: LiveAppModelTests.testAddByURLListModelsStreamAndProbeStatus -->

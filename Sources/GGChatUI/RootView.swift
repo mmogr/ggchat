@@ -107,6 +107,7 @@ struct ConversationRow: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
+        .accessibilityElement(children: .combine)
     }
 
     private var title: String {

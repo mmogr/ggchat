@@ -65,6 +65,7 @@ struct RoleLabel: View {
 /// Collapsed by default. While the model is still thinking the label says
 /// so, with a subtle symbol effect instead of a spinner.
 struct ReasoningRow: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let text: String
     let isThinking: Bool
     @State private var expanded = false
@@ -80,7 +81,9 @@ struct ReasoningRow: View {
             Label(isThinking ? "Thinking" : "Reasoning", systemImage: "brain")
                 .font(.callout)
                 .foregroundStyle(.secondary)
-                .symbolEffect(.pulse, isActive: isThinking)
+                .symbolEffect(.pulse, isActive: isThinking && !reduceMotion)
+                .accessibilityLabel(
+                    isThinking ? "Thinking, in progress" : "Reasoning, \(expanded ? "expanded" : "collapsed")")
         }
     }
 }
