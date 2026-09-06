@@ -199,13 +199,14 @@ extension AppModel {
     /// is hung up.
     ///
     /// There is no brief-background regime worth holding a pipe open for.
-    /// iroh gives a path fifteen seconds of idle before it is gone and
-    /// clamps any longer per-path timeout, and iOS reclaims a suspended
-    /// process's sockets without telling it — TN2277 says to close listening
-    /// sockets on the way out for exactly this reason. Holding one buys a
-    /// few seconds and pays with a pill reading "Direct" over a socket the
-    /// system already took back. So the choice is binary, and this is the
-    /// half of it that costs a reconnect instead of a lie.
+    /// iOS reclaims a suspended process's sockets without telling it —
+    /// TN2277, *Networking and Multitasking*, says to close listening
+    /// sockets on the way out for exactly this reason — and nothing tells
+    /// this side when the far one gives up either, so a status is only ever
+    /// as fresh as the last thing that arrived over a socket the system may
+    /// already have taken back. Holding a pipe buys a few seconds and pays
+    /// with a pill reading "Direct" over nothing. So the choice is binary,
+    /// and this is the half of it that costs a reconnect instead of a lie.
     ///
     /// The reply is cancelled and waited for first, so its partial text
     /// reaches the conversation while there is still a runtime to write it:
