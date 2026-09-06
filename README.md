@@ -172,8 +172,11 @@ Each claim names the test that keeps it true.
   <!-- test: RemainingScreensUITests.testTheServerStatusPaneAgainstARealServer -->
   <!-- test: RemainingScreensUITests.testTheStatusPaneIsHiddenForAServerThatDoesNotReport -->
 - A closed pipe turns its status pill into a reconnect, and pressing it
-  brings the pipe back.
+  brings the pipe back. The pill is a way back in every state but one — a
+  dial already in flight — so a status that has gone stale is still
+  something you can press.
   <!-- test: RemainingScreensUITests.testAClosedPipeOffersAReconnect -->
+  <!-- test: AppModelDialTests.testOnlyADialInFlightWithholdsTheWayBack -->
 - Text grows at the largest accessibility size, and the test measures it,
   so a launch argument that silently changes nothing cannot pass for a
   Dynamic Type check.

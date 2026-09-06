@@ -185,11 +185,14 @@ struct Composer: View {
 
     // MARK: - Status pill
 
-    /// Quiet while connected; when the other machine is gone it becomes the
-    /// reconnect button.
+    /// Quiet while connected, and a way back at every moment the app is not
+    /// already dialling — including over a pill that reads "Direct", which
+    /// is the state a status goes stale in. `AppModel.canReconnect(_:)`
+    /// carries the reasoning.
     private func statusPill(_ status: PipeStatus) -> some View {
-        Button {
-            guard status == .closed, let provider else { return }
+        let offered = provider.map { model.canReconnect($0.id) } ?? false
+        return Button {
+            guard offered, let provider else { return }
             Task { await model.reconnectPipe(for: provider) }
         } label: {
             Label(statusText(status), systemImage: statusSymbol(status))
@@ -199,15 +202,15 @@ struct Composer: View {
                 .padding(.vertical, 7)
         }
         .buttonStyle(.plain)
-        // Only the closed pill is a button. Disabling the others would grey
-        // them, and "Direct" is the state you want, not an inactive control.
+        // Only the closed pill is tinted: it is the one asking to be pressed.
+        // The others read as status and are pressable without saying so.
         .foregroundStyle(status == .closed ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
-        .disabled(status != .closed)
-        .glassEffect(.regular.interactive(status == .closed), in: .capsule)
+        .disabled(!offered)
+        .glassEffect(.regular.interactive(offered), in: .capsule)
         .glassEffectID("status", in: glass)
         .glassEffectTransition(.matchedGeometry)
         .accessibilityLabel("Connection \(statusText(status))")
-        .accessibilityHint(status == .closed ? "Reconnects" : "")
+        .accessibilityHint(offered ? "Reconnects" : "")
     }
 
     private func statusText(_ status: PipeStatus) -> String {

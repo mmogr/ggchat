@@ -10,6 +10,23 @@ extension AppModel {
         pipeSessions[providerID]
     }
 
+    /// Whether the reconnect affordance is worth offering for this provider.
+    ///
+    /// It is offered in every state but one: while a dial is already in
+    /// flight, because asking for a second one is not a way back. It is
+    /// offered over a pill that reads "Direct" too, because a status is only
+    /// ever as fresh as the last thing the far side said, and after a
+    /// suspension, a sleep or a network change it can be describing a socket
+    /// that is already gone.
+    ///
+    /// Gating this on the status being `closed` is what left the app showing
+    /// a stale *and* disabled pill with no way out of it: nothing writes
+    /// `idle` when a pipe dies quietly, so the pill went on claiming a live
+    /// connection and refusing to be pressed about it.
+    public func canReconnect(_ providerID: UUID) -> Bool {
+        !connecting.contains(providerID)
+    }
+
     /// Pairs with a machine and adds it as a provider: redeem the six-digit
     /// code through the pipe for that machine's API key, keep the key as the
     /// provider's token, then dial the pipe the ordinary way.
