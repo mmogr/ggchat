@@ -149,6 +149,12 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelDialTests.testRemovingAProviderMidDialLeavesNoConnectionBehind -->
   <!-- test: AppModelDialTests.testTwoOverlappingDialsLeaveExactlyOneConnection -->
   <!-- test: AppModelDialTests.testAProviderThatIsNoLongerOnTheListIsNotDialled -->
+- A dial that is refused leaves a closed pill to press rather than no pill at
+  all, and the next resume dials it again — one machine that was asleep is not
+  a provider you have to relaunch the app to reach. A dial refused after it
+  was called off says nothing instead.
+  <!-- test: AppModelFailedDialTests.testAFailedDialLeavesAPillToPressAndAResumeThatDialsAgain -->
+  <!-- test: AppModelFailedDialTests.testARefusalThatArrivesAfterItsDialWasCalledOffSaysNothing -->
 - Going to the background hangs up every pipe and writes the reply that was
   in flight into the conversation as a partial rather than losing it; coming
   back dials again, and only the pipes the app already had.
