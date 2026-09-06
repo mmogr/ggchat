@@ -46,6 +46,24 @@ extension AppModel {
         await connectPipe(for: config)
     }
 
+    /// Pairs again with a machine already on the list: redeem the code
+    /// through the new ticket, put both in place of the old pair, and dial
+    /// again. The provider's id survives, and with it its conversations —
+    /// see ``updateProvider(_:credentials:)``.
+    ///
+    /// The dial is part of the edit because a new ticket does nothing
+    /// without one. A replaced token takes effect on the next request, since
+    /// `makePipeProvider(for:)` reads it each time; a ticket is only ever
+    /// read at dial time, so an edited ticket sitting behind a live session
+    /// would be a setting that had visibly been saved and changed nothing.
+    public func updatePairedProvider(_ config: ProviderConfig, ticket: String, code: String) async throws {
+        let pairing = PipePairing(connector: pipeConnector, redeemer: redeemer)
+        let key = try await pairing.token(ticket: ticket, code: code)
+        try updateProvider(config, credentials: [.ticket: ticket, .token: key])
+        log.log(.info, "paired with \(config.name) again; the new code was redeemed for its key")
+        await reconnectPipe(for: config)
+    }
+
     /// Dials the pipe behind a provider, if it is not already up. The status
     /// pill follows the session from here on; a failure is the connector's
     /// own sentence.

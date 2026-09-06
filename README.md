@@ -148,6 +148,18 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundHangsUpEveryPipeAndComingBackDialsAgain -->
   <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundKeepsThePartialReplyInsteadOfLosingIt -->
   <!-- test: AppModelLifecycleTests.testComingBackDoesNotDialAPipeTheAppNeverOpened -->
+- A provider's row opens its settings, and its name and credentials are
+  edited in place, keeping the id — so a machine paired again with the
+  ticket its next `gglib remote enable` printed keeps its conversations.
+  A blank credential keeps the one stored, an edit that will not save puts
+  back what it found, and a new ticket is dialled rather than saved and
+  ignored.
+  <!-- test: ScreenGalleryUITests.testAProviderRowOpensItsSettingsAndTheEditSticks -->
+  <!-- test: AppModelProviderTests.testEditingAPipesCredentialsKeepsItsIdAndSoItsConversations -->
+  <!-- test: AppModelProviderTests.testAnEmptyCredentialKeepsTheOneAlreadyStored -->
+  <!-- test: AppModelProviderTests.testAnEditThatWillNotSaveLeavesTheOldCredentialsInPlace -->
+  <!-- test: AppModelProviderTests.testRePairingRedeemsTheNewCodeAndDialsTheNewTicket -->
+  <!-- test: AppModelProviderTests.testARefusedCodeLeavesTheProviderPairedWithTheMachineItHad -->
 - Removing a provider deletes its durable record before its credentials, so
   a delete that fails leaves the provider whole rather than resurrecting one
   on the next launch that can never connect.
