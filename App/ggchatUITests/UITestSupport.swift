@@ -22,15 +22,62 @@ extension XCTestCase {
     }
 
     /// An element can exist while something the system put on screen sits
-    /// over it, and a tap then goes to that instead.
+    /// over it, and a tap then goes to that instead. On a device that has
+    /// not seen this app before, iOS offers to save the token to the
+    /// password manager, and that offer can arrive seconds after the sheet
+    /// closes, so the wait dismisses whatever is on top as it goes rather
+    /// than clearing once up front and hoping.
     @MainActor
     func waitUntilHittable(_ element: XCUIElement, timeout: TimeInterval) -> Bool {
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
             if element.exists, element.isHittable { return true }
+            dismissAnythingOnTop()
             _ = element.waitForExistence(timeout: 0.5)
         }
         return false
+    }
+
+    /// Taps the dismissive button of any system prompt currently up. Cheap
+    /// enough to call in a loop, and silent when there is nothing there.
+    @MainActor
+    func dismissAnythingOnTop() {
+        // The password manager's offer is drawn by a remote view inside the
+        // app under test, not by SpringBoard, so both are swept.
+        let sources = [XCUIApplication(), XCUIApplication(bundleIdentifier: "com.apple.springboard")]
+        for source in sources {
+            for title in ["Not Now", "Cancel", "Dismiss", "Close"] {
+                let button = source.buttons[title]
+                if button.exists, button.isHittable {
+                    button.tap()
+                    return
+                }
+            }
+        }
+    }
+
+    /// Taps, then checks the tap actually did something, and tries again if
+    /// it did not. The password manager's offer can arrive a second time,
+    /// after the first has been dismissed, and swallow the tap that follows.
+    @MainActor
+    @discardableResult
+    func tap(_ element: XCUIElement, untilExists witness: XCUIElement, attempts: Int = 4) -> Bool {
+        for _ in 0..<attempts where waitUntilHittable(element, timeout: 15) {
+            element.tap()
+            if witness.waitForExistence(timeout: 8) { return true }
+            dismissAnythingOnTop()
+        }
+        return witness.exists
+    }
+
+    /// Everything on screen, for when a wait times out and the screenshot
+    /// alone does not say why.
+    @MainActor
+    func attachElementTree(_ app: XCUIApplication, name: String) {
+        let dump = XCTAttachment(string: app.debugDescription)
+        dump.name = name
+        dump.lifetime = .keepAlways
+        add(dump)
     }
 
     /// SwiftUI exposes a vertical `TextField` as a text view or a text field
@@ -43,8 +90,8 @@ extension XCTestCase {
 
     /// iOS offers to save a secure field's contents to the password manager
     /// once the sheet closes, and that alert swallows the next tap. The
-    /// monitor catches it on the next interaction; the poll catches it when
-    /// it arrives late. Both are needed.
+    /// monitor catches it on the next interaction; `waitUntilHittable`
+    /// catches it when it arrives late. Both are needed.
     @MainActor
     func clearingThePasswordManagerPrompt(in app: XCUIApplication, during work: () -> Void) {
         let monitor = addUIInterruptionMonitor(withDescription: "password manager") { alert in
@@ -55,19 +102,8 @@ extension XCTestCase {
             return false
         }
         defer { removeUIInterruptionMonitor(monitor) }
-
         work()
         app.tap()
-
-        let springboard: XCUIApplication? = XCUIApplication(bundleIdentifier: "com.apple.springboard")
-        let deadline = Date().addingTimeInterval(8)
-        while Date() < deadline {
-            for source in [springboard, app] {
-                guard let notNow = source?.buttons["Not Now"], notNow.exists, notNow.isHittable else { continue }
-                notNow.tap()
-                return
-            }
-            _ = springboard?.alerts.firstMatch.waitForExistence(timeout: 0.5)
-        }
+        dismissAnythingOnTop()
     }
 }

@@ -90,8 +90,8 @@ final class RemainingScreensUITests: XCTestCase {
         }
 
         let newConversation = app.buttons["New conversation"].firstMatch
-        XCTAssertTrue(waitUntilHittable(newConversation, timeout: 20))
-        newConversation.tap()
+        let pill = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Model, '")).firstMatch
+        XCTAssertTrue(tap(newConversation, untilExists: pill), "the conversation never opened")
 
         let connected = app.buttons.matching(
             NSPredicate(format: "label == 'Connection Direct' OR label == 'Connection Relayed'")

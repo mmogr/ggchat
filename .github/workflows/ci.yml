@@ -147,18 +147,30 @@ jobs:
             -resultBundlePath uitest.xcresult \
             -only-testing:ggchatUITests \
             CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
-      - name: Say which tests ran, so a skip cannot pass for a pass
+      - name: Say which tests ran and why any failed
         if: always()
         run: |
           xcrun xcresulttool get test-results tests --path uitest.xcresult --format json \
             | python3 -c "
           import json, sys
-          def walk(nodes):
+          cases, failures = [], []
+          def walk(nodes, case=None):
               for n in nodes:
                   if n.get('nodeType') == 'Test Case':
-                      print(f\"{n.get('result')}\t{n.get('name')}\")
-                  walk(n.get('children', []))
+                      case = n.get('name')
+                      cases.append((n.get('result'), case))
+                  if n.get('nodeType') in ('Failure Message', 'Repetition'):
+                      if n.get('nodeType') == 'Failure Message':
+                          failures.append((case, n.get('name')))
+                  walk(n.get('children', []), case)
           walk(json.load(sys.stdin).get('testNodes', []))
+          for result, name in cases:
+              print(f'{result}\t{name}')
+          for case, message in failures:
+              print(f'::error::{case}: {message}')
+          if not cases:
+              print('::error::no tests ran; the Xcode project is probably stale, run make project')
+              sys.exit(1)
           "
       - name: Upload the screenshots it took
         if: always()
