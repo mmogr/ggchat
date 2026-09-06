@@ -19,7 +19,7 @@ jobs:
     name: Build DocC
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Build static DocC for both modules
         run: |
           mkdir -p site
