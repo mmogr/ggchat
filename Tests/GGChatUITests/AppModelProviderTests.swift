@@ -164,6 +164,27 @@ final class AppModelProviderTests: XCTestCase {
         XCTAssertEqual(try secrets.secret(.token, for: config.id), "old-token")
     }
 
+    /// A form can outlive the provider it is editing — another window on
+    /// macOS, a swipe-delete behind a sheet. Saying so beats saving nothing
+    /// quietly, because a re-pairing has spent a one-time code by the time
+    /// it gets here.
+    @MainActor
+    func testEditingAProviderThatIsGoneSaysSoRatherThanSavingNothingQuietly() throws {
+        let secrets = InMemorySecrets()
+        let model = makeModel(store: InMemoryStore(), secrets: secrets)
+        let config = pipeConfig()
+        try model.addProvider(config, credentials: [.ticket: ticket, .token: "old-token"])
+        model.removeProvider(config.id)
+
+        XCTAssertThrowsError(try model.updateProvider(config, credentials: [.token: "new-token"])) { error in
+            XCTAssertEqual(error as? ProviderEditError, .noLongerThere)
+        }
+        XCTAssertTrue(model.providers.isEmpty, "the removed provider was put back by an edit")
+        XCTAssertNil(
+            try secrets.secret(.token, for: config.id),
+            "a credential was written for a provider that is no longer there")
+    }
+
     /// An edit that cannot be saved must put back exactly what it found. A
     /// provider left holding a new ticket beside an old token would dial one
     /// machine with another machine's key.
