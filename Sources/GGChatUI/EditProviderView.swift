@@ -113,14 +113,20 @@ struct EditProviderView: View {
         return "Requests go to \(Redaction.describe(url)). Leave the key blank to keep the one stored."
     }
 
+    /// Nil while the field is empty, which here means "keep what is stored"
+    /// rather than "not typed yet".
+    private var pairingShape: Result<PairingString, PairingStringError>? {
+        pairing.isEmpty ? nil : PairingString.parse(pairing)
+    }
+
     private var parsedPairing: PairingString? {
-        guard case .success(let parsed)? = pairing.isEmpty ? nil : PairingString.parse(pairing) else { return nil }
+        guard case .success(let parsed)? = pairingShape else { return nil }
         return parsed
     }
 
     @ViewBuilder
     private var pairingFooter: some View {
-        switch pairing.isEmpty ? nil : PairingString.parse(pairing) {
+        switch pairingShape {
         case nil:
             Text("Blank keeps the ticket and token already stored. Paste what `gglib remote enable` printed last.")
         case .success(let parsed) where parsed.code != nil:
