@@ -1,0 +1,76 @@
+name: Label Check
+
+on:
+  pull_request:
+    types: [opened, labeled, unlabeled, synchronize, reopened, ready_for_review]
+
+permissions: {}
+
+concurrency:
+  group: label-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  enrich:
+    name: Enrich labels
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Derive component and size labels from the diff
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const { owner, repo } = context.repo;
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner, repo, pull_number: pr.number, per_page: 100,
+            });
+            const components = new Set();
+            for (const f of files) {
+              const p = f.filename;
+              if (p.startsWith('Sources/GGChatCore/')) components.add('core');
+              else if (p.startsWith('Sources/GGChatUI/')) components.add('ui');
+              else if (p.startsWith('App/')) components.add('app');
+              else if (p.startsWith('Tests/')) components.add('tests');
+              else if (p.startsWith('docs/') || p === 'README.md' || p === 'CHANGELOG.md') components.add('docs');
+              else if (p.startsWith('scripts/')) components.add('scripts');
+              else if (p === 'Package.swift' || p === 'Package.resolved') components.add('deps');
+              else components.add('ci');
+            }
+            const lines = files.reduce((n, f) => n + f.additions + f.deletions, 0);
+            const size = lines < 10 ? 'size/xs' : lines < 100 ? 'size/s' : lines < 500 ? 'size/m' : lines < 1000 ? 'size/l' : 'size/xl';
+            const current = new Set(pr.labels.map(l => l.name));
+            const remove = [...current].filter(l => l.startsWith('size/') && l !== size);
+            for (const name of remove) {
+              await github.rest.issues.removeLabel({ owner, repo, issue_number: pr.number, name }).catch(() => {});
+            }
+            const add = [...components, size].filter(l => !current.has(l));
+            if (add.length) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number: pr.number, labels: add });
+            }
+            core.info(`components: ${[...components].join(', ')}; size: ${size} (${lines} lines)`);
+
+  label-check:
+    name: Label Check
+    runs-on: ubuntu-latest
+    needs: [enrich]
+    if: always()
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Require a component label and a size label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const number = context.payload.pull_request.number;
+            const { data } = await github.rest.issues.listLabelsOnIssue({ owner, repo, issue_number: number });
+            const names = data.map(l => l.name);
+            const components = ['core', 'ui', 'app', 'tests', 'docs', 'scripts', 'ci', 'deps'];
+            const hasComponent = names.some(n => components.includes(n));
+            const hasSize = names.some(n => n.startsWith('size/'));
+            if (!hasComponent || !hasSize) {
+              core.setFailed(`labels are ${JSON.stringify(names)}; need one of ${components.join('/')} and one size/*`);
+            }

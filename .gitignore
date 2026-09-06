@@ -1,0 +1,10 @@
+.build/
+.swiftpm/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+.DS_Store
+coverage.lcov
+test-results*.xml
+/docs/site/

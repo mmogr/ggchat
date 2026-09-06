@@ -1,0 +1,148 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    name: Format
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+      - name: Toolchain
+        run: swift --version
+      - name: Check formatting
+        run: make fmt-check
+
+  lint:
+    name: Lint
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install linters
+        run: brew install swiftlint actionlint
+      - name: Lint Swift and workflows
+        run: make lint
+
+  boundaries:
+    name: Check Boundaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check module boundaries
+        run: make boundaries
+
+  enforcement:
+    name: Enforce Architecture
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Glass sites
+        run: scripts/check_glass_sites.sh
+      - name: Time is an argument
+        run: scripts/check_time_is_an_argument.sh
+      - name: No print
+        run: scripts/check_no_print.sh
+      - name: No credential in a log call
+        run: scripts/check_log_calls.sh
+      - name: File size
+        run: scripts/check_file_size.sh
+      - name: README claims name their tests
+        run: scripts/check_readme_claims.sh
+
+  build:
+    name: Build
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved') }}
+          restore-keys: spm-${{ runner.os }}-
+      - name: Toolchain
+        run: xcodebuild -version && swift --version
+      - name: Build the package with warnings as errors
+        run: make build
+      - name: Build the app for macOS and the iOS simulator
+        if: hashFiles('App/ggchat.xcodeproj/project.pbxproj') != ''
+        run: |
+          set -o pipefail
+          xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat \
+            -destination 'platform=macOS' \
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES CODE_SIGNING_ALLOWED=NO -quiet
+          xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat \
+            -destination 'generic/platform=iOS Simulator' \
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES CODE_SIGNING_ALLOWED=NO -quiet
+
+  test:
+    name: Test
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved') }}
+          restore-keys: spm-${{ runner.os }}-
+      - name: Lockfile guard
+        run: |
+          swift package resolve
+          git diff --exit-code Package.resolved
+      - name: Run tests with coverage
+        run: |
+          swift test --parallel --enable-code-coverage --xunit-output test-results.xml
+      - name: Export coverage
+        run: |
+          profdata="$(dirname "$(swift test --show-codecov-path)")/default.profdata"
+          binary=.build/debug/ggchatPackageTests.xctest/Contents/MacOS/ggchatPackageTests
+          xcrun llvm-cov export -format=lcov -instr-profile "$profdata" "$binary" \
+            -ignore-filename-regex='\.build|Tests/' > coverage.lcov
+          xcrun llvm-cov report -instr-profile "$profdata" "$binary" \
+            -ignore-filename-regex='\.build|Tests/' | tee coverage-summary.txt
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            test-results*.xml
+            coverage.lcov
+            coverage-summary.txt
+
+  unused:
+    name: Unused Code
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved') }}
+          restore-keys: spm-${{ runner.os }}-
+      - name: Install periphery
+        run: brew install periphery
+      - name: Scan
+        run: make unused
+
+  docs:
+    name: Docs
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved') }}
+          restore-keys: spm-${{ runner.os }}-
+      - name: Build DocC with warnings as errors
+        run: make docs

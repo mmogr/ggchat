@@ -1,0 +1,53 @@
+name: Issue
+description: File a bug, feature, or other piece of work
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part does this touch? Select all that apply.
+      multiple: true
+      options:
+        - core
+        - ui
+        - app
+        - docs
+        - ci
+        - scripts
+        - tests
+        - deps
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - bug
+        - feature
+        - question
+        - decision
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What the app does today
+      description: What you saw, on which device and OS, against which server.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What it should do
+    validations:
+      required: true
+
+  - type: textarea
+    id: reading
+    attributes:
+      label: Reading
+      description: A log line, a counter from Settings > Diagnostics, a screenshot. Never a credential.
