@@ -11,6 +11,7 @@
 		2BC2B73C5C5BDAF36DDDA295 /* FirstRunUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FD64D354A297A69A640EC4 /* FirstRunUITests.swift */; };
 		7022193D36D9C554D11E7C19 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D6AD07AA03CC2B5B94885481 /* Assets.xcassets */; };
 		725081788612B911C82443FD /* RemainingScreensUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8887D474A25D1148508A1A8A /* RemainingScreensUITests.swift */; };
+		77CB7E9D19AE522138ADDE31 /* ReduceTransparencyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 012CA37950E7FD746580F4B9 /* ReduceTransparencyUITests.swift */; };
 		895F021D8EBF53CF1DE2D275 /* ScreenGalleryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B587441DB44EB8387612415 /* ScreenGalleryUITests.swift */; };
 		C3CA847E3248F9EEBB33E2FC /* UITestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A72388942EA2BF180AE457CF /* UITestSupport.swift */; };
 		C6B588CC1AD15333CC66DF6A /* GGChatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3827CC1C411258C3A02FB0E8 /* GGChatUI */; };
@@ -27,6 +28,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		012CA37950E7FD746580F4B9 /* ReduceTransparencyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReduceTransparencyUITests.swift; sourceTree = "<group>"; };
 		157E48045F63BAEE71CF5C31 /* ggchat-iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "ggchat-iOS.entitlements"; sourceTree = "<group>"; };
 		3B587441DB44EB8387612415 /* ScreenGalleryUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenGalleryUITests.swift; sourceTree = "<group>"; };
 		56D176E1F0D09146E5E6384D /* ggchatApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ggchatApp.swift; sourceTree = "<group>"; };
@@ -115,6 +117,7 @@
 			isa = PBXGroup;
 			children = (
 				D2FD64D354A297A69A640EC4 /* FirstRunUITests.swift */,
+				012CA37950E7FD746580F4B9 /* ReduceTransparencyUITests.swift */,
 				8887D474A25D1148508A1A8A /* RemainingScreensUITests.swift */,
 				3B587441DB44EB8387612415 /* ScreenGalleryUITests.swift */,
 				A72388942EA2BF180AE457CF /* UITestSupport.swift */,
@@ -221,6 +224,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2BC2B73C5C5BDAF36DDDA295 /* FirstRunUITests.swift in Sources */,
+				77CB7E9D19AE522138ADDE31 /* ReduceTransparencyUITests.swift in Sources */,
 				725081788612B911C82443FD /* RemainingScreensUITests.swift in Sources */,
 				895F021D8EBF53CF1DE2D275 /* ScreenGalleryUITests.swift in Sources */,
 				C3CA847E3248F9EEBB33E2FC /* UITestSupport.swift in Sources */,

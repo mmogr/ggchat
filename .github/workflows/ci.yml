@@ -127,30 +127,102 @@ jobs:
             coverage-summary.txt
 
   uitest:
-    name: UI Test
+    name: UI Test (${{ matrix.name }})
     runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        # The whole walk, then the display settings that only change how it is
+        # drawn, over the gallery that photographs every screen. A setting
+        # belongs here only when `simctl ui` can both set it and read it back.
+        # Reduce Transparency it cannot, so that run carries no setting: the
+        # test sets it and measures the consequence itself.
+        include:
+          - name: iPhone
+            slug: iphone
+            tests: ggchatUITests
+            option: ""
+            value: ""
+          - name: iPhone dark
+            slug: iphone-dark
+            tests: ggchatUITests/ScreenGalleryUITests
+            option: appearance
+            value: dark
+          - name: iPhone contrast
+            slug: iphone-contrast
+            tests: ggchatUITests/ScreenGalleryUITests
+            option: increase_contrast
+            value: enabled
+          - name: iPhone reduce transparency
+            slug: iphone-reduce-transparency
+            tests: ggchatUITests/ReduceTransparencyUITests
+            option: ""
+            value: ""
+    env:
+      BUNDLE: uitest-${{ matrix.slug }}.xcresult
     steps:
       - uses: actions/checkout@v7
+      # Not the `.build` the other jobs cache: xcodebuild resolves the package
+      # into its own cloned-source-packages directory and never reads .build,
+      # so caching that here would restore something this job cannot use.
+      # This saves the clone, not the compile.
+      - uses: actions/cache@v6
+        with:
+          path: .build/xcode-spm
+          key: xcode-spm-${{ runner.os }}-${{ hashFiles('Package.resolved') }}
+          restore-keys: xcode-spm-${{ runner.os }}-
       - name: Pick a booted iPhone simulator
         id: sim
         run: |
+          # Newest runtime first, sorted on a tuple of integers. Sorting the
+          # keys as strings puts iOS-18-4 above iOS-26-5, which would hand an
+          # iOS 18 device to an app that needs 26 and draws with .glassEffect.
           udid=$(xcrun simctl list devices available --json \
-            | python3 -c "import json,sys;d=json.load(sys.stdin)['devices'];print(next(x['udid'] for k,v in sorted(d.items()) if 'iOS' in k for x in v if 'iPhone' in x['name']))")
+            | python3 -c "import json,re,sys;d=json.load(sys.stdin)['devices'];v=lambda k:tuple(map(int,re.findall(r'\d+',k)));print(next(x['udid'] for k in sorted((k for k in d if 'iOS' in k),key=v,reverse=True) for x in d[k] if x['name'].startswith('iPhone')))")
           echo "udid=$udid" >> "$GITHUB_OUTPUT"
+          # Booting a booted device is an error by design, so that stays
+          # tolerant. bootstatus is the gate: a simulator that never comes up
+          # should fail here, by name, not twenty minutes later inside
+          # xcodebuild.
           xcrun simctl boot "$udid" || true
-          xcrun simctl bootstatus "$udid" -b || true
+          xcrun simctl bootstatus "$udid" -b
+      - name: Set the display setting this run is for
+        if: matrix.option != ''
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+          OPTION: ${{ matrix.option }}
+          VALUE: ${{ matrix.value }}
+        run: |
+          # simctl exits 117 on an option it does not have and prints what it
+          # reads back, so the setting is checked rather than assumed. A
+          # runtime that does not support it reads "unsupported", and a bad
+          # value for increase_contrast exits 0, so the read-back is the only
+          # thing that actually says the mode took.
+          xcrun simctl ui "$UDID" "$OPTION" "$VALUE"
+          got=$(xcrun simctl ui "$UDID" "$OPTION")
+          if [ "$got" != "$VALUE" ]; then
+            echo "::error::$OPTION did not take: the simulator reads $got"
+            exit 1
+          fi
       - name: Drive the first-run flow on a simulator
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+          TESTS: ${{ matrix.tests }}
         run: |
           set -o pipefail
+          # xcodebuild refuses to write a result bundle that already exists,
+          # and a re-run on a warm runner has one.
+          rm -rf "$BUNDLE"
           xcodebuild test -project App/ggchat.xcodeproj -scheme ggchat \
-            -destination "id=${{ steps.sim.outputs.udid }}" \
-            -resultBundlePath uitest.xcresult \
-            -only-testing:ggchatUITests \
+            -destination "id=$UDID" \
+            -resultBundlePath "$BUNDLE" \
+            -clonedSourcePackagesDirPath .build/xcode-spm \
+            -only-testing:"$TESTS" \
             CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
       - name: Say which tests ran and why any failed
         if: always()
         run: |
-          xcrun xcresulttool get test-results tests --path uitest.xcresult --format json \
+          xcrun xcresulttool get test-results tests --path "$BUNDLE" --format json \
             | python3 -c "
           import json, sys
           cases, failures = [], []
@@ -178,8 +250,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ui-test-screenshots
-          path: uitest.xcresult
+          name: ui-test-screenshots-${{ matrix.slug }}
+          path: ${{ env.BUNDLE }}
 
   unused:
     name: Unused Code
