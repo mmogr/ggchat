@@ -43,12 +43,17 @@ API key, so no key is ever read off one screen and typed into another. A
 bare ticket is the form every later pairing takes. Connecting goes through
 `PipeConnector`, which has two implementations today: a mock that walks
 idle → relayed → direct, and one that refuses. The status pill follows the
-mock and becomes a reconnect button when the pipe closes. Settings shows
-the readings the ADRs name, each with its denominator. In DEBUG builds a
-mock provider streams canned replies without a server. The pipe path is a
-mock until `modelpipe-ffi` exists, and that mock is DEBUG-only: a released
-build refuses to dial and says so, rather than answering a real ticket
-with a reply no machine wrote. Nothing here links Rust or iroh.
+mock, reads "Reconnect" when the pipe closes, and stays pressable in every
+state but a dial in flight, because a connected status can be stale. Going
+to the background hangs up every pipe and puts down the reply in flight,
+and coming back dials again. A provider's row opens its settings, so a
+machine re-enabled with a fresh ticket is re-paired in place and keeps its
+conversations. Settings shows the readings the ADRs name, each with its
+denominator. In DEBUG builds a mock provider streams canned replies
+without a server. The pipe path is a mock until `modelpipe-ffi` exists,
+and that mock is DEBUG-only: a released build refuses to dial and says so,
+rather than answering a real ticket with a reply no machine wrote. Nothing
+here links Rust or iroh.
 
 ## What is true today
 
@@ -136,6 +141,44 @@ Each claim names the test that keeps it true.
   counted and reconnecting dials again without counting the ticket twice.
   <!-- test: AppModelPipeTests.testConnectWalksToDirectAndStreamsThroughTheSessionURL -->
   <!-- test: AppModelPipeTests.testForceClosedIsCountedAndReconnectDialsAgain -->
+- A dial that lands after its provider was hung up or deleted closes itself
+  instead of installing a pipe nothing on screen can reach any more, two
+  dials in flight at once leave one connection rather than two, and a
+  provider that has left the list is not dialled at all.
+  <!-- test: AppModelDialTests.testADialThatLandsAfterADisconnectHangsUpInsteadOfInstallingItself -->
+  <!-- test: AppModelDialTests.testRemovingAProviderMidDialLeavesNoConnectionBehind -->
+  <!-- test: AppModelDialTests.testTwoOverlappingDialsLeaveExactlyOneConnection -->
+  <!-- test: AppModelDialTests.testAProviderThatIsNoLongerOnTheListIsNotDialled -->
+- A dial that is refused leaves a closed pill to press rather than no pill at
+  all, and the next resume dials it again — one machine that was asleep is not
+  a provider you have to relaunch the app to reach. A dial refused after it
+  was called off says nothing instead.
+  <!-- test: AppModelFailedDialTests.testAFailedDialLeavesAPillToPressAndAResumeThatDialsAgain -->
+  <!-- test: AppModelFailedDialTests.testARefusalThatArrivesAfterItsDialWasCalledOffSaysNothing -->
+- Going to the background hangs up every pipe and writes the reply that was
+  in flight into the conversation as a partial rather than losing it; coming
+  back dials again, and only the pipes the app already had.
+  <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundHangsUpEveryPipeAndComingBackDialsAgain -->
+  <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundKeepsThePartialReplyInsteadOfLosingIt -->
+  <!-- test: AppModelLifecycleTests.testComingBackDoesNotDialAPipeTheAppNeverOpened -->
+- A provider's row opens its settings, and its name and credentials are
+  edited in place, keeping the id — so a machine paired again with the
+  ticket its next `gglib remote enable` printed keeps its conversations.
+  A blank credential keeps the one stored, an edit that will not save puts
+  back what it found, and a new ticket is dialled rather than saved and
+  ignored.
+  <!-- test: ScreenGalleryUITests.testAProviderRowOpensItsSettingsAndTheEditSticks -->
+  <!-- test: AppModelProviderTests.testEditingAPipesCredentialsKeepsItsIdAndSoItsConversations -->
+  <!-- test: AppModelProviderTests.testAnEmptyCredentialKeepsTheOneAlreadyStored -->
+  <!-- test: AppModelProviderTests.testAnEditThatWillNotSaveLeavesTheOldCredentialsInPlace -->
+  <!-- test: AppModelProviderTests.testRePairingRedeemsTheNewCodeAndDialsTheNewTicket -->
+  <!-- test: AppModelProviderTests.testARefusedCodeLeavesTheProviderPairedWithTheMachineItHad -->
+  <!-- test: AppModelProviderTests.testEditingAProviderThatIsGoneSaysSoRatherThanSavingNothingQuietly -->
+- Removing a provider deletes its durable record before its credentials, so
+  a delete that fails leaves the provider whole rather than resurrecting one
+  on the next launch that can never connect.
+  <!-- test: AppModelProviderTests.testAProviderWhoseRecordWillNotDeleteKeepsItsCredentials -->
+  <!-- test: AppModelProviderTests.testRemovingAProviderTakesItsRecordAndItsCredentialsTogether -->
 - The Diagnostics readings survive a relaunch, and only a transport error
   within five seconds of a resume counts against ADR 0001.
   <!-- test: DiagnosticsTests.testReadingsPersistWithTheirDenominators -->
@@ -160,8 +203,11 @@ Each claim names the test that keeps it true.
   <!-- test: RemainingScreensUITests.testTheServerStatusPaneAgainstARealServer -->
   <!-- test: RemainingScreensUITests.testTheStatusPaneIsHiddenForAServerThatDoesNotReport -->
 - A closed pipe turns its status pill into a reconnect, and pressing it
-  brings the pipe back.
+  brings the pipe back. The pill is a way back in every state but one — a
+  dial already in flight — so a status that has gone stale is still
+  something you can press.
   <!-- test: RemainingScreensUITests.testAClosedPipeOffersAReconnect -->
+  <!-- test: AppModelDialTests.testOnlyADialInFlightWithholdsTheWayBack -->
 - Text grows at the largest accessibility size, and the test measures it,
   so a launch argument that silently changes nothing cannot pass for a
   Dynamic Type check.

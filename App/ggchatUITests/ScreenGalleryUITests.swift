@@ -215,6 +215,37 @@ final class ScreenGalleryUITests: XCTestCase {
         attach(name: "server-unreachable")
     }
 
+    /// A provider's row is the way into its settings. There was no tap
+    /// target on it at all before, so a pipe whose ticket had gone stale —
+    /// which is every pipe, every session — could only be deleted and built
+    /// again, taking its conversations with it.
+    @MainActor
+    func testAProviderRowOpensItsSettingsAndTheEditSticks() {
+        launch()
+        openAddProvider()
+        app.buttons["Cancel"].firstMatch.tap()
+        app.buttons["Providers"].firstMatch.tap()
+        let addMock = app.buttons["Add mock provider"].firstMatch
+        XCTAssertTrue(addMock.waitForExistence(timeout: 10))
+        addMock.tap()
+
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Mock'")).firstMatch
+        let name = app.textFields["edit-name"].firstMatch
+        XCTAssertTrue(tap(row, untilExists: name), "a provider row is not a way into its settings")
+        attach(name: "provider-edit")
+
+        name.tap()
+        app.keys["delete"].press(forDuration: 1.5)
+        name.typeText("Desk")
+        app.buttons["Save"].firstMatch.tap()
+
+        XCTAssertTrue(
+            app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Desk'")).firstMatch
+                .waitForExistence(timeout: 10),
+            "the edited name never reached the list")
+        attach(name: "providers-list-edited")
+    }
+
     @MainActor
     private func attach(name: String) {
         let shot = XCTAttachment(screenshot: app.screenshot())
