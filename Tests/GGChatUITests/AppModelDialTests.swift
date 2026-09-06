@@ -142,4 +142,26 @@ final class AppModelDialTests: XCTestCase {
             fixture.stillBound, [installed.baseURL],
             "the superseded dial's session was left bound alongside the installed one")
     }
+
+    /// What the status pill is gated on. A dial in flight is the one state
+    /// where a second dial is not a way back; a "Direct" that has gone stale
+    /// is exactly when one is.
+    @MainActor
+    func testOnlyADialInFlightWithholdsTheWayBack() async throws {
+        let fixture = try makeFixture()
+        let inFlight = await fixture.dial()
+        XCTAssertFalse(
+            fixture.model.canReconnect(fixture.config.id),
+            "a dial is already out; asking for a second one is not a way back")
+
+        fixture.gate.open()
+        await inFlight.value
+        for _ in 0..<200 where fixture.model.pipeStatus(for: fixture.config.id) != .direct { await Task.yield() }
+
+        XCTAssertEqual(fixture.model.pipeStatus(for: fixture.config.id), .direct)
+        XCTAssertTrue(
+            fixture.model.canReconnect(fixture.config.id),
+            "a connected status is only as fresh as the last thing the far side said, "
+                + "so the pill has to stay a way back")
+    }
 }
