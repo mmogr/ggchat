@@ -136,6 +136,12 @@ Each claim names the test that keeps it true.
   counted and reconnecting dials again without counting the ticket twice.
   <!-- test: AppModelPipeTests.testConnectWalksToDirectAndStreamsThroughTheSessionURL -->
   <!-- test: AppModelPipeTests.testForceClosedIsCountedAndReconnectDialsAgain -->
+- A dial that lands after its provider was hung up or deleted closes itself
+  instead of installing a pipe nothing on screen can reach any more, and two
+  dials in flight at once leave one connection rather than two.
+  <!-- test: AppModelDialTests.testADialThatLandsAfterADisconnectHangsUpInsteadOfInstallingItself -->
+  <!-- test: AppModelDialTests.testRemovingAProviderMidDialLeavesNoConnectionBehind -->
+  <!-- test: AppModelDialTests.testTwoOverlappingDialsLeaveExactlyOneConnection -->
 - The Diagnostics readings survive a relaunch, and only a transport error
   within five seconds of a resume counts against ADR 0001.
   <!-- test: DiagnosticsTests.testReadingsPersistWithTheirDenominators -->

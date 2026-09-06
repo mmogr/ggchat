@@ -20,6 +20,10 @@ public final class AppModel {
     var pipeSessions: [UUID: any PipeSession] = [:]
     var statusTasks: [UUID: Task<Void, Never>] = [:]
     var connecting: Set<UUID> = []
+    /// Which attempt the latest dial for each provider is. It goes up when a
+    /// dial starts and again when one is called off, so a dial that returns
+    /// late can tell that its session is no longer the one to install.
+    var dialGeneration: [UUID: Int] = [:]
     var proxyStatusAvailability: [UUID: Bool] = [:]
     /// Changes once each time a pipe first reaches a connected state; the
     /// one haptic in the app fires on it.

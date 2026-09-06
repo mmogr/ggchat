@@ -32,6 +32,10 @@ extension AppModel {
     /// Dials the pipe behind a provider, if it is not already up. The status
     /// pill follows the session from here on; a failure is the connector's
     /// own sentence.
+    ///
+    /// The dial is stamped with a generation and only installs its session if
+    /// that stamp is still the current one when it returns — see
+    /// ``disconnectPipe(for:)`` for what moves it on.
     public func connectPipe(for config: ProviderConfig) async {
         guard config.isPipe, pipeSessions[config.id] == nil, !connecting.contains(config.id) else { return }
         guard let ticket = try? secrets.secret(.ticket, for: config.id),
@@ -40,11 +44,24 @@ extension AppModel {
             lastError = "The ticket or token for \(config.name) is missing from the Keychain."
             return
         }
+        let generation = (dialGeneration[config.id] ?? 0) + 1
+        dialGeneration[config.id] = generation
         connecting.insert(config.id)
-        defer { connecting.remove(config.id) }
+        // Only if this is still the dial in flight: a superseded one must not
+        // clear the flag its successor is relying on.
+        defer { if dialGeneration[config.id] == generation { connecting.remove(config.id) } }
         pipeStatuses[config.id] = .idle
         do {
             let session = try await pipeConnector.connect(ticket: ticket, token: token)
+            guard dialGeneration[config.id] == generation else {
+                // Called off, or dialled again, while this one was in flight.
+                // Installing it now would leave a live connection, a bound
+                // port and a status task belonging to a provider nothing on
+                // screen still points at, so this dial hangs up its own
+                // session and says nothing.
+                await session.shutdown()
+                return
+            }
             pipeSessions[config.id] = session
             diagnostics.recordTicket(digest: Ticket.digest(ticket))
             log.log(.info, "pipe up for \(config.name) at \(Redaction.describe(session.baseURL))")
@@ -55,6 +72,7 @@ extension AppModel {
                 }
             }
         } catch {
+            guard dialGeneration[config.id] == generation else { return }
             pipeStatuses[config.id] = nil
             report(error)
         }
@@ -66,7 +84,18 @@ extension AppModel {
         await connectPipe(for: config)
     }
 
+    /// Hangs up, and calls off any dial still in flight for this provider.
+    ///
+    /// Calling off the dial is what the generation is for. This can only ever
+    /// see a session that has already been installed, so before the stamp a
+    /// removal or a teardown that landed mid-dial found nothing to close —
+    /// and the dial went on to install a live session for a provider that no
+    /// longer existed, with a status task nothing would cancel. The mock's
+    /// `connect` never suspends, so that window is invisible from here; a
+    /// real connector leaves a QUIC connection and a bound port in it.
     public func disconnectPipe(for providerID: UUID) async {
+        dialGeneration[providerID] = (dialGeneration[providerID] ?? 0) + 1
+        connecting.remove(providerID)
         statusTasks[providerID]?.cancel()
         statusTasks[providerID] = nil
         // Shut down before forgetting the session, so "no session" also
