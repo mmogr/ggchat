@@ -1,5 +1,3 @@
-import Foundation
-
 /// Codable shapes for `/v1/models` and chat completion chunks, with gglib's
 /// extras (`description`, `context_window`) optional so any server decodes.
 public struct ModelInfo: Codable, Sendable, Equatable, Hashable, Identifiable {

@@ -154,29 +154,46 @@ Requires Xcode 26 and Swift 6.2 or later.
 swift build && swift test
 ```
 
-Against a running gglib (or any OpenAI-compatible server) the live test
-lists models and streams one short reply:
+Against a running gglib (or any OpenAI-compatible server) the live tests
+list models, stream one short reply, and drive the same thing through the
+app model:
 
 ```sh
 GGCHAT_LIVE_BASE_URL=http://127.0.0.1:8080/v1 make test-live
 ```
 
 Set `GGCHAT_LIVE_API_KEY` as well to point it at a server that wants a
-bearer token, which is how it runs against a modelpipe pipe.
+bearer token, which is how it runs against a modelpipe pipe. Every live
+test skips itself when `GGCHAT_LIVE_BASE_URL` is unset, so `make test-live`
+refuses to run without it rather than passing having exercised nothing.
 
-`make ci` runs what CI runs: `make fmt-check`, `make lint`,
-`make boundaries`, `make enforce`, `make build`, `make test`,
-`make unused`, `make docs`. `make bootstrap` installs the Homebrew tools
-those need (xcodegen, swiftlint, periphery, actionlint).
+`make ci` runs what CI runs: `make fmt-check`, `make lint`, `make analyze`,
+`make boundaries`, `make enforce`, `make build`, `make build-app`,
+`make build-app-release`, `make test`, `make unused`, `make docs`. The
+UI-test legs are the exception; they need a booted simulator and have their
+own targets below. `make bootstrap` installs the Homebrew tools those need
+(xcodegen, swiftlint, periphery, actionlint).
+
+`make analyze` runs the rules under `analyzer_rules` in `.swiftlint.yml`.
+They are separate from `make lint` because they need the arguments the
+compiler was given, so the target builds with `-v` first and hands
+swiftlint that log.
 
 The app target is generated from `App/project.yml` by xcodegen
 (`make project`) and committed. Open `App/ggchat.xcodeproj` in Xcode, or
-build from the command line:
+build both platforms with `make build-app`:
 
 ```sh
 xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat -destination 'platform=macOS'
 xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat -destination 'generic/platform=iOS Simulator'
 ```
+
+`make build-app-release` compiles the same two destinations with
+`-configuration Release`. Nothing else does: the scheme's run and test
+actions are Debug, `xcodebuild build` with no `-configuration` takes the
+run action's, and the Release archive action is not run here. Without that
+target the `#else` arm of an `#if DEBUG` -- the code that decides what a
+shipped build does -- is compiled by no gate.
 
 `make uitest` drives the app on a booted iPhone simulator: the first-run
 flow, and a walk through the screens that flow never reaches. It always

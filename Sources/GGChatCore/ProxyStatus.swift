@@ -1,5 +1,3 @@
-import Foundation
-
 /// A tolerant subset of gglib's `GET /v1/proxy/status`. Every field is
 /// optional so a field gglib renames does not blank the pane.
 public struct ProxyStatus: Decodable, Sendable, Equatable {
