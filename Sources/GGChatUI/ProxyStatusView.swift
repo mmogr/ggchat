@@ -107,9 +107,14 @@ struct RecentRequestRow: View {
                 Text(request.modelName ?? "unknown model")
                 Spacer()
                 if let seconds = request.recordedAtSeconds {
-                    Text(Date(timeIntervalSince1970: TimeInterval(seconds)), style: .relative)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    // One unit, not "47 min., 2 sec.", which is the default.
+                    Text(
+                        Date(timeIntervalSince1970: TimeInterval(seconds)),
+                        format: .relative(presentation: .numeric, unitsStyle: .narrow)
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
                 }
             }
             if !request.flags.isEmpty {

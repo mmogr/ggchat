@@ -10,6 +10,19 @@ path. That reach will come from [modelpipe](https://github.com/mmogr/modelpipe).
 The app is generic: any OpenAI-compatible provider works.
 [gglib](https://github.com/mmogr/gglib) is the provider it is built around.
 
+## What it looks like
+
+| Streaming from gglib | A pipe, connected | gglib's server status |
+|---|---|---|
+| ![A finished reply on an iPhone](docs/screenshots/iphone-reply.png) | ![The model pill beside a status pill reading Direct](docs/screenshots/iphone-pipe-connected.png) | ![Slots, context used, and recent requests](docs/screenshots/iphone-server-status.png) |
+
+![The macOS window, with a conversation open](docs/screenshots/macos-chat.png)
+
+These are photographs of the app, not mock-ups. The three iPhone ones are
+attachments the UI tests take as they walk through it, and `make
+screenshots` regenerates them from a test run, so a picture cannot quietly
+go stale. The first is a real reply from gglib.
+
 ## Status
 
 v0.1 is in progress. What exists today is the core package (the provider
@@ -113,6 +126,17 @@ Each claim names the test that keeps it true.
   diagnostics readings.
   <!-- test: ScreenGalleryUITests.testAPipeConnectsAndTheStatusPillWalks -->
   <!-- test: ScreenGalleryUITests.testTheProviderFormExplainsABadTicket -->
+- gglib's server status pane fills in from a real server, and is not
+  offered at all by a provider that does not report one.
+  <!-- test: RemainingScreensUITests.testTheServerStatusPaneAgainstARealServer -->
+  <!-- test: RemainingScreensUITests.testTheStatusPaneIsHiddenForAServerThatDoesNotReport -->
+- A closed pipe turns its status pill into a reconnect, and pressing it
+  brings the pipe back.
+  <!-- test: RemainingScreensUITests.testAClosedPipeOffersAReconnect -->
+- Text grows at the largest accessibility size, and the test measures it,
+  so a launch argument that silently changes nothing cannot pass for a
+  Dynamic Type check.
+  <!-- test: RemainingScreensUITests.testTheAppAtAnAccessibilityTypeSize -->
 - Reopening the app returns you to the conversation you left.
   <!-- test: SwiftDataStoreTests.testAppModelKeepsSelectionAndPersistsThroughTheStore -->
 - A block quote's `>` marker and a list item's indentation stay out of the

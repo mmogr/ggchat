@@ -88,20 +88,9 @@ final class ScreenGalleryUITests: XCTestCase {
 
         let addButton = app.buttons["Add"].firstMatch
         XCTAssertTrue(addButton.isEnabled, "a good ticket and token left Add disabled")
-        // Registered before the tap that provokes it. The monitor only fires
-        // on the next interaction with the app, hence the tap that follows.
-        let monitor = addUIInterruptionMonitor(withDescription: "password manager") { alert in
-            for title in ["Not Now", "Cancel", "Dismiss"] where alert.buttons[title].exists {
-                alert.buttons[title].tap()
-                return true
-            }
-            return false
+        clearingThePasswordManagerPrompt(in: app) {
+            addButton.tap()
         }
-        defer { removeUIInterruptionMonitor(monitor) }
-
-        addButton.tap()
-        app.tap()
-        clearThePasswordManagerPrompt()
         attach(name: "pipe-after-add")
 
         let newConversation = app.buttons["New conversation"].firstMatch
@@ -183,36 +172,6 @@ final class ScreenGalleryUITests: XCTestCase {
                 "a dead server produced no sentence")
         }
         attach(name: "server-unreachable")
-    }
-
-    /// A button can exist while something the system put on screen sits over
-    /// it, and a tap then goes to that instead. Waiting for existence is not
-    /// enough; this waits until the tap would land.
-    @MainActor
-    private func waitUntilHittable(_ element: XCUIElement, timeout: TimeInterval) -> Bool {
-        let deadline = Date().addingTimeInterval(timeout)
-        while Date() < deadline {
-            if element.exists, element.isHittable { return true }
-            _ = element.waitForExistence(timeout: 0.5)
-        }
-        return false
-    }
-
-    /// iOS offers to save a secure field's contents to the password manager
-    /// after the sheet closes. It is the system's prompt, not the app's, and
-    /// it swallows the next tap, so the walk clears it before carrying on.
-    @MainActor
-    private func clearThePasswordManagerPrompt() {
-        let springboard: XCUIApplication? = XCUIApplication(bundleIdentifier: "com.apple.springboard")
-        let deadline = Date().addingTimeInterval(8)
-        while Date() < deadline {
-            for source in [springboard, app] where source != nil {
-                guard let notNow = source?.buttons["Not Now"], notNow.exists, notNow.isHittable else { continue }
-                notNow.tap()
-                return
-            }
-            _ = springboard?.alerts.firstMatch.waitForExistence(timeout: 0.5)
-        }
     }
 
     @MainActor
