@@ -51,6 +51,14 @@ final class MockPipeTests: XCTestCase {
         XCTAssertTrue(real is OpenAICompatibleProvider)
     }
 
+    func testAFixedURLCanBeRegisteredAndReplaced() {
+        let registry = LoopbackProviderRegistry()
+        let url = URL(string: "http://127.0.0.1:49151/v1")!
+        registry.register(MockProvider(scripts: [.init(text: "one")]), at: url)
+        registry.register(MockProvider(scripts: [.init(text: "two")]), at: url)
+        XCTAssertEqual((registry.provider(for: url) as? MockProvider)?.scripts.first?.text, "two")
+    }
+
     func testTwoSessionsGetDifferentPorts() async throws {
         let connector = MockPipeConnector(registry: LoopbackProviderRegistry())
         let one = try await connector.connect(ticket: ticket, token: "t")

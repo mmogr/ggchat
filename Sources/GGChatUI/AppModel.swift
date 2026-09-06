@@ -11,22 +11,52 @@ public final class AppModel {
     public var selectedConversationID: UUID?
     /// The last failure worth telling the user about, as its own sentence.
     public var lastError: String?
+    /// The reply being streamed, if any.
+    public internal(set) var liveReply: LiveReply?
+    var streamTask: Task<Void, Never>?
+    var streamErrors: [UUID: ProviderError] = [:]
+    var modelsByProvider: [UUID: [ModelInfo]] = [:]
+    var pipeStatuses: [UUID: PipeStatus] = [:]
+    var pipeSessions: [UUID: any PipeSession] = [:]
+    var statusTasks: [UUID: Task<Void, Never>] = [:]
+    var connecting: Set<UUID> = []
+    var proxyStatusAvailability: [UUID: Bool] = [:]
+    /// Changes once each time a pipe first reaches a connected state; the
+    /// one haptic in the app fires on it.
+    public internal(set) var connectedPulse = 0
 
+    public let diagnostics: Diagnostics
     let store: any Store
     let secrets: any Secrets
     let log: any LogSink
+    let registry: LoopbackProviderRegistry
+    let pipeConnector: any PipeConnector
     let now: () -> Date
+
+    /// Where the in-process mock provider answers in DEBUG builds, the same
+    /// address after every launch so a saved mock provider keeps working.
+    public static let mockBaseURL = URL(string: "http://127.0.0.1:49151/v1")!
 
     public init(
         store: any Store,
         secrets: any Secrets,
         log: any LogSink = OSLogSink(category: "app"),
+        registry: LoopbackProviderRegistry = .shared,
+        pipeConnector: any PipeConnector = PipeConnectorFactory.make(),
+        diagnostics: Diagnostics = Diagnostics(),
         now: @escaping () -> Date = { Date() }
     ) {
         self.store = store
         self.secrets = secrets
         self.log = log
+        self.registry = registry
+        self.pipeConnector = pipeConnector
+        self.diagnostics = diagnostics
         self.now = now
+        #if DEBUG
+            registry.register(
+                MockProvider(sleeper: ContinuousClockSleeper(), tokenDelay: .milliseconds(25)), at: Self.mockBaseURL)
+        #endif
     }
 
     public var selectedConversation: Conversation? {
@@ -37,6 +67,10 @@ public final class AppModel {
         do {
             providers = try store.loadProviders()
             conversations = try store.loadConversations().sorted { $0.updatedAt > $1.updatedAt }
+            // Reopening the app returns you to the conversation you left.
+            if selectedConversationID == nil {
+                selectedConversationID = conversations.first?.id
+            }
         } catch {
             report(error)
         }
@@ -82,16 +116,27 @@ public final class AppModel {
 
     // MARK: - Providers
 
-    public func addProvider(_ config: ProviderConfig, credentials: [SecretKind: String]) {
+    /// Throws rather than reporting, because the form that calls this is a
+    /// sheet: an alert raised behind a dismissing sheet is never seen, so the
+    /// caller keeps the sheet open and shows the reason in place.
+    public func addProvider(_ config: ProviderConfig, credentials: [SecretKind: String]) throws {
+        var written: [SecretKind] = []
         do {
             for (kind, value) in credentials where !value.isEmpty {
                 try secrets.setSecret(value, kind, for: config.id)
+                written.append(kind)
             }
             try store.save(provider: config)
-            providers.append(config)
         } catch {
-            report(error)
+            // Leave nothing half-added: a provider whose token did not save
+            // would fail later, further from the cause.
+            for kind in written {
+                try? secrets.setSecret(nil, kind, for: config.id)
+            }
+            log.log(.error, "could not add \(config.name): \(error.localizedDescription)")
+            throw error
         }
+        providers.append(config)
     }
 
     public func updateProvider(_ config: ProviderConfig) {
@@ -106,6 +151,7 @@ public final class AppModel {
 
     public func removeProvider(_ id: UUID) {
         providers.removeAll { $0.id == id }
+        Task { await disconnectPipe(for: id) }
         do {
             try secrets.removeAll(for: id)
             try store.deleteProvider(id: id)
@@ -127,14 +173,13 @@ public final class AppModel {
 extension AppModel {
     /// Seeded, in-memory, for previews.
     public static var preview: AppModel {
-        let model = AppModel(store: InMemoryStore(), secrets: InMemorySecrets(), log: NoopLogSink())
-        model.addProvider(
-            ProviderConfig(
-                name: "gglib on the Mac",
-                kind: .openAICompatible(baseURL: URL(string: "http://127.0.0.1:8080/v1")!),
-                defaultModel: "Qwen3.8-27B"),
+        let model = AppModel(
+            store: InMemoryStore(), secrets: InMemorySecrets(), log: NoopLogSink(),
+            pipeConnector: MockPipeConnector(), diagnostics: Diagnostics(defaults: UserDefaults(suiteName: "preview")!))
+        try? model.addProvider(
+            ProviderConfig(name: "Mock", kind: .openAICompatible(baseURL: mockBaseURL), defaultModel: "mock-27b"),
             credentials: [:])
-        model.addProvider(
+        try? model.addProvider(
             ProviderConfig(name: "Home", kind: .pipe(ticketDigest: "0123456789abcdef")),
             credentials: [.ticket: "pipeabcdefghijklmnop", .token: "preview"])
         let conversation = model.newConversation()

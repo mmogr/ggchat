@@ -22,8 +22,20 @@ public final class SwiftDataStore: Store {
     )
         -> ModelContainer
     {
+        #if DEBUG
+            // `-ggchat-reset YES` starts from nothing, so a UI test sees the
+            // first-run screens.
+            if UserDefaults.standard.bool(forKey: "ggchat-reset") {
+                deleteStoreOnDisk(log: log)
+            }
+        #endif
         if !inMemory {
             do {
+                // iOS does not ship an Application Support directory, and
+                // SwiftData will not create one, so the store fails to open
+                // and everything silently lives in memory instead.
+                _ = try FileManager.default.url(
+                    for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
                 let configuration = ModelConfiguration("ggchat", schema: schema)
                 return try ModelContainer(for: schema, configurations: [configuration])
             } catch {
@@ -37,6 +49,20 @@ public final class SwiftDataStore: Store {
             fatalError("SwiftData could not create even an in-memory store: \(error)")
         }
     }
+
+    #if DEBUG
+        /// Removes the store so the next launch is a first run.
+        static func deleteStoreOnDisk(log: any LogSink) {
+            guard
+                let support = try? FileManager.default.url(
+                    for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+            else { return }
+            for suffix in ["", "-shm", "-wal"] {
+                try? FileManager.default.removeItem(at: support.appending(path: "ggchat.store\(suffix)"))
+            }
+            log.log(.info, "store reset on request")
+        }
+    #endif
 
     // MARK: - Providers
 

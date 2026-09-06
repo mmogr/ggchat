@@ -8,19 +8,34 @@
 
 /* Begin PBXBuildFile section */
 		16ADEFC09003320C95363413 /* ggchatApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D176E1F0D09146E5E6384D /* ggchatApp.swift */; };
+		2BC2B73C5C5BDAF36DDDA295 /* FirstRunUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FD64D354A297A69A640EC4 /* FirstRunUITests.swift */; };
 		7022193D36D9C554D11E7C19 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D6AD07AA03CC2B5B94885481 /* Assets.xcassets */; };
+		895F021D8EBF53CF1DE2D275 /* ScreenGalleryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B587441DB44EB8387612415 /* ScreenGalleryUITests.swift */; };
 		C6B588CC1AD15333CC66DF6A /* GGChatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3827CC1C411258C3A02FB0E8 /* GGChatUI */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		335B673EF1D9BE6C3B5EA080 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 539D5F899BC0AEACDBAFAE5F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1D7BB5600CE781C36C8E10FA;
+			remoteInfo = ggchat;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		157E48045F63BAEE71CF5C31 /* ggchat-iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "ggchat-iOS.entitlements"; sourceTree = "<group>"; };
+		3B587441DB44EB8387612415 /* ScreenGalleryUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenGalleryUITests.swift; sourceTree = "<group>"; };
 		56D176E1F0D09146E5E6384D /* ggchatApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ggchatApp.swift; sourceTree = "<group>"; };
 		A0ABE63F6756B69704008146 /* ggchat.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ggchat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A620F205B643A7E1B77C12F3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		ACFEC7FB129F67C8D31EC44B /* ggchat-macOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "ggchat-macOS.entitlements"; sourceTree = "<group>"; };
+		D2FD64D354A297A69A640EC4 /* FirstRunUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunUITests.swift; sourceTree = "<group>"; };
 		D6AD07AA03CC2B5B94885481 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		DAF72E349B4862F0CFBCFFDF /* ggchat */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ggchat; path = ..; sourceTree = SOURCE_ROOT; };
 		E8525D55CC4C5971CAEB1E81 /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
+		EFA7D812A49BFE4BB0007F8F /* ggchatUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ggchatUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -47,6 +62,7 @@
 			isa = PBXGroup;
 			children = (
 				A0ABE63F6756B69704008146 /* ggchat.app */,
+				EFA7D812A49BFE4BB0007F8F /* ggchatUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -85,14 +101,42 @@
 			children = (
 				391A0BE2034CEEA73CD137A5 /* ggchat */,
 				788C0303CB1FA240EB10352A /* ggchat */,
+				85B1B4C232285CA7CEF58345 /* ggchatUITests */,
 				248FACB0894B6623AF92A16C /* Packages */,
 				2BA2B3D5B2F8F8F703FD290C /* Products */,
 			);
 			sourceTree = "<group>";
 		};
+		85B1B4C232285CA7CEF58345 /* ggchatUITests */ = {
+			isa = PBXGroup;
+			children = (
+				D2FD64D354A297A69A640EC4 /* FirstRunUITests.swift */,
+				3B587441DB44EB8387612415 /* ScreenGalleryUITests.swift */,
+			);
+			path = ggchatUITests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		0922AB6724F29252F5FECFC9 /* ggchatUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3F4B0C1E6D8E05211B1BD626 /* Build configuration list for PBXNativeTarget "ggchatUITests" */;
+			buildPhases = (
+				4DC173883BFED7911D32DE07 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C0367380EA4FA3E4CE7585CC /* PBXTargetDependency */,
+			);
+			name = ggchatUITests;
+			packageProductDependencies = (
+			);
+			productName = ggchatUITests;
+			productReference = EFA7D812A49BFE4BB0007F8F /* ggchatUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		1D7BB5600CE781C36C8E10FA /* ggchat */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 30B68BC212B97B02ED5DD4CD /* Build configuration list for PBXNativeTarget "ggchat" */;
@@ -122,6 +166,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
+					0922AB6724F29252F5FECFC9 = {
+						ProvisioningStyle = Automatic;
+						TestTargetID = 1D7BB5600CE781C36C8E10FA;
+					};
 					1D7BB5600CE781C36C8E10FA = {
 						ProvisioningStyle = Automatic;
 					};
@@ -144,6 +192,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				0922AB6724F29252F5FECFC9 /* ggchatUITests */,
 				1D7BB5600CE781C36C8E10FA /* ggchat */,
 			);
 		};
@@ -161,6 +210,15 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		4DC173883BFED7911D32DE07 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2BC2B73C5C5BDAF36DDDA295 /* FirstRunUITests.swift in Sources */,
+				895F021D8EBF53CF1DE2D275 /* ScreenGalleryUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		DDEAB702BE3E3522A1E8E407 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -170,6 +228,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C0367380EA4FA3E4CE7585CC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1D7BB5600CE781C36C8E10FA /* ggchat */;
+			targetProxy = 335B673EF1D9BE6C3B5EA080 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		19E490BB0C8688B2AB553187 /* Release */ = {
@@ -229,6 +295,30 @@
 			};
 			name = Release;
 		};
+		1F86FC8E26B78C1952661038 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.mattogrady.ggchat.uitests;
+				PRODUCT_NAME = ggchatUITests;
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = ggchat;
+			};
+			name = Release;
+		};
 		30DE6C49E14167A8D26E1184 /* Release */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = E8525D55CC4C5971CAEB1E81 /* Version.xcconfig */;
@@ -261,6 +351,30 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
+		};
+		7AF8A5E3310F2BC7FCCD9427 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.mattogrady.ggchat.uitests;
+				PRODUCT_NAME = ggchatUITests;
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = ggchat;
+			};
+			name = Debug;
 		};
 		900D030CC033048B47D473E1 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -367,6 +481,15 @@
 			buildConfigurations = (
 				900D030CC033048B47D473E1 /* Debug */,
 				30DE6C49E14167A8D26E1184 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3F4B0C1E6D8E05211B1BD626 /* Build configuration list for PBXNativeTarget "ggchatUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7AF8A5E3310F2BC7FCCD9427 /* Debug */,
+				1F86FC8E26B78C1952661038 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

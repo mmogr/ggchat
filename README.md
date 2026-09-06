@@ -17,8 +17,20 @@ protocol, the OpenAI-compatible implementation, the SSE parser, ticket
 shape validation, the pipe seam with its mock) and the app shell: a
 sidebar of conversations persisted with SwiftData, a providers sheet that
 adds a server by address or a pipe by ticket and token, and settings. The
-transcript does not stream yet. The pipe path is a mock until
-`modelpipe-ffi` exists; nothing here links Rust or iroh.
+transcript streams replies as markdown with copyable code blocks and
+collapsed reasoning, with a stop button and, when a reply stops early, a
+Continue button. A server added by address lists its models and streams;
+against gglib, a server status pane shows slots, context in use and recent
+requests, and it is hidden for servers that do not answer that endpoint.
+The app has been run: the screens below are photographs of it, not
+mock-ups. A pipe provider is added by pasting a ticket and token, or on iOS by
+scanning a QR code; connecting goes through `PipeConnector`, whose only
+implementation today is a mock that walks idle → relayed → direct. The
+status pill follows it and becomes a reconnect button when the pipe
+closes. Settings shows the readings the ADRs name, each with its
+denominator. In DEBUG builds a mock provider streams canned replies
+without a server. The pipe path is a mock until `modelpipe-ffi` exists;
+nothing here links Rust or iroh.
 
 ## What is true today
 
@@ -59,6 +71,51 @@ Each claim names the test that keeps it true.
 - Conversations, their messages in order, and providers survive a round
   trip through SwiftData; deleting a conversation cascades to its messages.
   <!-- test: SwiftDataStoreTests.testConversationsRoundTripWithMessagesInOrder -->
+- Sending streams the reply, with reasoning kept separately, into the
+  conversation; a dropped stream keeps the partial reply on screen and
+  Continue extends that same message rather than starting a new one.
+  <!-- test: AppModelStreamingTests.testSendStreamsAReplyIntoTheConversation -->
+  <!-- test: AppModelStreamingTests.testADroppedStreamKeepsThePartialAndContinueCarriesOn -->
+- Exactly three custom glass surfaces exist, all in one file inside one
+  `GlassEffectContainer`; `scripts/check_glass_sites.sh` counts them, and
+  `scripts/check_no_hand_drawn_glass.sh` refuses any material or
+  translucent fill elsewhere, so Reduce Transparency and Increase Contrast
+  are the system's to honour. Symbol effects and the streaming animation
+  switch off under Reduce Motion, and the pills stack at accessibility
+  type sizes.
+- With `GGCHAT_LIVE_BASE_URL` set, the app model adds that server by URL,
+  lists its models, streams a complete reply and probes the status endpoint.
+  <!-- test: LiveAppModelTests.testAddByURLListModelsStreamAndProbeStatus -->
+- Connecting a pipe provider walks the status to direct, fires the one
+  haptic once, records the ticket's digest, and streams through the
+  session's loopback URL with the token as the key; a forced close is
+  counted and reconnecting dials again without counting the ticket twice.
+  <!-- test: AppModelPipeTests.testConnectWalksToDirectAndStreamsThroughTheSessionURL -->
+  <!-- test: AppModelPipeTests.testForceClosedIsCountedAndReconnectDialsAgain -->
+- The Diagnostics readings survive a relaunch, and only a transport error
+  within five seconds of a resume counts against ADR 0001.
+  <!-- test: DiagnosticsTests.testReadingsPersistWithTheirDenominators -->
+- A first-time user can add a provider, start a conversation, send a
+  message and watch the reply stream in, driven through the real app on a
+  simulator. The same walk runs against a server on this machine when one
+  is listening, and skips when none is.
+  <!-- test: FirstRunUITests.testFirstRunWithTheMockProvider -->
+  <!-- test: FirstRunUITests.testFirstRunAgainstAServerOnThisMachine -->
+- A credential that will not save takes the provider with it, rather than
+  leaving one that fails later, and the reason names the credential.
+  <!-- test: AddProviderFailureTests.testACredentialThatWillNotSaveLeavesNoHalfAddedProvider -->
+  <!-- test: AddProviderFailureTests.testTheKeychainErrorSaysWhichCredentialAndWhy -->
+- The screens the first-run walk never reaches are visited and photographed
+  too: the provider form and what it says about a bad address or ticket, a
+  pipe connecting and its status pill, the providers list, and the
+  diagnostics readings.
+  <!-- test: ScreenGalleryUITests.testAPipeConnectsAndTheStatusPillWalks -->
+  <!-- test: ScreenGalleryUITests.testTheProviderFormExplainsABadTicket -->
+- Reopening the app returns you to the conversation you left.
+  <!-- test: SwiftDataStoreTests.testAppModelKeepsSelectionAndPersistsThroughTheStore -->
+- A block quote's `>` marker and a list item's indentation stay out of the
+  rendered text.
+  <!-- test: MarkdownTests.testListsHeadingsQuotesAndRules -->
 
 ## Building and testing
 
@@ -89,6 +146,13 @@ xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat -destination 'plat
 xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat -destination 'generic/platform=iOS Simulator'
 ```
 
+`make uitest` drives the app on a booted iPhone simulator: the first-run
+flow, and a walk through the screens that flow never reaches. It always
+runs against the DEBUG mock provider, and also against a server on
+`127.0.0.1:8080` when one is listening. The builds are signed ad-hoc,
+because an unsigned iOS app has no Keychain access and this app keeps
+every credential there.
+
 ## Layout
 
 ```
@@ -96,10 +160,18 @@ Sources/GGChatCore/   no SwiftUI; the provider protocol, wire types, SSE, ticket
 Sources/GGChatUI/     SwiftUI; the app model, views, and SwiftData persistence
 App/                  the xcodegen spec, the generated project, and a @main struct with assets
 Tests/GGChatCoreTests XCTest; fixtures are real captures from gglib
-Tests/GGChatUITests   the SwiftData store round trip
+Tests/GGChatUITests   the app model, streaming, the pipe, and the SwiftData store
+App/ggchatUITests     XCUITest that drives the first-run flow on a simulator
 docs/adr/             decisions, each with a kill criterion that names a reading
 scripts/              the checks CI runs; `make ci` runs the same ones
 ```
+
+## The seam
+
+The pipe path stops at two protocols, `PipeConnector` and `PipeSession`.
+[docs/ffi-seam.md](docs/ffi-seam.md) states what `modelpipe-ffi` must
+provide in their terms, and which tests already assert each behaviour
+against the mock.
 
 ## Decisions
 

@@ -54,7 +54,7 @@ final class SwiftDataStoreTests: XCTestCase {
     func testAppModelKeepsSelectionAndPersistsThroughTheStore() throws {
         let store = makeStore()
         let model = AppModel(store: store, secrets: InMemorySecrets(), log: NoopLogSink(), now: { .distantPast })
-        model.addProvider(
+        try model.addProvider(
             ProviderConfig(name: "p", kind: .openAICompatible(baseURL: URL(string: "http://p/v1")!), defaultModel: "m"),
             credentials: [.apiKey: "k"])
         let conversation = model.newConversation()
@@ -64,5 +64,8 @@ final class SwiftDataStoreTests: XCTestCase {
         reloaded.load()
         XCTAssertEqual(reloaded.conversations.map(\.id), [conversation.id])
         XCTAssertEqual(reloaded.providers.map(\.name), ["p"])
+        XCTAssertEqual(
+            reloaded.selectedConversationID, conversation.id,
+            "reopening returns you to the most recent conversation")
     }
 }

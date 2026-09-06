@@ -35,8 +35,9 @@ and `MockPipeConnector` implements them the way `ModelpipeConnector` will.
 - **Reading:** the count of `ProviderError.transport` failures that occur
   within five seconds of the app returning to the foreground, against the
   count of foreground resumes. Both are local counters in
-  Settings › Diagnostics (arrives with the pipe flow; recorded from the
-  first build that has a pipe).
+  Settings › Diagnostics ("Transport errors after resume: N of M resumes"),
+  kept by `Diagnostics` in `Sources/GGChatUI/Diagnostics.swift` and
+  covered by `DiagnosticsTests`.
 - **Threshold:** if resume failures exceed one in ten over a month of daily
   use on a real pipe, revisit this decision and cost a request API.
 - Zeros are recorded with their denominator: "0 of 212 resumes".

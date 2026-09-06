@@ -48,6 +48,8 @@ jobs:
       - uses: actions/checkout@v5
       - name: Glass sites
         run: scripts/check_glass_sites.sh
+      - name: No hand-drawn glass
+        run: scripts/check_no_hand_drawn_glass.sh
       - name: Time is an argument
         run: scripts/check_time_is_an_argument.sh
       - name: No print
@@ -77,13 +79,17 @@ jobs:
         if: hashFiles('App/ggchat.xcodeproj/project.pbxproj') != ''
         run: |
           set -o pipefail
+          # Ad-hoc signing, not none: an unsigned iOS app has no Keychain
+          # access, and the app keeps every credential there.
           # Warnings-as-errors is set on the app target in App/project.yml, not
           # here: on the command line it would also apply to the package
           # dependencies, and swift-markdown compiles with warnings suppressed.
           xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat \
-            -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO -quiet
+            -destination 'platform=macOS' \
+            CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
           xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat \
-            -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO -quiet
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
 
   test:
     name: Test
@@ -119,6 +125,47 @@ jobs:
             test-results*.xml
             coverage.lcov
             coverage-summary.txt
+
+  uitest:
+    name: UI Test
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+      - name: Pick a booted iPhone simulator
+        id: sim
+        run: |
+          udid=$(xcrun simctl list devices available --json \
+            | python3 -c "import json,sys;d=json.load(sys.stdin)['devices'];print(next(x['udid'] for k,v in sorted(d.items()) if 'iOS' in k for x in v if 'iPhone' in x['name']))")
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$udid" || true
+          xcrun simctl bootstatus "$udid" -b || true
+      - name: Drive the first-run flow on a simulator
+        run: |
+          set -o pipefail
+          xcodebuild test -project App/ggchat.xcodeproj -scheme ggchat \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -resultBundlePath uitest.xcresult \
+            -only-testing:ggchatUITests \
+            CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
+      - name: Say which tests ran, so a skip cannot pass for a pass
+        if: always()
+        run: |
+          xcrun xcresulttool get test-results tests --path uitest.xcresult --format json \
+            | python3 -c "
+          import json, sys
+          def walk(nodes):
+              for n in nodes:
+                  if n.get('nodeType') == 'Test Case':
+                      print(f\"{n.get('result')}\t{n.get('name')}\")
+                  walk(n.get('children', []))
+          walk(json.load(sys.stdin).get('testNodes', []))
+          "
+      - name: Upload the screenshots it took
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-screenshots
+          path: uitest.xcresult
 
   unused:
     name: Unused Code

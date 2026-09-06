@@ -13,6 +13,22 @@ packages:
   ggchat-package:
     path: ..
 targets:
+  ggchatUITests:
+    type: bundle.ui-testing
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: ggchatUITests
+    dependencies:
+      - target: ggchat
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mattogrady.ggchat.uitests
+        PRODUCT_NAME: ggchatUITests
+        SWIFT_VERSION: "6.0"
+        TEST_TARGET_NAME: ggchat
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+
   ggchat:
     type: application
     supportedDestinations: [iOS, macOS]
@@ -62,9 +78,12 @@ schemes:
     build:
       targets:
         ggchat: all
+        ggchatUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
+      targets:
+        - ggchatUITests
     archive:
       config: Release

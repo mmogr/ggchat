@@ -32,9 +32,10 @@ second line.
 
 ## Kill criteria
 
-- **Reading:** two local counters in Settings › Diagnostics: the number of
-  `closed` transitions seen while a reply was streaming, and the number of
-  Continue presses. Recorded from the first build with a status pill.
+- **Reading:** two local counters in Settings › Diagnostics: "Pipe closed
+  mid-reply: N of M closes" and "Continue pressed: K times", kept by
+  `Diagnostics` and covered by `DiagnosticsTests` and
+  `AppModelPipeTests.testForceClosedIsCountedAndReconnectDialsAgain`.
 - **Threshold:** if, over a month, Continue is pressed after fewer than half
   of mid-stream closes, the button is not earning its place: users are
   re-asking instead. Revisit option 1 with an opt-in.

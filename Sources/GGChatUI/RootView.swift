@@ -5,26 +5,33 @@ import SwiftUI
 /// system draws the glass.
 public struct RootView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showingProviders = false
     @State private var showingSettings = false
+    @State private var addingProvider = false
 
     public init() {}
 
     public var body: some View {
         @Bindable var model = model
         NavigationSplitView {
-            ConversationSidebar(showingProviders: $showingProviders, showingSettings: $showingSettings)
+            ConversationSidebar(
+                showingProviders: $showingProviders, showingSettings: $showingSettings,
+                addingProvider: $addingProvider
+            )
+            .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 400)
         } detail: {
             if let conversation = model.selectedConversation {
                 ChatView(conversation: conversation)
             } else {
-                ContentUnavailableView(
-                    "No conversation", systemImage: "bubble.left.and.text.bubble.right",
-                    description: Text("Start one from the sidebar."))
+                EmptyDetailView(addingProvider: $addingProvider)
             }
         }
         .sheet(isPresented: $showingProviders) {
             ProvidersView()
+        }
+        .sheet(isPresented: $addingProvider) {
+            AddProviderView()
         }
         .sheet(isPresented: $showingSettings) {
             SettingsView()
@@ -38,6 +45,9 @@ public struct RootView: View {
             Text(model.lastError ?? "")
         }
         .task { model.load() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { model.didBecomeActive() }
+        }
     }
 }
 
@@ -45,6 +55,7 @@ struct ConversationSidebar: View {
     @Environment(AppModel.self) private var model
     @Binding var showingProviders: Bool
     @Binding var showingSettings: Bool
+    @Binding var addingProvider: Bool
 
     var body: some View {
         @Bindable var model = model
@@ -61,9 +72,20 @@ struct ConversationSidebar: View {
         }
         .overlay {
             if model.conversations.isEmpty {
-                ContentUnavailableView(
-                    "No conversations", systemImage: "text.bubble",
-                    description: Text(model.providers.isEmpty ? "Add a provider first." : "Start one."))
+                // The way in on a phone, where the detail pane and its call
+                // to action are a screen away.
+                VStack(spacing: 12) {
+                    Text(model.providers.isEmpty ? "No providers yet" : "No conversations yet")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                    if model.providers.isEmpty {
+                        Button("Add a provider") { addingProvider = true }
+                    } else {
+                        Button("New conversation") { model.newConversation() }
+                    }
+                }
+                .buttonStyle(.bordered)
+                .padding()
             }
         }
         .navigationTitle("ggchat")
@@ -90,6 +112,35 @@ struct ConversationSidebar: View {
     }
 }
 
+/// What the app says when nothing is selected. On first run it is the way
+/// in: a first-time user is one button from adding their server.
+struct EmptyDetailView: View {
+    @Environment(AppModel.self) private var model
+    @Binding var addingProvider: Bool
+
+    var body: some View {
+        if model.providers.isEmpty {
+            ContentUnavailableView {
+                Label("No providers", systemImage: "server.rack")
+            } description: {
+                Text("Add the server that runs your models, or a modelpipe ticket from one.")
+            } actions: {
+                Button("Add a provider") { addingProvider = true }
+                    .buttonStyle(.borderedProminent)
+            }
+        } else {
+            ContentUnavailableView {
+                Label("No conversation", systemImage: "bubble.left.and.text.bubble.right")
+            } description: {
+                Text("Start one, and it appears in the sidebar.")
+            } actions: {
+                Button("New conversation") { model.newConversation() }
+                    .buttonStyle(.borderedProminent)
+            }
+        }
+    }
+}
+
 struct ConversationRow: View {
     @Environment(AppModel.self) private var model
     let conversation: Conversation
@@ -103,6 +154,7 @@ struct ConversationRow: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
+        .accessibilityElement(children: .combine)
     }
 
     private var title: String {

@@ -4,6 +4,7 @@ included:
   - Sources
   - Tests
   - App/ggchat
+  - App/ggchatUITests
 excluded:
   - .build
   - App/ggchat.xcodeproj

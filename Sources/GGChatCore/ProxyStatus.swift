@@ -57,3 +57,22 @@ public struct ProxyStatus: Decodable, Sendable, Equatable {
         recentRequests = try container.decodeIfPresent([RecentRequest].self, forKey: .recentRequests) ?? []
     }
 }
+
+extension ProxyStatus.Slot {
+    /// Prompt tokens over context size, 0…1, or nil when either is unknown.
+    public var contextUsage: Double? {
+        guard let promptTokens, let contextSize, contextSize > 0 else { return nil }
+        return min(1, max(0, Double(promptTokens) / Double(contextSize)))
+    }
+}
+
+extension ProxyStatus.RecentRequest {
+    /// The flags gglib raised on this request, as short words for a badge row.
+    public var flags: [String] {
+        var flags: [String] = []
+        if loopGuardTripped == true { flags.append("loop guard") }
+        if toolRepaired == true { flags.append("tool repaired") }
+        if let truncated = messagesTruncated, truncated > 0 { flags.append("\(truncated) truncated") }
+        return flags
+    }
+}

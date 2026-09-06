@@ -31,6 +31,17 @@ struct ProvidersView: View {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Add provider", systemImage: "plus") { adding = true }
                 }
+                #if DEBUG
+                    ToolbarItem(placement: .automatic) {
+                        Button("Add mock provider", systemImage: "wand.and.sparkles") {
+                            try? model.addProvider(
+                                ProviderConfig(
+                                    name: "Mock", kind: .openAICompatible(baseURL: AppModel.mockBaseURL),
+                                    defaultModel: "mock-27b"),
+                                credentials: [:])
+                        }
+                    }
+                #endif
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
                 }
@@ -59,6 +70,7 @@ struct ProviderRow: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .accessibilityElement(children: .combine)
     }
 
     private var detail: String {

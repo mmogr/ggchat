@@ -24,6 +24,12 @@ public final class LoopbackProviderRegistry: Sendable {
         return url
     }
 
+    /// Binds `provider` to a base URL chosen by the caller, for a mock that
+    /// has to answer at the same address after a relaunch.
+    public func register(_ provider: any Provider, at baseURL: URL) {
+        providers.withLock { $0[baseURL] = provider }
+    }
+
     public func provider(for baseURL: URL) -> (any Provider)? {
         providers.withLock { $0[baseURL] }
     }
