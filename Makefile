@@ -1,7 +1,7 @@
 # Local parity with CI: `make ci` runs what the workflow runs.
 SWIFT_SOURCES := Sources Tests Package.swift $(wildcard App/ggchat/*.swift) $(wildcard App/ggchatUITests/*.swift)
 
-.PHONY: project bootstrap fmt fmt-check lint boundaries enforce build test test-live uitest unused docs ci
+.PHONY: screenshots project bootstrap fmt fmt-check lint boundaries enforce build test test-live uitest unused docs ci
 
 project:
 	cd App && xcodegen generate --quiet
@@ -48,6 +48,10 @@ uitest:
 		-destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
 		-only-testing:ggchatUITests \
 		CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
+
+# Refreshes docs/screenshots from a UI test run.
+screenshots:
+	scripts/screenshots.sh
 
 unused:
 	periphery scan --quiet --strict

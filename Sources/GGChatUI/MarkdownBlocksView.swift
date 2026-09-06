@@ -88,6 +88,10 @@ struct CodeBlockView: View {
                     .padding(.bottom, 10)
             }
         }
+        // Code does not reflow, so at the largest sizes a line becomes a
+        // dozen characters. It still grows, just not past the first
+        // accessibility step; the transcript around it grows all the way.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .background(.fill.tertiary, in: .rect(cornerRadius: 10))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(language ?? "Code") block")
