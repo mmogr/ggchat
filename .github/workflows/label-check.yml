@@ -19,7 +19,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Derive component and size labels from the diff
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const pr = context.payload.pull_request;
@@ -61,7 +61,7 @@ jobs:
       pull-requests: read
     steps:
       - name: Require a component label and a size label
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const { owner, repo } = context.repo;
