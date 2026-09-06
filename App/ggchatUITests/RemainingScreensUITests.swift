@@ -79,7 +79,10 @@ final class RemainingScreensUITests: XCTestCase {
         let ticket = app.textFields["provider-ticket"].firstMatch
         XCTAssertTrue(ticket.waitForExistence(timeout: 10))
         ticket.tap()
-        ticket.typeText("pipeabcdefghijklmnop")
+        // modelpipe's normative vector 1. Nothing shorter will do: the form
+        // refuses a ticket under 67 characters, so Add would stay disabled
+        // and there would be no pipe here to close.
+        ticket.typeText("pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na")
         let token = app.secureTextFields["provider-token"].firstMatch
         XCTAssertTrue(token.waitForExistence(timeout: 5))
         token.tap()

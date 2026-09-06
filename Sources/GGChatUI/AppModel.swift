@@ -179,9 +179,13 @@ extension AppModel {
         try? model.addProvider(
             ProviderConfig(name: "Mock", kind: .openAICompatible(baseURL: mockBaseURL), defaultModel: "mock-27b"),
             credentials: [:])
+        // modelpipe's normative vector 1, so the seeded pipe carries a ticket
+        // that would actually pass the shape check the form applies.
         try? model.addProvider(
             ProviderConfig(name: "Home", kind: .pipe(ticketDigest: "0123456789abcdef")),
-            credentials: [.ticket: "pipeabcdefghijklmnop", .token: "preview"])
+            credentials: [
+                .ticket: "pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na", .token: "preview",
+            ])
         let conversation = model.newConversation()
         var seeded = conversation
         seeded.messages = [

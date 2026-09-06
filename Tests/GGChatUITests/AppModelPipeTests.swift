@@ -4,7 +4,8 @@ import XCTest
 @testable import GGChatUI
 
 final class AppModelPipeTests: XCTestCase {
-    private let ticket = "pipeabcdefghijklmnop"
+    /// modelpipe's normative vector 1, the shortest string that is a ticket.
+    private let ticket = "pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na"
 
     @MainActor
     private func makeModel(
