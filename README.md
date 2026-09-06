@@ -37,15 +37,15 @@ against gglib, a server status pane shows slots, context in use and recent
 requests, and it is hidden for servers that do not answer that endpoint.
 The app has been run: the screens below are photographs of it, not
 mock-ups. A pipe provider is added by pasting a ticket and token, or on iOS by
-scanning a QR code; connecting goes through `PipeConnector`, whose only
-implementation today is a mock that walks idle → relayed → direct. The
-status pill follows it and becomes a reconnect button when the pipe
-closes. Settings shows the readings the ADRs name, each with its
-denominator. In DEBUG builds a mock provider streams canned replies
-without a server. The pipe path is a mock until `modelpipe-ffi` exists,
-and that mock is DEBUG-only: a released build refuses to dial and says so,
-rather than answering a real ticket with a reply no machine wrote. Nothing
-here links Rust or iroh.
+scanning a QR code; connecting goes through `PipeConnector`, which has two
+implementations today: a mock that walks idle → relayed → direct, and one
+that refuses. The status pill follows the mock and becomes a reconnect
+button when the pipe closes. Settings shows the readings the ADRs name,
+each with its denominator. In DEBUG builds a mock provider streams canned
+replies without a server. The pipe path is a mock until `modelpipe-ffi`
+exists, and that mock is DEBUG-only: a released build refuses to dial and
+says so, rather than answering a real ticket with a reply no machine
+wrote. Nothing here links Rust or iroh.
 
 ## What is true today
 
