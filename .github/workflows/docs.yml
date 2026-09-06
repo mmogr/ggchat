@@ -34,7 +34,7 @@ jobs:
           <p><a href="GGChatCore/documentation/ggchatcore/">GGChatCore</a> ·
              <a href="GGChatUI/documentation/ggchatui/">GGChatUI</a></p>
           HTML
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
