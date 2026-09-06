@@ -71,7 +71,14 @@ extension AppModel {
     /// The dial is stamped with a generation and only installs its session if
     /// that stamp is still the current one when it returns — see
     /// ``disconnectPipe(for:)`` for what moves it on.
+    ///
+    /// A provider that is no longer on the list has no pipe to dial. Callers
+    /// hold a `ProviderConfig` by value across suspensions — the resume in
+    /// ``didBecomeActive()`` walks a whole list of them — so one deleted in
+    /// between would otherwise be dialled, and then reported as missing its
+    /// credentials, which it is: they were deleted with it.
     public func connectPipe(for config: ProviderConfig) async {
+        guard providers.contains(where: { $0.id == config.id }) else { return }
         guard config.isPipe, pipeSessions[config.id] == nil, !connecting.contains(config.id) else { return }
         guard let ticket = try? secrets.secret(.ticket, for: config.id),
             let token = try? secrets.secret(.token, for: config.id)
