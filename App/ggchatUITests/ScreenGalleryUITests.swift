@@ -94,10 +94,13 @@ final class ScreenGalleryUITests: XCTestCase {
         attach(name: "pipe-after-add")
 
         let newConversation = app.buttons["New conversation"].firstMatch
-        XCTAssertTrue(
-            waitUntilHittable(newConversation, timeout: 20),
-            "the New conversation button never became tappable; something is over the app")
-        newConversation.tap()
+        let pill = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Model, '")).firstMatch
+        if !tap(newConversation, untilExists: pill) {
+            attachElementTree(app, name: "blocked-tree")
+            attach(name: "blocked")
+            XCTFail("the conversation never opened; something is over the app")
+            return
+        }
         attach(name: "pipe-conversation")
 
         // The pill starts at Connecting and reaches Direct or Relayed.
