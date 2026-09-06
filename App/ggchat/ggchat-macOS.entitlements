@@ -6,5 +6,15 @@
 	<true/>
 	<key>com.apple.security.network.client</key>
 	<true/>
+	<!-- A pipe is not a client connection. An iroh endpoint binds a UDP
+	     socket and has to receive datagrams nothing here asked for: hole
+	     punching, a peer dialling back, and the relay's own traffic all
+	     arrive unsolicited. Under the App Sandbox the client entitlement
+	     alone drops those without a word, so the endpoint would come up
+	     and never hear anything. Declared now, with the seam still behind
+	     PipeConnector, because the failure it prevents looks exactly like
+	     a NAT that will not open. -->
+	<key>com.apple.security.network.server</key>
+	<true/>
 </dict>
 </plist>
