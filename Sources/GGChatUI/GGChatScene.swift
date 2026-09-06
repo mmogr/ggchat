@@ -20,6 +20,10 @@ public struct GGChatScene: Scene {
                 .environment(model)
         }
         .modelContainer(container)
+        #if os(macOS)
+            .defaultSize(width: 1100, height: 720)
+            .windowResizability(.contentMinSize)
+        #endif
 
         #if os(macOS)
             Settings {

@@ -1,7 +1,7 @@
 # Local parity with CI: `make ci` runs what the workflow runs.
-SWIFT_SOURCES := Sources Tests Package.swift $(wildcard App/ggchat/*.swift)
+SWIFT_SOURCES := Sources Tests Package.swift $(wildcard App/ggchat/*.swift) $(wildcard App/ggchatUITests/*.swift)
 
-.PHONY: project bootstrap fmt fmt-check lint boundaries enforce build test test-live unused docs ci
+.PHONY: project bootstrap fmt fmt-check lint boundaries enforce build test test-live uitest unused docs ci
 
 project:
 	cd App && xcodegen generate --quiet
@@ -40,6 +40,13 @@ test:
 # Against a running gglib: GGCHAT_LIVE_BASE_URL=http://127.0.0.1:8080/v1 make test-live
 test-live:
 	swift test --filter LiveGGLibTests
+
+# Drives the app on a booted iPhone simulator. The live half of the test
+# runs only when something is listening on 127.0.0.1:8080.
+uitest:
+	xcodebuild test -project App/ggchat.xcodeproj -scheme ggchat \
+		-destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+		-only-testing:ggchatUITests CODE_SIGNING_ALLOWED=NO -quiet
 
 unused:
 	periphery scan --quiet --strict

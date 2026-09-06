@@ -11,7 +11,7 @@ status=0
 while IFS= read -r marker; do
     class="${marker%%.*}"
     method="${marker#*.}"
-    if ! grep -rlE "class $class\b" "$ROOT/Tests" | xargs grep -lE "func $method\b" >/dev/null 2>&1; then
+    if ! grep -rlE "class $class\b" "$ROOT/Tests" "$ROOT/App" 2>/dev/null | xargs grep -lE "func $method\b" >/dev/null 2>&1; then
         echo "readme: marker names no test: $marker" >&2
         status=1
     fi

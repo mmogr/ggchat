@@ -37,6 +37,8 @@ final class MarkdownTests: XCTestCase {
         XCTAssertTrue(ordered2)
         guard case .quote(let inner) = blocks[3] else { return XCTFail("unexpected block shape") }
         XCTAssertEqual(inner.count, 1)
+        guard case .paragraph(let quoted) = inner[0] else { return XCTFail("unexpected block shape") }
+        XCTAssertEqual(String(quoted.characters), "quoted", "the quote marker is not part of the text")
         XCTAssertEqual(blocks[4], .thematicBreak)
     }
 

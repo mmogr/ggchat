@@ -22,7 +22,8 @@ collapsed reasoning, with a stop button and, when a reply stops early, a
 Continue button. A server added by address lists its models and streams;
 against gglib, a server status pane shows slots, context in use and recent
 requests, and it is hidden for servers that do not answer that endpoint.
-A pipe provider is added by pasting a ticket and token, or on iOS by
+The app has been run: the screens below are photographs of it, not
+mock-ups. A pipe provider is added by pasting a ticket and token, or on iOS by
 scanning a QR code; connecting goes through `PipeConnector`, whose only
 implementation today is a mock that walks idle → relayed → direct. The
 status pill follows it and becomes a reconnect button when the pipe
@@ -94,6 +95,17 @@ Each claim names the test that keeps it true.
 - The Diagnostics readings survive a relaunch, and only a transport error
   within five seconds of a resume counts against ADR 0001.
   <!-- test: DiagnosticsTests.testReadingsPersistWithTheirDenominators -->
+- A first-time user can add a provider, start a conversation, send a
+  message and watch the reply stream in, driven through the real app on a
+  simulator. The same walk runs against a server on this machine when one
+  is listening, and skips when none is.
+  <!-- test: FirstRunUITests.testFirstRunWithTheMockProvider -->
+  <!-- test: FirstRunUITests.testFirstRunAgainstAServerOnThisMachine -->
+- Reopening the app returns you to the conversation you left.
+  <!-- test: SwiftDataStoreTests.testAppModelKeepsSelectionAndPersistsThroughTheStore -->
+- A block quote's `>` marker and a list item's indentation stay out of the
+  rendered text.
+  <!-- test: MarkdownTests.testListsHeadingsQuotesAndRules -->
 
 ## Building and testing
 
@@ -124,6 +136,10 @@ xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat -destination 'plat
 xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat -destination 'generic/platform=iOS Simulator'
 ```
 
+`make uitest` drives the first-run flow through the real app on a booted
+iPhone simulator. It always runs against the DEBUG mock provider, and also
+against a server on `127.0.0.1:8080` when one is listening.
+
 ## Layout
 
 ```
@@ -131,7 +147,8 @@ Sources/GGChatCore/   no SwiftUI; the provider protocol, wire types, SSE, ticket
 Sources/GGChatUI/     SwiftUI; the app model, views, and SwiftData persistence
 App/                  the xcodegen spec, the generated project, and a @main struct with assets
 Tests/GGChatCoreTests XCTest; fixtures are real captures from gglib
-Tests/GGChatUITests   the SwiftData store round trip
+Tests/GGChatUITests   the app model, streaming, the pipe, and the SwiftData store
+App/ggchatUITests     XCUITest that drives the first-run flow on a simulator
 docs/adr/             decisions, each with a kill criterion that names a reading
 scripts/              the checks CI runs; `make ci` runs the same ones
 ```

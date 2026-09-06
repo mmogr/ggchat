@@ -29,7 +29,8 @@ struct Composer: View {
             }
         }
         .padding(.horizontal)
-        .padding(.bottom, 8)
+        .padding(.top, 10)
+        .padding(.bottom, 10)
         .frame(maxWidth: 760)
         .frame(maxWidth: .infinity)
         .task(id: provider?.id) {
@@ -69,6 +70,7 @@ struct Composer: View {
             TextField("Message", text: $draft, axis: .vertical)
                 .lineLimit(1...8)
                 .textFieldStyle(.plain)
+                .accessibilityIdentifier("composer")
                 .padding(.vertical, 8)
                 .padding(.leading, 6)
                 .onSubmit(sendIfPossible)

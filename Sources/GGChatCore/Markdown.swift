@@ -66,12 +66,11 @@ public enum MarkdownBlocks {
     /// Inline styling via Foundation, which understands emphasis, strong,
     /// code spans and links.
     private static func inline(_ container: some Markup) -> AttributedString {
-        // `format()` re-indents inline children that sit inside a list item;
-        // a paragraph's own lines never start with meaningful whitespace.
-        let raw: String = container.children.map { $0.format() }.joined()
-        let lines: [String] = raw.split(separator: "\n", omittingEmptySubsequences: false)
-            .map { String($0.drop(while: { $0 == " " || $0 == "\t" })) }
-        let source: String = lines.joined(separator: "\n")
+        // `format()` renders a node in the context of its ancestors, so a
+        // paragraph inside a block quote comes back with its "> " marker and
+        // one inside a list item comes back indented. Detaching drops that
+        // context, leaving the inline markdown alone.
+        let source: String = container.detachedFromParent.children.map { $0.format() }.joined()
         let options = AttributedString.MarkdownParsingOptions(
             interpretedSyntax: .inlineOnlyPreservingWhitespace)
         return (try? AttributedString(markdown: source, options: options)) ?? AttributedString(source)

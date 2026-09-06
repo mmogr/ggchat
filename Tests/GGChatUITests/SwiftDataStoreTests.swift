@@ -64,5 +64,8 @@ final class SwiftDataStoreTests: XCTestCase {
         reloaded.load()
         XCTAssertEqual(reloaded.conversations.map(\.id), [conversation.id])
         XCTAssertEqual(reloaded.providers.map(\.name), ["p"])
+        XCTAssertEqual(
+            reloaded.selectedConversationID, conversation.id,
+            "reopening returns you to the most recent conversation")
     }
 }

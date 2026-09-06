@@ -67,6 +67,10 @@ public final class AppModel {
         do {
             providers = try store.loadProviders()
             conversations = try store.loadConversations().sorted { $0.updatedAt > $1.updatedAt }
+            // Reopening the app returns you to the conversation you left.
+            if selectedConversationID == nil {
+                selectedConversationID = conversations.first?.id
+            }
         } catch {
             report(error)
         }

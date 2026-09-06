@@ -34,18 +34,21 @@ struct AddProviderView: View {
 
                 Section("Name") {
                     TextField("gglib on the Mac", text: $name)
+                        .accessibilityIdentifier("provider-name")
                 }
 
                 switch kind {
                 case .server:
                     Section {
                         TextField("http://127.0.0.1:8080/v1", text: $address)
+                            .accessibilityIdentifier("provider-address")
                             .autocorrectionDisabled()
                             #if os(iOS)
                                 .keyboardType(.URL)
                                 .textInputAutocapitalization(.never)
                             #endif
                         SecureField("API key (optional on loopback)", text: $apiKey)
+                            .accessibilityIdentifier("provider-key")
                     } header: {
                         Text("Address")
                     } footer: {
@@ -54,6 +57,7 @@ struct AddProviderView: View {
                 case .pipe:
                     Section {
                         TextField("pipe…", text: $ticket, axis: .vertical)
+                            .accessibilityIdentifier("provider-ticket")
                             .lineLimit(3...6)
                             .font(.body.monospaced())
                             .autocorrectionDisabled()
@@ -61,6 +65,7 @@ struct AddProviderView: View {
                                 .textInputAutocapitalization(.never)
                             #endif
                         SecureField("Token", text: $token)
+                            .accessibilityIdentifier("provider-token")
                         #if os(iOS)
                             if ScanTicketView.isSupported {
                                 Button("Scan ticket", systemImage: "qrcode.viewfinder") { scanning = true }

@@ -122,6 +122,33 @@ jobs:
             coverage.lcov
             coverage-summary.txt
 
+  uitest:
+    name: UI Test
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+      - name: Pick a booted iPhone simulator
+        id: sim
+        run: |
+          udid=$(xcrun simctl list devices available --json \
+            | python3 -c "import json,sys;d=json.load(sys.stdin)['devices'];print(next(x['udid'] for k,v in sorted(d.items()) if 'iOS' in k for x in v if 'iPhone' in x['name']))")
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$udid" || true
+          xcrun simctl bootstatus "$udid" -b || true
+      - name: Drive the first-run flow on a simulator
+        run: |
+          set -o pipefail
+          xcodebuild test -project App/ggchat.xcodeproj -scheme ggchat \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -resultBundlePath uitest.xcresult \
+            -only-testing:ggchatUITests CODE_SIGNING_ALLOWED=NO -quiet
+      - name: Upload the screenshots it took
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-screenshots
+          path: uitest.xcresult
+
   unused:
     name: Unused Code
     runs-on: macos-26
