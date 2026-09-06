@@ -17,7 +17,7 @@ jobs:
     name: Format
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Toolchain
         run: swift --version
       - name: Check formatting
@@ -27,7 +27,7 @@ jobs:
     name: Lint
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Install linters
         run: brew install swiftlint actionlint
       - name: Lint Swift and workflows
@@ -37,7 +37,7 @@ jobs:
     name: Check Boundaries
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Check module boundaries
         run: make boundaries
 
@@ -45,7 +45,7 @@ jobs:
     name: Enforce Architecture
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Glass sites
         run: scripts/check_glass_sites.sh
       - name: No hand-drawn glass
@@ -65,7 +65,7 @@ jobs:
     name: Build
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/cache@v4
         with:
           path: .build
@@ -95,7 +95,7 @@ jobs:
     name: Test
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/cache@v4
         with:
           path: .build
@@ -130,7 +130,7 @@ jobs:
     name: UI Test
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Pick a booted iPhone simulator
         id: sim
         run: |
@@ -171,7 +171,7 @@ jobs:
     name: Unused Code
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/cache@v4
         with:
           path: .build
@@ -186,7 +186,7 @@ jobs:
     name: Docs
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/cache@v4
         with:
           path: .build
