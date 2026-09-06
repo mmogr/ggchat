@@ -100,25 +100,24 @@ final class RemainingScreensUITests: XCTestCase {
 
         // Close it from the debug switch, which is what a dropped pipe looks
         // like. Settings lives on the conversation list, so go back for it.
-        goBack()
         let settings = app.buttons["Settings"].firstMatch
-        XCTAssertTrue(waitUntilHittable(settings, timeout: 15), "settings is unreachable from the list")
-        settings.tap()
+        XCTAssertTrue(
+            tap(app.navigationBars.buttons.element(boundBy: 0), untilExists: settings),
+            "going back did not reach the conversation list")
+
         let force = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Force '")).firstMatch
-        XCTAssertTrue(force.waitForExistence(timeout: 10), "DEBUG builds can force a pipe closed")
+        XCTAssertTrue(tap(settings, untilExists: force), "DEBUG builds can force a pipe closed")
         force.tap()
         app.buttons["Done"].firstMatch.tap()
 
         // Back into the conversation to see what its pill now says.
-        let row = app.cells.firstMatch
-        if waitUntilHittable(row, timeout: 10) { row.tap() }
-
         let reconnect = app.buttons["Connection Reconnect"].firstMatch
-        XCTAssertTrue(reconnect.waitForExistence(timeout: 20), "a closed pipe offers no way back")
+        XCTAssertTrue(
+            tap(app.cells.firstMatch, untilExists: reconnect),
+            "a closed pipe offers no way back")
         attach(name: "pipe-closed")
         XCTAssertTrue(reconnect.isEnabled, "the reconnect pill is not tappable")
-        reconnect.tap()
-        XCTAssertTrue(connected.waitForExistence(timeout: 30), "reconnect did not bring the pipe back")
+        XCTAssertTrue(tap(reconnect, untilExists: connected), "reconnect did not bring the pipe back")
         attach(name: "pipe-reconnected")
     }
 
@@ -175,13 +174,6 @@ final class RemainingScreensUITests: XCTestCase {
             }
         }
         return connected == 0
-    }
-
-    /// The chat screen is pushed over the list on a phone; this pops it.
-    @MainActor
-    private func goBack() {
-        let back = app.navigationBars.buttons.element(boundBy: 0)
-        if back.exists, back.isHittable { back.tap() }
     }
 
     @MainActor
