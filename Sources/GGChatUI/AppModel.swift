@@ -2,6 +2,21 @@ import Foundation
 import GGChatCore
 import Observation
 
+/// Why an edit to a provider could not be made.
+public enum ProviderEditError: Error, Sendable, Equatable, LocalizedError {
+    /// It left the list while its form was open. Worth a sentence rather
+    /// than a silent no-op: a re-pairing spends a one-time code before it
+    /// gets here, and a form that closed as though it had saved would leave
+    /// the user hunting for a machine that is simply no longer listed.
+    case noLongerThere
+
+    public var errorDescription: String? {
+        switch self {
+        case .noLongerThere: "That provider was removed while you were editing it."
+        }
+    }
+}
+
 /// The app's state: providers, conversations, selection. Chat streaming
 /// arrives in the next step; this is the shell.
 @Observable
@@ -174,7 +189,9 @@ public final class AppModel {
     /// a sheet. Half a new credential beside half an old one is worse than
     /// not editing at all: it is a ticket and a token from two machines.
     public func updateProvider(_ config: ProviderConfig, credentials: [SecretKind: String]) throws {
-        guard let index = providers.firstIndex(where: { $0.id == config.id }) else { return }
+        guard let index = providers.firstIndex(where: { $0.id == config.id }) else {
+            throw ProviderEditError.noLongerThere
+        }
         var replaced: [SecretKind: String?] = [:]
         do {
             for (kind, value) in credentials where !value.isEmpty {

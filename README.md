@@ -43,12 +43,17 @@ API key, so no key is ever read off one screen and typed into another. A
 bare ticket is the form every later pairing takes. Connecting goes through
 `PipeConnector`, which has two implementations today: a mock that walks
 idle → relayed → direct, and one that refuses. The status pill follows the
-mock and becomes a reconnect button when the pipe closes. Settings shows
-the readings the ADRs name, each with its denominator. In DEBUG builds a
-mock provider streams canned replies without a server. The pipe path is a
-mock until `modelpipe-ffi` exists, and that mock is DEBUG-only: a released
-build refuses to dial and says so, rather than answering a real ticket
-with a reply no machine wrote. Nothing here links Rust or iroh.
+mock, reads "Reconnect" when the pipe closes, and stays pressable in every
+state but a dial in flight, because a connected status can be stale. Going
+to the background hangs up every pipe and puts down the reply in flight,
+and coming back dials again. A provider's row opens its settings, so a
+machine re-enabled with a fresh ticket is re-paired in place and keeps its
+conversations. Settings shows the readings the ADRs name, each with its
+denominator. In DEBUG builds a mock provider streams canned replies
+without a server. The pipe path is a mock until `modelpipe-ffi` exists,
+and that mock is DEBUG-only: a released build refuses to dial and says so,
+rather than answering a real ticket with a reply no machine wrote. Nothing
+here links Rust or iroh.
 
 ## What is true today
 
@@ -162,6 +167,7 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelProviderTests.testAnEditThatWillNotSaveLeavesTheOldCredentialsInPlace -->
   <!-- test: AppModelProviderTests.testRePairingRedeemsTheNewCodeAndDialsTheNewTicket -->
   <!-- test: AppModelProviderTests.testARefusedCodeLeavesTheProviderPairedWithTheMachineItHad -->
+  <!-- test: AppModelProviderTests.testEditingAProviderThatIsGoneSaysSoRatherThanSavingNothingQuietly -->
 - Removing a provider deletes its durable record before its credentials, so
   a delete that fails leaves the provider whole rather than resurrecting one
   on the next launch that can never connect.

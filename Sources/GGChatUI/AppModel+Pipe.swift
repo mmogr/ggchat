@@ -218,9 +218,9 @@ extension AppModel {
         }
         for config in providers where config.isPipe && pipeStatuses[config.id] != nil {
             await disconnectPipe(for: config.id)
-            // Closed rather than absent, for ``connectPipe(for:)``'s reason:
-            // a provider with no status has no pill, and this is precisely
-            // the state a way back has to be offered from.
+            // Closed rather than absent, for `connectPipe(for:)`'s reason: a
+            // provider with no status has no pill, and this is precisely the
+            // state a way back has to be offered from.
             pipeStatuses[config.id] = .closed
         }
     }
