@@ -27,25 +27,28 @@ go stale. The first is a real reply from gglib.
 
 v0.1.0 is released. What exists today is the core package (the provider
 protocol, the OpenAI-compatible implementation, the SSE parser, ticket
-shape validation, the pipe seam with its mock) and the app shell: a
-sidebar of conversations persisted with SwiftData, a providers sheet that
-adds a server by address or a pipe by ticket and token, and settings. The
-transcript streams replies as markdown with copyable code blocks and
-collapsed reasoning, with a stop button and, when a reply stops early, a
-Continue button. A server added by address lists its models and streams;
-against gglib, a server status pane shows slots, context in use and recent
-requests, and it is hidden for servers that do not answer that endpoint.
-The app has been run: the screens below are photographs of it, not
-mock-ups. A pipe provider is added by pasting a ticket and token, or on iOS by
-scanning a QR code; connecting goes through `PipeConnector`, which has two
-implementations today: a mock that walks idle → relayed → direct, and one
-that refuses. The status pill follows the mock and becomes a reconnect
-button when the pipe closes. Settings shows the readings the ADRs name,
-each with its denominator. In DEBUG builds a mock provider streams canned
-replies without a server. The pipe path is a mock until `modelpipe-ffi`
-exists, and that mock is DEBUG-only: a released build refuses to dial and
-says so, rather than answering a real ticket with a reply no machine
-wrote. Nothing here links Rust or iroh.
+shape validation, pairing, the pipe seam with its mock) and the app shell:
+a sidebar of conversations persisted with SwiftData, a providers sheet
+that adds a server by address or a pipe by its pairing string, and
+settings. The transcript streams replies as markdown with copyable code
+blocks and collapsed reasoning, with a stop button and, when a reply stops
+early, a Continue button. A server added by address lists its models and
+streams; against gglib, a server status pane shows slots, context in use
+and recent requests, and it is hidden for servers that do not answer that
+endpoint. The app has been run: the screens below are photographs of it,
+not mock-ups. A pipe provider is added by pasting the `ticket-code` string
+`gglib remote enable` printed, or on iOS by scanning its QR code: the
+six-digit code is spent once, through the pipe itself, for that machine's
+API key, so no key is ever read off one screen and typed into another. A
+bare ticket is the form every later pairing takes. Connecting goes through
+`PipeConnector`, which has two implementations today: a mock that walks
+idle → relayed → direct, and one that refuses. The status pill follows the
+mock and becomes a reconnect button when the pipe closes. Settings shows
+the readings the ADRs name, each with its denominator. In DEBUG builds a
+mock provider streams canned replies without a server. The pipe path is a
+mock until `modelpipe-ffi` exists, and that mock is DEBUG-only: a released
+build refuses to dial and says so, rather than answering a real ticket
+with a reply no machine wrote. Nothing here links Rust or iroh.
 
 ## What is true today
 
@@ -70,6 +73,22 @@ Each claim names the test that keeps it true.
   <!-- test: TicketTests.testTheShapeARealTicketHas -->
   <!-- test: TicketTests.testLongestPossibleTicketIsAcceptedAndOneMoreIsNot -->
   <!-- test: TicketTests.testNonASCIIIsRejectedBeforeCaseFolding -->
+- A pairing string comes apart the way gglib's does: on the last `-`, with
+  a six-digit code after it, and the whole thing uppercased is what the
+  printed QR carries. A suffix that is not six digits is named as the
+  problem rather than swallowed.
+  <!-- test: PairingStringTests.testTheOneStringGGLibPrintsIsAccepted -->
+  <!-- test: PairingStringTests.testASuffixThatIsNotSixDigitsIsNamedAsTheProblem -->
+- Pairing is a step before the seam, not a third parameter on it: the
+  ticket is dialled, the code is redeemed through that pipe as both the
+  bearer and the body, the pipe is hung up, and the key that comes back is
+  the provider's token. A refused code leaves no provider behind, and the
+  form stops asking for a token once it has a code to fetch one with.
+  <!-- test: PairingTests.testPairingDialsRedeemsThroughThatPipeAndHangsUp -->
+  <!-- test: PairingTests.testTheCodeTravelsAsTheBearerAndInTheBody -->
+  <!-- test: AppModelPairingTests.testARedeemedCodeBecomesTheProvidersTokenAndThePipeConnects -->
+  <!-- test: AppModelPairingTests.testARefusedCodeAddsNoProviderAndSaysWhy -->
+  <!-- test: ScreenGalleryUITests.testAPairingCodeIsRedeemedInsteadOfAskingForAToken -->
 - The mock pipe walks idle → relayed → direct, can be forced closed, and a
   late subscriber gets the current status first.
   <!-- test: MockPipeTests.testStatusWalksIdleRelayedDirectThenClosedOnDemand -->
@@ -202,7 +221,7 @@ so its test sets it through Settings and measures the result instead.
 ## Layout
 
 ```
-Sources/GGChatCore/   no SwiftUI; the provider protocol, wire types, SSE, ticket, pipe seam, mocks
+Sources/GGChatCore/   no SwiftUI; the provider protocol, wire types, SSE, ticket, pairing, pipe seam, mocks
 Sources/GGChatUI/     SwiftUI; the app model, views, and SwiftData persistence
 App/                  the xcodegen spec, the generated project, and a @main struct with assets
 Tests/GGChatCoreTests XCTest; fixtures are real captures from gglib

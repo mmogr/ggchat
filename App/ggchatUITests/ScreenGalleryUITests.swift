@@ -69,6 +69,44 @@ final class ScreenGalleryUITests: XCTestCase {
         attach(name: "form-pipe-bad-ticket")
     }
 
+    /// The pairing half, driven through the real app: a code in the string
+    /// means no token is asked for, and Add spends the code on a redeem
+    /// through the pipe.
+    ///
+    /// Nothing listens on the mock pipe's loopback port, so the redeem
+    /// cannot succeed here. What this asserts is that it is *reached* — that
+    /// the form, the app model, the pairing step and the HTTP exchange are
+    /// wired to each other — and that a failure keeps the sheet up with its
+    /// reason instead of adding a provider whose token is a spent code.
+    @MainActor
+    func testAPairingCodeIsRedeemedInsteadOfAskingForAToken() {
+        launch()
+        openAddProvider()
+        app.buttons["Pipe"].firstMatch.tap()
+        let ticket = app.textFields["provider-ticket"].firstMatch
+        XCTAssertTrue(ticket.waitForExistence(timeout: 10), "the ticket field is not reachable")
+        ticket.tap()
+        ticket.typeText("\(wellFormedTicket)-483920")
+
+        XCTAssertTrue(
+            app.staticTexts["A ticket and a code. The code is redeemed once, for that machine's key."]
+                .waitForExistence(timeout: 5),
+            "the form never said it had recognised a code")
+        XCTAssertFalse(
+            app.secureTextFields["provider-token"].firstMatch.exists,
+            "a code was given and the form still asks for the token that code fetches")
+        XCTAssertTrue(app.buttons["Add"].firstMatch.isEnabled, "a ticket and a code left Add disabled")
+        attach(name: "form-pipe-code")
+
+        app.buttons["Add"].firstMatch.tap()
+        let unreachable = app.staticTexts.matching(
+            NSPredicate(format: "label BEGINSWITH 'The pairing request did not get through'")
+        ).firstMatch
+        XCTAssertTrue(unreachable.waitForExistence(timeout: 30), "the code was never redeemed anywhere")
+        attach(name: "form-pipe-code-unreachable")
+        XCTAssertTrue(app.buttons["Add"].firstMatch.exists, "the sheet closed and took the reason with it")
+    }
+
     /// A pipe provider connects and the status pill walks to a connected state.
     @MainActor
     func testAPipeConnectsAndTheStatusPillWalks() {

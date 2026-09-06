@@ -3,9 +3,19 @@
     import SwiftUI
     import VisionKit
 
-    /// The app's one moment of theatre: the live camera, a ticket recognised
-    /// inline from a QR code or printed text, handed back the moment its
-    /// shape checks out.
+    /// The app's one moment of theatre: the live camera, a pairing string
+    /// recognised inline from a QR code or printed text, handed back the
+    /// moment it parses.
+    ///
+    /// What gglib prints in that QR is `TICKET-CODE`, uppercased, because
+    /// uppercase base32 is a QR alphanumeric payload and lowercase is not.
+    /// So the whole candidate goes through ``GGChatCore/PairingString``,
+    /// which owns the split on the last `-` and the case folding both; this
+    /// view holds no parsing of its own.
+    ///
+    /// A candidate that does not parse is dropped without a word, because
+    /// the text recogniser reports every string the lens can see: a scanner
+    /// that complained about each one would be complaining about the room.
     struct ScanTicketView: View {
         let onScan: (String) -> Void
         @Environment(\.dismiss) private var dismiss
@@ -18,14 +28,13 @@
         var body: some View {
             NavigationStack {
                 DataScanner { candidate in
-                    let cleaned = Ticket.normalized(candidate.trimmingCharacters(in: .whitespacesAndNewlines))
-                    guard case .success = Ticket.validateShape(cleaned), seen == nil else { return }
-                    seen = cleaned
-                    onScan(cleaned)
+                    guard case .success(let parsed) = PairingString.parse(candidate), seen == nil else { return }
+                    seen = parsed.canonical
+                    onScan(parsed.canonical)
                 }
                 .ignoresSafeArea()
                 .overlay(alignment: .bottom) {
-                    Text("Point the camera at the ticket")
+                    Text("Point the camera at the code gglib printed")
                         .font(.callout)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)

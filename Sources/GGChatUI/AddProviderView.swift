@@ -1,8 +1,12 @@
 import GGChatCore
 import SwiftUI
 
-/// URL and key, or ticket and token. The ticket's shape is checked as it is
-/// typed and the reason it fails is shown as a sentence.
+/// URL and key, or the pairing string a machine printed. Its shape is
+/// checked as it is typed and the reason it fails is shown as a sentence.
+///
+/// A pairing string is `ticket-code` the first time and a bare ticket after
+/// that, so the token field is asked for only when there is no code to
+/// redeem for one — a code is a token this device has not been given yet.
 ///
 /// The key and token are `SecureField`s, which is what they are. iOS may
 /// offer to save them to the password manager afterwards; there is no
@@ -21,9 +25,11 @@ struct AddProviderView: View {
     @State private var name = ""
     @State private var address = ""
     @State private var apiKey = ""
-    @State private var ticket = ""
+    @State private var pairing = ""
     @State private var token = ""
     @State private var failure: String?
+    /// True from the moment a code goes out until the key comes back.
+    @State private var redeeming = false
     #if os(iOS)
         @State private var scanning = false
     #endif
@@ -62,7 +68,7 @@ struct AddProviderView: View {
                     }
                 case .pipe:
                     Section {
-                        TextField("pipe…", text: $ticket, axis: .vertical)
+                        TextField("pipe…-483920", text: $pairing, axis: .vertical)
                             .accessibilityIdentifier("provider-ticket")
                             .lineLimit(3...6)
                             .font(.body.monospaced())
@@ -70,17 +76,22 @@ struct AddProviderView: View {
                             #if os(iOS)
                                 .textInputAutocapitalization(.never)
                             #endif
-                        SecureField("Token", text: $token)
-                            .accessibilityIdentifier("provider-token")
+                        // A code is redeemed for the token, so asking for
+                        // one as well would be asking for the thing the
+                        // code exists to fetch.
+                        if parsedPairing?.code == nil {
+                            SecureField("Token", text: $token)
+                                .accessibilityIdentifier("provider-token")
+                        }
                         #if os(iOS)
                             if ScanTicketView.isSupported {
                                 Button("Scan ticket", systemImage: "qrcode.viewfinder") { scanning = true }
                             }
                         #endif
                     } header: {
-                        Text("Ticket and token")
+                        Text("Pairing string")
                     } footer: {
-                        ticketFooter
+                        pairingFooter
                     }
                 }
             }
@@ -98,7 +109,7 @@ struct AddProviderView: View {
             #if os(iOS)
                 .sheet(isPresented: $scanning) {
                     ScanTicketView { scanned in
-                        ticket = scanned
+                        pairing = scanned
                         scanning = false
                     }
                 }
@@ -108,8 +119,12 @@ struct AddProviderView: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") { add() }
-                        .disabled(!canAdd)
+                    if redeeming {
+                        ProgressView()
+                    } else {
+                        Button("Add") { add() }
+                            .disabled(!canAdd)
+                    }
                 }
             }
         }
@@ -128,17 +143,26 @@ struct AddProviderView: View {
         return "That is not an http or https address."
     }
 
-    private var ticketShape: Result<Void, TicketShapeError>? {
-        ticket.isEmpty ? nil : Ticket.validateShape(ticket.trimmingCharacters(in: .whitespacesAndNewlines))
+    private var pairingShape: Result<PairingString, PairingStringError>? {
+        pairing.isEmpty ? nil : PairingString.parse(pairing)
+    }
+
+    private var parsedPairing: PairingString? {
+        guard case .success(let parsed)? = pairingShape else { return nil }
+        return parsed
     }
 
     @ViewBuilder
-    private var ticketFooter: some View {
-        switch ticketShape {
+    private var pairingFooter: some View {
+        switch pairingShape {
         case nil:
-            Text("Paste the ticket from `modelpipe serve`. The token is separate.")
+            Text("Paste what `gglib remote enable` printed, or scan it. A bare ticket works once the key is stored.")
+        case .success(let parsed) where parsed.code != nil:
+            Label(
+                "A ticket and a code. The code is redeemed once, for that machine's key.",
+                systemImage: "checkmark.circle")
         case .success:
-            Label("Looks like a ticket.", systemImage: "checkmark.circle")
+            Label("Looks like a ticket. The token is separate.", systemImage: "checkmark.circle")
         case .failure(let error):
             Label(error.errorDescription ?? "", systemImage: "exclamationmark.triangle")
                 .foregroundStyle(.red)
@@ -150,7 +174,7 @@ struct AddProviderView: View {
         case .server:
             normalizedURL != nil
         case .pipe:
-            if case .success? = ticketShape { !token.isEmpty } else { false }
+            if let parsed = parsedPairing { parsed.code != nil || !token.isEmpty } else { false }
         }
     }
 
@@ -168,11 +192,15 @@ struct AddProviderView: View {
                     kind: .openAICompatible(baseURL: url))
                 try model.addProvider(config, credentials: [.apiKey: apiKey])
             case .pipe:
-                let cleaned = Ticket.normalized(ticket.trimmingCharacters(in: .whitespacesAndNewlines))
+                guard let parsed = parsedPairing else { return }
                 let config = ProviderConfig(
                     name: trimmedName.isEmpty ? "Pipe" : trimmedName,
-                    kind: .pipe(ticketDigest: Ticket.digest(cleaned)))
-                try model.addProvider(config, credentials: [.ticket: cleaned, .token: token])
+                    kind: .pipe(ticketDigest: Ticket.digest(parsed.ticket)))
+                if let code = parsed.code {
+                    pair(config, ticket: parsed.ticket, code: code)
+                    return
+                }
+                try model.addProvider(config, credentials: [.ticket: parsed.ticket, .token: token])
                 Task { await model.connectPipe(for: config) }
             }
         } catch {
@@ -180,6 +208,25 @@ struct AddProviderView: View {
             return
         }
         dismiss()
+    }
+
+    /// Redeeming is a round trip through the pipe, so the sheet stays up
+    /// with the Add button replaced by a spinner and dismisses only when the
+    /// key is in the Keychain. A sheet that dismissed first would take the
+    /// reason a code was refused away with it, and a refused code is the
+    /// failure this form most has to explain: it is spent either way, so the
+    /// next attempt starts on the other machine.
+    private func pair(_ config: ProviderConfig, ticket: String, code: String) {
+        redeeming = true
+        Task {
+            do {
+                try await model.addPairedProvider(config, ticket: ticket, code: code)
+                dismiss()
+            } catch {
+                failure = error.localizedDescription
+                redeeming = false
+            }
+        }
     }
 }
 
