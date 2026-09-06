@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/mmogr/ggchat/compare/v0.1.0...v0.1.1) (2026-09-06)
+
+
+### What the app stopped getting wrong
+
+* **ci:** the badges survive a coverage run that reports no percentage ([#23](https://github.com/mmogr/ggchat/issues/23)) ([979a076](https://github.com/mmogr/ggchat/commit/979a076555574a6e9acc881c1b53d3a0c7261a58))
+
 ## 0.1.0 (2026-09-06)
 
 
