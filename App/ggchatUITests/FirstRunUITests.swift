@@ -17,20 +17,15 @@ final class FirstRunUITests: XCTestCase {
         "http://\(localServer.host):\(localServer.port)/v1"
     }
 
-    override func setUp() {
-        continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchArguments = ["-ggchat-reset", "YES"]
-        app.launch()
-    }
-
     /// The claim from the handoff: a first-time user is streaming in under a
     /// minute, touching nothing but the buttons in front of them.
+    @MainActor
     func testFirstRunWithTheMockProvider() throws {
         try runFirstRun(liveURL: nil)
     }
 
     /// The same walk, against a real OpenAI-compatible server.
+    @MainActor
     func testFirstRunAgainstAServerOnThisMachine() throws {
         try XCTSkipUnless(
             Self.somethingIsListening(),
@@ -38,7 +33,15 @@ final class FirstRunUITests: XCTestCase {
         try runFirstRun(liveURL: Self.localServerBaseURL)
     }
 
+    /// Launches a fresh app and walks it. `XCUIApplication` is main-actor
+    /// bound, so the whole walk is, and there is no `setUp` override to
+    /// disagree about isolation.
+    @MainActor
     private func runFirstRun(liveURL: String?) throws {
+        continueAfterFailure = false
+        app = XCUIApplication()
+        app.launchArguments = ["-ggchat-reset", "YES"]
+        app.launch()
         XCTContext.runActivity(named: "provider: \(liveURL ?? "the DEBUG mock")") { _ in }
         let suffix = liveURL == nil ? "mock" : "live"
 
@@ -128,6 +131,7 @@ final class FirstRunUITests: XCTestCase {
         return connected == 0
     }
 
+    @MainActor
     private func attach(name: String) {
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = name

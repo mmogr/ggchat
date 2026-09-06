@@ -142,6 +142,19 @@ jobs:
             -destination "id=${{ steps.sim.outputs.udid }}" \
             -resultBundlePath uitest.xcresult \
             -only-testing:ggchatUITests CODE_SIGNING_ALLOWED=NO -quiet
+      - name: Say which tests ran, so a skip cannot pass for a pass
+        if: always()
+        run: |
+          xcrun xcresulttool get test-results tests --path uitest.xcresult --format json \
+            | python3 -c "
+          import json, sys
+          def walk(nodes):
+              for n in nodes:
+                  if n.get('nodeType') == 'Test Case':
+                      print(f\"{n.get('result')}\t{n.get('name')}\")
+                  walk(n.get('children', []))
+          walk(json.load(sys.stdin).get('testNodes', []))
+          "
       - name: Upload the screenshots it took
         if: always()
         uses: actions/upload-artifact@v4
