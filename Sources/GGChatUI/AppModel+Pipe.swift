@@ -10,6 +10,25 @@ extension AppModel {
         pipeSessions[providerID]
     }
 
+    /// Pairs with a machine and adds it as a provider: redeem the six-digit
+    /// code through the pipe for that machine's API key, keep the key as the
+    /// provider's token, then dial the pipe the ordinary way.
+    ///
+    /// The key is stored before the dial, so a redeemed code is never spent
+    /// for nothing — a dial that fails afterwards leaves a provider that can
+    /// be reconnected, not a machine that has to be enabled again.
+    ///
+    /// Throws rather than reporting, for the same reason ``addProvider(_:credentials:)``
+    /// does: the form that calls this is a sheet, and an alert raised behind
+    /// a dismissing sheet is never seen.
+    public func addPairedProvider(_ config: ProviderConfig, ticket: String, code: String) async throws {
+        let pairing = PipePairing(connector: pipeConnector, redeemer: redeemer)
+        let key = try await pairing.token(ticket: ticket, code: code)
+        try addProvider(config, credentials: [.ticket: ticket, .token: key])
+        log.log(.info, "paired with \(config.name); the code was redeemed for its key")
+        await connectPipe(for: config)
+    }
+
     /// Dials the pipe behind a provider, if it is not already up. The status
     /// pill follows the session from here on; a failure is the connector's
     /// own sentence.
