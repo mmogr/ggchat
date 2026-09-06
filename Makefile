@@ -1,7 +1,10 @@
 # Local parity with CI: `make ci` runs what the workflow runs.
 SWIFT_SOURCES := Sources Tests Package.swift $(wildcard App/ggchat/*.swift)
 
-.PHONY: bootstrap fmt fmt-check lint boundaries enforce build test test-live unused docs ci
+.PHONY: project bootstrap fmt fmt-check lint boundaries enforce build test test-live unused docs ci
+
+project:
+	cd App && xcodegen generate --quiet
 
 bootstrap:
 	brew install xcodegen swiftlint periphery actionlint
@@ -38,7 +41,7 @@ test-live:
 	swift test --filter LiveGGLibTests
 
 unused:
-	periphery scan --quiet
+	periphery scan --quiet --strict
 
 docs:
 	mkdir -p .build/docs

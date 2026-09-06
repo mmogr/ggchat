@@ -12,10 +12,12 @@ The app is generic: any OpenAI-compatible provider works.
 
 ## Status
 
-v0.1 is in progress. What exists today is the core package: the provider
+v0.1 is in progress. What exists today is the core package (the provider
 protocol, the OpenAI-compatible implementation, the SSE parser, ticket
-shape validation, the pipe seam with its mock, and the tests that keep each
-of those honest. There is no app target yet. The pipe path is a mock until
+shape validation, the pipe seam with its mock) and the app shell: a
+sidebar of conversations persisted with SwiftData, a providers sheet that
+adds a server by address or a pipe by ticket and token, and settings. The
+transcript does not stream yet. The pipe path is a mock until
 `modelpipe-ffi` exists; nothing here links Rust or iroh.
 
 ## What is true today
@@ -51,6 +53,12 @@ Each claim names the test that keeps it true.
 - A `ProviderConfig` holds no credential; a pipe config carries only a
   digest of its ticket.
   <!-- test: ProviderConfigTests.testPipeProviderRoundTripsAndHoldsOnlyADigest -->
+- A pasted address becomes a base URL: a bare host gets `/v1`, a trailing
+  slash is dropped, anything that is not http or https is refused.
+  <!-- test: BaseURLNormalizationTests.testBareHostGetsV1AndTrailingSlashIsDropped -->
+- Conversations, their messages in order, and providers survive a round
+  trip through SwiftData; deleting a conversation cascades to its messages.
+  <!-- test: SwiftDataStoreTests.testConversationsRoundTripWithMessagesInOrder -->
 
 ## Building and testing
 
@@ -72,12 +80,23 @@ GGCHAT_LIVE_BASE_URL=http://127.0.0.1:8080/v1 make test-live
 `make unused`, `make docs`. `make bootstrap` installs the Homebrew tools
 those need (xcodegen, swiftlint, periphery, actionlint).
 
+The app target is generated from `App/project.yml` by xcodegen
+(`make project`) and committed. Open `App/ggchat.xcodeproj` in Xcode, or
+build from the command line:
+
+```sh
+xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat -destination 'platform=macOS'
+xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat -destination 'generic/platform=iOS Simulator'
+```
+
 ## Layout
 
 ```
 Sources/GGChatCore/   no SwiftUI; the provider protocol, wire types, SSE, ticket, pipe seam, mocks
-Sources/GGChatUI/     SwiftUI (views arrive with the app shell)
+Sources/GGChatUI/     SwiftUI; the app model, views, and SwiftData persistence
+App/                  the xcodegen spec, the generated project, and a @main struct with assets
 Tests/GGChatCoreTests XCTest; fixtures are real captures from gglib
+Tests/GGChatUITests   the SwiftData store round trip
 docs/adr/             decisions, each with a kill criterion that names a reading
 scripts/              the checks CI runs; `make ci` runs the same ones
 ```

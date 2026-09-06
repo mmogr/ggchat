@@ -1,0 +1,152 @@
+import Foundation
+import GGChatCore
+import Observation
+
+/// The app's state: providers, conversations, selection. Chat streaming
+/// arrives in the next step; this is the shell.
+@Observable
+public final class AppModel {
+    public private(set) var providers: [ProviderConfig] = []
+    public private(set) var conversations: [Conversation] = []
+    public var selectedConversationID: UUID?
+    /// The last failure worth telling the user about, as its own sentence.
+    public var lastError: String?
+
+    let store: any Store
+    let secrets: any Secrets
+    let log: any LogSink
+    let now: () -> Date
+
+    public init(
+        store: any Store,
+        secrets: any Secrets,
+        log: any LogSink = OSLogSink(category: "app"),
+        now: @escaping () -> Date = { Date() }
+    ) {
+        self.store = store
+        self.secrets = secrets
+        self.log = log
+        self.now = now
+    }
+
+    public var selectedConversation: Conversation? {
+        conversations.first { $0.id == selectedConversationID }
+    }
+
+    public func load() {
+        do {
+            providers = try store.loadProviders()
+            conversations = try store.loadConversations().sorted { $0.updatedAt > $1.updatedAt }
+        } catch {
+            report(error)
+        }
+    }
+
+    // MARK: - Conversations
+
+    @discardableResult
+    public func newConversation() -> Conversation {
+        let provider = providers.first
+        let stamp = now()
+        let conversation = Conversation(
+            providerID: provider?.id, model: provider?.defaultModel, createdAt: stamp, updatedAt: stamp)
+        conversations.insert(conversation, at: 0)
+        selectedConversationID = conversation.id
+        persist(conversation)
+        return conversation
+    }
+
+    public func deleteConversation(_ id: UUID) {
+        conversations.removeAll { $0.id == id }
+        if selectedConversationID == id { selectedConversationID = nil }
+        do {
+            try store.deleteConversation(id: id)
+        } catch {
+            report(error)
+        }
+    }
+
+    public func update(_ conversation: Conversation) {
+        guard let index = conversations.firstIndex(where: { $0.id == conversation.id }) else { return }
+        conversations[index] = conversation
+        persist(conversation)
+    }
+
+    func persist(_ conversation: Conversation) {
+        do {
+            try store.save(conversation: conversation)
+        } catch {
+            report(error)
+        }
+    }
+
+    // MARK: - Providers
+
+    public func addProvider(_ config: ProviderConfig, credentials: [SecretKind: String]) {
+        do {
+            for (kind, value) in credentials where !value.isEmpty {
+                try secrets.setSecret(value, kind, for: config.id)
+            }
+            try store.save(provider: config)
+            providers.append(config)
+        } catch {
+            report(error)
+        }
+    }
+
+    public func updateProvider(_ config: ProviderConfig) {
+        guard let index = providers.firstIndex(where: { $0.id == config.id }) else { return }
+        providers[index] = config
+        do {
+            try store.save(provider: config)
+        } catch {
+            report(error)
+        }
+    }
+
+    public func removeProvider(_ id: UUID) {
+        providers.removeAll { $0.id == id }
+        do {
+            try secrets.removeAll(for: id)
+            try store.deleteProvider(id: id)
+        } catch {
+            report(error)
+        }
+    }
+
+    public func provider(for conversation: Conversation) -> ProviderConfig? {
+        providers.first { $0.id == conversation.providerID }
+    }
+
+    func report(_ error: any Error) {
+        lastError = error.localizedDescription
+        log.log(.error, "\(type(of: error)): \(error.localizedDescription)")
+    }
+}
+
+extension AppModel {
+    /// Seeded, in-memory, for previews.
+    public static var preview: AppModel {
+        let model = AppModel(store: InMemoryStore(), secrets: InMemorySecrets(), log: NoopLogSink())
+        model.addProvider(
+            ProviderConfig(
+                name: "gglib on the Mac",
+                kind: .openAICompatible(baseURL: URL(string: "http://127.0.0.1:8080/v1")!),
+                defaultModel: "Qwen3.8-27B"),
+            credentials: [:])
+        model.addProvider(
+            ProviderConfig(name: "Home", kind: .pipe(ticketDigest: "0123456789abcdef")),
+            credentials: [.ticket: "pipeabcdefghijklmnop", .token: "preview"])
+        let conversation = model.newConversation()
+        var seeded = conversation
+        seeded.messages = [
+            Message(role: .user, content: "What does a ticket look like?", createdAt: seeded.createdAt),
+            Message(
+                role: .assistant,
+                content: "It starts with `pipe` and is followed by base32 with no padding.",
+                createdAt: seeded.createdAt),
+        ]
+        model.update(seeded)
+        return model
+    }
+}

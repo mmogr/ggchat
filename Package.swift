@@ -27,6 +27,10 @@ let package = Package(
             dependencies: ["GGChatCore"],
             resources: [.copy("Fixtures")]
         ),
+        .testTarget(
+            name: "GGChatUITests",
+            dependencies: ["GGChatUI", "GGChatCore"]
+        ),
     ],
     swiftLanguageModes: [.v6]
 )
