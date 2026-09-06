@@ -12,7 +12,8 @@ import XCTest
 /// already finished. This holds that window open on purpose.
 private final class GatedConnector: PipeConnector {
     private struct State {
-        var open = false
+        var arrivals = 0
+        var released = 0
         var sessions: [MockPipeSession] = []
     }
 
@@ -28,12 +29,26 @@ private final class GatedConnector: PipeConnector {
         state.withLock { $0.sessions }
     }
 
+    /// Lets every dial through: the ones waiting and the ones still to come.
     func open() {
-        state.withLock { $0.open = true }
+        state.withLock { $0.released = .max }
+    }
+
+    /// Lets the first `count` dials through in the order they went out, and
+    /// goes on holding the rest — which is how a superseded dial can be
+    /// watched all the way back while its successor is still in flight.
+    func release(_ count: Int) {
+        state.withLock { $0.released = max($0.released, count) }
     }
 
     func connect(ticket: String, token: String) async throws -> any PipeSession {
-        while !state.withLock({ $0.open }) { await Task.yield() }
+        // Taken before the first suspension, so a dial that has reached
+        // `idle` has already taken its place in the queue.
+        let mine = state.withLock { state -> Int in
+            state.arrivals += 1
+            return state.arrivals
+        }
+        while state.withLock({ $0.released < mine }) { await Task.yield() }
         let session = try await inner.connect(ticket: ticket, token: token)
         if let mock = session as? MockPipeSession { state.withLock { $0.sessions.append(mock) } }
         return session
@@ -164,13 +179,27 @@ final class AppModelDialTests: XCTestCase {
     /// What the status pill is gated on. A dial in flight is the one state
     /// where a second dial is not a way back; a "Direct" that has gone stale
     /// is exactly when one is.
+    ///
+    /// A superseded dial coming back is not the end of a dial in flight: the
+    /// in-flight flag it would clear is the one its successor is relying on,
+    /// and clearing it offers the pill in the single state that has to
+    /// withhold it — and lets a third dial start while the second is still
+    /// out.
     @MainActor
     func testOnlyADialInFlightWithholdsTheWayBack() async throws {
         let fixture = try makeFixture()
-        let inFlight = await fixture.dial()
+        let superseded = await fixture.dial()
         XCTAssertFalse(
             fixture.model.canReconnect(fixture.config.id),
             "a dial is already out; asking for a second one is not a way back")
+
+        await fixture.model.disconnectPipe(for: fixture.config.id)
+        let inFlight = await fixture.dial()
+        fixture.gate.release(1)
+        await superseded.value
+        XCTAssertFalse(
+            fixture.model.canReconnect(fixture.config.id),
+            "the superseded dial cleared the in-flight flag its successor was relying on")
 
         fixture.gate.open()
         await inFlight.value
