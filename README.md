@@ -148,6 +148,11 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundHangsUpEveryPipeAndComingBackDialsAgain -->
   <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundKeepsThePartialReplyInsteadOfLosingIt -->
   <!-- test: AppModelLifecycleTests.testComingBackDoesNotDialAPipeTheAppNeverOpened -->
+- Removing a provider deletes its durable record before its credentials, so
+  a delete that fails leaves the provider whole rather than resurrecting one
+  on the next launch that can never connect.
+  <!-- test: AppModelProviderTests.testAProviderWhoseRecordWillNotDeleteKeepsItsCredentials -->
+  <!-- test: AppModelProviderTests.testRemovingAProviderTakesItsRecordAndItsCredentialsTogether -->
 - The Diagnostics readings survive a relaunch, and only a transport error
   within five seconds of a resume counts against ADR 0001.
   <!-- test: DiagnosticsTests.testReadingsPersistWithTheirDenominators -->
