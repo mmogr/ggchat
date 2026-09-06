@@ -25,7 +25,7 @@ go stale. The first is a real reply from gglib.
 
 ## Status
 
-v0.1 is in progress. What exists today is the core package (the provider
+v0.1.0 is released. What exists today is the core package (the provider
 protocol, the OpenAI-compatible implementation, the SSE parser, ticket
 shape validation, the pipe seam with its mock) and the app shell: a
 sidebar of conversations persisted with SwiftData, a providers sheet that

@@ -39,10 +39,20 @@ jobs:
           passed = total - failed
           json.dump({"schemaVersion": 1, "label": "tests", "message": f"{passed}/{total} passing",
                      "color": "brightgreen" if failed == 0 else "red"}, open("badges-out/tests.json", "w"))
+          # A TOTAL row reads "-" rather than a percentage when the run produced
+          # no coverage data, and float("-") raised, which killed the whole step
+          # — including the tests badge computed above, and the deploy that
+          # creates the `badges` branch the README's images point at. So this
+          # job had never once succeeded and both badges 404'd. Match a number
+          # or record nothing; "n/a" was always the intended answer here.
           pct = None
-          for line in open("results/coverage-summary.txt"):
-              if line.startswith("TOTAL"):
-                  pct = float(line.split()[-1].rstrip("%"))
+          try:
+              for line in open("results/coverage-summary.txt"):
+                  if line.startswith("TOTAL"):
+                      found = re.findall(r"(\d+(?:\.\d+)?)%", line)
+                      pct = float(found[-1]) if found else None
+          except OSError:
+              pass
           color = "brightgreen" if (pct or 0) >= 80 else "yellow" if (pct or 0) >= 60 else "orange"
           json.dump({"schemaVersion": 1, "label": "coverage",
                      "message": f"{pct:.0f}%" if pct is not None else "n/a", "color": color},
