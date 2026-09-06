@@ -95,9 +95,12 @@ Each claim names the test that keeps it true.
   `GlassEffectContainer`; `scripts/check_glass_sites.sh` counts them, and
   `scripts/check_no_hand_drawn_glass.sh` refuses any material or
   translucent fill elsewhere, so Reduce Transparency and Increase Contrast
-  are the system's to honour. Symbol effects and the streaming animation
-  switch off under Reduce Motion, and the pills stack at accessibility
-  type sizes.
+  are the system's to honour — and the test measures the glass going flat
+  rather than trusting the setting, because the launch arguments that look
+  like it are accepted and change nothing. Symbol effects and the streaming
+  animation switch off under Reduce Motion, and the pills stack at
+  accessibility type sizes.
+  <!-- test: ReduceTransparencyUITests.testGlassGoesFlatWhenTransparencyIsReduced -->
 - With `GGCHAT_LIVE_BASE_URL` set, the app model adds that server by URL,
   lists its models, streams a complete reply and probes the status endpoint.
   <!-- test: LiveAppModelTests.testAddByURLListModelsStreamAndProbeStatus -->
@@ -181,6 +184,13 @@ runs against the DEBUG mock provider, and also against a server on
 `127.0.0.1:8080` when one is listening. The builds are signed ad-hoc,
 because an unsigned iOS app has no Keychain access and this app keeps
 every credential there.
+
+`make uitest-dark` and `make uitest-contrast` run the same walk with the
+device set to dark mode and to Increase Contrast. Both are settings on the
+simulator rather than launch arguments, so each target sets one, checks
+`simctl` reads it back, and restores it afterwards even if the walk fails.
+Reduce Transparency has no `simctl` option and no working launch argument,
+so its test sets it through Settings and measures the result instead.
 
 ## Layout
 
