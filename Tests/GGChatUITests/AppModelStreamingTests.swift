@@ -129,9 +129,11 @@ final class AddProviderFailureTests: XCTestCase {
         let secrets = FailingSecrets(failOn: .token)
         let model = AppModel(store: InMemoryStore(), secrets: secrets, log: NoopLogSink())
         let config = ProviderConfig(name: "home", kind: .pipe(ticketDigest: "abc"))
+        // modelpipe's normative vector 1, the shortest string that is a ticket.
+        let ticket = "pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na"
 
         XCTAssertThrowsError(
-            try model.addProvider(config, credentials: [.ticket: "pipeabcdefghijklmnop", .token: "t"])
+            try model.addProvider(config, credentials: [.ticket: ticket, .token: "t"])
         ) { error in
             XCTAssertEqual((error as? KeychainError)?.kind, .token)
         }

@@ -57,15 +57,23 @@ Each claim names the test that keeps it true.
   <!-- test: WireTests.testFirstChunkHasNoChoicesKeyAndStillDecodes -->
   <!-- test: WireTests.testReasoningArrivesAsReasoningContent -->
   <!-- test: WireTests.testUsageChunkHasEmptyChoicesAndCachedTokens -->
-- A server's error sentence is shown verbatim, and every documented
-  modelpipe and gglib code says which machine to look at.
+- A server's error sentence is shown verbatim, and every code modelpipe and
+  gglib write says either which machine to look at or that the answer is to
+  wait. The side named is the side that wrote the refusal, which is not
+  always the side you are sitting at. The codes are an enum, so the mapping
+  is exhaustive by the compiler rather than by a list someone remembers to
+  extend.
   <!-- test: ErrorTests.testServerMessageIsRenderedVerbatim -->
   <!-- test: ErrorTests.testEveryDocumentedCodeNamesWhereToLook -->
+  <!-- test: ErrorTests.testTheSideNamedIsTheSideThatWroteTheRefusal -->
+  <!-- test: ErrorTests.testAMachineThatIsMerelyBusySaysToWaitRatherThanNamingASide -->
 - A ticket's shape is validated without decoding it: `pipe` prefix in any
-  ASCII case, base32 body, no padding, at most 1643 characters, and
-  non-ASCII is rejected before any case folding. A real ticket from
+  ASCII case, base32 body, no padding, between 67 and 1643 characters, and
+  non-ASCII is rejected before any case folding. 67 is modelpipe's minimal
+  ticket — one endpoint id and nothing else — and a real ticket from
   `modelpipe serve` is 81 characters and is accepted in either case.
   <!-- test: TicketTests.testTheShapeARealTicketHas -->
+  <!-- test: TicketTests.testATicketTooShortToCarryAnEndpointIdIsRefused -->
   <!-- test: TicketTests.testLongestPossibleTicketIsAcceptedAndOneMoreIsNot -->
   <!-- test: TicketTests.testNonASCIIIsRejectedBeforeCaseFolding -->
 - The mock pipe walks idle → relayed → direct, can be forced closed, and a

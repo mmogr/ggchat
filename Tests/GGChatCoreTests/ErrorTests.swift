@@ -3,24 +3,53 @@ import XCTest
 @testable import GGChatCore
 
 final class ErrorTests: XCTestCase {
+    /// The whole vocabulary, not a list maintained beside it. The list this
+    /// replaces named ten codes while the switch handled eleven, so
+    /// `invalid_request` was mapped and never checked, and the thirteen
+    /// gglib codes nobody had mapped could not show up in it at all.
+    /// Walking `allCases` means a code brings its own test with it, and the
+    /// exhaustive switch behind `whereToLook` means it cannot be added
+    /// without an answer.
     func testEveryDocumentedCodeNamesWhereToLook() {
-        let expectations: [(String, WhereToLook)] = [
-            ("invalid_api_key", .servingSide),
-            ("backend_unreachable", .servingSide),
-            ("tunnel_unavailable", .connectingSide),
-            ("bad_gateway", .connectingSide),
-            ("bad_request", .request),
-            ("incomplete_request", .request),
-            ("loop_detected", .request),
-            ("stagnation_detected", .request),
-            ("profile_not_found", .request),
-            ("model_not_found", .request),
-        ]
-        for (code, expected) in expectations {
-            XCTAssertEqual(ProviderError.whereToLook(forCode: code), expected, code)
+        XCTAssertFalse(ProviderError.Code.allCases.isEmpty)
+        for code in ProviderError.Code.allCases {
+            XCTAssertNotEqual(
+                ProviderError.whereToLook(forCode: code.rawValue), .unknown,
+                "\(code.rawValue) is in the vocabulary and still says nothing")
+            XCTAssertNotNil(code.whereToLook.hint, "\(code.rawValue) has no second line to show")
         }
         XCTAssertEqual(ProviderError.whereToLook(forCode: "something_new"), .unknown)
         XCTAssertEqual(ProviderError.whereToLook(forCode: nil), .unknown)
+    }
+
+    /// The side named is the side that *wrote* the refusal. modelpipe writes
+    /// `bad_gateway` on the serving side, about a backend it reached and
+    /// could not read, and can only write `incomplete_request` after the head
+    /// has already gone upstream — which makes it "your upload stopped", not
+    /// "your JSON is wrong". Both used to point at the other machine.
+    func testTheSideNamedIsTheSideThatWroteTheRefusal() {
+        let expectations: [(ProviderError.Code, WhereToLook)] = [
+            (.badGateway, .servingSide),
+            (.incompleteRequest, .connectingSide),
+            (.invalidAPIKey, .servingSide),
+            (.backendUnreachable, .servingSide),
+            (.tunnelUnavailable, .connectingSide),
+            (.badRequest, .request),
+        ]
+        for (code, expected) in expectations {
+            XCTAssertEqual(code.whereToLook, expected, code.rawValue)
+        }
+    }
+
+    /// A model still loading and a queue that never reached the request are
+    /// not a machine to go and look at. Sending someone to inspect a machine
+    /// that is doing its job is worse than saying nothing.
+    func testAMachineThatIsMerelyBusySaysToWaitRatherThanNamingASide() {
+        for code in [ProviderError.Code.modelLoading, .admissionTimeout, .upstreamTimeout] {
+            XCTAssertEqual(code.whereToLook, .waitAndRetry, code.rawValue)
+        }
+        let loading = ProviderError.server(status: 503, code: "model_loading", message: "Model is loading, retry")
+        XCTAssertEqual(loading.whereToLook, .waitAndRetry)
     }
 
     func testServerMessageIsRenderedVerbatim() {
