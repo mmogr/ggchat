@@ -5,19 +5,53 @@
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": true,
   "changelog-sections": [
-    { "type": "feat", "section": "What the app now does" },
-    { "type": "fix", "section": "What the app stopped getting wrong" },
-    { "type": "perf", "section": "What got faster" },
-    { "type": "style", "section": "How it looks" },
-    { "type": "docs", "section": "Documentation" },
-    { "type": "refactor", "section": "Internal", "hidden": true },
-    { "type": "test", "section": "Internal", "hidden": true },
-    { "type": "ci", "section": "Internal", "hidden": true },
-    { "type": "chore", "section": "Internal", "hidden": true }
+    {
+      "type": "feat",
+      "section": "What the app now does"
+    },
+    {
+      "type": "fix",
+      "section": "What the app stopped getting wrong"
+    },
+    {
+      "type": "perf",
+      "section": "What got faster"
+    },
+    {
+      "type": "style",
+      "section": "How it looks"
+    },
+    {
+      "type": "docs",
+      "section": "Documentation"
+    },
+    {
+      "type": "refactor",
+      "section": "Internal",
+      "hidden": true
+    },
+    {
+      "type": "test",
+      "section": "Internal",
+      "hidden": true
+    },
+    {
+      "type": "ci",
+      "section": "Internal",
+      "hidden": true
+    },
+    {
+      "type": "chore",
+      "section": "Internal",
+      "hidden": true
+    }
   ],
   "packages": {
     ".": {
-      "extra-files": ["Config/Version.xcconfig"]
+      "extra-files": [
+        "Config/Version.xcconfig"
+      ],
+      "initial-version": "0.1.0"
     }
   }
 }
