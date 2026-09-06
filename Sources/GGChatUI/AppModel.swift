@@ -156,12 +156,30 @@ public final class AppModel {
         }
     }
 
+    /// Forgets a provider: the durable record first, then its credentials.
+    ///
+    /// The order is the whole of it. Both calls throw, and only one of the
+    /// two leftovers is harmless. A row that outlives its credentials is
+    /// resurrected by the next ``load()`` as a provider that can never
+    /// connect and whose only remaining move is to be deleted again; a
+    /// credential that outlives its row is unreachable, because its key is a
+    /// provider id nothing holds any more.
+    ///
+    /// So the record goes first, and if that will not go, nothing else is
+    /// touched and the provider goes back where it was taken from.
     public func removeProvider(_ id: UUID) {
-        providers.removeAll { $0.id == id }
+        guard let index = providers.firstIndex(where: { $0.id == id }) else { return }
+        let removed = providers.remove(at: index)
+        do {
+            try store.deleteProvider(id: id)
+        } catch {
+            providers.insert(removed, at: index)
+            report(error)
+            return
+        }
         Task { await disconnectPipe(for: id) }
         do {
             try secrets.removeAll(for: id)
-            try store.deleteProvider(id: id)
         } catch {
             report(error)
         }
