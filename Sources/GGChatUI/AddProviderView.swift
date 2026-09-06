@@ -3,6 +3,11 @@ import SwiftUI
 
 /// URL and key, or ticket and token. The ticket's shape is checked as it is
 /// typed and the reason it fails is shown as a sentence.
+///
+/// The key and token are `SecureField`s, which is what they are. iOS may
+/// offer to save them to the password manager afterwards; there is no
+/// content type that means "secret, never offer to save", and the
+/// alternatives all show the secret in the clear.
 struct AddProviderView: View {
     enum Kind: String, CaseIterable, Identifiable {
         case server = "Server"
@@ -18,6 +23,7 @@ struct AddProviderView: View {
     @State private var apiKey = ""
     @State private var ticket = ""
     @State private var token = ""
+    @State private var failure: String?
     #if os(iOS)
         @State private var scanning = false
     #endif
@@ -76,6 +82,15 @@ struct AddProviderView: View {
                     } footer: {
                         ticketFooter
                     }
+                }
+            }
+            .safeAreaInset(edge: .bottom) {
+                if let failure {
+                    Label(failure, systemImage: "exclamationmark.triangle")
+                        .font(.callout)
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
                 }
             }
             .formStyle(.grouped)
@@ -139,22 +154,30 @@ struct AddProviderView: View {
         }
     }
 
+    /// Adds, and only dismisses if that worked. A sheet that closes on a
+    /// failure takes the reason with it.
     private func add() {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
-        switch kind {
-        case .server:
-            guard let url = normalizedURL else { return }
-            let config = ProviderConfig(
-                name: trimmedName.isEmpty ? (url.host() ?? "Server") : trimmedName,
-                kind: .openAICompatible(baseURL: url))
-            model.addProvider(config, credentials: [.apiKey: apiKey])
-        case .pipe:
-            let cleaned = Ticket.normalized(ticket.trimmingCharacters(in: .whitespacesAndNewlines))
-            let config = ProviderConfig(
-                name: trimmedName.isEmpty ? "Pipe" : trimmedName,
-                kind: .pipe(ticketDigest: Ticket.digest(cleaned)))
-            model.addProvider(config, credentials: [.ticket: cleaned, .token: token])
-            Task { await model.connectPipe(for: config) }
+        failure = nil
+        do {
+            switch kind {
+            case .server:
+                guard let url = normalizedURL else { return }
+                let config = ProviderConfig(
+                    name: trimmedName.isEmpty ? (url.host() ?? "Server") : trimmedName,
+                    kind: .openAICompatible(baseURL: url))
+                try model.addProvider(config, credentials: [.apiKey: apiKey])
+            case .pipe:
+                let cleaned = Ticket.normalized(ticket.trimmingCharacters(in: .whitespacesAndNewlines))
+                let config = ProviderConfig(
+                    name: trimmedName.isEmpty ? "Pipe" : trimmedName,
+                    kind: .pipe(ticketDigest: Ticket.digest(cleaned)))
+                try model.addProvider(config, credentials: [.ticket: cleaned, .token: token])
+                Task { await model.connectPipe(for: config) }
+            }
+        } catch {
+            failure = error.localizedDescription
+            return
         }
         dismiss()
     }

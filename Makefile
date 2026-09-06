@@ -46,7 +46,8 @@ test-live:
 uitest:
 	xcodebuild test -project App/ggchat.xcodeproj -scheme ggchat \
 		-destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-		-only-testing:ggchatUITests CODE_SIGNING_ALLOWED=NO -quiet
+		-only-testing:ggchatUITests \
+		CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
 
 unused:
 	periphery scan --quiet --strict

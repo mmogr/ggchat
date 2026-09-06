@@ -101,6 +101,16 @@ Each claim names the test that keeps it true.
   is listening, and skips when none is.
   <!-- test: FirstRunUITests.testFirstRunWithTheMockProvider -->
   <!-- test: FirstRunUITests.testFirstRunAgainstAServerOnThisMachine -->
+- A credential that will not save takes the provider with it, rather than
+  leaving one that fails later, and the reason names the credential.
+  <!-- test: AddProviderFailureTests.testACredentialThatWillNotSaveLeavesNoHalfAddedProvider -->
+  <!-- test: AddProviderFailureTests.testTheKeychainErrorSaysWhichCredentialAndWhy -->
+- The screens the first-run walk never reaches are visited and photographed
+  too: the provider form and what it says about a bad address or ticket, a
+  pipe connecting and its status pill, the providers list, and the
+  diagnostics readings.
+  <!-- test: ScreenGalleryUITests.testAPipeConnectsAndTheStatusPillWalks -->
+  <!-- test: ScreenGalleryUITests.testTheProviderFormExplainsABadTicket -->
 - Reopening the app returns you to the conversation you left.
   <!-- test: SwiftDataStoreTests.testAppModelKeepsSelectionAndPersistsThroughTheStore -->
 - A block quote's `>` marker and a list item's indentation stay out of the
@@ -136,9 +146,12 @@ xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat -destination 'plat
 xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat -destination 'generic/platform=iOS Simulator'
 ```
 
-`make uitest` drives the first-run flow through the real app on a booted
-iPhone simulator. It always runs against the DEBUG mock provider, and also
-against a server on `127.0.0.1:8080` when one is listening.
+`make uitest` drives the app on a booted iPhone simulator: the first-run
+flow, and a walk through the screens that flow never reaches. It always
+runs against the DEBUG mock provider, and also against a server on
+`127.0.0.1:8080` when one is listening. The builds are signed ad-hoc,
+because an unsigned iOS app has no Keychain access and this app keeps
+every credential there.
 
 ## Layout
 

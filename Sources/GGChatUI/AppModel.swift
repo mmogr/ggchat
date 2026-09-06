@@ -116,16 +116,27 @@ public final class AppModel {
 
     // MARK: - Providers
 
-    public func addProvider(_ config: ProviderConfig, credentials: [SecretKind: String]) {
+    /// Throws rather than reporting, because the form that calls this is a
+    /// sheet: an alert raised behind a dismissing sheet is never seen, so the
+    /// caller keeps the sheet open and shows the reason in place.
+    public func addProvider(_ config: ProviderConfig, credentials: [SecretKind: String]) throws {
+        var written: [SecretKind] = []
         do {
             for (kind, value) in credentials where !value.isEmpty {
                 try secrets.setSecret(value, kind, for: config.id)
+                written.append(kind)
             }
             try store.save(provider: config)
-            providers.append(config)
         } catch {
-            report(error)
+            // Leave nothing half-added: a provider whose token did not save
+            // would fail later, further from the cause.
+            for kind in written {
+                try? secrets.setSecret(nil, kind, for: config.id)
+            }
+            log.log(.error, "could not add \(config.name): \(error.localizedDescription)")
+            throw error
         }
+        providers.append(config)
     }
 
     public func updateProvider(_ config: ProviderConfig) {
@@ -165,10 +176,10 @@ extension AppModel {
         let model = AppModel(
             store: InMemoryStore(), secrets: InMemorySecrets(), log: NoopLogSink(),
             pipeConnector: MockPipeConnector(), diagnostics: Diagnostics(defaults: UserDefaults(suiteName: "preview")!))
-        model.addProvider(
+        try? model.addProvider(
             ProviderConfig(name: "Mock", kind: .openAICompatible(baseURL: mockBaseURL), defaultModel: "mock-27b"),
             credentials: [:])
-        model.addProvider(
+        try? model.addProvider(
             ProviderConfig(name: "Home", kind: .pipe(ticketDigest: "0123456789abcdef")),
             credentials: [.ticket: "pipeabcdefghijklmnop", .token: "preview"])
         let conversation = model.newConversation()

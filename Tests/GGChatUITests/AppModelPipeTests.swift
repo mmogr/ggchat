@@ -7,7 +7,11 @@ final class AppModelPipeTests: XCTestCase {
     private let ticket = "pipeabcdefghijklmnop"
 
     @MainActor
-    private func makeModel(script: MockProvider.Script = .init(text: "over the pipe")) -> (AppModel, ProviderConfig) {
+    private func makeModel(
+        script: MockProvider.Script = .init(text: "over the pipe")
+    ) throws
+        -> (AppModel, ProviderConfig)
+    {
         let registry = LoopbackProviderRegistry()
         let connector = MockPipeConnector(
             sleeper: ImmediateSleeper(), provider: MockProvider(scripts: [script]), registry: registry)
@@ -18,7 +22,7 @@ final class AppModelPipeTests: XCTestCase {
             now: { Date(timeIntervalSince1970: 1_700_000_000) })
         let config = ProviderConfig(
             name: "home", kind: .pipe(ticketDigest: Ticket.digest(ticket)), defaultModel: "mock-27b")
-        model.addProvider(config, credentials: [.ticket: ticket, .token: "secret-token"])
+        try model.addProvider(config, credentials: [.ticket: ticket, .token: "secret-token"])
         return (model, config)
     }
 
@@ -31,7 +35,7 @@ final class AppModelPipeTests: XCTestCase {
 
     @MainActor
     func testConnectWalksToDirectAndStreamsThroughTheSessionURL() async throws {
-        let (model, config) = makeModel()
+        let (model, config) = try makeModel()
         XCTAssertNil(model.pipeStatus(for: config.id))
         await model.connectPipe(for: config)
         let session = try XCTUnwrap(model.pipeSession(for: config.id))
@@ -50,7 +54,7 @@ final class AppModelPipeTests: XCTestCase {
 
     @MainActor
     func testForceClosedIsCountedAndReconnectDialsAgain() async throws {
-        let (model, config) = makeModel()
+        let (model, config) = try makeModel()
         await model.connectPipe(for: config)
         await waitForStatus(.direct, model, config.id)
         let mock = try XCTUnwrap(model.pipeSession(for: config.id) as? MockPipeSession)
@@ -67,10 +71,10 @@ final class AppModelPipeTests: XCTestCase {
     }
 
     @MainActor
-    func testConnectWithoutSecretsRefusesWithASentence() async {
-        let (model, _) = makeModel()
+    func testConnectWithoutSecretsRefusesWithASentence() async throws {
+        let (model, _) = try makeModel()
         let orphan = ProviderConfig(name: "orphan", kind: .pipe(ticketDigest: "x"))
-        model.addProvider(orphan, credentials: [:])
+        try model.addProvider(orphan, credentials: [:])
         await model.connectPipe(for: orphan)
         XCTAssertNil(model.pipeSession(for: orphan.id))
         XCTAssertEqual(model.lastError, "The ticket or token for orphan is missing from the Keychain.")
@@ -78,7 +82,7 @@ final class AppModelPipeTests: XCTestCase {
 
     @MainActor
     func testRemovingAProviderShutsItsPipeDown() async throws {
-        let (model, config) = makeModel()
+        let (model, config) = try makeModel()
         await model.connectPipe(for: config)
         let session = try XCTUnwrap(model.pipeSession(for: config.id))
         model.removeProvider(config.id)

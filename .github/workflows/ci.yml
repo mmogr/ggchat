@@ -79,13 +79,17 @@ jobs:
         if: hashFiles('App/ggchat.xcodeproj/project.pbxproj') != ''
         run: |
           set -o pipefail
+          # Ad-hoc signing, not none: an unsigned iOS app has no Keychain
+          # access, and the app keeps every credential there.
           # Warnings-as-errors is set on the app target in App/project.yml, not
           # here: on the command line it would also apply to the package
           # dependencies, and swift-markdown compiles with warnings suppressed.
           xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat \
-            -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO -quiet
+            -destination 'platform=macOS' \
+            CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
           xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat \
-            -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO -quiet
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
 
   test:
     name: Test
@@ -141,7 +145,8 @@ jobs:
           xcodebuild test -project App/ggchat.xcodeproj -scheme ggchat \
             -destination "id=${{ steps.sim.outputs.udid }}" \
             -resultBundlePath uitest.xcresult \
-            -only-testing:ggchatUITests CODE_SIGNING_ALLOWED=NO -quiet
+            -only-testing:ggchatUITests \
+            CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
       - name: Say which tests ran, so a skip cannot pass for a pass
         if: always()
         run: |

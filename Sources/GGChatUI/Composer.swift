@@ -199,6 +199,9 @@ struct Composer: View {
                 .padding(.vertical, 7)
         }
         .buttonStyle(.plain)
+        // Only the closed pill is a button. Disabling the others would grey
+        // them, and "Direct" is the state you want, not an inactive control.
+        .foregroundStyle(status == .closed ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
         .disabled(status != .closed)
         .glassEffect(.regular.interactive(status == .closed), in: .capsule)
         .glassEffectID("status", in: glass)

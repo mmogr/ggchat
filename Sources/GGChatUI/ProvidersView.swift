@@ -34,7 +34,7 @@ struct ProvidersView: View {
                 #if DEBUG
                     ToolbarItem(placement: .automatic) {
                         Button("Add mock provider", systemImage: "wand.and.sparkles") {
-                            model.addProvider(
+                            try? model.addProvider(
                                 ProviderConfig(
                                     name: "Mock", kind: .openAICompatible(baseURL: AppModel.mockBaseURL),
                                     defaultModel: "mock-27b"),
