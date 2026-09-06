@@ -37,13 +37,15 @@ against gglib, a server status pane shows slots, context in use and recent
 requests, and it is hidden for servers that do not answer that endpoint.
 The app has been run: the screens below are photographs of it, not
 mock-ups. A pipe provider is added by pasting a ticket and token, or on iOS by
-scanning a QR code; connecting goes through `PipeConnector`, whose only
-implementation today is a mock that walks idle → relayed → direct. The
-status pill follows it and becomes a reconnect button when the pipe
-closes. Settings shows the readings the ADRs name, each with its
-denominator. In DEBUG builds a mock provider streams canned replies
-without a server. The pipe path is a mock until `modelpipe-ffi` exists;
-nothing here links Rust or iroh.
+scanning a QR code; connecting goes through `PipeConnector`, which has two
+implementations today: a mock that walks idle → relayed → direct, and one
+that refuses. The status pill follows the mock and becomes a reconnect
+button when the pipe closes. Settings shows the readings the ADRs name,
+each with its denominator. In DEBUG builds a mock provider streams canned
+replies without a server. The pipe path is a mock until `modelpipe-ffi`
+exists, and that mock is DEBUG-only: a released build refuses to dial and
+says so, rather than answering a real ticket with a reply no machine
+wrote. Nothing here links Rust or iroh.
 
 ## What is true today
 
@@ -71,6 +73,11 @@ Each claim names the test that keeps it true.
 - The mock pipe walks idle → relayed → direct, can be forced closed, and a
   late subscriber gets the current status first.
   <!-- test: MockPipeTests.testStatusWalksIdleRelayedDirectThenClosedOnDemand -->
+- The mock is DEBUG-only. A build without one refuses a perfectly good
+  ticket with a sentence about the build, instead of mocking a pipe that
+  is not there.
+  <!-- test: UnavailablePipeTests.testABuildWithNoPipeRefusesAGoodTicketInsteadOfMockingOne -->
+  <!-- test: UnavailablePipeTests.testTheRefusalIsASentenceThatBlamesTheBuildAndNotTheUser -->
 - A bearer token is sent on every request and never reaches a log line.
   <!-- test: OpenAICompatibleProviderTests.testNoCredentialEverReachesALogLine -->
 - gglib's proxy status endpoint decodes when it answers and is `nil` on 404.
