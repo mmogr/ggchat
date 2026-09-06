@@ -137,11 +137,13 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelPipeTests.testConnectWalksToDirectAndStreamsThroughTheSessionURL -->
   <!-- test: AppModelPipeTests.testForceClosedIsCountedAndReconnectDialsAgain -->
 - A dial that lands after its provider was hung up or deleted closes itself
-  instead of installing a pipe nothing on screen can reach any more, and two
-  dials in flight at once leave one connection rather than two.
+  instead of installing a pipe nothing on screen can reach any more, two
+  dials in flight at once leave one connection rather than two, and a
+  provider that has left the list is not dialled at all.
   <!-- test: AppModelDialTests.testADialThatLandsAfterADisconnectHangsUpInsteadOfInstallingItself -->
   <!-- test: AppModelDialTests.testRemovingAProviderMidDialLeavesNoConnectionBehind -->
   <!-- test: AppModelDialTests.testTwoOverlappingDialsLeaveExactlyOneConnection -->
+  <!-- test: AppModelDialTests.testAProviderThatIsNoLongerOnTheListIsNotDialled -->
 - Going to the background hangs up every pipe and writes the reply that was
   in flight into the conversation as a partial rather than losing it; coming
   back dials again, and only the pipes the app already had.

@@ -143,6 +143,24 @@ final class AppModelDialTests: XCTestCase {
             "the superseded dial's session was left bound alongside the installed one")
     }
 
+    /// A `ProviderConfig` is a value, and callers carry one across
+    /// suspensions — the resume walks a whole list of them. One deleted in
+    /// between has no pipe to dial, and complaining that its credentials are
+    /// missing is worse than silence: they are missing because it was
+    /// deleted, and the user is looking at a list it is no longer on.
+    @MainActor
+    func testAProviderThatIsNoLongerOnTheListIsNotDialled() async throws {
+        let fixture = try makeFixture()
+        fixture.gate.open()
+        fixture.model.removeProvider(fixture.config.id)
+
+        await fixture.model.connectPipe(for: fixture.config)
+
+        XCTAssertNil(fixture.model.pipeSession(for: fixture.config.id))
+        XCTAssertTrue(fixture.gate.sessions.isEmpty, "a deleted provider was dialled anyway")
+        XCTAssertNil(fixture.model.lastError, "a deleted provider was reported as missing its credentials")
+    }
+
     /// What the status pill is gated on. A dial in flight is the one state
     /// where a second dial is not a way back; a "Direct" that has gone stale
     /// is exactly when one is.
