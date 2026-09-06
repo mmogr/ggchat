@@ -142,6 +142,12 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelDialTests.testADialThatLandsAfterADisconnectHangsUpInsteadOfInstallingItself -->
   <!-- test: AppModelDialTests.testRemovingAProviderMidDialLeavesNoConnectionBehind -->
   <!-- test: AppModelDialTests.testTwoOverlappingDialsLeaveExactlyOneConnection -->
+- Going to the background hangs up every pipe and writes the reply that was
+  in flight into the conversation as a partial rather than losing it; coming
+  back dials again, and only the pipes the app already had.
+  <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundHangsUpEveryPipeAndComingBackDialsAgain -->
+  <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundKeepsThePartialReplyInsteadOfLosingIt -->
+  <!-- test: AppModelLifecycleTests.testComingBackDoesNotDialAPipeTheAppNeverOpened -->
 - The Diagnostics readings survive a relaunch, and only a transport error
   within five seconds of a resume counts against ADR 0001.
   <!-- test: DiagnosticsTests.testReadingsPersistWithTheirDenominators -->

@@ -73,7 +73,10 @@ extension AppModel {
             }
         } catch {
             guard dialGeneration[config.id] == generation else { return }
-            pipeStatuses[config.id] = nil
+            // Closed rather than absent. A provider with no status has no
+            // pill at all, and the pill is the only way back: a dial that
+            // failed is exactly when one is wanted.
+            pipeStatuses[config.id] = .closed
             report(error)
         }
     }
@@ -134,8 +137,49 @@ extension AppModel {
         return registry.makeProvider(baseURL: session.baseURL, apiKey: token, log: log)
     }
 
-    /// ADR 0001's reading: the app came back to the foreground.
-    public func didBecomeActive() {
+    /// ADR 0001's reading, and the way back in: the app came to the
+    /// foreground.
+    ///
+    /// Every pipe this app has dialled before and is not holding now is
+    /// dialled again here. Nothing survives a background — see
+    /// ``didEnterBackground()`` — and the composer's `task` does not run a
+    /// second time for a conversation that was already on screen, so without
+    /// this the app comes back to a pipe that is gone and never notices.
+    public func didBecomeActive() async {
         diagnostics.recordResume(at: now())
+        for config in providers
+        where config.isPipe && pipeSessions[config.id] == nil && pipeStatuses[config.id] != nil {
+            await connectPipe(for: config)
+        }
+    }
+
+    /// The app is going away: the reply in flight is put down and every pipe
+    /// is hung up.
+    ///
+    /// There is no brief-background regime worth holding a pipe open for.
+    /// iroh gives a path fifteen seconds of idle before it is gone and
+    /// clamps any longer per-path timeout, and iOS reclaims a suspended
+    /// process's sockets without telling it — TN2277 says to close listening
+    /// sockets on the way out for exactly this reason. Holding one buys a
+    /// few seconds and pays with a pill reading "Direct" over a socket the
+    /// system already took back. So the choice is binary, and this is the
+    /// half of it that costs a reconnect instead of a lie.
+    ///
+    /// The reply is cancelled and waited for first, so its partial text
+    /// reaches the conversation while there is still a runtime to write it:
+    /// a process killed for memory while streaming otherwise leaves the
+    /// user's question with no answer under it and no error either.
+    public func didEnterBackground() async {
+        if let inFlight = streamTask {
+            inFlight.cancel()
+            await inFlight.value
+        }
+        for config in providers where config.isPipe && pipeStatuses[config.id] != nil {
+            await disconnectPipe(for: config.id)
+            // Closed rather than absent, for ``connectPipe(for:)``'s reason:
+            // a provider with no status has no pill, and this is precisely
+            // the state a way back has to be offered from.
+            pipeStatuses[config.id] = .closed
+        }
     }
 }
