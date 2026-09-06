@@ -50,7 +50,9 @@ Each claim names the test that keeps it true.
   <!-- test: ErrorTests.testEveryDocumentedCodeNamesWhereToLook -->
 - A ticket's shape is validated without decoding it: `pipe` prefix in any
   ASCII case, base32 body, no padding, at most 1643 characters, and
-  non-ASCII is rejected before any case folding.
+  non-ASCII is rejected before any case folding. A real ticket from
+  `modelpipe serve` is 81 characters and is accepted in either case.
+  <!-- test: TicketTests.testTheShapeARealTicketHas -->
   <!-- test: TicketTests.testLongestPossibleTicketIsAcceptedAndOneMoreIsNot -->
   <!-- test: TicketTests.testNonASCIIIsRejectedBeforeCaseFolding -->
 - The mock pipe walks idle → relayed → direct, can be forced closed, and a
@@ -131,6 +133,9 @@ lists models and streams one short reply:
 ```sh
 GGCHAT_LIVE_BASE_URL=http://127.0.0.1:8080/v1 make test-live
 ```
+
+Set `GGCHAT_LIVE_API_KEY` as well to point it at a server that wants a
+bearer token, which is how it runs against a modelpipe pipe.
 
 `make ci` runs what CI runs: `make fmt-check`, `make lint`,
 `make boundaries`, `make enforce`, `make build`, `make test`,

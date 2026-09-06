@@ -23,6 +23,18 @@ final class TicketTests: XCTestCase {
         XCTAssertEqual(check(longest + "a"), .tooLong(count: 1644))
     }
 
+    /// The shape a real `modelpipe serve` prints: 81 characters, a 77-character
+    /// body, which is 5 mod 8. Checked against a live ticket on 6 Sep 2026.
+    func testTheShapeARealTicketHas() {
+        let body = String(repeating: "abcdefgh", count: 9) + "abcde"
+        XCTAssertEqual(body.count, 77)
+        let ticket = "pipe" + body
+        XCTAssertEqual(ticket.count, 81)
+        XCTAssertNil(check(ticket))
+        XCTAssertNil(check(ticket.uppercased()), "a QR scan gives it in uppercase")
+        XCTAssertEqual(Ticket.normalized(ticket.uppercased()), ticket)
+    }
+
     func testNonASCIIIsRejectedBeforeCaseFolding() {
         XCTAssertEqual(check("pipé" + body16), .nonASCII)
         XCTAssertEqual(check("pipe" + body16 + "ß"), .nonASCII)

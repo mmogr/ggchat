@@ -13,7 +13,8 @@ final class LiveAppModelTests: XCTestCase {
         else { throw XCTSkip("GGCHAT_LIVE_BASE_URL is not set") }
         let model = AppModel(store: InMemoryStore(), secrets: InMemorySecrets(), log: NoopLogSink())
         let config = ProviderConfig(name: "live", kind: .openAICompatible(baseURL: url))
-        try model.addProvider(config, credentials: [:])
+        let key = ProcessInfo.processInfo.environment["GGCHAT_LIVE_API_KEY"] ?? ""
+        try model.addProvider(config, credentials: [.apiKey: key])
         await model.refreshModels(for: config)
         XCTAssertFalse(model.models(for: config.id).isEmpty)
         XCTAssertNotNil(model.providers.first?.defaultModel, "the first listed model becomes the default")

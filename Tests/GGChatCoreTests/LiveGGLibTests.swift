@@ -9,7 +9,9 @@ final class LiveGGLibTests: XCTestCase {
         guard let raw = ProcessInfo.processInfo.environment["GGCHAT_LIVE_BASE_URL"], let url = URL(string: raw) else {
             throw XCTSkip("GGCHAT_LIVE_BASE_URL is not set")
         }
-        return OpenAICompatibleProvider(baseURL: url)
+        // A pipe requires its bearer token; a loopback gglib requires nothing.
+        let key = ProcessInfo.processInfo.environment["GGCHAT_LIVE_API_KEY"]
+        return OpenAICompatibleProvider(baseURL: url, apiKey: key)
     }
 
     func testLiveModelsAndAShortStream() async throws {
