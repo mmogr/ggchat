@@ -70,7 +70,7 @@ extension AppModel {
     ///
     /// The dial is stamped with a generation and only installs its session if
     /// that stamp is still the current one when it returns — see
-    /// ``disconnectPipe(for:)`` for what moves it on.
+    /// ``disconnectPipe(for:leaving:cutShort:)`` for what moves it on.
     ///
     /// A provider that is no longer on the list has no pipe to dial. Callers
     /// hold a `ProviderConfig` by value across suspensions — the resume in
@@ -92,7 +92,7 @@ extension AppModel {
         // Only if this is still the dial in flight: a superseded one must not
         // clear the flag its successor is relying on.
         defer { if dialGeneration[config.id] == generation { connecting.remove(config.id) } }
-        pipeStatuses[config.id] = .idle
+        setPipeStatus(.idle, for: config.id)
         do {
             let session = try await pipeConnector.connect(ticket: ticket, token: token)
             guard dialGeneration[config.id] == generation else {
@@ -110,7 +110,7 @@ extension AppModel {
             statusTasks[config.id]?.cancel()
             statusTasks[config.id] = Task { [weak self] in
                 for await status in session.status {
-                    self?.observe(status, for: config.id)
+                    self?.setPipeStatus(status, for: config.id)
                 }
             }
         } catch {
@@ -118,7 +118,7 @@ extension AppModel {
             // Closed rather than absent. A provider with no status has no
             // pill at all, and the pill is the only way back: a dial that
             // failed is exactly when one is wanted.
-            pipeStatuses[config.id] = .closed
+            setPipeStatus(.closed, for: config.id)
             report(error)
         }
     }
@@ -131,6 +131,23 @@ extension AppModel {
 
     /// Hangs up, and calls off any dial still in flight for this provider.
     ///
+    /// - Parameters:
+    ///   - providerID: whose pipe to hang up.
+    ///   - status: what the pill is left reading. `nil` — no pill at all — is
+    ///     right for a provider being deleted or dialled again. Going to the
+    ///     background leaves `.closed`, for ``connectPipe(for:)``'s reason:
+    ///     the pill is the way back, and that is the state it is most wanted
+    ///     from. Leaving it here rather than writing it afterwards is what
+    ///     puts the close through `setPipeStatus(_:for:cutShort:)` and so
+    ///     what counts it. That is the whole of the reason: writing it
+    ///     afterwards, as the caller used to, showed the user nothing wrong.
+    ///     The clear to `nil` came after the `await` below, and this module
+    ///     is compiled with `.defaultIsolation(MainActor.self)`, so nothing
+    ///     could run between that write and the caller's.
+    ///   - cutShort: whether this hang-up is what ended a reply in flight.
+    ///     Only ``didEnterBackground()`` can say so, because it puts the
+    ///     reply down before it hangs up — see there.
+    ///
     /// Calling off the dial is what the generation is for. This can only ever
     /// see a session that has already been installed, so before the stamp a
     /// removal or a teardown that landed mid-dial found nothing to close —
@@ -138,7 +155,7 @@ extension AppModel {
     /// longer existed, with a status task nothing would cancel. The mock's
     /// `connect` never suspends, so that window is invisible from here; a
     /// real connector leaves a QUIC connection and a bound port in it.
-    public func disconnectPipe(for providerID: UUID) async {
+    public func disconnectPipe(for providerID: UUID, leaving status: PipeStatus? = nil, cutShort: Bool = false) async {
         dialGeneration[providerID] = (dialGeneration[providerID] ?? 0) + 1
         connecting.remove(providerID)
         statusTasks[providerID]?.cancel()
@@ -149,22 +166,40 @@ extension AppModel {
             await session.shutdown()
             pipeSessions[providerID] = nil
         }
-        pipeStatuses[providerID] = nil
+        setPipeStatus(status, for: providerID, cutShort: cutShort)
     }
 
-    private func observe(_ status: PipeStatus, for providerID: UUID) {
+    /// The one place `pipeStatuses` is written, and so the one place a close
+    /// is counted. Being shown as closed and being counted as a close are the
+    /// same event; they used to be two.
+    ///
+    /// ADR 0002's denominator was kept where a status was *observed*, which
+    /// is only what a live session sends. The two closes that come from this
+    /// side set the pill and told the counter nothing: a dial that was
+    /// refused, and the hang-up on the way to the background. The second is
+    /// the phone's commonest close by a distance, so the reading was shown
+    /// over a denominator that omitted the case it exists to measure.
+    ///
+    /// `previous != .closed` is what stops one close being counted twice: a
+    /// refused dial leaves `.closed` behind, and the background that follows
+    /// it hangs up a provider with nothing left to hang up.
+    private func setPipeStatus(_ status: PipeStatus?, for providerID: UUID, cutShort: Bool = false) {
         let previous = pipeStatuses[providerID]
         pipeStatuses[providerID] = status
         if status == .closed, previous != .closed {
-            let streamingHere =
-                liveReply.flatMap { live in
-                    conversations.first { $0.id == live.conversationID }?.providerID == providerID
-                } ?? false
-            diagnostics.recordClosed(whileStreaming: streamingHere)
-            log.log(.info, "pipe closed\(streamingHere ? " mid-reply" : "")")
+            let midReply = cutShort || streamingProviderID == providerID
+            diagnostics.recordClosed(whileStreaming: midReply)
+            log.log(.info, "pipe closed\(midReply ? " mid-reply" : "")")
         }
-        if status.isConnected, previous?.isConnected != true {
+        if status?.isConnected == true, previous?.isConnected != true {
             connectedPulse &+= 1
+        }
+    }
+
+    /// The provider the reply in flight is going through, if there is one.
+    private var streamingProviderID: UUID? {
+        liveReply.flatMap { live in
+            conversations.first { $0.id == live.conversationID }?.providerID
         }
     }
 
@@ -212,17 +247,21 @@ extension AppModel {
     /// reaches the conversation while there is still a runtime to write it:
     /// a process killed for memory while streaming otherwise leaves the
     /// user's question with no answer under it and no error either.
+    ///
+    /// Which provider that reply belonged to has to be read before it is put
+    /// down. `finish(_:finished:)` clears `liveReply`, so by the time the
+    /// pipes are hung up below nothing is left to say that the close about to
+    /// be shown is the one that ended a reply — and ADR 0002 counts that
+    /// close as mid-reply, because the partial written a line earlier is
+    /// exactly what Continue is offered on.
     public func didEnterBackground() async {
+        let cutShort = streamingProviderID
         if let inFlight = streamTask {
             inFlight.cancel()
             await inFlight.value
         }
         for config in providers where config.isPipe && pipeStatuses[config.id] != nil {
-            await disconnectPipe(for: config.id)
-            // Closed rather than absent, for `connectPipe(for:)`'s reason: a
-            // provider with no status has no pill, and this is precisely the
-            // state a way back has to be offered from.
-            pipeStatuses[config.id] = .closed
+            await disconnectPipe(for: config.id, leaving: .closed, cutShort: config.id == cutShort)
         }
     }
 }

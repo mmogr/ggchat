@@ -3,31 +3,19 @@ import XCTest
 
 @testable import GGChatUI
 
-/// Yields one token and then never finishes, so a reply can be caught
-/// mid-flight without any of it depending on a clock.
-private struct HangingProvider: Provider {
-    func models() async throws -> [ModelInfo] {
-        MockProvider.sampleModels
-    }
-
-    func stream(_ request: ChatRequest) -> AsyncStream<ChatEvent> {
-        AsyncStream { continuation in
-            continuation.yield(.delta("half "))
-        }
-    }
-}
-
 /// What the app does when it goes away and when it comes back.
 final class AppModelLifecycleTests: XCTestCase {
     private let ticket = "pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na"
     private let serverURL = URL(string: "http://127.0.0.1:49998/v1")!
 
     @MainActor
-    private func makeModel(registry: LoopbackProviderRegistry) -> AppModel {
+    private func makeModel(
+        registry: LoopbackProviderRegistry, behind provider: any Provider = MockProvider()
+    ) -> AppModel {
         let defaults = UserDefaults(suiteName: "AppModelLifecycleTests.\(UUID().uuidString)")!
         return AppModel(
             store: InMemoryStore(), secrets: InMemorySecrets(), log: NoopLogSink(), registry: registry,
-            pipeConnector: MockPipeConnector(sleeper: ImmediateSleeper(), registry: registry),
+            pipeConnector: MockPipeConnector(sleeper: ImmediateSleeper(), provider: provider, registry: registry),
             diagnostics: Diagnostics(defaults: defaults), now: { Date(timeIntervalSince1970: 1_700_000_000) })
     }
 
@@ -69,6 +57,67 @@ final class AppModelLifecycleTests: XCTestCase {
         XCTAssertNotNil(model.pipeSession(for: config.id), "coming back left the pipe down with no way in")
         XCTAssertEqual(model.pipeStatus(for: config.id), .direct)
         XCTAssertEqual(model.diagnostics.foregroundResumes, 1, "ADR 0001's denominator still counts the resume")
+    }
+
+    /// ADR 0002's denominator, on the close that dominates it. Going to the
+    /// background is how a pipe on a phone almost always ends, and it is the
+    /// one close the app performs itself rather than watching arrive — so
+    /// while the counting lived in the status observer, the pill read Closed
+    /// and "of M closes" stayed where it was.
+    ///
+    /// Each background is its own close: a resume that dials again and a
+    /// second background are two, not one.
+    @MainActor
+    func testEveryBackgroundCountsTheCloseItPutsOnTheScreen() async throws {
+        let model = makeModel(registry: LoopbackProviderRegistry())
+        let config = try addPipe(to: model)
+        await model.connectPipe(for: config)
+        await waitForStatus(.direct, model, config.id)
+
+        await model.didEnterBackground()
+
+        XCTAssertEqual(model.pipeStatus(for: config.id), .closed)
+        XCTAssertEqual(
+            model.diagnostics.closedTransitions, 1,
+            "the pill was shown as Closed and ADR 0002's denominator never heard about it")
+        XCTAssertEqual(model.diagnostics.closedWhileStreaming, 0, "nothing was streaming")
+
+        await model.didBecomeActive()
+        await waitForStatus(.direct, model, config.id)
+        await model.didEnterBackground()
+
+        XCTAssertEqual(model.diagnostics.closedTransitions, 2, "the second background was folded into the first")
+    }
+
+    /// ADR 0002's numerator, on the same close. The reply is put down on the
+    /// way out and written as a partial, which is exactly the state the
+    /// Continue button is offered from — so this close is mid-reply, and
+    /// counting it as anything else measures Continue presses against a
+    /// population that excludes the presses' commonest cause.
+    ///
+    /// It is only knowable before the reply is put down: `liveReply` is nil
+    /// by the time the pipe is hung up.
+    @MainActor
+    func testABackgroundThatCutsAReplyShortCountsAMidReplyClose() async throws {
+        let model = makeModel(registry: LoopbackProviderRegistry(), behind: HangingProvider())
+        let config = try addPipe(to: model)
+        await model.connectPipe(for: config)
+        await waitForStatus(.direct, model, config.id)
+        model.newConversation()
+        let streaming = try XCTUnwrap(model.send("go"))
+        defer { streaming.cancel() }
+        for _ in 0..<200 where model.liveReply?.content.isEmpty != false { await Task.yield() }
+        XCTAssertEqual(model.liveReply?.content, "half ", "the reply never started")
+
+        await model.didEnterBackground()
+
+        XCTAssertTrue(
+            try XCTUnwrap(model.selectedConversation?.messages.last).isPartial,
+            "Continue is offered on this reply, so the close that ended it is mid-reply by definition")
+        XCTAssertEqual(model.diagnostics.closedTransitions, 1)
+        XCTAssertEqual(
+            model.diagnostics.closedWhileStreaming, 1,
+            "the close that ended the reply was counted as though no reply was running")
     }
 
     /// A resume dials the pipes this app had, and only those. A provider

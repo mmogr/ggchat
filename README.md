@@ -169,6 +169,22 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundHangsUpEveryPipeAndComingBackDialsAgain -->
   <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundKeepsThePartialReplyInsteadOfLosingIt -->
   <!-- test: AppModelLifecycleTests.testComingBackDoesNotDialAPipeTheAppNeverOpened -->
+- Every close the app shows is a close it counts, whoever wrote it down: ADR
+  0002's denominator moves for a background and for a refused dial, not only
+  for a close a live session reported. A close is counted once — a background
+  after a refused dial adds nothing — and a hang-up that leaves no pill at
+  all, from a delete or a reconnect, is not counted as one.
+  <!-- test: AppModelLifecycleTests.testEveryBackgroundCountsTheCloseItPutsOnTheScreen -->
+  <!-- test: AppModelFailedDialTests.testABackgroundAfterARefusedDialAddsNoSecondClose -->
+  <!-- test: AppModelPipeTests.testAHangUpThatLeavesNoPillIsNotCountedAsAClose -->
+- A close counts as mid-reply when it is what ended the reply — whether the
+  far machine went away or the app put the reply down on its way to the
+  background. Either leaves a partial with a Continue button under it, so
+  long as any of the reply had arrived; a background before the first token
+  counts the close and leaves nothing to continue. ADR 0002 struck the
+  threshold that fraction was meant to answer, and the counters outlived it.
+  <!-- test: AppModelPipeTests.testAPipeThatGoesAwayMidReplyIsCountedAsAMidReplyClose -->
+  <!-- test: AppModelLifecycleTests.testABackgroundThatCutsAReplyShortCountsAMidReplyClose -->
 - A provider's row opens its settings, and its name and credentials are
   edited in place, keeping the id — so a machine paired again with the
   ticket its next `gglib remote enable` printed keeps its conversations.
@@ -377,6 +393,10 @@ enables it.
 - Every sentence in this README is true, and where a claim can be tested a
   test keeps it. `scripts/check_readme_claims.sh` checks that every marker
   above names a test that exists.
+- One writer for the pipe status: `pipeStatuses` is written only by
+  `setPipeStatus(_:for:cutShort:)`, which is where a close is counted, so a
+  close the app shows is a close ADR 0002 hears about.
+  `scripts/check_one_status_writer.sh` refuses any other write.
 - No credential in any log line, ever.
 - Time is an argument: nothing in `GGChatCore` reads the clock except
   `Clock.swift`.

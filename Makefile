@@ -54,6 +54,7 @@ enforce:
 	scripts/check_glass_sites.sh
 	scripts/check_no_hand_drawn_glass.sh
 	scripts/check_time_is_an_argument.sh
+	scripts/check_one_status_writer.sh
 	scripts/check_no_print.sh
 	scripts/check_log_calls.sh
 	scripts/check_file_size.sh

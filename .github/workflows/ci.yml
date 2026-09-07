@@ -69,6 +69,8 @@ jobs:
         run: scripts/check_no_hand_drawn_glass.sh
       - name: Time is an argument
         run: scripts/check_time_is_an_argument.sh
+      - name: One writer for the pipe status
+        run: scripts/check_one_status_writer.sh
       - name: No print
         run: scripts/check_no_print.sh
       - name: No credential in a log call
