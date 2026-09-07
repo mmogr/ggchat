@@ -131,6 +131,15 @@ Each claim names the test that keeps it true.
   leaving one that fails later, and the reason names the credential.
   <!-- test: AddProviderFailureTests.testACredentialThatWillNotSaveLeavesNoHalfAddedProvider -->
   <!-- test: AddProviderFailureTests.testTheKeychainErrorSaysWhichCredentialAndWhy -->
+- Saving a credential updates the Keychain item and adds one only when
+  there was none to update, so the first save of a token and every save
+  after it both land. Any other status is reported rather than retried as
+  an add. The `SecItem` calls sit behind a seam a test can stand in for,
+  because reaching the real Keychain needs a signed build carrying the
+  entitlement.
+  <!-- test: KeychainSecretsTests.testAnItemThatIsAlreadyThereIsUpdatedAndNeverAdded -->
+  <!-- test: KeychainSecretsTests.testAnItemThatIsNotThereIsAddedOnlyAfterTheUpdateMisses -->
+  <!-- test: KeychainSecretsTests.testAnUpdateThatFailsForAnyOtherReasonIsNotRetriedAsAnAdd -->
 - The screens the first-run walk never reaches are visited and photographed
   too: the provider form and what it says about a bad address or ticket, a
   pipe connecting and its status pill, the providers list, and the
