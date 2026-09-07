@@ -177,6 +177,12 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelLifecycleTests.testEveryBackgroundCountsTheCloseItPutsOnTheScreen -->
   <!-- test: AppModelFailedDialTests.testABackgroundAfterARefusedDialAddsNoSecondClose -->
   <!-- test: AppModelPipeTests.testAHangUpThatLeavesNoPillIsNotCountedAsAClose -->
+- A close counts as mid-reply when it is what ended the reply — whether the
+  far machine went away or the app put the reply down on its way to the
+  background. Both leave a partial with a Continue button under it, which is
+  what ADR 0002's threshold is measured over.
+  <!-- test: AppModelPipeTests.testAPipeThatGoesAwayMidReplyIsCountedAsAMidReplyClose -->
+  <!-- test: AppModelLifecycleTests.testABackgroundThatCutsAReplyShortCountsAMidReplyClose -->
 - A provider's row opens its settings, and its name and credentials are
   edited in place, keeping the id — so a machine paired again with the
   ticket its next `gglib remote enable` printed keeps its conversations.

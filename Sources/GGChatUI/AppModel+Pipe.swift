@@ -70,7 +70,7 @@ extension AppModel {
     ///
     /// The dial is stamped with a generation and only installs its session if
     /// that stamp is still the current one when it returns — see
-    /// ``disconnectPipe(for:leaving:)`` for what moves it on.
+    /// ``disconnectPipe(for:leaving:cutShort:)`` for what moves it on.
     ///
     /// A provider that is no longer on the list has no pipe to dial. Callers
     /// hold a `ProviderConfig` by value across suspensions — the resume in
@@ -138,12 +138,15 @@ extension AppModel {
     ///     background leaves `.closed`, for ``connectPipe(for:)``'s reason:
     ///     the pill is the way back, and that is the state it is most wanted
     ///     from. Leaving it here rather than writing it afterwards is what
-    ///     puts the close through `setPipeStatus(_:for:)` and so
+    ///     puts the close through `setPipeStatus(_:for:cutShort:)` and so
     ///     what counts it. That is the whole of the reason: writing it
     ///     afterwards, as the caller used to, showed the user nothing wrong.
     ///     The clear to `nil` came after the `await` below, and this module
     ///     is compiled with `.defaultIsolation(MainActor.self)`, so nothing
     ///     could run between that write and the caller's.
+    ///   - cutShort: whether this hang-up is what ended a reply in flight.
+    ///     Only ``didEnterBackground()`` can say so, because it puts the
+    ///     reply down before it hangs up — see there.
     ///
     /// Calling off the dial is what the generation is for. This can only ever
     /// see a session that has already been installed, so before the stamp a
@@ -152,7 +155,7 @@ extension AppModel {
     /// longer existed, with a status task nothing would cancel. The mock's
     /// `connect` never suspends, so that window is invisible from here; a
     /// real connector leaves a QUIC connection and a bound port in it.
-    public func disconnectPipe(for providerID: UUID, leaving status: PipeStatus? = nil) async {
+    public func disconnectPipe(for providerID: UUID, leaving status: PipeStatus? = nil, cutShort: Bool = false) async {
         dialGeneration[providerID] = (dialGeneration[providerID] ?? 0) + 1
         connecting.remove(providerID)
         statusTasks[providerID]?.cancel()
@@ -163,7 +166,7 @@ extension AppModel {
             await session.shutdown()
             pipeSessions[providerID] = nil
         }
-        setPipeStatus(status, for: providerID)
+        setPipeStatus(status, for: providerID, cutShort: cutShort)
     }
 
     /// The one place `pipeStatuses` is written, and so the one place a close
@@ -180,11 +183,11 @@ extension AppModel {
     /// `previous != .closed` is what stops one close being counted twice: a
     /// refused dial leaves `.closed` behind, and the background that follows
     /// it hangs up a provider with nothing left to hang up.
-    private func setPipeStatus(_ status: PipeStatus?, for providerID: UUID) {
+    private func setPipeStatus(_ status: PipeStatus?, for providerID: UUID, cutShort: Bool = false) {
         let previous = pipeStatuses[providerID]
         pipeStatuses[providerID] = status
         if status == .closed, previous != .closed {
-            let midReply = streamingProviderID == providerID
+            let midReply = cutShort || streamingProviderID == providerID
             diagnostics.recordClosed(whileStreaming: midReply)
             log.log(.info, "pipe closed\(midReply ? " mid-reply" : "")")
         }
@@ -244,13 +247,21 @@ extension AppModel {
     /// reaches the conversation while there is still a runtime to write it:
     /// a process killed for memory while streaming otherwise leaves the
     /// user's question with no answer under it and no error either.
+    ///
+    /// Which provider that reply belonged to has to be read before it is put
+    /// down. `finish(_:finished:)` clears `liveReply`, so by the time the
+    /// pipes are hung up below nothing is left to say that the close about to
+    /// be shown is the one that ended a reply — and ADR 0002 counts that
+    /// close as mid-reply, because the partial written a line earlier is
+    /// exactly what Continue is offered on.
     public func didEnterBackground() async {
+        let cutShort = streamingProviderID
         if let inFlight = streamTask {
             inFlight.cancel()
             await inFlight.value
         }
         for config in providers where config.isPipe && pipeStatuses[config.id] != nil {
-            await disconnectPipe(for: config.id, leaving: .closed)
+            await disconnectPipe(for: config.id, leaving: .closed, cutShort: config.id == cutShort)
         }
     }
 }
