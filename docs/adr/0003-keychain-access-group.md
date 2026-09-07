@@ -79,6 +79,24 @@ read a token.
 > **Signing is still needed**, and that part stands: a real (not ad-hoc)
 > signature is what makes an entitlement mean anything. It is one of three
 > blockers rather than the blocker.
+>
+> **What "per-build" costs, so the price of clearing those blockers is
+> judgeable.** The app constructs `KeychainSecrets()` with no argument
+> (`Sources/GGChatUI/GGChatScene.swift:14`), so `accessGroup` is nil and
+> `baseQuery` omits `kSecAttrAccessGroup` entirely: every item lands in the
+> build's own default group, and nothing is synchronizable. The whole cost
+> of that is retyping the API key, ticket and token on the second machine —
+> once. It is not a recurring re-entry: an item is written with
+> `kSecAttrAccessibleAfterFirstUnlock` and no expiry, and the only code that
+> removes one is `AppModel.removeProvider` (`AppModel.swift:156`) and the
+> rollback when an add fails partway (`AppModel.swift:134`). So the status
+> quo costs one round of typing per machine, and clearing all three blockers
+> buys the removal of that one round. That is the number to weigh against a
+> paid signing team before anyone pays for one.
+>
+> Note also which blocker buys what: the access group alone would not buy it.
+> A group shares between builds on **one** device; the Mac-to-phone case in
+> "Context" additionally needs `kSecAttrSynchronizable`, per the note above.
 
 ## Kill criteria
 
