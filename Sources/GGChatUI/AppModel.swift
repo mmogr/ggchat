@@ -2,6 +2,21 @@ import Foundation
 import GGChatCore
 import Observation
 
+/// Why an edit to a provider could not be made.
+public enum ProviderEditError: Error, Sendable, Equatable, LocalizedError {
+    /// It left the list while its form was open. Worth a sentence rather
+    /// than a silent no-op: a re-pairing spends a one-time code before it
+    /// gets here, and a form that closed as though it had saved would leave
+    /// the user hunting for a machine that is simply no longer listed.
+    case noLongerThere
+
+    public var errorDescription: String? {
+        switch self {
+        case .noLongerThere: "That provider was removed while you were editing it."
+        }
+    }
+}
+
 /// The app's state: providers, conversations, selection. Chat streaming
 /// arrives in the next step; this is the shell.
 @Observable
@@ -20,6 +35,10 @@ public final class AppModel {
     var pipeSessions: [UUID: any PipeSession] = [:]
     var statusTasks: [UUID: Task<Void, Never>] = [:]
     var connecting: Set<UUID> = []
+    /// Which attempt the latest dial for each provider is. It goes up when a
+    /// dial starts and again when one is called off, so a dial that returns
+    /// late can tell that its session is no longer the one to install.
+    var dialGeneration: [UUID: Int] = [:]
     var proxyStatusAvailability: [UUID: Bool] = [:]
     /// Changes once each time a pipe first reaches a connected state; the
     /// one haptic in the app fires on it.
@@ -152,12 +171,69 @@ public final class AppModel {
         }
     }
 
+    /// Re-credentials a provider that is already there, keeping its id.
+    ///
+    /// Keeping the id is what makes this an edit and not a delete plus a
+    /// re-add: a conversation names its provider by that id as a plain
+    /// value, and every secret is filed under it, so a new id would orphan
+    /// both. `gglib remote enable` mints a fresh ticket every session, so
+    /// without this a pipe provider had to be thrown away and rebuilt each
+    /// time, taking its conversations with it.
+    ///
+    /// Only the credentials named here are written, and an empty one is
+    /// skipped: the form asks for a replacement, not for what is already
+    /// stored.
+    ///
+    /// Throws and puts back what it found, for
+    /// ``addProvider(_:credentials:)``'s reason — the form that calls this is
+    /// a sheet. Half a new credential beside half an old one is worse than
+    /// not editing at all: it is a ticket and a token from two machines.
+    public func updateProvider(_ config: ProviderConfig, credentials: [SecretKind: String]) throws {
+        guard let index = providers.firstIndex(where: { $0.id == config.id }) else {
+            throw ProviderEditError.noLongerThere
+        }
+        var replaced: [SecretKind: String?] = [:]
+        do {
+            for (kind, value) in credentials where !value.isEmpty {
+                let previous = try secrets.secret(kind, for: config.id)
+                replaced.updateValue(previous, forKey: kind)
+                try secrets.setSecret(value, kind, for: config.id)
+            }
+            try store.save(provider: config)
+        } catch {
+            for (kind, previous) in replaced {
+                try? secrets.setSecret(previous, kind, for: config.id)
+            }
+            log.log(.error, "could not update \(config.name): \(error.localizedDescription)")
+            throw error
+        }
+        providers[index] = config
+    }
+
+    /// Forgets a provider: the durable record first, then its credentials.
+    ///
+    /// The order is the whole of it. Both calls throw, and only one of the
+    /// two leftovers is harmless. A row that outlives its credentials is
+    /// resurrected by the next ``load()`` as a provider that can never
+    /// connect and whose only remaining move is to be deleted again; a
+    /// credential that outlives its row is unreachable, because its key is a
+    /// provider id nothing holds any more.
+    ///
+    /// So the record goes first, and if that will not go, nothing else is
+    /// touched and the provider goes back where it was taken from.
     public func removeProvider(_ id: UUID) {
-        providers.removeAll { $0.id == id }
+        guard let index = providers.firstIndex(where: { $0.id == id }) else { return }
+        let removed = providers.remove(at: index)
+        do {
+            try store.deleteProvider(id: id)
+        } catch {
+            providers.insert(removed, at: index)
+            report(error)
+            return
+        }
         Task { await disconnectPipe(for: id) }
         do {
             try secrets.removeAll(for: id)
-            try store.deleteProvider(id: id)
         } catch {
             report(error)
         }

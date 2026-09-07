@@ -1,7 +1,8 @@
 import GGChatCore
 import SwiftUI
 
-/// List, add, remove. Editing a provider's model comes with the picker.
+/// List, add, edit, remove. A provider's model is picked in the composer;
+/// a row here is the way to its name and its credentials.
 struct ProvidersView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -11,7 +12,15 @@ struct ProvidersView: View {
         NavigationStack {
             List {
                 ForEach(model.providers) { provider in
-                    ProviderRow(provider: provider)
+                    // The row is the edit affordance. Before this it was not
+                    // a control of any kind, so a pipe whose ticket had gone
+                    // stale — which is every pipe, every session — could only
+                    // be deleted and built again.
+                    NavigationLink {
+                        EditProviderView(provider: provider)
+                    } label: {
+                        ProviderRow(provider: provider)
+                    }
                 }
                 .onDelete { offsets in
                     for index in offsets {
