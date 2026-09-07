@@ -45,7 +45,10 @@ each with its denominator. In DEBUG builds a mock provider streams canned
 replies without a server. The pipe path is a mock until `modelpipe-ffi`
 exists, and that mock is DEBUG-only: a released build refuses to dial and
 says so, rather than answering a real ticket with a reply no machine
-wrote. Nothing here links Rust or iroh.
+wrote. Absent, not merely unchosen — `MockPipeConnector` and
+`MockPipeSession` are declared inside an `#if DEBUG`, and
+`make build-release` compiles the Release configuration and fails if
+either symbol is in it. Nothing here links Rust or iroh.
 
 ## What is true today
 
@@ -172,9 +175,14 @@ Set `GGCHAT_LIVE_API_KEY` as well to point it at a server that wants a
 bearer token, which is how it runs against a modelpipe pipe.
 
 `make ci` runs what CI runs: `make fmt-check`, `make lint`,
-`make boundaries`, `make enforce`, `make build`, `make test`,
-`make unused`, `make docs`. `make bootstrap` installs the Homebrew tools
-those need (xcodegen, swiftlint, periphery, actionlint).
+`make boundaries`, `make enforce`, `make build`, `make build-release`,
+`make test`, `make unused`, `make docs`. `make bootstrap` installs the
+Homebrew tools those need (xcodegen, swiftlint, periphery, actionlint).
+
+`make build-release` is the only one of those that compiles the `#else`
+arm of an `#if DEBUG`. It then reads the symbols out of the release
+objects and fails if the DEBUG-only mock pipe is among them, which a
+release build on its own would not catch: the mock compiles fine in one.
 
 The app target is generated from `App/project.yml` by xcodegen
 (`make project`) and committed. Open `App/ggchat.xcodeproj` in Xcode, or

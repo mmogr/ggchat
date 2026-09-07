@@ -1,7 +1,7 @@
 # Local parity with CI: `make ci` runs what the workflow runs.
 SWIFT_SOURCES := Sources Tests Package.swift $(wildcard App/ggchat/*.swift) $(wildcard App/ggchatUITests/*.swift)
 
-.PHONY: screenshots project bootstrap fmt fmt-check lint boundaries enforce build test test-live uitest uitest-dark uitest-contrast unused docs ci
+.PHONY: screenshots project bootstrap fmt fmt-check lint boundaries enforce build build-release test test-live uitest uitest-dark uitest-contrast unused docs ci
 
 project:
 	cd App && xcodegen generate --quiet
@@ -33,6 +33,15 @@ enforce:
 
 build:
 	swift build -Xswiftc -warnings-as-errors
+
+# The Release configuration, and then what only a release build can be asked:
+# whether the DEBUG-only types are really gone. `make build` never compiles the
+# `#else` arm of an `#if DEBUG`, and the checker needs objects to read, so the
+# two are one target. This is not in `enforce`: that job runs on Linux, and
+# this one needs a Swift toolchain and the macOS SDK.
+build-release:
+	swift build -c release -Xswiftc -warnings-as-errors
+	scripts/check_no_mock_in_release.sh
 
 test:
 	swift test --parallel
@@ -92,4 +101,4 @@ docs:
 	swift package --allow-writing-to-directory .build/docs generate-documentation \
 		--target GGChatUI --warnings-as-errors --output-path .build/docs/GGChatUI
 
-ci: fmt-check lint boundaries enforce build test unused docs
+ci: fmt-check lint boundaries enforce build build-release test unused docs

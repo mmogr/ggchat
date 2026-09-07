@@ -1,9 +1,10 @@
 import Foundation
 
 /// The seam between the app and modelpipe. `MockPipeConnector` implements it
-/// in DEBUG builds and `UnavailablePipeConnector` in every other build;
-/// `ModelpipeConnector` will implement it when `modelpipe-ffi` lands, and
-/// nothing above this protocol changes.
+/// in DEBUG builds, and only there: the mock is compiled out of every other
+/// configuration, so `UnavailablePipeConnector` is the only conformance a
+/// shipped build contains. `ModelpipeConnector` will implement it when
+/// `modelpipe-ffi` lands, and nothing above this protocol changes.
 public protocol PipeConnector: Sendable {
     func connect(ticket: String, token: String) async throws -> any PipeSession
 }

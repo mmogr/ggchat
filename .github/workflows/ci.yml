@@ -75,6 +75,13 @@ jobs:
         run: xcodebuild -version && swift --version
       - name: Build the package with warnings as errors
         run: make build
+      # The only job that compiles the `#else` arm of an `#if DEBUG`, and the
+      # only one that can ask whether the DEBUG-only mock pipe is really absent
+      # from a shipped binary rather than merely unchosen by the factory. Not
+      # in the enforcement job: that one runs on Linux and this needs a Swift
+      # toolchain and the macOS SDK.
+      - name: Build for release and check the mock pipe is not in it
+        run: make build-release
       - name: Build the app for macOS and the iOS simulator
         if: hashFiles('App/ggchat.xcodeproj/project.pbxproj') != ''
         run: |
