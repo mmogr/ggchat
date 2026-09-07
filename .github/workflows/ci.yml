@@ -7,7 +7,15 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Superseding a push to a branch is the point of this: the older run is
+  # testing a commit nobody will merge. A push to `main` is the opposite --
+  # it is the only run that tests two PRs together, each of which was green
+  # on its own, and there is no later run that repeats the reading, because
+  # the next push to main is a different tree again. Measured on
+  # 2026-09-07: six merges landed within minutes and cancelled each other,
+  # `a199ca3` was the first main run in that window allowed to finish, and
+  # it failed.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   contents: read
