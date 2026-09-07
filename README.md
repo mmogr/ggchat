@@ -250,7 +250,13 @@ against the mock.
 Versions come from [release-please](https://github.com/googleapis/release-please):
 conventional commit titles on `main` accumulate into a release PR, and
 merging it tags the version and rewrites `Config/Version.xcconfig`.
-Documentation is built with DocC and deployed to GitHub Pages on release.
+Documentation is built with DocC. The static-hosting build runs on every
+push to `main`, so a change that breaks it is caught by the commit that
+made it rather than by the release; the deploy step still runs only for a
+published release or a manual dispatch. Nothing is served yet: GitHub
+Pages is not enabled on this repository -- a repository setting, not
+something a workflow can turn on -- so the Pages URL 404s until someone
+enables it.
 
 ## House rules
 
