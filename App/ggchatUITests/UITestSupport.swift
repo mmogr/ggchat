@@ -70,6 +70,27 @@ extension XCTestCase {
         return witness.exists
     }
 
+    /// Puts the caret in a field and waits for the keyboard, because
+    /// `XCUIElement.tap()` does not always land where the element is: on an
+    /// iPad this app's composer stays unfocused through repeated taps, and
+    /// `typeText` then fails with "Neither element nor any descendant has
+    /// keyboard focus" while the same point tapped as a coordinate focuses
+    /// it. So the tap is placed at the centre of the element's own frame.
+    /// The keyboard is the witness: a tap that misses raises none, and
+    /// without waiting for one the caller types into nothing.
+    @MainActor
+    func caret(in element: XCUIElement, of app: XCUIApplication, attempts: Int = 3) -> Bool {
+        for _ in 0..<attempts where waitUntilHittable(element, timeout: 15) {
+            let middle = element.frame
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+                .withOffset(CGVector(dx: middle.midX, dy: middle.midY))
+                .tap()
+            if app.keyboards.element.waitForExistence(timeout: 5) { return true }
+            dismissAnythingOnTop()
+        }
+        return false
+    }
+
     /// Everything on screen, for when a wait times out and the screenshot
     /// alone does not say why.
     @MainActor

@@ -165,7 +165,16 @@ final class ScreenGalleryUITests: XCTestCase {
         let field = app.textViews["composer"].firstMatch
         let composer = field.exists ? field : app.textFields["composer"].firstMatch
         XCTAssertTrue(composer.waitForExistence(timeout: 15))
-        composer.tap()
+        // A server that is not there is an error, and the app says so in an
+        // alert that covers the composer until it is acknowledged. It is
+        // this walk's own doing -- it typed the address of a closed port --
+        // so the walk acknowledges it. The race is real rather than
+        // theoretical: on an iPhone the alert has usually not arrived by the
+        // time the composer is tapped, and on an iPad it is up first, so the
+        // composer is never hittable and the caret never lands.
+        let acknowledge = app.alerts.buttons["OK"].firstMatch
+        if acknowledge.waitForExistence(timeout: 5) { acknowledge.tap() }
+        XCTAssertTrue(caret(in: composer, of: app), "the composer never took the caret")
         composer.typeText("Anyone home?")
 
         // Without a model there is nothing to send, which is its own sentence.

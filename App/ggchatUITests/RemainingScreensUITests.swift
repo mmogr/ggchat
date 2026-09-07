@@ -102,11 +102,22 @@ final class RemainingScreensUITests: XCTestCase {
         XCTAssertTrue(connected.waitForExistence(timeout: 30), "the pipe never connected")
 
         // Close it from the debug switch, which is what a dropped pipe looks
-        // like. Settings lives on the conversation list, so go back for it.
+        // like. Settings lives on the conversation list: one screen back on
+        // an iPhone, where the split view is a stack, and already on screen
+        // on an iPad, where the sidebar is a column of its own. Going back
+        // there hits the sidebar toggle and hides the button being reached
+        // for, so the walk only goes back when Settings is not already
+        // there. Either way the assertion below is the same one: tapping
+        // Settings has to produce the switch. When the walk does go back,
+        // that tap is confirmed like every other one: the password
+        // manager's offer swallowed this exact tap on CI, which is why it
+        // was taught to check and retry in the first place.
         let settings = app.buttons["Settings"].firstMatch
-        XCTAssertTrue(
-            tap(app.navigationBars.buttons.element(boundBy: 0), untilExists: settings),
-            "going back did not reach the conversation list")
+        if !waitUntilHittable(settings, timeout: 5) {
+            XCTAssertTrue(
+                tap(app.navigationBars.buttons.element(boundBy: 0), untilExists: settings),
+                "going back did not reach the conversation list")
+        }
 
         let force = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Force '")).firstMatch
         XCTAssertTrue(tap(settings, untilExists: force), "DEBUG builds can force a pipe closed")
@@ -144,8 +155,7 @@ final class RemainingScreensUITests: XCTestCase {
         app = launchFreshApp(typeSize: typeSize)
         addMockProvider()
         app.buttons["New conversation"].firstMatch.tap()
-        XCTAssertTrue(waitUntilHittable(composer(in: app), timeout: 20), "the composer is unreachable")
-        composer(in: app).tap()
+        XCTAssertTrue(caret(in: composer(in: app), of: app), "the composer never took the caret")
         composer(in: app).typeText("Hello")
         let send = app.buttons["Send"].firstMatch
         XCTAssertTrue(send.waitForExistence(timeout: 5))

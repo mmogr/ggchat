@@ -226,6 +226,13 @@ runs against the DEBUG mock provider, and also against a server on
 because an unsigned iOS app has no Keychain access and this app keeps
 every credential there.
 
+`make uitest-ipad` runs the same walk on an iPad, which is not a larger
+iPhone: the root is a `NavigationSplitView`, so the sidebar and the
+conversation are two columns rather than a stack, and Settings is on
+screen instead of one screen back. It is the leg CI runs, and like CI it
+leaves out the Reduce Transparency reading, whose bands are fractions of
+an iPhone's screen. CI runs the walk on both families.
+
 `make uitest-dark` and `make uitest-contrast` run the same walk with the
 device set to dark mode and to Increase Contrast. Both are settings on the
 simulator rather than launch arguments, so each target sets one, checks
@@ -267,7 +274,13 @@ against the mock.
 Versions come from [release-please](https://github.com/googleapis/release-please):
 conventional commit titles on `main` accumulate into a release PR, and
 merging it tags the version and rewrites `Config/Version.xcconfig`.
-Documentation is built with DocC and deployed to GitHub Pages on release.
+Documentation is built with DocC. The static-hosting build runs on every
+push to `main`, so a change that breaks it is caught by the commit that
+made it rather than by the release; the deploy step still runs only for a
+published release or a manual dispatch. Nothing is served yet: GitHub
+Pages is not enabled on this repository -- a repository setting, not
+something a workflow can turn on -- so the Pages URL 404s until someone
+enables it.
 
 ## House rules
 
