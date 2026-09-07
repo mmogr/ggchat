@@ -1,4 +1,3 @@
-import Darwin
 import XCTest
 
 /// The screens left over: gglib's status pane, the reconnect a closed pipe
@@ -6,8 +5,6 @@ import XCTest
 /// written and unit-tested but never looked at.
 final class RemainingScreensUITests: XCTestCase {
     private var app: XCUIApplication!
-
-    private static let localServer = (host: "127.0.0.1", port: 8080)
 
     @MainActor
     private func launch(typeSize: String? = nil) {
@@ -31,7 +28,7 @@ final class RemainingScreensUITests: XCTestCase {
     /// that does not answer the endpoint.
     @MainActor
     func testTheServerStatusPaneAgainstARealServer() throws {
-        try XCTSkipUnless(Self.somethingIsListening(), "start gglib to run this")
+        guard let live = LiveServer.resolve() else { throw XCTSkip(LiveServer.absenceReason) }
         launch()
         let addProvider = app.buttons["Add a provider"].firstMatch
         XCTAssertTrue(addProvider.waitForExistence(timeout: 30))
@@ -39,10 +36,13 @@ final class RemainingScreensUITests: XCTestCase {
         let address = app.textFields["provider-address"].firstMatch
         XCTAssertTrue(address.waitForExistence(timeout: 10))
         address.tap()
-        address.typeText("http://\(Self.localServer.host):\(Self.localServer.port)/v1")
-        app.buttons["Add"].firstMatch.tap()
+        address.typeText(live.baseURL)
+        typeAPIKey(live.apiKey, in: app)
+        submitProviderForm(in: app)
 
-        app.buttons["New conversation"].firstMatch.tap()
+        let newConversation = app.buttons["New conversation"].firstMatch
+        let pill = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Model, '")).firstMatch
+        XCTAssertTrue(tap(newConversation, untilExists: pill), "the conversation never opened")
         let statusButton = app.buttons["Server status"].firstMatch
         XCTAssertTrue(
             statusButton.waitForExistence(timeout: 30),
@@ -169,24 +169,6 @@ final class RemainingScreensUITests: XCTestCase {
             timeout: 120)
         if let screenshot { attach(name: screenshot) }
         return assistant.frame.height
-    }
-
-    /// Whether a server is listening where gglib usually is. A plain TCP
-    /// connect, so the probe is not subject to transport security rules.
-    private static func somethingIsListening() -> Bool {
-        let descriptor = socket(AF_INET, SOCK_STREAM, 0)
-        guard descriptor >= 0 else { return false }
-        defer { close(descriptor) }
-        var address = sockaddr_in()
-        address.sin_family = sa_family_t(AF_INET)
-        address.sin_port = in_port_t(UInt16(localServer.port).bigEndian)
-        address.sin_addr.s_addr = inet_addr(localServer.host)
-        let connected = withUnsafePointer(to: &address) { pointer in
-            pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) {
-                connect(descriptor, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
-            }
-        }
-        return connected == 0
     }
 
     @MainActor

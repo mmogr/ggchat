@@ -104,7 +104,17 @@ test-live:
 # `make uitest SIMULATOR='iPhone 16'`.
 SIMULATOR ?= iPhone 17 Pro
 
-UITEST = xcodebuild test -project App/ggchat.xcodeproj -scheme ggchat \
+# Where the live walks point, and the key they type. A test runner on a
+# simulator does not inherit this environment: xcodebuild hands it only the
+# variables named TEST_RUNNER_<NAME>, with the prefix stripped, so the bare
+# names are unreadable in the runner without this. Forwarded unconditionally,
+# because an unset variable arrives as the empty string and the walk reads
+# that as unset -- it then falls back to probing 127.0.0.1:8080 and skips when
+# nothing answers, which is what it has always done and what keeps CI green.
+LIVE_ENV = TEST_RUNNER_GGCHAT_LIVE_BASE_URL="$$GGCHAT_LIVE_BASE_URL" \
+	TEST_RUNNER_GGCHAT_LIVE_API_KEY="$$GGCHAT_LIVE_API_KEY"
+
+UITEST = $(LIVE_ENV) xcodebuild test -project App/ggchat.xcodeproj -scheme ggchat \
 	-only-testing:ggchatUITests \
 	CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
 
@@ -114,8 +124,12 @@ UITEST = xcodebuild test -project App/ggchat.xcodeproj -scheme ggchat \
 # because sorting the runtime keys as strings puts iOS-18-4 above iOS-26-5.
 udid = $$(xcrun simctl list devices available --json | python3 -c "import json,re,sys;d=json.load(sys.stdin)['devices'];v=lambda k:tuple(map(int,re.findall(r'\d+',k)));print(next(x['udid'] for k in sorted((k for k in d if 'iOS' in k),key=v,reverse=True) for x in d[k] if x['name']=='$(SIMULATOR)'))")
 
-# Drives the app on a booted iPhone simulator. The live half of the test
-# runs only when something is listening on 127.0.0.1:8080.
+# Drives the app on a booted iPhone simulator. The live half runs against
+# GGCHAT_LIVE_BASE_URL when it is set, typing GGCHAT_LIVE_API_KEY into the
+# form; with neither set it falls back to 127.0.0.1:8080 and runs only when
+# something is listening there:
+#
+#   GGCHAT_LIVE_BASE_URL=http://127.0.0.1:8080/v1 GGCHAT_LIVE_API_KEY=sk-... make uitest
 uitest:
 	$(UITEST) -destination 'platform=iOS Simulator,name=$(SIMULATOR)'
 
