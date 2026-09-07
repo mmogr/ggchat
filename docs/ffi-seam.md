@@ -3,8 +3,10 @@
 ggchat stops at a seam. This is the seam, stated as the two Swift
 protocols the app already compiles against, plus the behaviours the mock
 has and the real thing must match. When `modelpipe-ffi` ships, a
-`ModelpipeConnector` that satisfies this replaces one line in
-`Sources/GGChatUI/PipeConnectorFactory.swift` and nothing above it changes.
+`ModelpipeConnector` that satisfies this replaces both arms of the
+`#if DEBUG` in `Sources/GGChatUI/PipeConnectorFactory.swift` — the mock in
+a debug build, `UnavailablePipeConnector` in every other — and nothing
+above it changes.
 
 ## The protocols (verbatim from `Sources/GGChatCore/PipeConnector.swift`)
 

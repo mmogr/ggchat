@@ -1,8 +1,9 @@
 import Foundation
 
 /// The seam between the app and modelpipe. `MockPipeConnector` implements it
-/// today; `ModelpipeConnector` will implement it when `modelpipe-ffi` lands,
-/// and nothing above this protocol changes.
+/// in DEBUG builds and `UnavailablePipeConnector` in every other build;
+/// `ModelpipeConnector` will implement it when `modelpipe-ffi` lands, and
+/// nothing above this protocol changes.
 public protocol PipeConnector: Sendable {
     func connect(ticket: String, token: String) async throws -> any PipeSession
 }
@@ -21,11 +22,16 @@ public protocol PipeSession: Sendable {
 public enum PipeConnectError: Error, Sendable, Equatable, LocalizedError {
     case invalidTicket(TicketShapeError)
     case missingToken
+    /// Nothing in this build can dial a ticket. The ticket and the token were
+    /// fine; the build has no `modelpipe-ffi` behind the seam, and the mock
+    /// that stands in for it is DEBUG-only.
+    case unavailable
 
     public var errorDescription: String? {
         switch self {
         case .invalidTicket(let shape): shape.errorDescription
         case .missingToken: "A token is required alongside the ticket."
+        case .unavailable: "This build cannot open a pipe yet; add the machine by its address instead."
         }
     }
 }
