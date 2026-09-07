@@ -179,8 +179,10 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelPipeTests.testAHangUpThatLeavesNoPillIsNotCountedAsAClose -->
 - A close counts as mid-reply when it is what ended the reply — whether the
   far machine went away or the app put the reply down on its way to the
-  background. Both leave a partial with a Continue button under it, which is
-  what ADR 0002's threshold is measured over.
+  background. Either leaves a partial with a Continue button under it, so
+  long as any of the reply had arrived; a background before the first token
+  counts the close and leaves nothing to continue. ADR 0002 struck the
+  threshold that fraction was meant to answer, and the counters outlived it.
   <!-- test: AppModelPipeTests.testAPipeThatGoesAwayMidReplyIsCountedAsAMidReplyClose -->
   <!-- test: AppModelLifecycleTests.testABackgroundThatCutsAReplyShortCountsAMidReplyClose -->
 - A provider's row opens its settings, and its name and credentials are
