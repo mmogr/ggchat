@@ -39,8 +39,11 @@ immediately after foregrounding.~~
 > not resolve itself on the next attempt — it is gone, and the answer is to
 > dial again, not to retry. A paragraph that describes a transient is an
 > argument for a delay or a retry; the failure it should have described is an
-> argument for noticing the session is dead and redialling, which is a
-> different piece of work and is not what this ADR costed.
+> argument for noticing the session is dead and redialling. The app does that
+> now — going to the background hangs up every pipe, and coming back dials
+> again the ones it had — so the work this paragraph called separate is done,
+> and done without the reading. What is still uncosted is the ffi telling a
+> reclaimed listener from a slow one, which is what the reading was for.
 >
 > The two failures also look nothing alike in the code. Only a refused or
 > dropped connection becomes `ProviderError.transport`
@@ -101,7 +104,10 @@ and `MockPipeConnector` implements them the way `ModelpipeConnector` will.
   >
   > **What would have to change to make this readable**, none of which is done
   > here: count `.server` with `bad_gateway`/`tunnel_unavailable` alongside
-  > `.transport`, or count where-to-look `.connectingSide` instead of a case;
+  > `.transport`, by code and not by where-to-look — `bad_gateway` is filed
+  > under `.servingSide`, because modelpipe writes it on the serve side about
+  > a backend it did reach and could not read, so counting `.connectingSide`
+  > would take `tunnel_unavailable` and leave the other one behind;
   > count failed dials as well as failed streams; and take the denominator
   > from a `.background` → `.active` transition rather than any `.active`.
 

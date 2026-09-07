@@ -25,11 +25,12 @@ group cannot be declared yet.~~
 >
 > Nothing here passes `CODE_SIGNING_ALLOWED=NO`. Every place that builds the
 > app passes `CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO
-> CODE_SIGNING_ALLOWED=YES` — the `Makefile`'s `UITEST`,
-> `scripts/screenshots.sh`, and `.github/workflows/ci.yml`. That is *ad-hoc*
-> signing, chosen deliberately and for this ADR's own subject: the workflow's
-> comment says "Ad-hoc signing, not none: an unsigned iOS app has no Keychain
-> access, and the app keeps every credential there", and
+> CODE_SIGNING_ALLOWED=YES` — the `Makefile`'s `APP_BUILD` and `UITEST`,
+> `scripts/screenshots.sh`, and the simulator step in
+> `.github/workflows/ci.yml`. That is *ad-hoc* signing, chosen deliberately
+> and for this ADR's own subject: the comment above the `Makefile`'s
+> `APP_BUILD` says "Ad-hoc signing, not none: an unsigned iOS app has no
+> Keychain access, and the app keeps every credential there", and
 > `KeychainError.reason` renders `errSecMissingEntitlement` as "this build is
 > not signed, so it has no Keychain access". The repo had already worked this
 > out; the ADR describes the setting it was changed away from.

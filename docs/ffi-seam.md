@@ -45,8 +45,8 @@ Each is what `MockPipeConnector` and `MockPipeSession` do today and what
    may be delivered. The stream ends only after `shutdown()`.
 5. **`closed` is recoverable by dialling again.** The app calls
    `shutdown()` on the old session and `connect` anew; the ffi must not
-   require process restart. A `closed` seen while a reply streams is
-   counted (ADR 0002).
+   require process restart. A `closed` that arrives while a reply streams is
+   counted, as is a close the app writes itself (ADR 0002).
 6. **`shutdown()` is idempotent and ends the status stream.** Calling it
    twice is fine. After it, the base URL must refuse connections rather
    than hang.
@@ -82,7 +82,8 @@ Each is what `MockPipeConnector` and `MockPipeSession` do today and what
   > reclaims the listener from a suspended process. ADR 0001's amendment
   > argues such a session is dead rather than slow — the answer is to dial
   > again, not to retry — but nothing in this document obliges the ffi to
-  > make the two distinguishable, and no counter records the difference.
+  > make the two distinguishable. The app's own counter cannot stand in: it
+  > moves for a background whether or not the listener was reclaimed.
   > That is open work, named here so an implementer does not read the
   > struck criterion as the acceptance test.
 - The Keychain holds the ticket and token under the provider's id; the
