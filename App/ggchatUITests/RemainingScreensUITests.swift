@@ -105,10 +105,15 @@ final class RemainingScreensUITests: XCTestCase {
         // there hits the sidebar toggle and hides the button being reached
         // for, so the walk only goes back when Settings is not already
         // there. Either way the assertion below is the same one: tapping
-        // Settings has to produce the switch.
+        // Settings has to produce the switch. When the walk does go back,
+        // that tap is confirmed like every other one: the password
+        // manager's offer swallowed this exact tap on CI, which is why it
+        // was taught to check and retry in the first place.
         let settings = app.buttons["Settings"].firstMatch
         if !waitUntilHittable(settings, timeout: 5) {
-            app.navigationBars.buttons.element(boundBy: 0).tap()
+            XCTAssertTrue(
+                tap(app.navigationBars.buttons.element(boundBy: 0), untilExists: settings),
+                "going back did not reach the conversation list")
         }
 
         let force = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Force '")).firstMatch
