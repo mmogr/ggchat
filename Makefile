@@ -3,7 +3,7 @@
 # those.
 SWIFT_SOURCES := Sources Tests Package.swift $(wildcard App/ggchat/*.swift) $(wildcard App/ggchatUITests/*.swift)
 
-.PHONY: screenshots project bootstrap fmt fmt-check lint analyze boundaries enforce build build-app build-app-release test test-live uitest uitest-dark uitest-contrast unused docs ci
+.PHONY: screenshots project bootstrap fmt fmt-check lint analyze boundaries enforce build build-app build-app-release test test-live uitest uitest-ipad uitest-dark uitest-contrast unused docs ci
 
 project:
 	cd App && xcodegen generate --quiet
@@ -118,6 +118,20 @@ udid = $$(xcrun simctl list devices available --json | python3 -c "import json,r
 # runs only when something is listening on 127.0.0.1:8080.
 uitest:
 	$(UITEST) -destination 'platform=iOS Simulator,name=$(SIMULATOR)'
+
+# Which iPad. The layout is the point rather than the model: the root is a
+# NavigationSplitView, a stack on an iPhone and two columns here.
+IPAD ?= iPad Pro 13-inch (M5)
+
+# The iPad leg CI runs, which is the whole walk without the Reduce
+# Transparency reading. That one is a measurement, not a walk: its bands are
+# fractions of an iPhone's screen, so on an iPad both of them are mostly
+# background and it fails on the shape of the picture. `make uitest` pointed
+# at an iPad runs it and fails there, which is why this target exists rather
+# than a note in the README.
+uitest-ipad:
+	$(UITEST) -skip-testing:ggchatUITests/ReduceTransparencyUITests \
+		-destination 'platform=iOS Simulator,name=$(IPAD)'
 
 # Dark and Increase Contrast are settings on the device, not launch
 # arguments, so the device is booted and set first. `simctl ui` prints what it
