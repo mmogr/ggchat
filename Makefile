@@ -3,7 +3,7 @@
 # those.
 SWIFT_SOURCES := Sources Tests Package.swift $(wildcard App/ggchat/*.swift) $(wildcard App/ggchatUITests/*.swift)
 
-.PHONY: screenshots project bootstrap fmt fmt-check lint analyze boundaries enforce build build-app build-app-release test test-live uitest uitest-ipad uitest-dark uitest-contrast unused docs ci
+.PHONY: screenshots project bootstrap fmt fmt-check lint analyze boundaries enforce build build-release build-app build-app-release test test-live uitest uitest-ipad uitest-dark uitest-contrast unused docs ci
 
 project:
 	cd App && xcodegen generate --quiet
@@ -76,15 +76,25 @@ build-app:
 	$(APP_BUILD) -destination 'platform=macOS'
 	$(APP_BUILD) -destination 'generic/platform=iOS Simulator'
 
-# The Release configuration, compiled. Nothing else compiles it: the scheme's
+# The app target in Release. Nothing else compiles it that way: the scheme's
 # run and test actions are Debug, `xcodebuild build` with no -configuration
 # takes the run action's, and the archive action that is Release is run by no
-# target and no workflow. So the `#else` arm of every `#if DEBUG` -- which is
-# everything the shipped app does differently from a development build -- had
-# never been handed to a compiler by any gate.
+# target and no workflow. What it covers is the app target itself -- its
+# generated project and its signing settings -- built as a shipped one is.
+# The `#if DEBUG` arms are all in `Sources`; `build-release` below compiles
+# those, and is the only one that leaves objects a checker can read.
 build-app-release:
 	$(APP_BUILD) -configuration Release -destination 'platform=macOS'
 	$(APP_BUILD) -configuration Release -destination 'generic/platform=iOS Simulator'
+
+# The Release configuration, and then what only a release build can be asked:
+# whether the DEBUG-only types are really gone. `make build` never compiles the
+# `#else` arm of an `#if DEBUG`, and the checker needs objects to read, so the
+# two are one target. This is not in `enforce`: that job runs on Linux, and
+# this one needs a Swift toolchain and the macOS SDK.
+build-release:
+	swift build -c release -Xswiftc -warnings-as-errors
+	scripts/check_no_mock_in_release.sh
 
 test:
 	swift test --parallel
@@ -180,4 +190,4 @@ docs:
 	swift package --allow-writing-to-directory .build/docs generate-documentation \
 		--target GGChatUI --warnings-as-errors --output-path .build/docs/GGChatUI
 
-ci: fmt-check lint analyze boundaries enforce build build-app build-app-release test unused docs
+ci: fmt-check lint analyze boundaries enforce build build-release build-app build-app-release test unused docs

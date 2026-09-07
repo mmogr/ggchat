@@ -96,6 +96,15 @@ jobs:
         run: xcodebuild -version && swift --version
       - name: Build the package with warnings as errors
         run: make build
+      # The package in its Release configuration. The app build below also
+      # links it in Release, but writes to DerivedData; this is the only one
+      # that leaves `.build/release` objects where the checker looks, and so
+      # the only one that can ask whether the DEBUG-only mock pipe is absent
+      # from a shipped binary rather than merely unchosen by the factory. Not
+      # in the enforcement job: that one runs on Linux and this needs a Swift
+      # toolchain and the macOS SDK.
+      - name: Build for release and check the mock pipe is not in it
+        run: make build-release
       # The xcodebuild invocations live in the Makefile so `make ci` compiles
       # what this job compiles instead of an approximation of it.
       - name: Build the app for macOS and the iOS simulator

@@ -52,8 +52,10 @@ conversations. Settings shows the readings the ADRs name, each with its
 denominator. In DEBUG builds a mock provider streams canned replies
 without a server. The pipe path is a mock until `modelpipe-ffi` exists,
 and that mock is DEBUG-only: a released build refuses to dial and says so,
-rather than answering a real ticket with a reply no machine wrote. Nothing
-here links Rust or iroh.
+rather than answering a real ticket with a reply no machine wrote. Absent,
+not merely unchosen -- `MockPipeConnector` and `MockPipeSession` are
+declared inside an `#if DEBUG`, and `make build-release` fails if either
+symbol is in the release objects. Nothing here links Rust or iroh.
 
 ## What is true today
 
@@ -283,16 +285,24 @@ test skips itself when `GGCHAT_LIVE_BASE_URL` is unset, so `make test-live`
 refuses to run without it rather than passing having exercised nothing.
 
 `make ci` runs what CI runs: `make fmt-check`, `make lint`, `make analyze`,
-`make boundaries`, `make enforce`, `make build`, `make build-app`,
-`make build-app-release`, `make test`, `make unused`, `make docs`. The
-UI-test legs are the exception; they need a booted simulator and have their
-own targets below. `make bootstrap` installs the Homebrew tools those need
-(xcodegen, swiftlint, periphery, actionlint).
+`make boundaries`, `make enforce`, `make build`, `make build-release`,
+`make build-app`, `make build-app-release`, `make test`, `make unused`,
+`make docs`. The UI-test legs are the exception; they need a booted
+simulator and have their own targets below. `make bootstrap` installs the
+Homebrew tools those need (xcodegen, swiftlint, periphery, actionlint).
 
 `make analyze` runs the rules under `analyzer_rules` in `.swiftlint.yml`.
 They are separate from `make lint` because they need the arguments the
 compiler was given, so the target builds with `-v` first and hands
 swiftlint that log.
+
+`make build-release` compiles the package in its Release configuration and
+then reads the symbols out of the objects it produced, failing if the
+DEBUG-only mock pipe is among them. A release build on its own would not
+catch it: the mock compiles perfectly well in one. `make build-app-release`
+compiles the app target in Release and is the only thing that does, but it
+goes through xcodebuild and leaves no `.build/release` objects to read,
+which is why both targets exist.
 
 The app target is generated from `App/project.yml` by xcodegen
 (`make project`) and committed. Open `App/ggchat.xcodeproj` in Xcode, or
@@ -304,11 +314,13 @@ xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat -destination 'gene
 ```
 
 `make build-app-release` compiles the same two destinations with
-`-configuration Release`. Nothing else does: the scheme's run and test
-actions are Debug, `xcodebuild build` with no `-configuration` takes the
-run action's, and the Release archive action is not run here. Without that
-target the `#else` arm of an `#if DEBUG` -- the code that decides what a
-shipped build does -- is compiled by no gate.
+`-configuration Release`. Nothing else compiles the app target that way:
+the scheme's run and test actions are Debug, `xcodebuild build` with no
+`-configuration` takes the run action's, and the Release archive action is
+not run here. That is what it is for -- the app target, its generated
+project and its signing settings, built the way a shipped one is. The
+`#else` arms all live in `Sources`, and `make build-release` compiles
+those.
 
 `make uitest` drives the app on a booted iPhone simulator: the first-run
 flow, and a walk through the screens that flow never reaches. It always

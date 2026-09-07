@@ -7,6 +7,11 @@
 /// So the release build gets this instead. It refuses every dial with a
 /// sentence, and `PipeConnectorFactory` is the one place that chooses
 /// between the two.
+///
+/// The choice is not the whole of it: outside DEBUG there is nothing to
+/// choose. `MockPipeConnector` and `MockPipeSession` are declared inside an
+/// `#if DEBUG`, so a release binary carries neither the types nor their
+/// symbols, and this is the only `PipeConnector` in it.
 public struct UnavailablePipeConnector: PipeConnector {
     public init() {}
 

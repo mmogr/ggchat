@@ -8,6 +8,15 @@ has and the real thing must match. When `modelpipe-ffi` ships, a
 a debug build, `UnavailablePipeConnector` in every other — and nothing
 above it changes.
 
+The mock exists only on the debug side of that `#if`. `MockPipeConnector`
+and `MockPipeSession` are themselves declared inside an `#if DEBUG` in
+`Sources/GGChatCore/MockPipeConnector.swift`, so a release build contains
+neither the types nor their symbols; `make build-release` compiles the
+package in Release and fails if it finds either in the objects. Until
+`modelpipe-ffi` lands, everything below describes behaviour that a shipped
+build does not have — `UnavailablePipeConnector` refuses, and refusing is
+all it does.
+
 ## The protocols (verbatim from `Sources/GGChatCore/PipeConnector.swift`)
 
 ```swift

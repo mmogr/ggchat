@@ -251,10 +251,20 @@ public final class AppModel {
 
 extension AppModel {
     /// Seeded, in-memory, for previews.
+    ///
+    /// The pipe connector is the initializer's default, `PipeConnectorFactory`,
+    /// and not a `MockPipeConnector` named here: the mock does not exist
+    /// outside DEBUG, and `#Preview` bodies are compiled in every
+    /// configuration. Previews therefore get the factory's mock — a
+    /// `ContinuousClockSleeper` at 900ms rather than the mock's own
+    /// `ImmediateSleeper` at 700ms — so the status pill walks idle → relayed →
+    /// direct over 1.8 seconds instead of arriving at direct at once. That is
+    /// the app's own timing, which is the more useful thing for a preview to
+    /// show.
     public static var preview: AppModel {
         let model = AppModel(
             store: InMemoryStore(), secrets: InMemorySecrets(), log: NoopLogSink(),
-            pipeConnector: MockPipeConnector(), diagnostics: Diagnostics(defaults: UserDefaults(suiteName: "preview")!))
+            diagnostics: Diagnostics(defaults: UserDefaults(suiteName: "preview")!))
         try? model.addProvider(
             ProviderConfig(name: "Mock", kind: .openAICompatible(baseURL: mockBaseURL), defaultModel: "mock-27b"),
             credentials: [:])
