@@ -391,6 +391,10 @@ enables it.
 - Every sentence in this README is true, and where a claim can be tested a
   test keeps it. `scripts/check_readme_claims.sh` checks that every marker
   above names a test that exists.
+- One writer for the pipe status: `pipeStatuses` is written only by
+  `setPipeStatus(_:for:cutShort:)`, which is where a close is counted, so a
+  close the app shows is a close ADR 0002 hears about.
+  `scripts/check_one_status_writer.sh` refuses any other write.
 - No credential in any log line, ever.
 - Time is an argument: nothing in `GGChatCore` reads the clock except
   `Clock.swift`.
