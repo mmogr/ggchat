@@ -159,7 +159,15 @@ jobs:
             slug: iphone
             device: iPhone
             tests: ggchatUITests
-            skip: ""
+            # Skipped here because it has a leg of its own below. Running it
+            # in both means running it twice on one device family, and the
+            # second one inherits whatever the eighteen tests before it left
+            # the simulator in: measured on a199ca3, the dedicated leg passed
+            # and this one failed the same test with `Failed to launch
+            # com.apple.Preferences: Timed out`. That is not a reading about
+            # the app. The iPad leg below skips it too, for an unrelated
+            # reason it states there.
+            skip: ggchatUITests/ReduceTransparencyUITests
             option: ""
             value: ""
           - name: iPhone dark
