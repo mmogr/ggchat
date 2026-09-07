@@ -5,7 +5,6 @@
 
 ### What the app stopped getting wrong
 
-* **ci:** a run on main is never cancelled by the next merge ([ed68d9e](https://github.com/mmogr/ggchat/commit/ed68d9e0011c65136e19677e840cd6af15e3217c))
 * **ci:** a run on main is never cancelled by the next merge ([18743fa](https://github.com/mmogr/ggchat/commit/18743fa0b474855616763b17a18d8039979d0ff9))
 
 ## [0.1.1](https://github.com/mmogr/ggchat/compare/v0.1.0...v0.1.1) (2026-09-07)
