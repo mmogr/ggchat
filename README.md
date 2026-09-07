@@ -111,7 +111,9 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelPipeTests.testConnectWalksToDirectAndStreamsThroughTheSessionURL -->
   <!-- test: AppModelPipeTests.testForceClosedIsCountedAndReconnectDialsAgain -->
 - The Diagnostics readings survive a relaunch, and only a transport error
-  within five seconds of a resume counts against ADR 0001.
+  within five seconds of a resume increments the "Transport errors after
+  resume" reading; see ADR 0001's amended kill criteria for why that
+  reading is not a health signal.
   <!-- test: DiagnosticsTests.testReadingsPersistWithTheirDenominators -->
 - A first-time user can add a provider, start a conversation, send a
   message and watch the reply stream in, driven through the real app on a
