@@ -1,5 +1,3 @@
-import Foundation
-
 /// The step that turns a six-digit code into the token
 /// ``PipeConnector/connect(ticket:token:)`` needs.
 ///
