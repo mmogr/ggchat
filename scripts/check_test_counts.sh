@@ -5,8 +5,12 @@
 # README claim whose marker is removed stops being checked by
 # check_readme_claims.sh, which only looks at markers that are still there.
 #
-# These are floors, not ratchets. Adding a test needs no edit here. Removing
-# one does, in the commit that removes it, where it can be argued for.
+# These are floors, not ratchets. Adding a test needs no edit here -- except
+# when the new tests are the whole of a change's guard, in which case leaving
+# the floor where it was means every guard the change contributes can be
+# deleted and no gate notices. Raise it past them in the same commit.
+# Removing a test needs an edit here as well, in the commit that removes it,
+# where it can be argued for.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -35,7 +39,7 @@ floor() {
 markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/null || true; })
 
 floor "package test cases" "$(test_cases "$ROOT/Tests")" 75
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 12
-floor "README test markers" "${markers:-0}" 35
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 18
+floor "README test markers" "${markers:-0}" 38
 
 exit $status
