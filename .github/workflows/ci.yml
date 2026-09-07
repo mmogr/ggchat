@@ -33,6 +33,23 @@ jobs:
       - name: Lint Swift and workflows
         run: make lint
 
+  # `swiftlint lint` cannot run the rules under `analyzer_rules`: they need
+  # the arguments the compiler was given, so they need a build. Nothing ran
+  # them, which made that block in .swiftlint.yml a list of rules that had
+  # never once been applied.
+  analyze:
+    name: Analyze
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install swiftlint
+        run: brew install swiftlint
+      # No .build cache here on purpose: the analyzer reads the compile
+      # commands a build prints, and a cache warm enough to skip compiling
+      # would leave it with nothing to read.
+      - name: Run the analyzer rules
+        run: make analyze
+
   boundaries:
     name: Check Boundaries
     runs-on: ubuntu-latest
@@ -60,6 +77,8 @@ jobs:
         run: scripts/check_file_size.sh
       - name: README claims name their tests
         run: scripts/check_readme_claims.sh
+      - name: Test and marker counts have not fallen
+        run: scripts/check_test_counts.sh
 
   build:
     name: Build
@@ -75,21 +94,19 @@ jobs:
         run: xcodebuild -version && swift --version
       - name: Build the package with warnings as errors
         run: make build
+      # The xcodebuild invocations live in the Makefile so `make ci` compiles
+      # what this job compiles instead of an approximation of it.
       - name: Build the app for macOS and the iOS simulator
         if: hashFiles('App/ggchat.xcodeproj/project.pbxproj') != ''
-        run: |
-          set -o pipefail
-          # Ad-hoc signing, not none: an unsigned iOS app has no Keychain
-          # access, and the app keeps every credential there.
-          # Warnings-as-errors is set on the app target in App/project.yml, not
-          # here: on the command line it would also apply to the package
-          # dependencies, and swift-markdown compiles with warnings suppressed.
-          xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat \
-            -destination 'platform=macOS' \
-            CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
-          xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat \
-            -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
+        run: make build-app
+      # Debug is the only configuration anything here had ever compiled: the
+      # scheme's run and test actions are Debug, `xcodebuild build` with no
+      # -configuration takes the run action's, and the Release archive action
+      # is never invoked. So the `#else` arm of every `#if DEBUG` -- the code
+      # that decides what a shipped app does -- reached no compiler at all.
+      - name: Compile the Release configuration
+        if: hashFiles('App/ggchat.xcodeproj/project.pbxproj') != ''
+        run: make build-app-release
 
   test:
     name: Test

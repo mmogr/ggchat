@@ -83,6 +83,12 @@ schemes:
       config: Debug
     test:
       config: Debug
+      # Without this the four xcodebuild UI-test legs instrument nothing:
+      # they walk every view in the app and `xccov` answers "No coverage
+      # data in result bundle". With it the result bundle CI already uploads
+      # carries the walk's coverage. The README badge is computed from the
+      # package run's lcov and is unaffected either way.
+      gatherCoverageData: true
       targets:
         - ggchatUITests
     archive:

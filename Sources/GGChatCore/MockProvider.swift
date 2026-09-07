@@ -1,5 +1,3 @@
-import Foundation
-
 /// Streams canned replies with timing. Previews and tests use it; the mock
 /// pipe session points at one. It takes a `Sleeper`, so a test runs it in
 /// microseconds and a preview at a readable pace.
