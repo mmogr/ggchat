@@ -1,4 +1,3 @@
-import Darwin
 import XCTest
 
 /// The screens left over: gglib's status pane, the reconnect a closed pipe
@@ -6,8 +5,6 @@ import XCTest
 /// written and unit-tested but never looked at.
 final class RemainingScreensUITests: XCTestCase {
     private var app: XCUIApplication!
-
-    private static let localServer = (host: "127.0.0.1", port: 8080)
 
     @MainActor
     private func launch(typeSize: String? = nil) {
@@ -31,7 +28,7 @@ final class RemainingScreensUITests: XCTestCase {
     /// that does not answer the endpoint.
     @MainActor
     func testTheServerStatusPaneAgainstARealServer() throws {
-        try XCTSkipUnless(Self.somethingIsListening(), "start gglib to run this")
+        guard let live = LiveServer.resolve() else { throw XCTSkip(LiveServer.absenceReason) }
         launch()
         let addProvider = app.buttons["Add a provider"].firstMatch
         XCTAssertTrue(addProvider.waitForExistence(timeout: 30))
@@ -39,10 +36,13 @@ final class RemainingScreensUITests: XCTestCase {
         let address = app.textFields["provider-address"].firstMatch
         XCTAssertTrue(address.waitForExistence(timeout: 10))
         address.tap()
-        address.typeText("http://\(Self.localServer.host):\(Self.localServer.port)/v1")
-        app.buttons["Add"].firstMatch.tap()
+        address.typeText(live.baseURL)
+        typeAPIKey(live.apiKey, in: app)
+        submitProviderForm(in: app)
 
-        app.buttons["New conversation"].firstMatch.tap()
+        let newConversation = app.buttons["New conversation"].firstMatch
+        let pill = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Model, '")).firstMatch
+        XCTAssertTrue(tap(newConversation, untilExists: pill), "the conversation never opened")
         let statusButton = app.buttons["Server status"].firstMatch
         XCTAssertTrue(
             statusButton.waitForExistence(timeout: 30),
@@ -79,7 +79,10 @@ final class RemainingScreensUITests: XCTestCase {
         let ticket = app.textFields["provider-ticket"].firstMatch
         XCTAssertTrue(ticket.waitForExistence(timeout: 10))
         ticket.tap()
-        ticket.typeText("pipeabcdefghijklmnop")
+        // modelpipe's normative vector 1. Nothing shorter will do: the form
+        // refuses a ticket under 67 characters, so Add would stay disabled
+        // and there would be no pipe here to close.
+        ticket.typeText("pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na")
         let token = app.secureTextFields["provider-token"].firstMatch
         XCTAssertTrue(token.waitForExistence(timeout: 5))
         token.tap()
@@ -99,11 +102,22 @@ final class RemainingScreensUITests: XCTestCase {
         XCTAssertTrue(connected.waitForExistence(timeout: 30), "the pipe never connected")
 
         // Close it from the debug switch, which is what a dropped pipe looks
-        // like. Settings lives on the conversation list, so go back for it.
+        // like. Settings lives on the conversation list: one screen back on
+        // an iPhone, where the split view is a stack, and already on screen
+        // on an iPad, where the sidebar is a column of its own. Going back
+        // there hits the sidebar toggle and hides the button being reached
+        // for, so the walk only goes back when Settings is not already
+        // there. Either way the assertion below is the same one: tapping
+        // Settings has to produce the switch. When the walk does go back,
+        // that tap is confirmed like every other one: the password
+        // manager's offer swallowed this exact tap on CI, which is why it
+        // was taught to check and retry in the first place.
         let settings = app.buttons["Settings"].firstMatch
-        XCTAssertTrue(
-            tap(app.navigationBars.buttons.element(boundBy: 0), untilExists: settings),
-            "going back did not reach the conversation list")
+        if !waitUntilHittable(settings, timeout: 5) {
+            XCTAssertTrue(
+                tap(app.navigationBars.buttons.element(boundBy: 0), untilExists: settings),
+                "going back did not reach the conversation list")
+        }
 
         let force = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Force '")).firstMatch
         XCTAssertTrue(tap(settings, untilExists: force), "DEBUG builds can force a pipe closed")
@@ -141,8 +155,7 @@ final class RemainingScreensUITests: XCTestCase {
         app = launchFreshApp(typeSize: typeSize)
         addMockProvider()
         app.buttons["New conversation"].firstMatch.tap()
-        XCTAssertTrue(waitUntilHittable(composer(in: app), timeout: 20), "the composer is unreachable")
-        composer(in: app).tap()
+        XCTAssertTrue(caret(in: composer(in: app), of: app), "the composer never took the caret")
         composer(in: app).typeText("Hello")
         let send = app.buttons["Send"].firstMatch
         XCTAssertTrue(send.waitForExistence(timeout: 5))
@@ -156,24 +169,6 @@ final class RemainingScreensUITests: XCTestCase {
             timeout: 120)
         if let screenshot { attach(name: screenshot) }
         return assistant.frame.height
-    }
-
-    /// Whether a server is listening where gglib usually is. A plain TCP
-    /// connect, so the probe is not subject to transport security rules.
-    private static func somethingIsListening() -> Bool {
-        let descriptor = socket(AF_INET, SOCK_STREAM, 0)
-        guard descriptor >= 0 else { return false }
-        defer { close(descriptor) }
-        var address = sockaddr_in()
-        address.sin_family = sa_family_t(AF_INET)
-        address.sin_port = in_port_t(UInt16(localServer.port).bigEndian)
-        address.sin_addr.s_addr = inet_addr(localServer.host)
-        let connected = withUnsafePointer(to: &address) { pointer in
-            pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) {
-                connect(descriptor, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
-            }
-        }
-        return connected == 0
     }
 
     @MainActor

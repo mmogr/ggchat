@@ -3,7 +3,11 @@ import XCTest
 @testable import GGChatCore
 
 final class MockPipeTests: XCTestCase {
-    private let ticket = "pipeabcdefghijklmnop"
+    /// modelpipe's normative vector 1 (`docs/ticket-format-v0.md`): the
+    /// shortest ticket that is one, generated from the RFC 8032 §7.1 test key
+    /// and asserted identical by three implementations on every modelpipe CI
+    /// run, so it cannot drift out from under this.
+    private let ticket = "pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na"
 
     func testStatusWalksIdleRelayedDirectThenClosedOnDemand() async throws {
         let sleeper = GatedSleeper()

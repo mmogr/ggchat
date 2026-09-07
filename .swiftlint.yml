@@ -9,8 +9,13 @@ excluded:
   - .build
   - App/ggchat.xcodeproj
 
+# Analyzer rules need the compiler's own arguments, so they run from
+# `make analyze` and never from `make lint`; nothing had ever run them.
+# `unused_declaration` is not here: periphery already scans for the same
+# thing under `make unused`, and this implementation of it flags the
+# `Encodable` properties in Wire.swift that only the synthesized encoder
+# reads -- exactly what .periphery.yml's `retain_codable_properties` keeps.
 analyzer_rules:
-  - unused_declaration
   - unused_import
 
 opt_in_rules:

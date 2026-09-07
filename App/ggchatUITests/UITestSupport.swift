@@ -70,6 +70,27 @@ extension XCTestCase {
         return witness.exists
     }
 
+    /// Puts the caret in a field and waits for the keyboard, because
+    /// `XCUIElement.tap()` does not always land where the element is: on an
+    /// iPad this app's composer stays unfocused through repeated taps, and
+    /// `typeText` then fails with "Neither element nor any descendant has
+    /// keyboard focus" while the same point tapped as a coordinate focuses
+    /// it. So the tap is placed at the centre of the element's own frame.
+    /// The keyboard is the witness: a tap that misses raises none, and
+    /// without waiting for one the caller types into nothing.
+    @MainActor
+    func caret(in element: XCUIElement, of app: XCUIApplication, attempts: Int = 3) -> Bool {
+        for _ in 0..<attempts where waitUntilHittable(element, timeout: 15) {
+            let middle = element.frame
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+                .withOffset(CGVector(dx: middle.midX, dy: middle.midY))
+                .tap()
+            if app.keyboards.element.waitForExistence(timeout: 5) { return true }
+            dismissAnythingOnTop()
+        }
+        return false
+    }
+
     /// Everything on screen, for when a wait times out and the screenshot
     /// alone does not say why.
     @MainActor
@@ -105,5 +126,44 @@ extension XCTestCase {
         work()
         app.tap()
         dismissAnythingOnTop()
+    }
+
+    /// Types the live server's key into the provider form.
+    ///
+    /// `provider-key` is the Server kind's field, bound to the credential
+    /// stored as `.apiKey`. It is not `provider-token`: that is the Pipe
+    /// kind's, it holds a different credential, and the form only ever shows
+    /// one of the two, so a server walk that reached for it would find
+    /// nothing there.
+    ///
+    /// An empty key types nothing, which leaves a keyless walk exactly as it
+    /// was -- including not waking the password manager, whose offer arrives
+    /// only once something has been put in a `SecureField`.
+    @MainActor
+    func typeAPIKey(_ key: String, in app: XCUIApplication) {
+        guard !key.isEmpty else { return }
+        let field = app.secureTextFields["provider-key"].firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "the API key field is not reachable")
+        field.tap()
+        field.typeText(key)
+    }
+
+    /// Submits the provider form: taps Add, then waits for the sheet to go.
+    ///
+    /// Nothing may sweep the screen while that sheet is up. Its own
+    /// dismissive button is titled "Cancel", which is one of the titles
+    /// `dismissAnythingOnTop()` reaches for, so a sweep aimed at the password
+    /// manager's offer closes the sheet instead and the provider is never
+    /// added -- and the walk then fails a long way further on, looking for
+    /// all the world like the server never answered. The offer is handled
+    /// afterwards instead, by the retrying `tap(_:untilExists:)` that opens
+    /// the conversation, which runs once the sheet is definitely gone.
+    @MainActor
+    func submitProviderForm(in app: XCUIApplication) {
+        let cancel = app.buttons["Cancel"].firstMatch
+        app.buttons["Add"].firstMatch.tap()
+        XCTAssertTrue(
+            cancel.waitForNonExistence(timeout: 20),
+            "the provider sheet did not close after Add, so nothing was added")
     }
 }

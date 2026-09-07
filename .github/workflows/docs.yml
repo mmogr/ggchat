@@ -1,6 +1,14 @@
 name: Deploy Docs to GitHub Pages
 
 on:
+  # The build had two triggers and neither had ever fired one run: the first
+  # release is still unpublished, and nobody had dispatched it by hand. So
+  # the static-hosting build below -- which is not the DocC build `make docs`
+  # and CI's Docs job run, because only this one passes
+  # --transform-for-static-hosting and a hosting base path -- had never been
+  # compiled at all, and the first time it ran would have been the release.
+  push:
+    branches: [main]
   release:
     types: [published]
   workflow_dispatch:
@@ -11,8 +19,11 @@ permissions:
   id-token: write
 
 concurrency:
+  # Not cancel-in-progress: with a push trigger, the merge that follows a
+  # release publish now lands in this same group, and cancelling would take
+  # down the deploy of the release that had just been tagged.
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -41,6 +52,14 @@ jobs:
   deploy:
     name: Deploy
     needs: build
+    # A push builds the site and stops there. Two reasons, and either alone
+    # is enough: GitHub Pages is not enabled on this repository at all
+    # (`gh api repos/mmogr/ggchat/pages` is a 404 and `has_pages` is false),
+    # so `deploy-pages` fails whenever it runs -- and once it is enabled,
+    # publishing every commit on main is a decision for whoever enables it,
+    # not a side effect of wanting the build exercised. Drop this line to
+    # make main deploy on push.
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

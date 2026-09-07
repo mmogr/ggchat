@@ -14,7 +14,9 @@ final class ProviderConfigTests: XCTestCase {
     }
 
     func testPipeProviderRoundTripsAndHoldsOnlyADigest() throws {
-        let ticket = "pipeabcdefghijklmnop"
+        // modelpipe's normative vector 1: a real ticket, so what is asserted
+        // absent from the encoded config is a real ticket's worth of secret.
+        let ticket = "pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na"
         let config = ProviderConfig(name: "home", kind: .pipe(ticketDigest: Ticket.digest(ticket)))
         let data = try JSONEncoder().encode(config)
         XCTAssertEqual(try JSONDecoder().decode(ProviderConfig.self, from: data), config)

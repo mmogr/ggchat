@@ -33,6 +33,23 @@ jobs:
       - name: Lint Swift and workflows
         run: make lint
 
+  # `swiftlint lint` cannot run the rules under `analyzer_rules`: they need
+  # the arguments the compiler was given, so they need a build. Nothing ran
+  # them, which made that block in .swiftlint.yml a list of rules that had
+  # never once been applied.
+  analyze:
+    name: Analyze
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install swiftlint
+        run: brew install swiftlint
+      # No .build cache here on purpose: the analyzer reads the compile
+      # commands a build prints, and a cache warm enough to skip compiling
+      # would leave it with nothing to read.
+      - name: Run the analyzer rules
+        run: make analyze
+
   boundaries:
     name: Check Boundaries
     runs-on: ubuntu-latest
@@ -52,6 +69,8 @@ jobs:
         run: scripts/check_no_hand_drawn_glass.sh
       - name: Time is an argument
         run: scripts/check_time_is_an_argument.sh
+      - name: One writer for the pipe status
+        run: scripts/check_one_status_writer.sh
       - name: No print
         run: scripts/check_no_print.sh
       - name: No credential in a log call
@@ -60,6 +79,8 @@ jobs:
         run: scripts/check_file_size.sh
       - name: README claims name their tests
         run: scripts/check_readme_claims.sh
+      - name: Test and marker counts have not fallen
+        run: scripts/check_test_counts.sh
 
   build:
     name: Build
@@ -75,28 +96,28 @@ jobs:
         run: xcodebuild -version && swift --version
       - name: Build the package with warnings as errors
         run: make build
-      # The only job that compiles the `#else` arm of an `#if DEBUG`, and the
-      # only one that can ask whether the DEBUG-only mock pipe is really absent
+      # The package in its Release configuration. The app build below also
+      # links it in Release, but writes to DerivedData; this is the only one
+      # that leaves `.build/release` objects where the checker looks, and so
+      # the only one that can ask whether the DEBUG-only mock pipe is absent
       # from a shipped binary rather than merely unchosen by the factory. Not
       # in the enforcement job: that one runs on Linux and this needs a Swift
       # toolchain and the macOS SDK.
       - name: Build for release and check the mock pipe is not in it
         run: make build-release
+      # The xcodebuild invocations live in the Makefile so `make ci` compiles
+      # what this job compiles instead of an approximation of it.
       - name: Build the app for macOS and the iOS simulator
         if: hashFiles('App/ggchat.xcodeproj/project.pbxproj') != ''
-        run: |
-          set -o pipefail
-          # Ad-hoc signing, not none: an unsigned iOS app has no Keychain
-          # access, and the app keeps every credential there.
-          # Warnings-as-errors is set on the app target in App/project.yml, not
-          # here: on the command line it would also apply to the package
-          # dependencies, and swift-markdown compiles with warnings suppressed.
-          xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat \
-            -destination 'platform=macOS' \
-            CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
-          xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat \
-            -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
+        run: make build-app
+      # Debug is the only configuration anything here had ever compiled: the
+      # scheme's run and test actions are Debug, `xcodebuild build` with no
+      # -configuration takes the run action's, and the Release archive action
+      # is never invoked. So the `#else` arm of every `#if DEBUG` -- the code
+      # that decides what a shipped app does -- reached no compiler at all.
+      - name: Compile the Release configuration
+        if: hashFiles('App/ggchat.xcodeproj/project.pbxproj') != ''
+        run: make build-app-release
 
   test:
     name: Test
@@ -147,22 +168,61 @@ jobs:
         include:
           - name: iPhone
             slug: iphone
+            device: iPhone
             tests: ggchatUITests
+            # Skipped here because it has a leg of its own below. Running it
+            # in both means running it twice on one device family, and the
+            # second one inherits whatever the eighteen tests before it left
+            # the simulator in: measured on a199ca3, the dedicated leg passed
+            # and this one failed the same test with `Failed to launch
+            # com.apple.Preferences: Timed out`. That is not a reading about
+            # the app. The iPad leg below skips it too, for an unrelated
+            # reason it states there.
+            skip: ggchatUITests/ReduceTransparencyUITests
             option: ""
             value: ""
           - name: iPhone dark
             slug: iphone-dark
+            device: iPhone
             tests: ggchatUITests/ScreenGalleryUITests
+            skip: ""
             option: appearance
             value: dark
           - name: iPhone contrast
             slug: iphone-contrast
+            device: iPhone
             tests: ggchatUITests/ScreenGalleryUITests
+            skip: ""
             option: increase_contrast
             value: enabled
           - name: iPhone reduce transparency
             slug: iphone-reduce-transparency
+            device: iPhone
             tests: ggchatUITests/ReduceTransparencyUITests
+            skip: ""
+            option: ""
+            value: ""
+          # The walk again on the other device family this app ships for.
+          # TARGETED_DEVICE_FAMILY is "1,2" and the root is a
+          # NavigationSplitView, which is a stack on an iPhone and two
+          # columns on an iPad: every leg above ran the compact layout, so
+          # nothing had ever driven the one an iPad user sees.
+          #
+          # It skips the Reduce Transparency reading, which is a measurement
+          # rather than a walk: it compares a band at 0.83-0.94 of the
+          # screenshot's height with one above it, and those fractions are an
+          # iPhone's. On an iPad Pro 13-inch the composer's glass is a strip
+          # in a much taller picture, so both bands are mostly background and
+          # the ratio moves 0.0026 where the test wants 0.01 -- it would fail
+          # for the shape of the screen, not for anything the app did. The
+          # iPhone leg above still runs it. Reaching it here means bands
+          # derived from the composer's own frame, not fractions of the
+          # picture.
+          - name: iPad
+            slug: ipad
+            device: iPad
+            tests: ggchatUITests
+            skip: ggchatUITests/ReduceTransparencyUITests
             option: ""
             value: ""
     env:
@@ -178,14 +238,50 @@ jobs:
           path: .build/xcode-spm
           key: xcode-spm-${{ runner.os }}-${{ hashFiles('Package.resolved') }}
           restore-keys: xcode-spm-${{ runner.os }}-
-      - name: Pick a booted iPhone simulator
+      - name: Pick a booted simulator
         id: sim
+        env:
+          DEVICE: ${{ matrix.device }}
         run: |
           # Newest runtime first, sorted on a tuple of integers. Sorting the
           # keys as strings puts iOS-18-4 above iOS-26-5, which would hand an
           # iOS 18 device to an app that needs 26 and draws with .glassEffect.
-          udid=$(xcrun simctl list devices available --json \
-            | python3 -c "import json,re,sys;d=json.load(sys.stdin)['devices'];v=lambda k:tuple(map(int,re.findall(r'\d+',k)));print(next(x['udid'] for k in sorted((k for k in d if 'iOS' in k),key=v,reverse=True) for x in d[k] if x['name'].startswith('iPhone')))")
+          # The family is the matrix's, not a constant: with it hard-coded to
+          # iPhone the iPad leg would boot an iPhone and pass as a fifth copy
+          # of the run above it.
+          #
+          # An empty family is that same bug wearing a different hat, and it
+          # is the one thing here nothing downstream can catch: it matches
+          # every name, so a leg added without a `device:` key takes whatever
+          # the newest runtime lists first -- an iPhone on this image -- and
+          # the name check below, comparing against the same empty string,
+          # waves it through. Refused here instead.
+          if [ -z "$DEVICE" ]; then
+            echo "::error::this leg names no device family"
+            exit 1
+          fi
+          read -r udid name <<<"$(xcrun simctl list devices available --json \
+            | python3 -c "import json,os,re,sys;p=os.environ['DEVICE'];d=json.load(sys.stdin)['devices'];v=lambda k:tuple(map(int,re.findall(r'\d+',k)));x=next(x for k in sorted((k for k in d if 'iOS' in k),key=v,reverse=True) for x in d[k] if x['name'].startswith(p));print(x['udid'],x['name'])")"
+          # A family the image has no device for: `next` raises, the traceback
+          # goes to the log and stdout comes back empty. Named here rather
+          # than left to the check below, which would report a leg that "got"
+          # a blank device, or to xcodebuild an hour later.
+          if [ -z "$udid" ]; then
+            echo "::error::no $DEVICE simulator on this runner image"
+            exit 1
+          fi
+          echo "this leg runs on $name ($udid)"
+          # The name is read back and checked against the family the leg is
+          # named for. This is a check on the picker rather than on the
+          # simulator, and it cannot fire for a device the picker could pick
+          # today: the same $DEVICE filters the list above. What it catches
+          # is an edit to that filter -- hard-code the family to iPhone and
+          # the iPad leg fails here instead of going green on a layout it
+          # never drew.
+          case "$name" in
+            "$DEVICE"*) ;;
+            *) echo "::error::the $DEVICE leg got $name"; exit 1 ;;
+          esac
           echo "udid=$udid" >> "$GITHUB_OUTPUT"
           # Booting a booted device is an error by design, so that stays
           # tolerant. bootstatus is the gate: a simulator that never comes up
@@ -215,16 +311,23 @@ jobs:
         env:
           UDID: ${{ steps.sim.outputs.udid }}
           TESTS: ${{ matrix.tests }}
+          SKIP: ${{ matrix.skip }}
         run: |
           set -o pipefail
           # xcodebuild refuses to write a result bundle that already exists,
           # and a re-run on a warm runner has one.
           rm -rf "$BUNDLE"
+          # The legs that skip nothing must pass no -skip-testing: at all,
+          # so the flag is built as an array rather than interpolated into
+          # the command: an empty `-skip-testing:` is an argument, not the
+          # absence of one.
+          skip=()
+          if [ -n "$SKIP" ]; then skip=(-skip-testing:"$SKIP"); fi
           xcodebuild test -project App/ggchat.xcodeproj -scheme ggchat \
             -destination "id=$UDID" \
             -resultBundlePath "$BUNDLE" \
             -clonedSourcePackagesDirPath .build/xcode-spm \
-            -only-testing:"$TESTS" \
+            -only-testing:"$TESTS" "${skip[@]}" \
             CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
       - name: Say which tests ran and why any failed
         if: always()

@@ -28,7 +28,10 @@ struct SettingsView: View {
                 } header: {
                     Text("Diagnostics")
                 } footer: {
-                    Text("Counted on this device only. ADR 0001 and ADR 0002 read these.")
+                    Text(
+                        "Counted on this device only. Both ADRs struck the criteria "
+                            + "these were meant to answer; the numbers are still real."
+                    )
                 }
                 #if DEBUG
                     if !connectedPipes.isEmpty {
