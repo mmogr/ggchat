@@ -13,8 +13,10 @@
 		725081788612B911C82443FD /* RemainingScreensUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8887D474A25D1148508A1A8A /* RemainingScreensUITests.swift */; };
 		77CB7E9D19AE522138ADDE31 /* ReduceTransparencyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 012CA37950E7FD746580F4B9 /* ReduceTransparencyUITests.swift */; };
 		895F021D8EBF53CF1DE2D275 /* ScreenGalleryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B587441DB44EB8387612415 /* ScreenGalleryUITests.swift */; };
+		95328C623F60DECDC145792B /* LiveServerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 261ADF538454ADA1B24301E8 /* LiveServerTests.swift */; };
 		C3CA847E3248F9EEBB33E2FC /* UITestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A72388942EA2BF180AE457CF /* UITestSupport.swift */; };
 		C6B588CC1AD15333CC66DF6A /* GGChatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3827CC1C411258C3A02FB0E8 /* GGChatUI */; };
+		FAF20668F07257B8B61A72B7 /* LiveServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3513C1C38B6CD42BBB5ADA4 /* LiveServer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -30,6 +32,7 @@
 /* Begin PBXFileReference section */
 		012CA37950E7FD746580F4B9 /* ReduceTransparencyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReduceTransparencyUITests.swift; sourceTree = "<group>"; };
 		157E48045F63BAEE71CF5C31 /* ggchat-iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "ggchat-iOS.entitlements"; sourceTree = "<group>"; };
+		261ADF538454ADA1B24301E8 /* LiveServerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveServerTests.swift; sourceTree = "<group>"; };
 		3B587441DB44EB8387612415 /* ScreenGalleryUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenGalleryUITests.swift; sourceTree = "<group>"; };
 		56D176E1F0D09146E5E6384D /* ggchatApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ggchatApp.swift; sourceTree = "<group>"; };
 		8887D474A25D1148508A1A8A /* RemainingScreensUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemainingScreensUITests.swift; sourceTree = "<group>"; };
@@ -37,6 +40,7 @@
 		A620F205B643A7E1B77C12F3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A72388942EA2BF180AE457CF /* UITestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestSupport.swift; sourceTree = "<group>"; };
 		ACFEC7FB129F67C8D31EC44B /* ggchat-macOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "ggchat-macOS.entitlements"; sourceTree = "<group>"; };
+		C3513C1C38B6CD42BBB5ADA4 /* LiveServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveServer.swift; sourceTree = "<group>"; };
 		D2FD64D354A297A69A640EC4 /* FirstRunUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunUITests.swift; sourceTree = "<group>"; };
 		D6AD07AA03CC2B5B94885481 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		DAF72E349B4862F0CFBCFFDF /* ggchat */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ggchat; path = ..; sourceTree = SOURCE_ROOT; };
@@ -117,6 +121,8 @@
 			isa = PBXGroup;
 			children = (
 				D2FD64D354A297A69A640EC4 /* FirstRunUITests.swift */,
+				C3513C1C38B6CD42BBB5ADA4 /* LiveServer.swift */,
+				261ADF538454ADA1B24301E8 /* LiveServerTests.swift */,
 				012CA37950E7FD746580F4B9 /* ReduceTransparencyUITests.swift */,
 				8887D474A25D1148508A1A8A /* RemainingScreensUITests.swift */,
 				3B587441DB44EB8387612415 /* ScreenGalleryUITests.swift */,
@@ -224,6 +230,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				2BC2B73C5C5BDAF36DDDA295 /* FirstRunUITests.swift in Sources */,
+				FAF20668F07257B8B61A72B7 /* LiveServer.swift in Sources */,
+				95328C623F60DECDC145792B /* LiveServerTests.swift in Sources */,
 				77CB7E9D19AE522138ADDE31 /* ReduceTransparencyUITests.swift in Sources */,
 				725081788612B911C82443FD /* RemainingScreensUITests.swift in Sources */,
 				895F021D8EBF53CF1DE2D275 /* ScreenGalleryUITests.swift in Sources */,

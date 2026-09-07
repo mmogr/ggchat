@@ -115,10 +115,18 @@ Each claim names the test that keeps it true.
   <!-- test: DiagnosticsTests.testReadingsPersistWithTheirDenominators -->
 - A first-time user can add a provider, start a conversation, send a
   message and watch the reply stream in, driven through the real app on a
-  simulator. The same walk runs against a server on this machine when one
-  is listening, and skips when none is.
+  simulator. The same walk runs against the server `GGCHAT_LIVE_BASE_URL`
+  names, typing `GGCHAT_LIVE_API_KEY` into the form; with neither set it
+  falls back to a server on `127.0.0.1:8080` and skips when none is there.
   <!-- test: FirstRunUITests.testFirstRunWithTheMockProvider -->
   <!-- test: FirstRunUITests.testFirstRunAgainstAServerOnThisMachine -->
+- Which server a live walk drives is resolved from those two variables: one
+  named outright is used as given and never probed, so an unreachable one
+  fails rather than skipping, and an unset one falls back to the loopback
+  only when something answers there.
+  <!-- test: LiveServerTests.testANamedServerIsUsedAsGivenAndIsNotProbed -->
+  <!-- test: LiveServerTests.testAnUnnamedServerFallsBackToTheLoopbackThatAnswers -->
+  <!-- test: LiveServerTests.testNothingNamedAndNothingListeningIsASkip -->
 - A credential that will not save takes the provider with it, rather than
   leaving one that fails later, and the reason names the credential.
   <!-- test: AddProviderFailureTests.testACredentialThatWillNotSaveLeavesNoHalfAddedProvider -->
@@ -197,10 +205,25 @@ shipped build does -- is compiled by no gate.
 
 `make uitest` drives the app on a booted iPhone simulator: the first-run
 flow, and a walk through the screens that flow never reaches. It always
-runs against the DEBUG mock provider, and also against a server on
-`127.0.0.1:8080` when one is listening. The builds are signed ad-hoc,
-because an unsigned iOS app has no Keychain access and this app keeps
-every credential there.
+runs against the DEBUG mock provider, and also against a live server:
+
+```sh
+GGCHAT_LIVE_BASE_URL=http://127.0.0.1:8080/v1 GGCHAT_LIVE_API_KEY=sk-... make uitest
+```
+
+The same two variables as `make test-live`, so one recipe configures both
+halves of the live suite. The walk types the key into the provider form, so
+a gglib that enforces one is reachable; before this it typed none and could
+only pass against a gglib that enforced none. With neither variable set it
+falls back to probing `127.0.0.1:8080` and skips when nothing answers, which
+is what keeps CI, where no gglib runs, green. `xcodebuild` hands a test
+runner on a simulator only the variables named `TEST_RUNNER_<NAME>`, so the
+Makefile and `scripts/screenshots.sh` forward them under that prefix; setting
+the bare names on an `xcodebuild` invocation of your own will not reach the
+walk.
+
+The builds are signed ad-hoc, because an unsigned iOS app has no Keychain
+access and this app keeps every credential there.
 
 `make uitest-dark` and `make uitest-contrast` run the same walk with the
 device set to dark mode and to Increase Contrast. Both are settings on the
