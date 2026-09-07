@@ -71,6 +71,27 @@ final class AppModelPipeTests: XCTestCase {
         XCTAssertEqual(model.diagnostics.ticketDigests.count, 1, "the same ticket is one node")
     }
 
+    /// A hang-up that leaves no pill is not a close. Deleting a provider and
+    /// pressing reconnect both end a session, but neither shows the user a
+    /// Closed pipe: the first leaves no provider and the second leaves a dial
+    /// in flight. Counting them would put into "of M closes" two events that
+    /// the user asked for and that no reading is about.
+    @MainActor
+    func testAHangUpThatLeavesNoPillIsNotCountedAsAClose() async throws {
+        let (model, config) = try makeModel()
+        await model.connectPipe(for: config)
+        await waitForStatus(.direct, model, config.id)
+
+        await model.reconnectPipe(for: config)
+        await waitForStatus(.direct, model, config.id)
+        XCTAssertEqual(model.diagnostics.closedTransitions, 0, "asking for the pipe back was counted as losing it")
+
+        model.removeProvider(config.id)
+        for _ in 0..<200 where model.pipeStatus(for: config.id) != nil { await Task.yield() }
+        XCTAssertNil(model.pipeStatus(for: config.id))
+        XCTAssertEqual(model.diagnostics.closedTransitions, 0, "deleting a machine was counted as a close")
+    }
+
     @MainActor
     func testConnectWithoutSecretsRefusesWithASentence() async throws {
         let (model, _) = try makeModel()

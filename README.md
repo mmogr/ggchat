@@ -169,6 +169,14 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundHangsUpEveryPipeAndComingBackDialsAgain -->
   <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundKeepsThePartialReplyInsteadOfLosingIt -->
   <!-- test: AppModelLifecycleTests.testComingBackDoesNotDialAPipeTheAppNeverOpened -->
+- Every close the app shows is a close it counts, whoever wrote it down: ADR
+  0002's denominator moves for a background and for a refused dial, not only
+  for a close a live session reported. A close is counted once — a background
+  after a refused dial adds nothing — and a hang-up that leaves no pill at
+  all, from a delete or a reconnect, is not counted as one.
+  <!-- test: AppModelLifecycleTests.testEveryBackgroundCountsTheCloseItPutsOnTheScreen -->
+  <!-- test: AppModelFailedDialTests.testABackgroundAfterARefusedDialAddsNoSecondClose -->
+  <!-- test: AppModelPipeTests.testAHangUpThatLeavesNoPillIsNotCountedAsAClose -->
 - A provider's row opens its settings, and its name and credentials are
   edited in place, keeping the id — so a machine paired again with the
   ticket its next `gglib remote enable` printed keeps its conversations.

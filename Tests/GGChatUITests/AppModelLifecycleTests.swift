@@ -71,6 +71,36 @@ final class AppModelLifecycleTests: XCTestCase {
         XCTAssertEqual(model.diagnostics.foregroundResumes, 1, "ADR 0001's denominator still counts the resume")
     }
 
+    /// ADR 0002's denominator, on the close that dominates it. Going to the
+    /// background is how a pipe on a phone almost always ends, and it is the
+    /// one close the app performs itself rather than watching arrive — so
+    /// while the counting lived in the status observer, the pill read Closed
+    /// and "of M closes" stayed where it was.
+    ///
+    /// Each background is its own close: a resume that dials again and a
+    /// second background are two, not one.
+    @MainActor
+    func testEveryBackgroundCountsTheCloseItPutsOnTheScreen() async throws {
+        let model = makeModel(registry: LoopbackProviderRegistry())
+        let config = try addPipe(to: model)
+        await model.connectPipe(for: config)
+        await waitForStatus(.direct, model, config.id)
+
+        await model.didEnterBackground()
+
+        XCTAssertEqual(model.pipeStatus(for: config.id), .closed)
+        XCTAssertEqual(
+            model.diagnostics.closedTransitions, 1,
+            "the pill was shown as Closed and ADR 0002's denominator never heard about it")
+        XCTAssertEqual(model.diagnostics.closedWhileStreaming, 0, "nothing was streaming")
+
+        await model.didBecomeActive()
+        await waitForStatus(.direct, model, config.id)
+        await model.didEnterBackground()
+
+        XCTAssertEqual(model.diagnostics.closedTransitions, 2, "the second background was folded into the first")
+    }
+
     /// A resume dials the pipes this app had, and only those. A provider
     /// nobody has opened a conversation for is left alone.
     @MainActor
