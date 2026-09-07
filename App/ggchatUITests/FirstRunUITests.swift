@@ -91,7 +91,7 @@ final class FirstRunUITests: XCTestCase {
         let composer = app.textViews["composer"].firstMatch
         let field = composer.exists ? composer : app.textFields["composer"].firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 15), "the composer never appeared")
-        field.tap()
+        XCTAssertTrue(caret(in: field, of: app), "the composer never took the caret")
         field.typeText("Say hello in three words.")
         let send = app.buttons["Send"].firstMatch
         XCTAssertTrue(send.waitForExistence(timeout: 5))
