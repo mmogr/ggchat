@@ -62,6 +62,19 @@ Each is what `MockPipeConnector` and `MockPipeSession` do today and what
    token. The app's redaction test greps for a distinctive token; extend
    it to the ffi's output when it lands.
 
+## Pairing sits above the seam, not inside it
+
+The first connection to a machine trades a six-digit code for that
+machine's API key, and the route that does it (`POST /v1/remote/pair` on
+gglib's proxy) is reachable only *through* the pipe. That did not become a
+third parameter on `connect`. `PipePairing` builds the exchange out of the
+two protocols above instead: `connect(ticket:token:)` with the code as the
+token, a POST to `session.baseURL`, `shutdown()`, and the key handed back
+to be stored and dialled with. So the ffi has nothing extra to implement
+for pairing — and the token it is handed on a pairing dial is the code,
+which modelpipe's `connect` ignores exactly as it ignores the token on
+every other dial.
+
 ## Platform facts already in place
 
 - `Info.plist` allows local networking only (`NSAllowsLocalNetworking`),

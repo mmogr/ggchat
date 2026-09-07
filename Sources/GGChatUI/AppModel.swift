@@ -31,6 +31,7 @@ public final class AppModel {
     let log: any LogSink
     let registry: LoopbackProviderRegistry
     let pipeConnector: any PipeConnector
+    let redeemer: any PairingRedeemer
     let now: () -> Date
 
     /// Where the in-process mock provider answers in DEBUG builds, the same
@@ -43,6 +44,7 @@ public final class AppModel {
         log: any LogSink = OSLogSink(category: "app"),
         registry: LoopbackProviderRegistry = .shared,
         pipeConnector: any PipeConnector = PipeConnectorFactory.make(),
+        redeemer: any PairingRedeemer = HTTPPairingRedeemer(),
         diagnostics: Diagnostics = Diagnostics(),
         now: @escaping () -> Date = { Date() }
     ) {
@@ -51,6 +53,7 @@ public final class AppModel {
         self.log = log
         self.registry = registry
         self.pipeConnector = pipeConnector
+        self.redeemer = redeemer
         self.diagnostics = diagnostics
         self.now = now
         #if DEBUG
