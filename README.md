@@ -202,6 +202,13 @@ runs against the DEBUG mock provider, and also against a server on
 because an unsigned iOS app has no Keychain access and this app keeps
 every credential there.
 
+`make uitest-ipad` runs the same walk on an iPad, which is not a larger
+iPhone: the root is a `NavigationSplitView`, so the sidebar and the
+conversation are two columns rather than a stack, and Settings is on
+screen instead of one screen back. It is the leg CI runs, and like CI it
+leaves out the Reduce Transparency reading, whose bands are fractions of
+an iPhone's screen. CI runs the walk on both families.
+
 `make uitest-dark` and `make uitest-contrast` run the same walk with the
 device set to dark mode and to Increase Contrast. Both are settings on the
 simulator rather than launch arguments, so each target sets one, checks
