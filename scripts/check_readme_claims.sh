@@ -30,18 +30,36 @@ markers = re.findall(r"<!-- test: ([A-Za-z0-9_.]+) -->", readme)
 # Members and nested types are indented, so they stay in the region they
 # belong to. `extension Foo` counts as Foo: that is where a test class may
 # keep some of its methods.
+# The indent is captured, not skipped, and it decides whether a declaration
+# opens a new region or sits inside the current one.
+#
+# Anchoring at column 0 was wrong: a whole test class indented inside a
+# `#if canImport(Security)` never matched, so none of its methods were
+# attributed to anything and every marker naming them failed. Allowing any
+# indentation is also wrong, and fails differently: a nested member type — a
+# helper `private final class Probe` inside a test case — would open a region
+# of its own and steal every method declared after it.
+#
+# So a declaration opens a region only when it is at or outside the current
+# region's indent. A type nested deeper is passed over, and its methods stay
+# attributed to the type the reader would name in a marker.
 DECL = re.compile(
-    r"^(?:@\w+\s+)*(?:final\s+|public\s+|internal\s+|private\s+|fileprivate\s+|open\s+)*"
-    r"(?:class|struct|actor|enum|extension)\s+(\w+)"
+    r"^(?P<indent>[ \t]*)"
+    r"(?:@\w+\s+)*(?:final\s+|public\s+|internal\s+|private\s+|fileprivate\s+|open\s+)*"
+    r"(?:class|struct|actor|enum|extension)\s+(?P<name>\w+)"
 )
 
 owners: dict[str, set[str]] = {}
 for path in sorted(root.glob("Tests/**/*.swift")) + sorted(root.glob("App/**/*.swift")):
     current = None
+    current_indent = 0
     for line in path.read_text().splitlines():
         declaration = DECL.match(line)
         if declaration:
-            current = declaration.group(1)
+            indent = len(declaration.group("indent").expandtabs(4))
+            if current is None or indent <= current_indent:
+                current = declaration.group("name")
+                current_indent = indent
             continue
         if current:
             method = re.search(r"\bfunc\s+(\w+)\s*\(", line)
