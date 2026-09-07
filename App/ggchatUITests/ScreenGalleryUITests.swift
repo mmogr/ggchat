@@ -8,9 +8,12 @@ import XCTest
 final class ScreenGalleryUITests: XCTestCase {
     private var app: XCUIApplication!
 
-    /// A ticket that is the right shape and decodes to nothing. The mock
-    /// connector only checks the shape.
-    private let wellFormedTicket = "pipeabcdefghijklmnop"
+    /// modelpipe's normative vector 1: a real 67-character ticket, which is
+    /// the shortest one there is. The form now enforces that floor, so a
+    /// short stand-in would leave Add disabled and this walk would never
+    /// reach the status pill — and the screenshot it takes is in the README.
+    /// 67 keystrokes into the simulator's keyboard is the price of that.
+    private let wellFormedTicket = "pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na"
 
     @MainActor
     private func launch() {
