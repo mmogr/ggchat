@@ -40,15 +40,15 @@ Each is what `MockPipeConnector` and `MockPipeSession` do today and what
 3. **`baseURL` is loopback, ends in `/v1`, and is stable for the life of
    the session.** The app builds `OpenAICompatibleProvider(baseURL:
    session.baseURL, apiKey: token)` and nothing else. See ADR 0001 for
-   why this is a URL and not a request API, and for the reading that
-   would overturn it.
+   why this is a URL and not a request API, and — as amended 2026-09-07 —
+   for why the reading that was to overturn it does not read that.
 4. **`status` yields the current value first**, then every change, to
    every subscriber, however late it subscribes. Equal consecutive values
    may be delivered. The stream ends only after `shutdown()`.
 5. **`closed` is recoverable by dialling again.** The app calls
    `shutdown()` on the old session and `connect` anew; the ffi must not
-   require process restart. A `closed` seen while a reply streams is
-   counted (ADR 0002).
+   require process restart. A `closed` that arrives while a reply streams is
+   counted, as is a close the app writes itself (ADR 0002).
 6. **`shutdown()` is idempotent and ends the status stream.** Calling it
    twice is fine. After it, the base URL must refuse connections rather
    than hang.
@@ -79,8 +79,28 @@ every other dial.
 
 - `Info.plist` allows local networking only (`NSAllowsLocalNetworking`),
   which covers loopback. Nothing else is needed for the pipe's URL.
-- iOS suspends the app, and with it the listener. ADR 0001's reading
-  counts transport errors within five seconds of a resume.
+- iOS suspends the app, and with it the listener. ~~ADR 0001's reading
+  counts transport errors within five seconds of a resume.~~
+
+  > **Amended 2026-09-07 — do not build toward that reading.** ADR 0001's
+  > kill criterion was struck on the same date and the counter behind it is
+  > blind to the case it was written for. `Diagnostics.recordStreamEnd`
+  > (`Sources/GGChatUI/Diagnostics.swift:37`) returns unless the error is
+  > `ProviderError.transport`, and by #7 above a far side that is away
+  > answers over a working pipe with modelpipe's HTTP error body, which
+  > `OpenAICompatibleProvider.serverError` turns into `ProviderError.server`.
+  > No window width fixes that. A zero on this counter is not evidence the
+  > ffi is behaving under suspension; read ADR 0001's "Kill criteria" note
+  > before treating it as a signal.
+  >
+  > What the seam does **not** yet say is what the ffi owes when the system
+  > reclaims the listener from a suspended process. ADR 0001's amendment
+  > argues such a session is dead rather than slow — the answer is to dial
+  > again, not to retry — but nothing in this document obliges the ffi to
+  > make the two distinguishable. The app's own counter cannot stand in: it
+  > moves for a background whether or not the listener was reclaimed.
+  > That is open work, named here so an implementer does not read the
+  > struck criterion as the acceptance test.
 - The Keychain holds the ticket and token under the provider's id; the
   config holds only a digest, used to count distinct tickets (the app's
   kill criterion, shown in Settings).
