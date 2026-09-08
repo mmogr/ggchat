@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/mmogr/ggchat/compare/v0.1.1...v0.1.2) (2026-09-07)
+
+
+### What the app stopped getting wrong
+
+* **ci:** a run on main is never cancelled by the next merge ([18743fa](https://github.com/mmogr/ggchat/commit/18743fa0b474855616763b17a18d8039979d0ff9))
+
 ## [0.1.1](https://github.com/mmogr/ggchat/compare/v0.1.0...v0.1.1) (2026-09-07)
 
 
