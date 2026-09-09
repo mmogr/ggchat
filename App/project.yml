@@ -97,8 +97,24 @@ schemes:
       targets:
         ggchat: all
         ggchatUITests: [test]
+    # Release, so that pressing Run gives the app that dials rather than the
+    # one that mocks. `PipeConnectorFactory` returns `MockPipeConnector` in
+    # DEBUG, and that mock accepts a real ticket, walks its pill to "Direct"
+    # and answers with canned replies -- which on a phone is indistinguishable
+    # from the thing working, and was very nearly recorded as a passing
+    # acceptance test.
+    #
+    # This has to agree with the generated scheme or the setting is a trap
+    # rather than a default: the scheme is committed, and `make project`
+    # rewrites it from here. It said Debug while the scheme said Release, so
+    # the next regeneration would have put the mock back with no diff anyone
+    # would read as meaning that.
+    #
+    # The DEBUG affordances -- "Add mock provider", "Force closed" -- are still
+    # a scheme edit away for whoever wants to work on the UI without a machine
+    # to dial, and `make uitest` is unaffected: the Test action stays Debug.
     run:
-      config: Debug
+      config: Release
     test:
       config: Debug
       # Without this the four xcodebuild UI-test legs instrument nothing:

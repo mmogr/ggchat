@@ -82,9 +82,15 @@ build:
 APP_BUILD = xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat \
 	CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
 
+# Debug, said out loud. `xcodebuild build` with no `-configuration` takes the
+# scheme's run action, and that is now Release so that pressing Run in Xcode
+# gives the app that dials rather than the one that mocks. Inheriting it here
+# would have quietly stopped compiling the `#if DEBUG` arms in the app target
+# -- the mock connector, the mock provider, the Force-closed control -- and
+# made this target a duplicate of `build-app-release`.
 build-app:
-	$(APP_BUILD) -destination 'platform=macOS'
-	$(APP_BUILD) -destination 'generic/platform=iOS Simulator'
+	$(APP_BUILD) -configuration Debug -destination 'platform=macOS'
+	$(APP_BUILD) -configuration Debug -destination 'generic/platform=iOS Simulator'
 
 # The app target in Release. Nothing else compiles it that way: the scheme's
 # run and test actions are Debug, `xcodebuild build` with no -configuration
