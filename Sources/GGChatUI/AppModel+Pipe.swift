@@ -192,9 +192,10 @@ extension AppModel {
     /// see a session that has already been installed, so before the stamp a
     /// removal or a teardown that landed mid-dial found nothing to close —
     /// and the dial went on to install a live session for a provider that no
-    /// longer existed, with a status task nothing would cancel. The mock's
-    /// `connect` never suspends, so that window is invisible from here; a
-    /// real connector leaves a QUIC connection and a bound port in it.
+    /// longer existed, with a status task nothing would cancel. That window
+    /// used to be invisible in a debug build, because the mock's `connect`
+    /// does not suspend — a release build now dials for real and leaves a
+    /// QUIC connection and a bound port sitting in it.
     public func disconnectPipe(for providerID: UUID, leaving status: PipeStatus? = nil, cutShort: Bool = false) async {
         dialGeneration[providerID] = (dialGeneration[providerID] ?? 0) + 1
         connecting.remove(providerID)
