@@ -53,7 +53,7 @@ final class ReduceTransparencyUITests: XCTestCase {
     private func glassAgainstItsBackground(screenshot: String) throws -> Double {
         app = launchFreshApp()
         addMockProvider()
-        app.buttons["New conversation"].firstMatch.tap()
+        openConversation(in: app)
         XCTAssertTrue(waitUntilHittable(composer(in: app), timeout: 20), "the composer never appeared")
 
         let shot = app.screenshot()

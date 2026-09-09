@@ -103,10 +103,41 @@ extension XCTestCase {
 
     /// SwiftUI exposes a vertical `TextField` as a text view or a text field
     /// depending on how many lines it is showing, so both are asked for.
+    ///
+    /// The choice is made when this is called, not when the returned element
+    /// is used, so it must not be called before the conversation is on
+    /// screen: with no composer of either kind present, `textView.exists` is
+    /// false and this pins the text-field query, which then never matches
+    /// the text view SwiftUI went on to make. Open the conversation with
+    /// ``openConversation(in:)`` first and the question is being asked of a
+    /// screen that can answer it.
     @MainActor
     func composer(in app: XCUIApplication) -> XCUIElement {
         let textView = app.textViews["composer"].firstMatch
         return textView.exists ? textView : app.textFields["composer"].firstMatch
+    }
+
+    /// Opens a conversation and does not return until one is open.
+    ///
+    /// Every walk starts here, so every walk confirms the tap in the same
+    /// way rather than each remembering to. The witness is the model pill,
+    /// which is the first thing the conversation screen puts up and is
+    /// present whatever the provider did: its label is
+    /// `"Model, " + (the model ?? "Choose a model")`, so a server that
+    /// listed nothing — or is not there at all — still raises it. That is
+    /// what lets one witness serve all of these walks instead of each
+    /// needing its own.
+    ///
+    /// Returns the pill, for the walks that go on to read the model's name
+    /// off it.
+    @MainActor
+    @discardableResult
+    func openConversation(in app: XCUIApplication) -> XCUIElement {
+        let newConversation = app.buttons["New conversation"].firstMatch
+        XCTAssertTrue(newConversation.waitForExistence(timeout: 10), "no way to start a conversation")
+        let pill = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Model, '")).firstMatch
+        XCTAssertTrue(tap(newConversation, untilExists: pill), "the conversation never opened")
+        return pill
     }
 
     /// iOS offers to save a secure field's contents to the password manager

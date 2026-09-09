@@ -199,10 +199,9 @@ final class ScreenGalleryUITests: XCTestCase {
         address.typeText("http://127.0.0.1:9/v1")
         app.buttons["Add"].firstMatch.tap()
 
-        app.buttons["New conversation"].firstMatch.tap()
-        let field = app.textViews["composer"].firstMatch
-        let composer = field.exists ? field : app.textFields["composer"].firstMatch
-        XCTAssertTrue(composer.waitForExistence(timeout: 15))
+        openConversation(in: app)
+        let field = composer(in: app)
+        XCTAssertTrue(field.waitForExistence(timeout: 15))
         // A server that is not there is an error, and the app says so in an
         // alert that covers the composer until it is acknowledged. It is
         // this walk's own doing -- it typed the address of a closed port --
@@ -212,8 +211,8 @@ final class ScreenGalleryUITests: XCTestCase {
         // composer is never hittable and the caret never lands.
         let acknowledge = app.alerts.buttons["OK"].firstMatch
         if acknowledge.waitForExistence(timeout: 5) { acknowledge.tap() }
-        XCTAssertTrue(caret(in: composer, of: app), "the composer never took the caret")
-        composer.typeText("Anyone home?")
+        XCTAssertTrue(caret(in: field, of: app), "the composer never took the caret")
+        field.typeText("Anyone home?")
 
         // Without a model there is nothing to send, which is its own sentence.
         let send = app.buttons["Send"].firstMatch

@@ -40,9 +40,7 @@ final class RemainingScreensUITests: XCTestCase {
         typeAPIKey(live.apiKey, in: app)
         submitProviderForm(in: app)
 
-        let newConversation = app.buttons["New conversation"].firstMatch
-        let pill = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Model, '")).firstMatch
-        XCTAssertTrue(tap(newConversation, untilExists: pill), "the conversation never opened")
+        openConversation(in: app)
         let statusButton = app.buttons["Server status"].firstMatch
         XCTAssertTrue(
             statusButton.waitForExistence(timeout: 30),
@@ -61,7 +59,7 @@ final class RemainingScreensUITests: XCTestCase {
     func testTheStatusPaneIsHiddenForAServerThatDoesNotReport() {
         launch()
         addMockProvider()
-        app.buttons["New conversation"].firstMatch.tap()
+        openConversation(in: app)
         XCTAssertTrue(waitUntilHittable(composer(in: app), timeout: 20), "the composer never appeared")
         XCTAssertFalse(
             app.buttons["Server status"].exists,
@@ -92,9 +90,7 @@ final class RemainingScreensUITests: XCTestCase {
             app.buttons["Add"].firstMatch.tap()
         }
 
-        let newConversation = app.buttons["New conversation"].firstMatch
-        let pill = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Model, '")).firstMatch
-        XCTAssertTrue(tap(newConversation, untilExists: pill), "the conversation never opened")
+        openConversation(in: app)
 
         let connected = app.buttons.matching(
             NSPredicate(format: "label == 'Connection Direct' OR label == 'Connection Relayed'")
@@ -154,9 +150,10 @@ final class RemainingScreensUITests: XCTestCase {
     private func heightOfTheAssistantLabel(typeSize: String?, screenshot: String?) -> CGFloat {
         app = launchFreshApp(typeSize: typeSize)
         addMockProvider()
-        app.buttons["New conversation"].firstMatch.tap()
-        XCTAssertTrue(caret(in: composer(in: app), of: app), "the composer never took the caret")
-        composer(in: app).typeText("Hello")
+        openConversation(in: app)
+        let field = composer(in: app)
+        XCTAssertTrue(caret(in: field, of: app), "the composer never took the caret")
+        field.typeText("Hello")
         let send = app.buttons["Send"].firstMatch
         XCTAssertTrue(send.waitForExistence(timeout: 5))
         XCTAssertTrue(send.isHittable, "the send button is not tappable at this type size")
