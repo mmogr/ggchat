@@ -1,21 +1,36 @@
 # What modelpipe-ffi must provide
 
-ggchat stops at a seam. This is the seam, stated as the two Swift
-protocols the app already compiles against, plus the behaviours the mock
-has and the real thing must match. When `modelpipe-ffi` ships, a
-`ModelpipeConnector` that satisfies this replaces both arms of the
-`#if DEBUG` in `Sources/GGChatUI/PipeConnectorFactory.swift` — the mock in
-a debug build, `UnavailablePipeConnector` in every other — and nothing
-above it changes.
+ggchat stopped at a seam. This is that seam, stated as the two Swift
+protocols the app compiles against, plus the behaviours the mock had and the
+real thing had to match.
+
+> **Amended 2026-09-09 — the seam is crossed, and one sentence below was
+> wrong about how.** `ModelpipeConnector` does *not* replace both arms of the
+> `#if DEBUG` in `Sources/GGChatUI/PipeConnectorFactory.swift`. It replaces
+> the release arm; the mock stays in DEBUG. Following the original sentence
+> literally would have stopped twenty-odd app-model tests compiling, along
+> with the Settings screen's "Force closed" control, which downcasts to
+> `MockPipeSession` and is the only way to exercise the reconnect UI by hand.
+> A debug build that dialled for real would also need a machine serving a
+> ticket before it could show a conversation at all.
+>
+> "Nothing above it changes" was also optimistic, and the way it was wrong is
+> worth keeping. Six consumer paths did change, not because the seam moved but
+> because a real dial reaches code a mock never did: it suspends, it can be
+> cancelled, and it fails for reasons that are nobody's mistake. The list is in
+> ggchat #52. The seam held; what had never been exercised was everything
+> downstream of a dial that takes time and can go wrong.
 
 The mock exists only on the debug side of that `#if`. `MockPipeConnector`
 and `MockPipeSession` are themselves declared inside an `#if DEBUG` in
 `Sources/GGChatCore/MockPipeConnector.swift`, so a release build contains
 neither the types nor their symbols; `make build-release` compiles the
-package in Release and fails if it finds either in the objects. Until
-`modelpipe-ffi` lands, everything below describes behaviour that a shipped
-build does not have — `UnavailablePipeConnector` refuses, and refusing is
-all it does.
+package in Release and fails if it finds either in the objects.
+
+Everything below now describes behaviour a shipped build **has**.
+`UnavailablePipeConnector` is still compiled, and still refuses, but nothing
+returns it: it is the sentinel `scripts/check_no_mock_in_release.sh` looks for
+to prove it really opened the release objects.
 
 ## The protocols (verbatim from `Sources/GGChatCore/PipeConnector.swift`)
 

@@ -6,10 +6,16 @@ import XCTest
 
 /// A dial that does not land until it is let through.
 ///
-/// `MockPipeConnector.connect` has no suspension point in it at all, so the
-/// window between a dial going out and its session being installed does not
-/// exist in any other test — every one of them awaits a dial that has
-/// already finished. This holds that window open on purpose.
+/// `MockPipeConnector.connect` has no suspension point in it at all, so no
+/// other test in this file's neighbourhood can see the window between a dial
+/// going out and its session being installed — every one of them awaits a
+/// dial that has already finished. This holds that window open on purpose.
+///
+/// It is no longer the only place the window exists. `ModelpipeConnector`
+/// suspends on a real dial, so in a shipped build every dial opens it, and
+/// `AppModelQuietDialTests` reaches it from the other side by cancelling one
+/// mid-flight. What is still unique here is holding it open *deliberately*,
+/// which is what lets the interlock be asserted rather than raced for.
 private final class GatedConnector: PipeConnector {
     private struct State {
         var arrivals = 0

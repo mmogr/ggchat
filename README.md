@@ -50,19 +50,18 @@ and coming back dials again. A provider's row opens its settings, so a
 machine re-enabled with a fresh ticket is re-paired in place and keeps its
 conversations. Settings shows the readings the ADRs name, each with its
 denominator. In DEBUG builds a mock provider streams canned replies
-without a server. The pipe path is a mock until `modelpipe-ffi` exists,
-and that mock is DEBUG-only: a released build refuses to dial and says so,
-rather than answering a real ticket with a reply no machine wrote. Absent,
-not merely unchosen -- `MockPipeConnector` and `MockPipeSession` are
+without a server.
+
+**A shipped build now dials for real.** `GGChatPipe` is a target of its own
+that links `modelpipe-ffi`, and it is the only place the boundary check
+permits `import Modelpipe`; `ModelpipeConnector` behind it validates a ticket,
+dials, and hands back a session whose loopback URL is the far machine. The
+mock stays on the DEBUG side of `PipeConnectorFactory` rather than being
+replaced, because it is what the Settings screen's "Force closed" control and
+twenty-odd app-model tests are written against. It is absent from a release
+build, not merely unchosen: `MockPipeConnector` and `MockPipeSession` are
 declared inside an `#if DEBUG`, and `make build-release` fails if either
 symbol is in the release objects.
-
-The binding is now here, though nothing dials through it yet: `GGChatPipe` is
-a target of its own that links `modelpipe-ffi`, and it is the only place the
-boundary check permits `import Modelpipe`. `PipeConnectorFactory` still
-chooses between the mock and the refusal, so a shipped build behaves exactly
-as it did; what changed is that the xcframework resolves, links, and answers a
-call on every CI run.
 
 ## What is true today
 
