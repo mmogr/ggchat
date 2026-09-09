@@ -1,6 +1,15 @@
 {
-  "originHash" : "aaef9f5654920f4853b1a69543cc67b855e19cc081c0e93b9170e55837e4ad02",
+  "originHash" : "71c5b043078815864a7235f14d9f746927e03b906317d4c3a4a1bbd6d860d422",
   "pins" : [
+    {
+      "identity" : "modelpipe-ffi",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mmogr/modelpipe-ffi.git",
+      "state" : {
+        "revision" : "6f0d982d7a7ed741682eed0ce67a33d5484b5ad0",
+        "version" : "0.1.2"
+      }
+    },
     {
       "identity" : "swift-cmark",
       "kind" : "remoteSourceControl",
