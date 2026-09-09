@@ -186,6 +186,7 @@
 						TestTargetID = 1D7BB5600CE781C36C8E10FA;
 					};
 					1D7BB5600CE781C36C8E10FA = {
+						DevelopmentTeam = G6QCW84LSM;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -351,6 +352,7 @@
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "ggchat/ggchat-macOS.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = G6QCW84LSM;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = ggchat/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -409,6 +411,7 @@
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "ggchat/ggchat-macOS.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = G6QCW84LSM;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = ggchat/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";

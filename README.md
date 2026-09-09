@@ -373,6 +373,14 @@ a dot -- the bowl is the conversation, the tail is the pipe, the dot is the
 machine at the other end of it. It centres itself on its own measured
 bounding box, so moving a curve does not mean re-tuning eleven sizes by hand.
 
+`make build-app-device` compiles the app for the `iphoneos` SDK, which
+nothing else does: every other app build targets a simulator or macOS, and
+those share the host's frameworks and can fall back to x86_64. A problem
+specific to a real device would otherwise first appear during an archive.
+Signing is off there rather than ad-hoc, because the iOS SDK refuses an
+ad-hoc identity outright and a real one needs a provisioning profile; what it
+proves is the compile and the link.
+
 `make build-app-release` compiles the same two destinations with
 `-configuration Release`. Nothing else compiles the app target that way:
 the scheme's run and test actions are Debug, `xcodebuild build` with no
