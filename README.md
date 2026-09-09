@@ -120,6 +120,30 @@ Each claim names the test that keeps it true.
   <!-- test: BindingTests.testTheBindingIsLinkedAndAnswersAcrossTheBoundary -->
   <!-- test: BindingTests.testEveryPipeStatusCrossesUnchanged -->
   <!-- test: BindingTests.testARelayedPipeCountsAsConnected -->
+- A real connector validates before it dials, so a ticket of the wrong shape
+  and an empty token each cost nothing — which matters because pairing dials
+  with the six-digit code as the token, and `PipePairing` does no shape check
+  of its own.
+  <!-- test: ModelpipeConnectorTests.testATicketOfTheWrongShapeIsRefusedWithoutDialling -->
+  <!-- test: ModelpipeConnectorTests.testAnEmptyTokenIsRefusedEvenThoughTheBindingWouldNotWantIt -->
+- A failure from the transport reaches the person as a sentence, never as the
+  binding's own debug rendering, and says whether dialling again is worth it.
+  <!-- test: ModelpipeConnectorTests.testATransportErrorArrivesAsASentenceAndNotADebugRendering -->
+  <!-- test: ModelpipeConnectorTests.testABadTicketIsNotWorthDiallingAgain -->
+  <!-- test: ModelpipeConnectorTests.testTheBindingDecidesWhatIsWorthRepeating -->
+- A pipe that dies on its own still says `closed`. The binding ends its status
+  sequence on any close, and nothing above the seam writes a status when a
+  stream merely finishes, so the session writes it before finishing.
+  <!-- test: ModelpipeSessionTests.testAPipeThatDiesOnItsOwnStillSaysClosed -->
+- `relayed` is held back for a moment in case a direct path is behind it, and
+  shown when nothing better follows. A hole punch commonly reaches a relay
+  first, and a pill that flashes "Relayed" reads as a warning about a
+  connection that is still being made.
+  <!-- test: ModelpipeSessionTests.testRelayedDoesNotFlashWhenDirectIsAMomentBehindIt -->
+  <!-- test: ModelpipeSessionTests.testRelayedIsShownWhenNothingBetterFollows -->
+- A pipe's base URL has to be loopback with a port, not merely something
+  `URL(string:)` accepted — it parses strings with spaces and no scheme at all.
+  <!-- test: ModelpipeSessionTests.testAnAddressOffLoopbackIsRefused -->
 - The mock pipe walks idle → relayed → direct, can be forced closed, and a
   late subscriber gets the current status first.
   <!-- test: MockPipeTests.testStatusWalksIdleRelayedDirectThenClosedOnDemand -->
