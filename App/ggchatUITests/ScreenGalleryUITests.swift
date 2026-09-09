@@ -246,7 +246,20 @@ final class ScreenGalleryUITests: XCTestCase {
         attach(name: "provider-edit")
 
         name.tap()
-        app.keys["delete"].press(forDuration: 1.5)
+        // Deleting by holding the key for a fixed 1.5s is a race against the
+        // runner: the field is cleared by however many repeats the keyboard
+        // manages in that window, and on a loaded machine that is fewer than
+        // the name is long. The leftover then sits in front of what is typed
+        // next, and the assertion below fails saying the edit never arrived —
+        // which reads as a broken edit rather than a slow keyboard.
+        //
+        // One delete per character that is actually there, and then a check
+        // that the field really is empty before anything is typed into it.
+        let existing = (name.value as? String) ?? ""
+        name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: existing.count))
+        XCTAssertEqual(
+            (name.value as? String).flatMap { $0.isEmpty ? nil : $0 }, nil,
+            "the name field still held text before the new name was typed")
         name.typeText("Desk")
         app.buttons["Save"].firstMatch.tap()
 
