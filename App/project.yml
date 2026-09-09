@@ -78,6 +78,13 @@ targets:
         # about a framework that "may still be link-compatible".
         ARCHS: arm64
         CODE_SIGN_STYLE: Automatic
+        # Committed rather than set in Xcode, because `make project`
+        # regenerates this project from this file: a team chosen in the
+        # Signing & Capabilities tab survives exactly until the next
+        # `xcodegen generate`, and then the build fails asking for one again
+        # in a way that reads as intermittent. A Team ID is not a secret --
+        # it is in every distributed app bundle -- so it lives here.
+        DEVELOPMENT_TEAM: G6QCW84LSM
         "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": ggchat/ggchat-macOS.entitlements
         "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]": ggchat/ggchat-iOS.entitlements
         "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": ggchat/ggchat-iOS.entitlements

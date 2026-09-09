@@ -3,7 +3,7 @@
 # those.
 SWIFT_SOURCES := Sources Tests Package.swift $(wildcard App/ggchat/*.swift) $(wildcard App/ggchatUITests/*.swift)
 
-.PHONY: icon screenshots project bootstrap fmt fmt-check lint analyze boundaries enforce build build-release build-app build-app-release test test-live uitest uitest-ipad uitest-dark uitest-contrast unused docs ci
+.PHONY: icon build-app-device screenshots project bootstrap fmt fmt-check lint analyze boundaries enforce build build-release build-app build-app-release test test-live uitest uitest-ipad uitest-dark uitest-contrast unused docs ci
 
 project:
 	cd App && xcodegen generate --quiet
@@ -102,6 +102,22 @@ build-app-release:
 # `#else` arm of an `#if DEBUG`, and the checker needs objects to read, so the
 # two are one target. This is not in `enforce`: that job runs on Linux, and
 # this one needs a Swift toolchain and the macOS SDK.
+# The device SDK, which nothing else compiles. Every other app build targets
+# a simulator or macOS, and those are x86_64-capable and share the host's
+# frameworks -- so a problem that is specific to `iphoneos` and arm64 would
+# first appear during an archive, after the signing work, to whoever was
+# trying to ship.
+#
+# Signing is off rather than ad-hoc: `CODE_SIGN_IDENTITY=-` is refused
+# outright by the iOS SDK, and a real identity would need a provisioning
+# profile from Apple, which is not a thing a build check should reach for.
+# What this proves is the compile and the link, which is what has never been
+# proven; installing on a phone is Xcode's job and needs the profile.
+build-app-device:
+	xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat \
+		-configuration Release -destination 'generic/platform=iOS' \
+		CODE_SIGNING_ALLOWED=NO -quiet
+
 build-release:
 	swift build -c release -Xswiftc -warnings-as-errors
 	scripts/check_no_mock_in_release.sh
@@ -202,4 +218,4 @@ docs:
 	swift package --allow-writing-to-directory .build/docs generate-documentation \
 		--target GGChatUI --warnings-as-errors --output-path .build/docs/GGChatUI
 
-ci: fmt-check lint analyze boundaries enforce build build-release build-app build-app-release test unused docs
+ci: fmt-check lint analyze boundaries enforce build build-release build-app build-app-release build-app-device test unused docs
