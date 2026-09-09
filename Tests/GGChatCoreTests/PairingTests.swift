@@ -146,6 +146,46 @@ final class PairingTests: XCTestCase {
         XCTAssertEqual(connector.sessions.map(\.shutdowns), [1], "the pairing pipe is hung up anyway")
     }
 
+    /// The defect this waiting exists for, and it cost a real pairing on a
+    /// real phone before it was found.
+    ///
+    /// `connect` returns as soon as the local port is bound, not once the far
+    /// machine answers -- modelpipe's contract, and the seam says so. A redeem
+    /// sent into that gap is answered `502` by the tunnel's own edge, because
+    /// there is no peer to forward it to, and the one-time code is spent on
+    /// that 502. The next attempt needs a fresh `gglib remote enable`.
+    ///
+    /// Not a rare race. A hole punch through carrier-grade NAT took about two
+    /// seconds to reach its first path when this was measured, and the redeem
+    /// goes out in microseconds, so on a phone the gap is lost nearly every
+    /// time. On a fast LAN it is won often enough that the failure reads as a
+    /// code that was simply wrong.
+    func testAPipeThatNeverReachesTheFarMachineDoesNotSpendTheCode() async {
+        let connector = SpyPipeConnector(reaches: false)
+        let far = RecordingRedeemer(.success("never-asked-for"))
+        let pairing = PipePairing(
+            connector: connector, redeemer: far, sleeper: ImmediateSleeper(),
+            patience: .seconds(30))
+
+        do {
+            _ = try await pairing.token(ticket: ticket, code: "483920")
+            XCTFail("the code was redeemed into a pipe that had reached nobody")
+        } catch let error as PairingError {
+            guard case .unreachable = error else {
+                return XCTFail("expected unreachable, got \(error)")
+            }
+        } catch {
+            XCTFail("\(error)")
+        }
+
+        XCTAssertEqual(
+            far.calls.count, 0,
+            "the redeem went out anyway, which is what spends the code for nothing")
+        XCTAssertEqual(
+            connector.sessions.map(\.shutdowns), [1],
+            "a pairing that gave up still has to hang the pipe up")
+    }
+
     func testEveryRefusalHasASentence() {
         let errors: [PairingError] = [
             .refused, .unreachable("no route"), .unexpectedStatus(503), .malformedResponse("x"),
@@ -178,13 +218,21 @@ final class PairingTests: XCTestCase {
 final class SpyPipeSession: PipeSession, Sendable {
     let baseURL: URL
     private let closed = Mutex(0)
+    private let relay: PipeStatusRelay
 
-    init(baseURL: URL) {
+    /// - Parameter reached: whether the far machine ever answers. `false` is
+    ///   a pipe whose port is bound and whose peer never appears, which is
+    ///   what pairing must not redeem into.
+    init(baseURL: URL, reached: Bool = true) {
         self.baseURL = baseURL
+        self.relay = PipeStatusRelay(initial: reached ? .direct : .idle)
     }
 
+    /// Starts at `direct` by default, because pairing now waits for the far
+    /// machine before spending the code and a session that never connects
+    /// would be a pipe pairing is right to refuse.
     var status: AsyncStream<PipeStatus> {
-        AsyncStream<PipeStatus> { $0.finish() }
+        relay.stream()
     }
 
     var shutdowns: Int {
@@ -210,8 +258,15 @@ final class SpyPipeConnector: PipeConnector, Sendable {
         state.withLock { $0.sessions }
     }
 
+    /// Whether the sessions this hands back ever reach the far machine.
+    let reaches: Bool
+
+    init(reaches: Bool = true) {
+        self.reaches = reaches
+    }
+
     func connect(ticket: String, token: String) async throws -> any PipeSession {
-        let session = SpyPipeSession(baseURL: Self.baseURL)
+        let session = SpyPipeSession(baseURL: Self.baseURL, reached: reaches)
         state.withLock {
             $0.tickets.append(ticket)
             $0.sessions.append(session)

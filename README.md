@@ -157,6 +157,11 @@ Each claim names the test that keeps it true.
   instead of finding a dead session installed and refusing.
   <!-- test: AppModelQuietDialTests.testASessionThatEndedIsForgottenSoAResumeCanDialAgain -->
   <!-- test: AppModelQuietDialTests.testAnOldSessionEndingDoesNotRemoveTheOneThatReplacedIt -->
+- Pairing waits for the far machine before spending the code. `connect`
+  returns once the local port is bound, not once the peer answers, and a
+  redeem sent into that gap is answered `502` by the tunnel's own edge — which
+  spends the one-time code on nothing and needs a fresh `gglib remote enable`.
+  <!-- test: PairingTests.testAPipeThatNeverReachesTheFarMachineDoesNotSpendTheCode -->
 - The mock pipe walks idle → relayed → direct, can be forced closed, and a
   late subscriber gets the current status first.
   <!-- test: MockPipeTests.testStatusWalksIdleRelayedDirectThenClosedOnDemand -->
