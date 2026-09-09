@@ -68,13 +68,10 @@ final class FirstRunUITests: XCTestCase {
         // system put on top: having typed a key into a `SecureField`, iOS
         // offers to save it once the sheet closes, and that offer swallows
         // the tap underneath it.
-        let newConversation = app.buttons["New conversation"].firstMatch
-        XCTAssertTrue(newConversation.waitForExistence(timeout: 10), "no way to start a conversation")
-
-        // 4. The pill names the model that was actually listed, so a live run
-        // cannot pass by quietly falling back to the mock.
-        let pill = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Model, '")).firstMatch
-        XCTAssertTrue(tap(newConversation, untilExists: pill), "the model pill never appeared")
+        //
+        // 4. The pill it waits for names the model that was actually listed,
+        // so a live run cannot pass by quietly falling back to the mock.
+        let pill = openConversation(in: app)
         if live == nil {
             XCTAssertEqual(pill.label, "Model, mock-27b")
         } else {
@@ -84,8 +81,7 @@ final class FirstRunUITests: XCTestCase {
         attach(name: "02-empty-conversation-\(suffix)")
 
         // 5. Send a message.
-        let composer = app.textViews["composer"].firstMatch
-        let field = composer.exists ? composer : app.textFields["composer"].firstMatch
+        let field = composer(in: app)
         XCTAssertTrue(field.waitForExistence(timeout: 15), "the composer never appeared")
         XCTAssertTrue(caret(in: field, of: app), "the composer never took the caret")
         field.typeText("Say hello in three words.")
