@@ -56,6 +56,29 @@ extension XCTestCase {
         }
     }
 
+    /// Scrolls a scrollable screen until an element is there to be tapped.
+    ///
+    /// Not the same problem as `waitUntilHittable`, which waits for something
+    /// on top to go away. This one is for something that has never been on
+    /// screen at all: SwiftUI does not put every row of a long `Form` into
+    /// the accessibility tree at once, so a control below the fold can report
+    /// `exists == false` — indistinguishable, from a test, from a control
+    /// that was never built. Settings crossed that line when it gained a
+    /// section of readings, and the failure read as "the DEBUG build has no
+    /// Force button" rather than "scroll down".
+    ///
+    /// Swipes rather than using `scrollToElement`, which needs a frame the
+    /// element does not have while it is outside the tree.
+    @MainActor
+    @discardableResult
+    func scrollUntilHittable(_ element: XCUIElement, in app: XCUIApplication, swipes: Int = 6) -> Bool {
+        for _ in 0...swipes {
+            if element.exists, element.isHittable { return true }
+            app.swipeUp()
+        }
+        return element.exists && element.isHittable
+    }
+
     /// Taps, then checks the tap actually did something, and tries again if
     /// it did not. The password manager's offer can arrive a second time,
     /// after the first has been dismissed, and swallow the tap that follows.
