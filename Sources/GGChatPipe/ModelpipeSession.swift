@@ -15,6 +15,9 @@ public final class ModelpipeSession: PipeSession, Sendable {
     private let relay: PipeStatusRelay
     private let driver = Mutex<Task<Void, Never>?>(nil)
     private let deferred = Mutex<Task<Void, Never>?>(nil)
+    /// Whether this session has ended. See ``closeReason``, which cannot be
+    /// answered without it.
+    private let hasClosed = Mutex(false)
 
     /// How long `relayed` has to survive before it is worth showing.
     ///
@@ -80,6 +83,10 @@ public final class ModelpipeSession: PipeSession, Sendable {
                 // leave the close uncounted, and leave the provider pointed at
                 // a listener that is gone.
                 self?.cancelDeferred()
+                // Before the send, not after: a subscriber that reads
+                // `closeReason` the moment it is handed `.closed` must not
+                // find a session that still describes itself as open.
+                self?.markClosed()
                 relay.send(.closed)
                 relay.finish()
             }
@@ -121,18 +128,35 @@ public final class ModelpipeSession: PipeSession, Sendable {
             $0?.cancel()
             $0 = nil
         }
+        markClosed()
         relay.send(.closed)
         relay.finish()
     }
 
-    /// What the pipe last said about why it closed, if it has closed.
-    public var closeReason: MpCloseReason? { pipe.closeReason() }
+    /// Records that the sequence is over, so ``closeReason`` can tell an open
+    /// pipe from one whose peer left without a word.
+    private func markClosed() {
+        hasClosed.withLock { $0 = true }
+    }
 
-    /// The loopback port, for a diagnostic that wants the number alone.
-    public var port: UInt16 { pipe.port() }
+    /// Why this pipe closed, or `nil` while it is still open.
+    ///
+    /// The flag is load-bearing, not bookkeeping. `pipe.closeReason()`
+    /// answers `nil` in two completely different situations — a pipe that is
+    /// still carrying traffic, and a pipe that ended without anyone recording
+    /// why — and the binding offers nothing that tells them apart. This side
+    /// knows, because it is the side that watched the status sequence end, so
+    /// the question "has it closed?" is answered here and only the remaining
+    /// silence is handed to `PipeCloseReason`'s mapping.
+    public var closeReason: PipeCloseReason? {
+        guard hasClosed.withLock({ $0 }) else { return nil }
+        return PipeCloseReason(pipe.closeReason())
+    }
 
-    /// Relay counters for this pipe's endpoint.
-    public var networkMetrics: MpNetworkMetrics { pipe.networkMetrics() }
+    /// The port and the relay counters, read from the binding on demand.
+    public var readings: PipeReadings {
+        PipeReadings(port: pipe.port(), metrics: pipe.networkMetrics())
+    }
 
     /// Tell the endpoint its network may have moved.
     public func notifyNetworkChange() async { await pipe.notifyNetworkChange() }

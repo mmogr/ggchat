@@ -165,6 +165,21 @@ Each claim names the test that keeps it true.
 - The mock pipe walks idle → relayed → direct, can be forced closed, and a
   late subscriber gets the current status first.
   <!-- test: MockPipeTests.testStatusWalksIdleRelayedDirectThenClosedOnDemand -->
+- A pipe that goes away without being asked says which side to look at. The
+  binding reports a shutdown and a failed listener and nothing else, so a peer
+  that simply stopped answering closes with no reason recorded — and that
+  silence, not an open pipe, is what it is read as.
+  <!-- test: PipeCloseReasonTests.testEveryReasonThatWasNotAskedForHasASentenceNamingASide -->
+  <!-- test: ModelpipeSessionTests.testAPeerThatSimplyVanishesIsSaidToHaveVanished -->
+  <!-- test: AppModelCloseReasonTests.testAPeerThatVanishesLeavesAReasonBesideTheStatusAndOneSentence -->
+- A close the app asked for — the background, a reconnect, a provider deleted
+  — explains nothing and says nothing, because it is something the person just
+  did.
+  <!-- test: PipeCloseReasonTests.testAHangUpThisAppAskedForIsNotWorthASentence -->
+  <!-- test: AppModelCloseReasonTests.testAHangUpTheAppPerformedExplainsNothingAndSaysNothing -->
+- Settings shows what each live pipe says about itself: its path, the loopback
+  port it bound, and what its endpoint spent on relays.
+  <!-- test: ModelpipeSessionTests.testTheReadingsCrossTheSeamInTheAppsOwnVocabulary -->
 - The mock is DEBUG-only. A build without one refuses a perfectly good
   ticket with a sentence about the build, instead of mocking a pipe that
   is not there.

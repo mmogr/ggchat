@@ -116,7 +116,13 @@ final class RemainingScreensUITests: XCTestCase {
         }
 
         let force = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Force '")).firstMatch
-        XCTAssertTrue(tap(settings, untilExists: force), "DEBUG builds can force a pipe closed")
+        XCTAssertTrue(waitUntilHittable(settings, timeout: 15), "the Settings button never became tappable")
+        settings.tap()
+        // Settings is a long enough Form that the Debug section is below the
+        // fold on a phone, and a row SwiftUI has not built yet does not exist
+        // as far as this query is concerned.
+        XCTAssertTrue(
+            scrollUntilHittable(force, in: app), "DEBUG builds can force a pipe closed")
         force.tap()
         app.buttons["Done"].firstMatch.tap()
 

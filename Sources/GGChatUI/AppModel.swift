@@ -32,6 +32,14 @@ public final class AppModel {
     var streamErrors: [UUID: ProviderError] = [:]
     var modelsByProvider: [UUID: [ModelInfo]] = [:]
     var pipeStatuses: [UUID: PipeStatus] = [:]
+    /// Why each pipe last closed, for as long as it is closed.
+    ///
+    /// Written only by `setPipeStatus`, and `scripts/check_one_status_writer.sh`
+    /// holds it to that. Being shown as closed and having a reason for it are
+    /// one event, in the same way that being shown as closed and being counted
+    /// as a close already are — a reason written from anywhere else could
+    /// describe a different close from the one on screen.
+    var pipeCloseReasons: [UUID: PipeCloseReason] = [:]
     var pipeSessions: [UUID: any PipeSession] = [:]
     var statusTasks: [UUID: Task<Void, Never>] = [:]
     var connecting: Set<UUID> = []
@@ -246,45 +254,5 @@ public final class AppModel {
     func report(_ error: any Error) {
         lastError = error.localizedDescription
         log.log(.error, "\(type(of: error)): \(error.localizedDescription)")
-    }
-}
-
-extension AppModel {
-    /// Seeded, in-memory, for previews.
-    ///
-    /// The pipe connector is the initializer's default, `PipeConnectorFactory`,
-    /// and not a `MockPipeConnector` named here: the mock does not exist
-    /// outside DEBUG, and `#Preview` bodies are compiled in every
-    /// configuration. Previews therefore get the factory's mock — a
-    /// `ContinuousClockSleeper` at 900ms rather than the mock's own
-    /// `ImmediateSleeper` at 700ms — so the status pill walks idle → relayed →
-    /// direct over 1.8 seconds instead of arriving at direct at once. That is
-    /// the app's own timing, which is the more useful thing for a preview to
-    /// show.
-    public static var preview: AppModel {
-        let model = AppModel(
-            store: InMemoryStore(), secrets: InMemorySecrets(), log: NoopLogSink(),
-            diagnostics: Diagnostics(defaults: UserDefaults(suiteName: "preview")!))
-        try? model.addProvider(
-            ProviderConfig(name: "Mock", kind: .openAICompatible(baseURL: mockBaseURL), defaultModel: "mock-27b"),
-            credentials: [:])
-        // modelpipe's normative vector 1, so the seeded pipe carries a ticket
-        // that would actually pass the shape check the form applies.
-        try? model.addProvider(
-            ProviderConfig(name: "Home", kind: .pipe(ticketDigest: "0123456789abcdef")),
-            credentials: [
-                .ticket: "pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na", .token: "preview",
-            ])
-        let conversation = model.newConversation()
-        var seeded = conversation
-        seeded.messages = [
-            Message(role: .user, content: "What does a ticket look like?", createdAt: seeded.createdAt),
-            Message(
-                role: .assistant,
-                content: "It starts with `pipe` and is followed by base32 with no padding.",
-                createdAt: seeded.createdAt),
-        ]
-        model.update(seeded)
-        return model
     }
 }

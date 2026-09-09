@@ -27,43 +27,6 @@ extension AppModel {
         !connecting.contains(providerID)
     }
 
-    /// Pairs with a machine and adds it as a provider: redeem the six-digit
-    /// code through the pipe for that machine's API key, keep the key as the
-    /// provider's token, then dial the pipe the ordinary way.
-    ///
-    /// The key is stored before the dial, so a redeemed code is never spent
-    /// for nothing — a dial that fails afterwards leaves a provider that can
-    /// be reconnected, not a machine that has to be enabled again.
-    ///
-    /// Throws rather than reporting, for the same reason ``addProvider(_:credentials:)``
-    /// does: the form that calls this is a sheet, and an alert raised behind
-    /// a dismissing sheet is never seen.
-    public func addPairedProvider(_ config: ProviderConfig, ticket: String, code: String) async throws {
-        let pairing = PipePairing(connector: pipeConnector, redeemer: redeemer)
-        let key = try await pairing.token(ticket: ticket, code: code)
-        try addProvider(config, credentials: [.ticket: ticket, .token: key])
-        log.log(.info, "paired with \(config.name); the code was redeemed for its key")
-        await connectPipe(for: config)
-    }
-
-    /// Pairs again with a machine already on the list: redeem the code
-    /// through the new ticket, put both in place of the old pair, and dial
-    /// again. The provider's id survives, and with it its conversations —
-    /// see ``updateProvider(_:credentials:)``.
-    ///
-    /// The dial is part of the edit because a new ticket does nothing
-    /// without one. A replaced token takes effect on the next request, since
-    /// `makePipeProvider(for:)` reads it each time; a ticket is only ever
-    /// read at dial time, so an edited ticket sitting behind a live session
-    /// would be a setting that had visibly been saved and changed nothing.
-    public func updatePairedProvider(_ config: ProviderConfig, ticket: String, code: String) async throws {
-        let pairing = PipePairing(connector: pipeConnector, redeemer: redeemer)
-        let key = try await pairing.token(ticket: ticket, code: code)
-        try updateProvider(config, credentials: [.ticket: ticket, .token: key])
-        log.log(.info, "paired with \(config.name) again; the new code was redeemed for its key")
-        await reconnectPipe(for: config)
-    }
-
     /// Dials the pipe behind a provider, if it is not already up. The status
     /// pill follows the session from here on; a failure is the connector's
     /// own sentence.
@@ -120,7 +83,13 @@ extension AppModel {
             statusTasks[config.id]?.cancel()
             statusTasks[config.id] = Task { [weak self] in
                 for await status in session.status {
-                    self?.setPipeStatus(status, for: config.id)
+                    // Read at the moment the close arrives, and only for a
+                    // close: an open session answers `nil`, which is also what
+                    // "no reason" looks like, so asking at any other time
+                    // would be asking a question the session cannot answer.
+                    let reason = status == .closed ? session.closeReason : nil
+                    self?.setPipeStatus(status, for: config.id, because: reason)
+                    if let reason { self?.announce(reason, for: config) }
                 }
                 // The stream ends only after a close, so the session behind it
                 // is finished. Forgetting it is what lets the next dial
@@ -155,6 +124,32 @@ extension AppModel {
                 report(error)
             }
         }
+    }
+
+    /// Says why a pipe went away — once, and only when the app did not ask it
+    /// to.
+    ///
+    /// Through the alert rather than the sentence under a partial reply. That
+    /// second channel exists only while a partial assistant message is the
+    /// last one on screen, so a pipe that dies while an older conversation is
+    /// open has nothing to hang a sentence under — and that is the ordinary
+    /// case, not the exceptional one. It is also typed `ProviderError`, which
+    /// would put a connection sentence behind "Could not reach the server:", a
+    /// prefix about a request nobody made.
+    ///
+    /// `lastError == nil` is the rule `makePipeProvider(for:)` already
+    /// follows: never written over the top of a sentence still waiting to be
+    /// read. A close the app performed says nothing at all, which is what
+    /// keeps a walk to the background silent.
+    private func announce(_ reason: PipeCloseReason, for config: ProviderConfig) {
+        guard reason.wasUnexpected, let sentence = reason.sentence(naming: config.name) else { return }
+        log.log(.info, "\(config.name): \(sentence)")
+        if lastError == nil { lastError = sentence }
+    }
+
+    /// Why the pipe behind a provider last closed, while it is closed.
+    public func pipeCloseReason(for providerID: UUID) -> PipeCloseReason? {
+        pipeCloseReasons[providerID]
     }
 
     /// Drops a finished session, unless a newer dial has already replaced it.
@@ -224,13 +219,24 @@ extension AppModel {
     /// `previous != .closed` is what stops one close being counted twice: a
     /// refused dial leaves `.closed` behind, and the background that follows
     /// it hangs up a provider with nothing left to hang up.
-    private func setPipeStatus(_ status: PipeStatus?, for providerID: UUID, cutShort: Bool = false) {
+    ///
+    /// The reason travels through here rather than beside it, and is
+    /// *assigned* rather than merged: a reason left behind by an earlier close
+    /// would be a sentence about the wrong event. `nil` is therefore the right
+    /// answer for every close this side performs — the hang-up on the way to
+    /// the background, the manual reconnect, a provider deleted — because a
+    /// close the app asked for has nothing to explain.
+    private func setPipeStatus(
+        _ status: PipeStatus?, for providerID: UUID, cutShort: Bool = false,
+        because reason: PipeCloseReason? = nil
+    ) {
         let previous = pipeStatuses[providerID]
         pipeStatuses[providerID] = status
+        pipeCloseReasons[providerID] = status == .closed ? reason : nil
         if status == .closed, previous != .closed {
             let midReply = cutShort || streamingProviderID == providerID
             diagnostics.recordClosed(whileStreaming: midReply)
-            log.log(.info, "pipe closed\(midReply ? " mid-reply" : "")")
+            log.log(.info, "pipe closed\(midReply ? " mid-reply" : "")\(reason.map { ": \($0)" } ?? "")")
         }
         if status?.isConnected == true, previous?.isConnected != true {
             connectedPulse &+= 1
