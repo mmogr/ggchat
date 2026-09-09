@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/mmogr/ggchat/compare/v0.2.0...v0.2.1) (2026-09-09)
+
+
+### What the app stopped getting wrong
+
+* **app:** running from Xcode dials rather than mocks ([#57](https://github.com/mmogr/ggchat/issues/57)) ([26f2f17](https://github.com/mmogr/ggchat/commit/26f2f17a78ef1da59b49d908808f3d093964d9ee))
+* **pipe:** pairing waits for the far machine before spending the code ([#55](https://github.com/mmogr/ggchat/issues/55)) ([bf564f6](https://github.com/mmogr/ggchat/commit/bf564f6f27dcd8f2df0204159ac6f6a658f4b43b))
+
 ## [0.2.0](https://github.com/mmogr/ggchat/compare/v0.1.2...v0.2.0) (2026-09-09)
 
 
