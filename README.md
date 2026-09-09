@@ -144,6 +144,20 @@ Each claim names the test that keeps it true.
 - A pipe's base URL has to be loopback with a port, not merely something
   `URL(string:)` accepted — it parses strings with spaces and no scheme at all.
   <!-- test: ModelpipeSessionTests.testAnAddressOffLoopbackIsRefused -->
+- A dial the person asked for says why it failed; one they did not — the
+  resume dials every pipe it is holding none of — says nothing and leaves the
+  pill as the way back. A machine that is asleep would otherwise raise an
+  alert on every return to the foreground, carrying only the last provider's
+  sentence.
+  <!-- test: AppModelQuietDialTests.testADialSomebodyAskedForSaysWhatWentWrong -->
+  <!-- test: AppModelQuietDialTests.testAResumeThatFindsTheMachineAsleepSaysNothing -->
+- A dial cancelled by the view going away complains to nobody, because the
+  composer dials inside a task SwiftUI cancels on every provider switch.
+  <!-- test: AppModelQuietDialTests.testADialCancelledByTheViewGoingAwaySaysNothing -->
+- A pipe that dies quietly is forgotten, so the next resume dials it again
+  instead of finding a dead session installed and refusing.
+  <!-- test: AppModelQuietDialTests.testASessionThatEndedIsForgottenSoAResumeCanDialAgain -->
+  <!-- test: AppModelQuietDialTests.testAnOldSessionEndingDoesNotRemoveTheOneThatReplacedIt -->
 - The mock pipe walks idle → relayed → direct, can be forced closed, and a
   late subscriber gets the current status first.
   <!-- test: MockPipeTests.testStatusWalksIdleRelayedDirectThenClosedOnDemand -->

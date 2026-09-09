@@ -34,9 +34,18 @@ struct SettingsView: View {
                     )
                 }
                 #if DEBUG
-                    if !connectedPipes.isEmpty {
+                    // Only the pipes this button can actually close. It works
+                    // by downcasting to the mock, so against any other session
+                    // it is a control that looks live, is pressable, and does
+                    // nothing — and it is the only way to exercise the
+                    // reconnect UI by hand, so a silent no-op there costs the
+                    // one affordance that would have shown it was broken.
+                    let forceable = connectedPipes.filter {
+                        model.pipeSession(for: $0.id) is MockPipeSession
+                    }
+                    if !forceable.isEmpty {
                         Section("Debug") {
-                            ForEach(connectedPipes) { provider in
+                            ForEach(forceable) { provider in
                                 Button("Force \(provider.name) closed", systemImage: "bolt.slash") {
                                     (model.pipeSession(for: provider.id) as? MockPipeSession)?.forceClosed()
                                 }

@@ -77,7 +77,17 @@ extension AppModel {
     /// ``didBecomeActive()`` walks a whole list of them — so one deleted in
     /// between would otherwise be dialled, and then reported as missing its
     /// credentials, which it is: they were deleted with it.
-    public func connectPipe(for config: ProviderConfig) async {
+    /// - Parameters:
+    ///   - config: the provider whose pipe to dial.
+    ///   - quietly: whether a failure should raise an alert.
+    ///     ``didBecomeActive()`` dials every pipe it is holding none of, and
+    ///     a machine that is asleep would otherwise put an alert in front of
+    ///     the person on every single return to the foreground — one they did
+    ///     not ask for and cannot act on, carrying only the last provider's
+    ///     sentence because each failure overwrites the one before it. The
+    ///     pill already says "Reconnect"; that is the report for a dial nobody
+    ///     asked for. A dial they *did* ask for still says why it failed.
+    public func connectPipe(for config: ProviderConfig, quietly: Bool = false) async {
         guard providers.contains(where: { $0.id == config.id }) else { return }
         guard config.isPipe, pipeSessions[config.id] == nil, !connecting.contains(config.id) else { return }
         guard let ticket = try? secrets.secret(.ticket, for: config.id),
@@ -112,15 +122,45 @@ extension AppModel {
                 for await status in session.status {
                     self?.setPipeStatus(status, for: config.id)
                 }
+                // The stream ends only after a close, so the session behind it
+                // is finished. Forgetting it is what lets the next dial
+                // happen: `connectPipe` refuses while one is installed, and
+                // both the composer's task and `didBecomeActive` ask for a
+                // dial only when there is none — so a pipe that died quietly
+                // used to leave a dead session in the dictionary that nothing
+                // but a manual press would clear.
+                //
+                // Only if this is still the current dial. A teardown has
+                // already moved the generation on and installed nothing, and a
+                // later dial may have installed a live session that this one
+                // must not remove.
+                self?.forgetSessionIfCurrent(config.id, generation: generation)
             }
+        } catch is CancellationError {
+            // The view asked for this dial and went away again — the composer
+            // dials inside a `.task(id:)` that SwiftUI cancels on every
+            // provider switch. Nobody is waiting for an answer, so there is
+            // nobody to tell. Left closed so the pill is still a way back.
+            guard dialGeneration[config.id] == generation else { return }
+            setPipeStatus(.closed, for: config.id)
         } catch {
             guard dialGeneration[config.id] == generation else { return }
             // Closed rather than absent. A provider with no status has no
             // pill at all, and the pill is the only way back: a dial that
             // failed is exactly when one is wanted.
             setPipeStatus(.closed, for: config.id)
-            report(error)
+            if quietly {
+                log.log(.info, "\(config.name) did not answer: \(error.localizedDescription)")
+            } else {
+                report(error)
+            }
         }
+    }
+
+    /// Drops a finished session, unless a newer dial has already replaced it.
+    private func forgetSessionIfCurrent(_ providerID: UUID, generation: Int) {
+        guard dialGeneration[providerID] == generation else { return }
+        pipeSessions[providerID] = nil
     }
 
     /// Tears the session down and dials again. The reconnect affordance.
@@ -135,7 +175,7 @@ extension AppModel {
     ///   - providerID: whose pipe to hang up.
     ///   - status: what the pill is left reading. `nil` — no pill at all — is
     ///     right for a provider being deleted or dialled again. Going to the
-    ///     background leaves `.closed`, for ``connectPipe(for:)``'s reason:
+    ///     background leaves `.closed`, for ``connectPipe(for:quietly:)``'s reason:
     ///     the pill is the way back, and that is the state it is most wanted
     ///     from. Leaving it here rather than writing it afterwards is what
     ///     puts the close through `setPipeStatus(_:for:cutShort:)` and so
@@ -197,7 +237,11 @@ extension AppModel {
     }
 
     /// The provider the reply in flight is going through, if there is one.
-    private var streamingProviderID: UUID? {
+    ///
+    /// Not `private`: `didEnterBackground` reads it, and it lives in
+    /// `AppModel+Lifecycle` — a different file, which is what `private` means
+    /// in Swift even for two extensions of the same type.
+    var streamingProviderID: UUID? {
         liveReply.flatMap { live in
             conversations.first { $0.id == live.conversationID }?.providerID
         }
@@ -207,61 +251,17 @@ extension AppModel {
     /// session's loopback URL with the token as its key.
     func makePipeProvider(for config: ProviderConfig) -> (any Provider)? {
         guard let session = pipeSessions[config.id] else {
-            lastError = "\(config.name) is not connected yet."
+            // Never over the top of a sentence already waiting to be read.
+            // The dial sets one and the model refresh follows it a moment
+            // later, so the connector's own reason for refusing — which is
+            // the whole point of `PipeConnectError`'s cases being sentences —
+            // used to be replaced by this one before anything showed it.
+            if lastError == nil {
+                lastError = "\(config.name) is not connected yet."
+            }
             return nil
         }
         let token = try? secrets.secret(.token, for: config.id)
         return registry.makeProvider(baseURL: session.baseURL, apiKey: token, log: log)
-    }
-
-    /// ADR 0001's reading, and the way back in: the app came to the
-    /// foreground.
-    ///
-    /// Every pipe this app has dialled before and is not holding now is
-    /// dialled again here. Nothing survives a background — see
-    /// ``didEnterBackground()`` — and the composer's `task` does not run a
-    /// second time for a conversation that was already on screen, so without
-    /// this the app comes back to a pipe that is gone and never notices.
-    public func didBecomeActive() async {
-        diagnostics.recordResume(at: now())
-        for config in providers
-        where config.isPipe && pipeSessions[config.id] == nil && pipeStatuses[config.id] != nil {
-            await connectPipe(for: config)
-        }
-    }
-
-    /// The app is going away: the reply in flight is put down and every pipe
-    /// is hung up.
-    ///
-    /// There is no brief-background regime worth holding a pipe open for.
-    /// iOS reclaims a suspended process's sockets without telling it —
-    /// TN2277, *Networking and Multitasking*, says to close listening
-    /// sockets on the way out for exactly this reason — and nothing tells
-    /// this side when the far one gives up either, so a status is only ever
-    /// as fresh as the last thing that arrived over a socket the system may
-    /// already have taken back. Holding a pipe buys a few seconds and pays
-    /// with a pill reading "Direct" over nothing. So the choice is binary,
-    /// and this is the half of it that costs a reconnect instead of a lie.
-    ///
-    /// The reply is cancelled and waited for first, so its partial text
-    /// reaches the conversation while there is still a runtime to write it:
-    /// a process killed for memory while streaming otherwise leaves the
-    /// user's question with no answer under it and no error either.
-    ///
-    /// Which provider that reply belonged to has to be read before it is put
-    /// down. `finish(_:finished:)` clears `liveReply`, so by the time the
-    /// pipes are hung up below nothing is left to say that the close about to
-    /// be shown is the one that ended a reply — and ADR 0002 counts that
-    /// close as mid-reply, because the partial written a line earlier is
-    /// exactly what Continue is offered on.
-    public func didEnterBackground() async {
-        let cutShort = streamingProviderID
-        if let inFlight = streamTask {
-            inFlight.cancel()
-            await inFlight.value
-        }
-        for config in providers where config.isPipe && pipeStatuses[config.id] != nil {
-            await disconnectPipe(for: config.id, leaving: .closed, cutShort: config.id == cutShort)
-        }
     }
 }
