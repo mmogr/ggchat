@@ -55,7 +55,14 @@ and that mock is DEBUG-only: a released build refuses to dial and says so,
 rather than answering a real ticket with a reply no machine wrote. Absent,
 not merely unchosen -- `MockPipeConnector` and `MockPipeSession` are
 declared inside an `#if DEBUG`, and `make build-release` fails if either
-symbol is in the release objects. Nothing here links Rust or iroh.
+symbol is in the release objects.
+
+The binding is now here, though nothing dials through it yet: `GGChatPipe` is
+a target of its own that links `modelpipe-ffi`, and it is the only place the
+boundary check permits `import Modelpipe`. `PipeConnectorFactory` still
+chooses between the mock and the refusal, so a shipped build behaves exactly
+as it did; what changed is that the xcframework resolves, links, and answers a
+call on every CI run.
 
 ## What is true today
 
@@ -104,6 +111,15 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelPairingTests.testARedeemedCodeBecomesTheProvidersTokenAndThePipeConnects -->
   <!-- test: AppModelPairingTests.testARefusedCodeAddsNoProviderAndSaysWhy -->
   <!-- test: ScreenGalleryUITests.testAPairingCodeIsRedeemedInsteadOfAskingForAToken -->
+- The modelpipe binding is linked and answers across the boundary: a string
+  that is not a ticket comes back as an `MpError` with a sentence in it. The
+  xcframework is a binary fetched at resolve time and checked against a uniffi
+  checksum only on first use, so a mismatched pair traps on a device rather
+  than failing a build — something has to call across the boundary on every
+  run, and this is it. Its four statuses cross into the app's own unchanged.
+  <!-- test: BindingTests.testTheBindingIsLinkedAndAnswersAcrossTheBoundary -->
+  <!-- test: BindingTests.testEveryPipeStatusCrossesUnchanged -->
+  <!-- test: BindingTests.testARelayedPipeCountsAsConnected -->
 - The mock pipe walks idle → relayed → direct, can be forced closed, and a
   late subscriber gets the current status first.
   <!-- test: MockPipeTests.testStatusWalksIdleRelayedDirectThenClosedOnDemand -->
@@ -369,9 +385,11 @@ so its test sets it through Settings and measures the result instead.
 
 ```
 Sources/GGChatCore/   no SwiftUI; the provider protocol, wire types, SSE, ticket, pairing, pipe seam, mocks
+Sources/GGChatPipe/   the only target that links modelpipe-ffi; no UI framework either
 Sources/GGChatUI/     SwiftUI; the app model, views, and SwiftData persistence
 App/                  the xcodegen spec, the generated project, and a @main struct with assets
 Tests/GGChatCoreTests XCTest; fixtures are real captures from gglib
+Tests/GGChatPipeTests that the binding is linked and its statuses cross unchanged
 Tests/GGChatUITests   the app model, streaming, the pipe, and the SwiftData store
 App/ggchatUITests     XCUITest that drives the first-run flow on a simulator
 docs/adr/             decisions, each with a kill criterion that names a reading

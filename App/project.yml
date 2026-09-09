@@ -66,6 +66,17 @@ targets:
         ENABLE_PREVIEWS: YES
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: NO
+        # Apple silicon only, because modelpipe-ffi is. Its xcframework ships
+        # three arm64 slices and no x86_64: an Intel Mac app and an Intel Mac
+        # running the simulator were dropped there deliberately, and a
+        # consumer has to agree or the link fails.
+        #
+        # It has to be said here rather than left to the default. `ARCHS`
+        # otherwise resolves to every standard architecture for the SDK, so
+        # the macOS build asks for x86_64, finds no such slice, and fails with
+        # a page of missing `_uniffi_modelpipe_ffi_fn_*` symbols under a note
+        # about a framework that "may still be link-compatible".
+        ARCHS: arm64
         CODE_SIGN_STYLE: Automatic
         "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": ggchat/ggchat-macOS.entitlements
         "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]": ggchat/ggchat-iOS.entitlements

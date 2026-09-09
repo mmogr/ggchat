@@ -117,5 +117,13 @@ every other dial.
 ## What is out of scope until then
 
 The hole-punching spike from a carrier NAT on a real iPhone belongs to
-the ffi work, not this repo. Nothing here links Rust or iroh, and the
-boundary check fails the build if something does.
+the ffi work, not this repo.
+
+> **Amended 2026-09-09 — the binding is linked; the connector is not written.**
+> `Sources/GGChatPipe` is a target of its own that depends on
+> `modelpipe-ffi`, and `scripts/check_boundaries.sh` now permits
+> `import Modelpipe` there and nowhere else, rather than banning it outright.
+> What has not changed is what a build does with a ticket:
+> `PipeConnectorFactory` still returns the mock in DEBUG and
+> `UnavailablePipeConnector` everywhere else, so everything below still
+> describes behaviour a shipped build does not have.

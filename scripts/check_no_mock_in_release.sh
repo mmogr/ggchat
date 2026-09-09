@@ -7,6 +7,10 @@
 # `#if DEBUG`, and this is what holds them there: a release build alone would
 # not, because the mock compiles perfectly well in one.
 #
+# Every target that could carry the symbols is scanned, GGChatPipe included:
+# the loop below is the whole of the search, so a target left out of it is a
+# target certified clean without being opened.
+#
 # Symbols, not sources. A grep over the sources would have to strip comments --
 # `PipeConnector.swift` and `UnavailablePipeConnector.swift` both name the mock
 # in a doc comment, on purpose, and a source grep would fail a correctly fixed
@@ -19,6 +23,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BANNED='MockPipeConnector|MockPipeSession'
 CORE="$ROOT/.build/release/GGChatCore.build"
+PIPE="$ROOT/.build/release/GGChatPipe.build"
 UI="$ROOT/.build/release/GGChatUI.build"
 # Compiled in every configuration, so its presence is the proof that the module
 # declaring the mock was really read. Looked for in its own object and not
@@ -30,7 +35,7 @@ SENTINEL='UnavailablePipeConnector'
 SENTINEL_OBJECT="$CORE/$SENTINEL.swift.o"
 
 objects=''
-for target in "$CORE" "$UI"; do
+for target in "$CORE" "$PIPE" "$UI"; do
     found=$(find "$target" -name '*.o' 2>/dev/null || true)
     if [ -z "$found" ]; then
         echo "release: no objects under $target; run 'make build-release'" >&2

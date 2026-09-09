@@ -47,8 +47,10 @@ analyze:
 		|| { tail -40 $(ANALYZE_LOG) >&2; exit 1; }
 	# The gate refuses to pass vacuously: no compile line for a target of
 	# ours means the analyzer had nothing to look at.
-	grep -q -- '-module-name GGChatCore' $(ANALYZE_LOG) \
-		|| { echo 'analyze: the build printed no compile commands, so nothing was analysed' >&2; exit 1; }
+	for module in GGChatCore GGChatPipe GGChatUI; do \
+		grep -q -- "-module-name $$module" $(ANALYZE_LOG) \
+			|| { echo "analyze: no compile command for $$module, so it was not analysed" >&2; exit 1; }; \
+	done
 	# Violations go to stdout. sourcekit writes a compiler banner per file
 	# and type-checks iOS-only sources against the macOS args they were not
 	# built with, all on stderr, so that is kept in a file instead.
@@ -195,6 +197,8 @@ docs:
 	mkdir -p .build/docs
 	swift package --allow-writing-to-directory .build/docs generate-documentation \
 		--target GGChatCore --warnings-as-errors --output-path .build/docs/GGChatCore
+	swift package --allow-writing-to-directory .build/docs generate-documentation \
+		--target GGChatPipe --warnings-as-errors --output-path .build/docs/GGChatPipe
 	swift package --allow-writing-to-directory .build/docs generate-documentation \
 		--target GGChatUI --warnings-as-errors --output-path .build/docs/GGChatUI
 
