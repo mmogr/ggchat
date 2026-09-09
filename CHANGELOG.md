@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.0](https://github.com/mmogr/ggchat/compare/v0.1.2...v0.2.0) (2026-09-09)
+
+
+### What the app now does
+
+* **app:** ggchat has an icon of its own ([4732465](https://github.com/mmogr/ggchat/commit/47324652d7b52f6aa0fffc389a1c4cd59420fae5))
+* **app:** the app signs with a real team and builds for a real device ([#54](https://github.com/mmogr/ggchat/issues/54)) ([5fed953](https://github.com/mmogr/ggchat/commit/5fed9539d0a82c8afd187240b10c222ed89af675))
+* **pipe:** a release build dials a real machine ([#53](https://github.com/mmogr/ggchat/issues/53)) ([7d61811](https://github.com/mmogr/ggchat/commit/7d61811757e8574d5e9eccb1b8190b653e4cb3ca))
+* **pipe:** a ticket is dialled through modelpipe, not mocked ([#51](https://github.com/mmogr/ggchat/issues/51)) ([cabfbd3](https://github.com/mmogr/ggchat/commit/cabfbd37183b4f1533514438fd8f6043fcf373e1))
+* **pipe:** the app carries the binding it dials with ([71688dd](https://github.com/mmogr/ggchat/commit/71688ddeae710d1c3a0b7ff5c1dc1907016d033a))
+* **pipe:** the app carries the binding it dials with ([188dc59](https://github.com/mmogr/ggchat/commit/188dc5954a5e1f41ca972b3919dbd070df00bace))
+
+
+### What the app stopped getting wrong
+
+* **pipe:** a refused dial says what was actually wrong ([#52](https://github.com/mmogr/ggchat/issues/52)) ([d1806f4](https://github.com/mmogr/ggchat/commit/d1806f4fa57d36c47cb6455724e174619488678d))
+
 ## [0.1.2](https://github.com/mmogr/ggchat/compare/v0.1.1...v0.1.2) (2026-09-07)
 
 
