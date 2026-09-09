@@ -1,4 +1,3 @@
-import Foundation
 import GGChatCore
 
 /// Pairing: redeeming a one-time code through a pipe for a machine's key.

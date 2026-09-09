@@ -110,4 +110,30 @@ final class MockPipeTests: XCTestCase {
         let cEnd = await c.next()
         XCTAssertNil(cEnd)
     }
+
+    /// The two DEBUG controls report different closes, and the difference is
+    /// the point of having both.
+    ///
+    /// "Force closed" is a person pressing a button, so it reports a
+    /// shutdown and anything watching for unexpected closes leaves it alone —
+    /// which is what keeps the reconnect walk in the UI tests a walk rather
+    /// than a race. "Drop" is the close the binding has no case for, and the
+    /// only way to exercise the sentence by hand.
+    func testAPipeThatIsDroppedSaysThePeerVanishedAndOneThatIsForcedDoesNot() async throws {
+        let registry = LoopbackProviderRegistry()
+        let connector = MockPipeConnector(sleeper: ImmediateSleeper(), registry: registry)
+
+        let firstSession = try await connector.connect(ticket: ticket, token: "token")
+        let forced = try XCTUnwrap(firstSession as? MockPipeSession)
+        XCTAssertNil(forced.closeReason, "a pipe that is up has no reason to have closed")
+        forced.forceClosed()
+        XCTAssertEqual(forced.closeReason, .shutdown)
+        XCTAssertFalse(forced.closeReason?.wasUnexpected ?? true)
+
+        let secondSession = try await connector.connect(ticket: ticket, token: "token")
+        let dropped = try XCTUnwrap(secondSession as? MockPipeSession)
+        dropped.dropped()
+        XCTAssertEqual(dropped.closeReason, .peerVanished)
+        XCTAssertEqual(dropped.closeReason?.sentence(naming: "Home"), "Home stopped answering.")
+    }
 }

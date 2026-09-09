@@ -54,6 +54,8 @@
         private let relay = PipeStatusRelay(initial: .idle)
         private let walk = Mutex<Task<Void, Never>?>(nil)
         private let registry: LoopbackProviderRegistry
+        private let reason = Mutex<PipeCloseReason?>(nil)
+        private let networkChanges = Mutex(0)
 
         init(baseURL: URL, sleeper: any Sleeper, stepDelay: Duration, registry: LoopbackProviderRegistry) {
             self.baseURL = baseURL
@@ -77,13 +79,55 @@
             relay.current
         }
 
-        /// Simulates the other machine going away, for the reconnect UI.
+        public var closeReason: PipeCloseReason? {
+            reason.withLock { $0 }
+        }
+
+        /// A mock binds no port of its own, so the number it reports is the
+        /// one in the base URL the registry minted for it. The relay counters
+        /// stay at zero: nothing here has ever touched a relay, and inventing
+        /// numbers would make the Settings screen a place where readings are
+        /// sometimes fiction.
+        public var readings: PipeReadings {
+            PipeReadings(port: UInt16(baseURL.port ?? 0))
+        }
+
+        /// Counted rather than discarded, so a test can assert that the app
+        /// told its pipes the network had moved.
+        public var networkChangeCount: Int {
+            networkChanges.withLock { $0 }
+        }
+
+        public func notifyNetworkChange() async {
+            networkChanges.withLock { $0 += 1 }
+        }
+
+        /// Simulates hanging up: what the Settings screen's "Force closed"
+        /// control does.
+        ///
+        /// Reports `shutdown`, because that is honestly what it is — the app
+        /// closed this pipe because somebody pressed a button. It is
+        /// deliberately *not* `peerVanished`: this is the control the
+        /// reconnect walk in `RemainingScreensUITests` drives, and a close
+        /// that reads as unexpected is one anything watching for unexpected
+        /// closes would be entitled to act on.
         public func forceClosed() {
+            reason.withLock { $0 = .shutdown }
+            walk.withLock { $0?.cancel() }
+            relay.send(.closed)
+        }
+
+        /// Simulates the far machine going away without saying so — the close
+        /// the binding has no case for and the one a person most wants
+        /// explained.
+        public func dropped() {
+            reason.withLock { $0 = .peerVanished }
             walk.withLock { $0?.cancel() }
             relay.send(.closed)
         }
 
         public func shutdown() async {
+            reason.withLock { $0 = .shutdown }
             walk.withLock { $0?.cancel() }
             relay.send(.closed)
             relay.finish()

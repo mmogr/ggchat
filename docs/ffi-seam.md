@@ -42,11 +42,36 @@ public protocol PipeConnector: Sendable {
 public protocol PipeSession: Sendable {
     var baseURL: URL { get }                      // http://127.0.0.1:<port>/v1
     var status: AsyncStream<PipeStatus> { get }   // current value first, then changes
+    var closeReason: PipeCloseReason? { get }     // nil while still open
+    var readings: PipeReadings { get }            // the port, and the relay counters
+    func notifyNetworkChange() async
     func shutdown() async
 }
 
 public enum PipeStatus: String { case idle, direct, relayed, closed }
 ```
+
+> **Amended 2026-09-09 — `PipeSession` gained three members, and the heading
+> above is not as true as it looks.** The pipe's own readings had nowhere to
+> go: the binding exposes a close reason, a port and relay counters, and the
+> seam stopped at a base URL and a status, so the app dropped all three.
+>
+> `PipeCloseReason` has **three** cases where the binding's `MpCloseReason`
+> has two. modelpipe records a reason for a shutdown and for a failed
+> listener; a pipe whose peer simply stopped answering ends with nothing
+> recorded, and read straight off the binding that silence is
+> indistinguishable from a pipe that is still open. `GGChatPipe` establishes
+> that the sequence has ended and maps the remaining silence to
+> `peerVanished` — the close a person most wants explained.
+>
+> The three are requirements rather than defaulted extras. A default here
+> would let a session report a dead pipe as open with nothing failing.
+>
+> Two things the heading still gets wrong, left for the pass that closes
+> issue #8: `PipeStatus` is quoted from `PipeConnector.swift` and does not
+> live there — it is `Sources/GGChatCore/PipeStatus.swift`, and it has more
+> conformances than shown — and `PipeConnectError`, which *does* live in the
+> quoted file, is missing from this block entirely.
 
 ## Behaviours the app relies on
 

@@ -45,16 +45,29 @@ private final class ClosableConnector: PipeConnector {
 private final class ClosableSession: PipeSession, Sendable {
     let baseURL = URL(string: "http://127.0.0.1:51999/v1")!
     private let relay = PipeStatusRelay(initial: .direct)
+    private let reason = Mutex<PipeCloseReason?>(nil)
 
     var status: AsyncStream<PipeStatus> { relay.stream() }
+    var closeReason: PipeCloseReason? { reason.withLock { $0 } }
+    var readings: PipeReadings { PipeReadings(port: 51999) }
 
-    /// The far side went away and the pipe ended its own stream.
-    func die() {
+    func notifyNetworkChange() async {}
+
+    /// The pipe ended its own stream.
+    ///
+    /// The reason defaults to `shutdown` rather than to something more
+    /// dramatic because these tests are about what happens to a session that
+    /// *ended*, not about why it did. A default that read as unexpected would
+    /// quietly make every one of them a test about whatever the app decides
+    /// to do about unexpected closes.
+    func die(because why: PipeCloseReason = .shutdown) {
+        reason.withLock { $0 = why }
         relay.send(.closed)
         relay.finish()
     }
 
     func shutdown() async {
+        reason.withLock { $0 = .shutdown }
         relay.send(.closed)
         relay.finish()
     }

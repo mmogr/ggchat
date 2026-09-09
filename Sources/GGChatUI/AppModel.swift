@@ -32,6 +32,14 @@ public final class AppModel {
     var streamErrors: [UUID: ProviderError] = [:]
     var modelsByProvider: [UUID: [ModelInfo]] = [:]
     var pipeStatuses: [UUID: PipeStatus] = [:]
+    /// Why each pipe last closed, for as long as it is closed.
+    ///
+    /// Written only by `setPipeStatus`, and `scripts/check_one_status_writer.sh`
+    /// holds it to that. Being shown as closed and having a reason for it are
+    /// one event, in the same way that being shown as closed and being counted
+    /// as a close already are — a reason written from anywhere else could
+    /// describe a different close from the one on screen.
+    var pipeCloseReasons: [UUID: PipeCloseReason] = [:]
     var pipeSessions: [UUID: any PipeSession] = [:]
     var statusTasks: [UUID: Task<Void, Never>] = [:]
     var connecting: Set<UUID> = []

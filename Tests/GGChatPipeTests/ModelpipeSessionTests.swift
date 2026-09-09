@@ -115,16 +115,22 @@ final class ModelpipeSessionTests: XCTestCase {
         XCTAssertEqual(seen, [.closed], "a stream opened after a shutdown must end, not hang")
     }
 
-    /// The three readings the binding exposes and the seam has no home for
-    /// yet. Surfacing them is its own change; carrying them is this one's job,
-    /// and a session that dropped them would make that change bigger.
-    func testTheDiagnosticReadingsAreCarried() async throws {
-        let pipe = FakePipe(from: .direct, baseUrl: "http://127.0.0.1:51234/v1")
+    /// The readings the binding exposes, now that the seam has a home for
+    /// them — and in the app's vocabulary rather than the binding's, because
+    /// nothing above this module may name an `Mp` type.
+    ///
+    /// `stayOpen: true` is load-bearing. Without it the walk is spent
+    /// immediately, the driver ends, and the session is closed before the
+    /// first assertion — so "a pipe that is open" would be asserted about one
+    /// that had already shut.
+    func testTheReadingsCrossTheSeamInTheAppsOwnVocabulary() async throws {
+        let pipe = FakePipe(from: .direct, baseUrl: "http://127.0.0.1:51234/v1", stayOpen: true)
         let session = try ModelpipeSession(
             pipe: pipe, sleeper: ImmediateSleeper(), grace: .milliseconds(1))
 
-        XCTAssertEqual(session.port, 51234)
-        XCTAssertEqual(session.networkMetrics.relayConnections, 3)
+        XCTAssertEqual(session.readings.port, 51234)
+        XCTAssertEqual(session.readings.relayConnections, 3)
+        XCTAssertEqual(session.readings.relayConnectionsFailed, 1)
         XCTAssertNil(session.closeReason, "a pipe that is open has no reason to have closed")
 
         await session.shutdown()
@@ -132,5 +138,41 @@ final class ModelpipeSessionTests: XCTestCase {
 
         await session.notifyNetworkChange()
         XCTAssertEqual(pipe.networkChangeCount, 1)
+    }
+
+    /// The case the binding cannot report, and the reason this enum has three
+    /// cases where `MpCloseReason` has two.
+    ///
+    /// A pipe whose peer stops answering ends its status sequence with no
+    /// reason recorded. Read straight off the binding that is `nil`, which is
+    /// also what an open pipe answers — so the session has to know the
+    /// sequence ended before it can call the silence anything.
+    func testAPeerThatSimplyVanishesIsSaidToHaveVanished() async throws {
+        let pipe = FakePipe(from: .direct, reason: nil)
+        let session = try ModelpipeSession(
+            pipe: pipe, sleeper: ImmediateSleeper(), grace: .milliseconds(1))
+
+        var seen: [PipeStatus] = []
+        for await status in session.status { seen.append(status) }
+
+        XCTAssertEqual(seen.last, .closed)
+        XCTAssertEqual(
+            session.closeReason, .peerVanished,
+            "a close the binding recorded no reason for is a peer that went away, not an open pipe")
+    }
+
+    /// The other reason worth a sentence, and the one that names this device
+    /// rather than the far machine.
+    func testAListenerFailureIsBlamedOnThisDeviceAndNotTheNetwork() async throws {
+        let pipe = FakePipe(from: .direct, reason: .listenerFailed)
+        let session = try ModelpipeSession(
+            pipe: pipe, sleeper: ImmediateSleeper(), grace: .milliseconds(1))
+
+        for await _ in session.status {}
+
+        XCTAssertEqual(session.closeReason, .listenerFailed)
+        XCTAssertEqual(
+            session.closeReason?.sentence(naming: "Home"),
+            "This device stopped accepting the connection to Home.")
     }
 }

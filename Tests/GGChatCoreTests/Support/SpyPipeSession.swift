@@ -29,6 +29,22 @@ final class SpyPipeSession: PipeSession, Sendable {
         closed.withLock { $0 }
     }
 
+    /// Pairing hangs up every pipe it opens, so this is `shutdown` once it is
+    /// anything at all. A spy that claimed a peer had vanished would be
+    /// describing a failure this fake has no way to have had.
+    var closeReason: PipeCloseReason? {
+        closed.withLock { $0 > 0 } ? .shutdown : nil
+    }
+
+    /// The port out of the base URL it was handed. Pairing reads neither
+    /// this nor the counters; they are here because the seam requires an
+    /// answer, and an honest zero is the answer.
+    var readings: PipeReadings {
+        PipeReadings(port: UInt16(baseURL.port ?? 0))
+    }
+
+    func notifyNetworkChange() async {}
+
     func shutdown() async {
         closed.withLock { $0 += 1 }
     }

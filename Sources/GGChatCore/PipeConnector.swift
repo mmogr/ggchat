@@ -11,11 +11,34 @@ public protocol PipeConnector: Sendable {
 
 /// A live pipe. Requests go to `baseURL` through an ordinary
 /// `OpenAICompatibleProvider`; there is no pipe-specific chat code.
+///
+/// The last three are what the pipe knows about itself, and they are
+/// requirements rather than optional extras with defaults on purpose. A
+/// default implementation here would be the protocol-level version of the
+/// `default:` arm `PipeStatus+Modelpipe` argues against: a session that
+/// forgot to answer ``closeReason`` would report a dead pipe as still open,
+/// nothing would fail, and every decision made downstream of that answer
+/// would quietly be made on a lie. Four conformances is a small price for
+/// the compiler catching the fifth.
 public protocol PipeSession: Sendable {
     /// `http://127.0.0.1:<port>/v1`
     var baseURL: URL { get }
     /// Current value first, then every change.
     var status: AsyncStream<PipeStatus> { get }
+    /// Why this pipe closed, or `nil` while it is still open.
+    ///
+    /// Only meaningful once ``status`` has yielded `closed`; before that a
+    /// session has nothing to explain and answers `nil`.
+    var closeReason: PipeCloseReason? { get }
+    /// The port and the relay counters, read at the moment of asking.
+    var readings: PipeReadings { get }
+    /// Tell the far endpoint that this device's network may have moved.
+    ///
+    /// Declared here rather than arriving with the code that calls it, so
+    /// that the seam settles in one change instead of two. A session that
+    /// cannot act on the news does nothing, which is the honest answer for a
+    /// pipe that has no endpoint underneath it.
+    func notifyNetworkChange() async
     func shutdown() async
 }
 
