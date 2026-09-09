@@ -3,10 +3,18 @@
 # those.
 SWIFT_SOURCES := Sources Tests Package.swift $(wildcard App/ggchat/*.swift) $(wildcard App/ggchatUITests/*.swift)
 
-.PHONY: screenshots project bootstrap fmt fmt-check lint analyze boundaries enforce build build-release build-app build-app-release test test-live uitest uitest-ipad uitest-dark uitest-contrast unused docs ci
+.PHONY: icon screenshots project bootstrap fmt fmt-check lint analyze boundaries enforce build build-release build-app build-app-release test test-live uitest uitest-ipad uitest-dark uitest-contrast unused docs ci
 
 project:
 	cd App && xcodegen generate --quiet
+
+# The app icon is drawn by a script rather than stored as art nobody can
+# regenerate: `scripts/make_app_icon.swift` is the source, and this writes the
+# eleven PNGs the asset catalogue names straight into it. Rerun it after
+# changing a curve; the mark centres itself on its own bounding box, so the
+# sizes do not need re-tuning by hand.
+icon:
+	swift scripts/make_app_icon.swift App/ggchat/Assets.xcassets/AppIcon.appiconset
 
 bootstrap:
 	brew install xcodegen swiftlint periphery actionlint

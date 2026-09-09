@@ -313,6 +313,13 @@ xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat -destination 'plat
 xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat -destination 'generic/platform=iOS Simulator'
 ```
 
+The app icon is drawn rather than stored: `scripts/make_app_icon.swift` is
+the source and `make icon` writes the eleven PNGs the asset catalogue names.
+The mark is a lowercase g whose descender leaves the letterform and ends on
+a dot -- the bowl is the conversation, the tail is the pipe, the dot is the
+machine at the other end of it. It centres itself on its own measured
+bounding box, so moving a curve does not mean re-tuning eleven sizes by hand.
+
 `make build-app-release` compiles the same two destinations with
 `-configuration Release`. Nothing else compiles the app target that way:
 the scheme's run and test actions are Debug, `xcodebuild build` with no
@@ -368,7 +375,7 @@ Tests/GGChatCoreTests XCTest; fixtures are real captures from gglib
 Tests/GGChatUITests   the app model, streaming, the pipe, and the SwiftData store
 App/ggchatUITests     XCUITest that drives the first-run flow on a simulator
 docs/adr/             decisions, each with a kill criterion that names a reading
-scripts/              the checks CI runs; `make ci` runs the same ones
+scripts/              the checks CI runs; `make ci` runs the same ones, and the app icon's source
 ```
 
 ## The seam
