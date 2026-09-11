@@ -92,7 +92,7 @@ final class ScreenGalleryUITests: XCTestCase {
         ticket.typeText("\(wellFormedTicket)-483920")
 
         XCTAssertTrue(
-            app.staticTexts["A ticket and a code. The code is redeemed once, for that machine's key."]
+            app.staticTexts["A ticket and a code. The code is redeemed once, for a key of this device's own."]
                 .waitForExistence(timeout: 5),
             "the form never said it had recognised a code")
         XCTAssertFalse(
@@ -230,9 +230,9 @@ final class ScreenGalleryUITests: XCTestCase {
     }
 
     /// A provider's row is the way into its settings. There was no tap
-    /// target on it at all before, so a pipe whose ticket had gone stale —
-    /// which is every pipe, every session — could only be deleted and built
-    /// again, taking its conversations with it.
+    /// target on it at all before, so a pipe that needed a new code or
+    /// ticket could only be deleted and built again, taking its
+    /// conversations with it.
     @MainActor
     func testAProviderRowOpensItsSettingsAndTheEditSticks() {
         launch()

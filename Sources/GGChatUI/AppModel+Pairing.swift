@@ -1,6 +1,6 @@
 import GGChatCore
 
-/// Pairing: redeeming a one-time code through a pipe for a machine's key.
+/// Pairing: redeeming a one-time code through a pipe for this device's key.
 ///
 /// Split from `AppModel+Pipe` because these two are not pipe plumbing. They
 /// spend a credential, they are the only pipe paths that `throw` rather than
@@ -8,12 +8,12 @@ import GGChatCore
 /// resume and the hang-up in `AppModel+Lifecycle`.
 extension AppModel {
     /// Pairs with a machine and adds it as a provider: redeem the six-digit
-    /// code through the pipe for that machine's API key, keep the key as the
-    /// provider's token, then dial the pipe the ordinary way.
+    /// code through the pipe for a key that machine minted for this device,
+    /// keep it as the provider's token, then dial the pipe the ordinary way.
     ///
     /// The key is stored before the dial, so a redeemed code is never spent
     /// for nothing — a dial that fails afterwards leaves a provider that can
-    /// be reconnected, not a machine that has to be enabled again.
+    /// be reconnected, not a machine that has to invite this device again.
     ///
     /// `deviceName` is what the far machine will list this device as, if it
     /// keeps a list. It has no default on purpose: `config.name` names the
@@ -29,12 +29,12 @@ extension AppModel {
         let pairing = PipePairing(connector: pipeConnector, redeemer: redeemer)
         let key = try await pairing.token(ticket: ticket, code: code, deviceName: deviceName)
         try addProvider(config, credentials: [.ticket: ticket, .token: key])
-        log.log(.info, "paired with \(config.name); the code was redeemed for its key")
+        log.log(.info, "paired with \(config.name); the code was redeemed for this device's key")
         await connectPipe(for: config)
     }
 
     /// Pairs again with a machine already on the list: redeem the code
-    /// through the new ticket, put both in place of the old pair, and dial
+    /// through the pasted ticket, put both in place of the old pair, and dial
     /// again. The provider's id survives, and with it its conversations —
     /// see ``updateProvider(_:credentials:)``.
     ///
@@ -52,7 +52,7 @@ extension AppModel {
         let pairing = PipePairing(connector: pipeConnector, redeemer: redeemer)
         let key = try await pairing.token(ticket: ticket, code: code, deviceName: deviceName)
         try updateProvider(config, credentials: [.ticket: ticket, .token: key])
-        log.log(.info, "paired with \(config.name) again; the new code was redeemed for its key")
+        log.log(.info, "paired with \(config.name) again; the new code was redeemed for this device's key")
         await reconnectPipe(for: config)
     }
 }

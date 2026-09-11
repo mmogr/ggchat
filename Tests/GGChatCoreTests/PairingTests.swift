@@ -102,7 +102,7 @@ final class PairingTests: XCTestCase {
             let sentence = try XCTUnwrap(error.errorDescription)
             XCTAssertTrue(sentence.contains("expired"), sentence)
             XCTAssertTrue(sentence.contains("used already"), sentence)
-            XCTAssertTrue(sentence.contains("gglib remote enable"), sentence)
+            XCTAssertTrue(sentence.contains("gglib remote invite"), sentence)
         }
     }
 

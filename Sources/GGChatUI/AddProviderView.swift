@@ -172,10 +172,10 @@ struct AddProviderView: View {
     private var pairingFooter: some View {
         switch pairingShape {
         case nil:
-            Text("Paste what `gglib remote enable` printed, or scan it. A bare ticket works once the key is stored.")
+            Text("Paste or scan what `gglib remote enable --invite` shows. A bare ticket works once the key is stored.")
         case .success(let parsed) where parsed.code != nil:
             Label(
-                "A ticket and a code. The code is redeemed once, for that machine's key.",
+                "A ticket and a code. The code is redeemed once, for a key of this device's own.",
                 systemImage: "checkmark.circle")
         case .success:
             Label("Looks like a ticket. The token is separate.", systemImage: "checkmark.circle")
@@ -236,8 +236,8 @@ struct AddProviderView: View {
     /// with the Add button replaced by a spinner and dismisses only when the
     /// key is in the Keychain. A sheet that dismissed first would take the
     /// reason a code was refused away with it, and a refused code is the
-    /// failure this form most has to explain: it is spent either way, so the
-    /// next attempt starts on the other machine.
+    /// failure this form most has to explain: it may be dead for good, and
+    /// then the next attempt starts on the other machine.
     private func pair(_ config: ProviderConfig, ticket: String, code: String) {
         redeeming = true
         Task {

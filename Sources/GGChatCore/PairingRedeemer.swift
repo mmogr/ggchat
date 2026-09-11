@@ -26,7 +26,7 @@ public enum PairingError: Error, Sendable, Equatable, LocalizedError {
         switch self {
         case .refused:
             "The other machine refused the pairing code. It may have expired (two minutes), been used "
-                + "already, or been burned by wrong attempts; run `gglib remote enable` there again."
+                + "already, or been burned by wrong attempts; run `gglib remote invite` there again."
         case .unreachable(let detail):
             "The pairing request did not get through: \(detail)"
         case .unexpectedStatus(let status):
@@ -37,12 +37,12 @@ public enum PairingError: Error, Sendable, Equatable, LocalizedError {
     }
 }
 
-/// Trades a one-time pairing code for the machine's API key.
+/// Trades a one-time pairing code for a key of this device's own.
 ///
 /// A seam of its own so the app model can be tested without a server, and
 /// so the one place that speaks gglib's pairing route is named.
 public protocol PairingRedeemer: Sendable {
-    /// POST the code to `baseURL`'s pairing route and return the API key.
+    /// POST the code to `baseURL`'s pairing route and return this device's key.
     /// `baseURL` is a live pipe's loopback URL: the request is what makes
     /// the far machine's route reachable at all.
     ///

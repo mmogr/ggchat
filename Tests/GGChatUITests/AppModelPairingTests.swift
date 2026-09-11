@@ -64,8 +64,8 @@ final class AppModelPairingTests: XCTestCase {
         XCTAssertEqual(model.diagnostics.ticketDigests, [Ticket.digest(ticket)])
     }
 
-    /// A code is spent whether or not it worked, so a refusal must leave
-    /// nothing half-added for the next attempt to trip over.
+    /// A refusal must leave nothing half-added for the next attempt to trip
+    /// over, whether that attempt retypes the code or brings a fresh one.
     @MainActor
     func testARefusedCodeAddsNoProviderAndSaysWhy() async throws {
         let (model, secrets) = makeModel(FixedRedeemer(.failure(.refused)))
@@ -76,7 +76,7 @@ final class AppModelPairingTests: XCTestCase {
             XCTFail("a refused code added a provider")
         } catch let error as PairingError {
             XCTAssertEqual(error, .refused)
-            XCTAssertTrue(error.localizedDescription.contains("gglib remote enable"), error.localizedDescription)
+            XCTAssertTrue(error.localizedDescription.contains("gglib remote invite"), error.localizedDescription)
         }
 
         XCTAssertTrue(model.providers.isEmpty)

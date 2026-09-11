@@ -55,8 +55,8 @@ private struct StubRedeemer: PairingRedeemer {
 /// Forgetting a provider, and re-credentialling one in place.
 final class AppModelProviderTests: XCTestCase {
     /// modelpipe's normative vector 1 from `docs/ticket-format-v0.md`, and a
-    /// second string of the same shape standing in for what the next
-    /// `gglib remote enable` prints.
+    /// second string of the same shape standing in for the new ticket a
+    /// machine has once its endpoint identity is deleted.
     private let ticket = "pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na"
     private let newTicket = "pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaadesk2na"
 
@@ -120,7 +120,7 @@ final class AppModelProviderTests: XCTestCase {
         XCTAssertNil(model.lastError)
     }
 
-    /// The edit that had no path into it at all: a fresh ticket for a machine
+    /// The edit that had no path into it at all: a new ticket for a machine
     /// already on the list. The id has to survive, because a conversation
     /// names its provider by that id and nothing repoints it.
     @MainActor
@@ -212,9 +212,9 @@ final class AppModelProviderTests: XCTestCase {
     }
 
     /// The whole edit, through the door a user comes in by: paste what the
-    /// machine printed this session, redeem the code for its key, dial the
-    /// new ticket. The old one was never read again, so nothing would have
-    /// noticed the ticket had changed without the redial.
+    /// machine's `gglib remote invite` showed, redeem the code for this
+    /// device's key, dial the new ticket. The old one was never read again,
+    /// so nothing would have noticed the ticket had changed without the redial.
     @MainActor
     func testRePairingRedeemsTheNewCodeAndDialsTheNewTicket() async throws {
         let secrets = InMemorySecrets()

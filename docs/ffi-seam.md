@@ -113,8 +113,8 @@ Each is what `MockPipeConnector` and `MockPipeSession` do today and what
 
 ## Pairing sits above the seam, not inside it
 
-The first connection to a machine trades a six-digit code for that
-machine's API key, and the route that does it (`POST /v1/remote/pair` on
+The first connection to a machine trades a six-digit code for a key of
+this device's own, and the route that does it (`POST /v1/remote/pair` on
 gglib's proxy) is reachable only *through* the pipe. That did not become a
 third parameter on `connect`. `PipePairing` builds the exchange out of the
 two protocols above instead: `connect(ticket:token:)` with the code as the

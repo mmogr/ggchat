@@ -13,9 +13,8 @@ struct ProvidersView: View {
             List {
                 ForEach(model.providers) { provider in
                     // The row is the edit affordance. Before this it was not
-                    // a control of any kind, so a pipe whose ticket had gone
-                    // stale — which is every pipe, every session — could only
-                    // be deleted and built again.
+                    // a control of any kind, so a pipe that needed a new code
+                    // or ticket could only be deleted and built again.
                     NavigationLink {
                         EditProviderView(provider: provider)
                     } label: {

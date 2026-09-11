@@ -40,7 +40,7 @@ public struct PipePairing: Sendable {
     }
 
     /// Dial `ticket`, reach the far machine, redeem `code` through it, and
-    /// hand back that machine's API key.
+    /// hand back the key it minted for this device.
     ///
     /// The pairing session is shut down either way, and the caller dials
     /// again with the key. That is one extra dial, spent once per machine,
@@ -64,8 +64,8 @@ public struct PipePairing: Sendable {
             return key
         } catch {
             // A refused code must not leave a pipe up. There is nothing to
-            // retry through it: the code is spent or wrong, and the next
-            // attempt starts with a fresh `gglib remote enable`.
+            // retry through it: a retry dials again, and a spent code means
+            // a fresh `gglib remote invite` on the other machine.
             await session.shutdown()
             throw error
         }
@@ -79,7 +79,7 @@ public struct PipePairing: Sendable {
     /// contract and the seam says so — and a redeem sent into that gap is
     /// answered `502` by the tunnel's own edge, because there is no peer to
     /// forward it to. The code is spent on that 502 and the next attempt
-    /// needs a fresh `gglib remote enable`.
+    /// needs a fresh `gglib remote invite`.
     ///
     /// It is not a rare race. A hole punch through carrier-grade NAT took
     /// about two seconds to its first path when this was measured, and the
