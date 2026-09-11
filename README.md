@@ -105,7 +105,7 @@ Each claim names the test that keeps it true.
   bearer and the body, the pipe is hung up, and the key that comes back is
   the provider's token. A refused code leaves no provider behind, and the
   form stops asking for a token once it has a code to fetch one with.
-  <!-- test: PairingTests.testPairingDialsRedeemsThroughThatPipeAndHangsUp -->
+  <!-- test: PipePairingTests.testPairingDialsRedeemsThroughThatPipeAndHangsUp -->
   <!-- test: PairingTests.testTheCodeTravelsAsTheBearerAndInTheBody -->
   <!-- test: AppModelPairingTests.testARedeemedCodeBecomesTheProvidersTokenAndThePipeConnects -->
   <!-- test: AppModelPairingTests.testARefusedCodeAddsNoProviderAndSaysWhy -->
@@ -161,7 +161,7 @@ Each claim names the test that keeps it true.
   returns once the local port is bound, not once the peer answers, and a
   redeem sent into that gap is answered `502` by the tunnel's own edge — which
   spends the one-time code on nothing and needs a fresh `gglib remote enable`.
-  <!-- test: PairingTests.testAPipeThatNeverReachesTheFarMachineDoesNotSpendTheCode -->
+  <!-- test: PipePairingTests.testAPipeThatNeverReachesTheFarMachineDoesNotSpendTheCode -->
 - The mock pipe walks idle → relayed → direct, can be forced closed, and a
   late subscriber gets the current status first.
   <!-- test: MockPipeTests.testStatusWalksIdleRelayedDirectThenClosedOnDemand -->
