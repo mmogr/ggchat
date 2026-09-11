@@ -51,11 +51,15 @@ public struct PipePairing: Sendable {
     /// The dial carries the code as its token because during pairing the
     /// code *is* the only credential this side holds; it is what the redeem
     /// request bears. modelpipe's own connect takes no token at all.
-    public func token(ticket: String, code: String) async throws -> String {
+    ///
+    /// `deviceName` rides along with the redeem. It is what the far machine
+    /// will list this device as, if it keeps a list, and not the provider's
+    /// name, which is what this side calls the far machine.
+    public func token(ticket: String, code: String, deviceName: String? = nil) async throws -> String {
         let session = try await connector.connect(ticket: ticket, token: code)
         do {
             try await reachFarMachine(through: session)
-            let key = try await redeemer.redeem(code: code, through: session.baseURL)
+            let key = try await redeemer.redeem(code: code, deviceName: deviceName, through: session.baseURL)
             await session.shutdown()
             return key
         } catch {

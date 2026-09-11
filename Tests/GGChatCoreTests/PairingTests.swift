@@ -33,7 +33,41 @@ final class PairingTests: XCTestCase {
         XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer 483920")
         let body = try XCTUnwrap(Self.body(of: request))
         let sent = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: String])
-        XCTAssertEqual(sent, ["code": "483920"])
+        XCTAssertEqual(sent, ["code": "483920"], "no device name, so no `name` key at all")
+    }
+
+    /// What this device is called on the far machine's list travels in the
+    /// body as `name`, the key gglib reads, beside the code.
+    func testADeviceNameTravelsInTheBodyAsName() async throws {
+        let host = "pair-name.test"
+        StubURLProtocol.register(
+            host: host, path: "/v1/remote/pair",
+            .init(status: 200, chunks: [Data(#"{"api_key":"far-machine-key"}"#.utf8)]))
+
+        _ = try await redeemer.redeem(code: "483920", deviceName: "Kitchen iPad", through: baseURL(host))
+
+        let request = try XCTUnwrap(StubURLProtocol.requests(host: host).last)
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer 483920")
+        let body = try XCTUnwrap(Self.body(of: request))
+        let sent = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: String])
+        XCTAssertEqual(sent, ["code": "483920", "name": "Kitchen iPad"])
+    }
+
+    /// A field left blank, or holding only spaces, is no name at all. gglib
+    /// would trim it away, but this side does not send it for that to
+    /// happen: the key is absent, not empty.
+    func testABlankDeviceNameIsNotSentAtAll() async throws {
+        let host = "pair-blank-name.test"
+        StubURLProtocol.register(
+            host: host, path: "/v1/remote/pair",
+            .init(status: 200, chunks: [Data(#"{"api_key":"far-machine-key"}"#.utf8)]))
+
+        _ = try await redeemer.redeem(code: "483920", deviceName: "  \n", through: baseURL(host))
+
+        let request = try XCTUnwrap(StubURLProtocol.requests(host: host).last)
+        let body = try XCTUnwrap(Self.body(of: request))
+        let sent = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: String])
+        XCTAssertEqual(sent, ["code": "483920"], "a blank name was sent instead of left out")
     }
 
     /// A first request may still be finishing a hole punch, so it is given

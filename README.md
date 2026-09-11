@@ -110,6 +110,15 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelPairingTests.testARedeemedCodeBecomesTheProvidersTokenAndThePipeConnects -->
   <!-- test: AppModelPairingTests.testARefusedCodeAddsNoProviderAndSaysWhy -->
   <!-- test: ScreenGalleryUITests.testAPairingCodeIsRedeemedInsteadOfAskingForAToken -->
+- The name typed for this device travels in the redeem's body as `name`,
+  beside the code. A name that is blank once trimmed is not sent at all:
+  the key is left out, not sent empty. The app model never sends the
+  provider's name, which names the other machine, in its place.
+  <!-- test: PairingTests.testADeviceNameTravelsInTheBodyAsName -->
+  <!-- test: PairingTests.testABlankDeviceNameIsNotSentAtAll -->
+  <!-- test: PipePairingTests.testTheDeviceNameRidesTheRedeem -->
+  <!-- test: AppModelPairingTests.testTheNameTypedForThisDeviceIsWhatTheRedeemCarries -->
+  <!-- test: AppModelPairingTests.testWithNoDeviceNameTheProvidersNameIsNotSentInItsPlace -->
 - The modelpipe binding is linked and answers across the boundary: a string
   that is not a ticket comes back as an `MpError` with a sentence in it. The
   xcframework is a binary fetched at resolve time and checked against a uniffi

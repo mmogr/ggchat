@@ -30,6 +30,20 @@ final class PipePairingTests: XCTestCase {
         XCTAssertEqual(connector.sessions.map(\.shutdowns), [1], "the pairing pipe is hung up")
     }
 
+    /// What this device is called on the far machine's list rides the redeem
+    /// as it was given. Leaving a blank one out is the wire's business, not
+    /// this step's.
+    func testTheDeviceNameRidesTheRedeem() async throws {
+        let far = RecordingRedeemer(.success("far-machine-key"))
+        let pairing = PipePairing(connector: SpyPipeConnector(), redeemer: far)
+        _ = try await pairing.token(ticket: ticket, code: "483920", deviceName: " Kitchen iPad ")
+        _ = try await pairing.token(ticket: ticket, code: "483920", deviceName: "   ")
+
+        XCTAssertEqual(
+            far.calls.map(\.deviceName), [" Kitchen iPad ", "   "],
+            "this step tidied a name that is the wire's to tidy")
+    }
+
     /// A spent code must not leave a pipe up. There is nothing to retry
     /// through it: the next attempt starts on the other machine.
     func testTheSessionIsHungUpEvenWhenTheCodeIsRefused() async throws {
@@ -120,6 +134,7 @@ final class SpyPipeConnector: PipeConnector, Sendable {
 final class RecordingRedeemer: PairingRedeemer, Sendable {
     struct Call: Sendable {
         var code: String
+        var deviceName: String?
         var baseURL: URL
     }
 
@@ -134,8 +149,8 @@ final class RecordingRedeemer: PairingRedeemer, Sendable {
         recorded.withLock { $0 }
     }
 
-    func redeem(code: String, through baseURL: URL) async throws -> String {
-        recorded.withLock { $0.append(Call(code: code, baseURL: baseURL)) }
+    func redeem(code: String, deviceName: String?, through baseURL: URL) async throws -> String {
+        recorded.withLock { $0.append(Call(code: code, deviceName: deviceName, baseURL: baseURL)) }
         return try outcome.get()
     }
 }

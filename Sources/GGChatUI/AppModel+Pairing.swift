@@ -15,12 +15,19 @@ extension AppModel {
     /// for nothing — a dial that fails afterwards leaves a provider that can
     /// be reconnected, not a machine that has to be enabled again.
     ///
+    /// `deviceName` is what the far machine will list this device as, if it
+    /// keeps a list. It has no default on purpose: `config.name` names the
+    /// far machine, and a form that forgot to pass the other name should fail
+    /// to build, not send none.
+    ///
     /// Throws rather than reporting, for the same reason ``addProvider(_:credentials:)``
     /// does: the form that calls this is a sheet, and an alert raised behind
     /// a dismissing sheet is never seen.
-    public func addPairedProvider(_ config: ProviderConfig, ticket: String, code: String) async throws {
+    public func addPairedProvider(
+        _ config: ProviderConfig, ticket: String, code: String, deviceName: String?
+    ) async throws {
         let pairing = PipePairing(connector: pipeConnector, redeemer: redeemer)
-        let key = try await pairing.token(ticket: ticket, code: code)
+        let key = try await pairing.token(ticket: ticket, code: code, deviceName: deviceName)
         try addProvider(config, credentials: [.ticket: ticket, .token: key])
         log.log(.info, "paired with \(config.name); the code was redeemed for its key")
         await connectPipe(for: config)
@@ -36,9 +43,14 @@ extension AppModel {
     /// `makePipeProvider(for:)` reads it each time; a ticket is only ever
     /// read at dial time, so an edited ticket sitting behind a live session
     /// would be a setting that had visibly been saved and changed nothing.
-    public func updatePairedProvider(_ config: ProviderConfig, ticket: String, code: String) async throws {
+    ///
+    /// The device name is asked for again rather than remembered: it goes
+    /// out with the redeem and is kept nowhere on this side.
+    public func updatePairedProvider(
+        _ config: ProviderConfig, ticket: String, code: String, deviceName: String?
+    ) async throws {
         let pairing = PipePairing(connector: pipeConnector, redeemer: redeemer)
-        let key = try await pairing.token(ticket: ticket, code: code)
+        let key = try await pairing.token(ticket: ticket, code: code, deviceName: deviceName)
         try updateProvider(config, credentials: [.ticket: ticket, .token: key])
         log.log(.info, "paired with \(config.name) again; the new code was redeemed for its key")
         await reconnectPipe(for: config)
