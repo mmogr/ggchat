@@ -15,7 +15,7 @@ public enum PairingError: Error, Sendable, Equatable, LocalizedError {
     /// The request never got through. Mostly that is the far machine not
     /// answering — the pipe itself is up, since the code went to its own
     /// loopback port — and it also covers a request that could not be
-    /// written, which one string field makes effectively impossible.
+    /// written, which a body of at most two strings makes effectively impossible.
     case unreachable(String)
     /// A reply that was neither the key nor the refusal.
     case unexpectedStatus(Int)
@@ -45,7 +45,12 @@ public protocol PairingRedeemer: Sendable {
     /// POST the code to `baseURL`'s pairing route and return the API key.
     /// `baseURL` is a live pipe's loopback URL: the request is what makes
     /// the far machine's route reachable at all.
-    func redeem(code: String, through baseURL: URL) async throws -> String
+    ///
+    /// `deviceName` is the name the person typed for this device, or nil. A
+    /// far machine that keeps a list of paired devices lists this one by it;
+    /// it is not the provider's name, which is what this side calls the far
+    /// machine.
+    func redeem(code: String, deviceName: String?, through baseURL: URL) async throws -> String
 }
 
 /// The real one: `POST <baseURL>/remote/pair`, the Swift half of gglib's
@@ -70,7 +75,10 @@ public struct HTTPPairingRedeemer: PairingRedeemer {
     /// and in the body, so the far proxy's pairing route can check it
     /// against the code that session minted. Both halves are required
     /// there; sending one is refused exactly like sending neither.
-    public func redeem(code: String, through baseURL: URL) async throws -> String {
+    ///
+    /// The device name travels in the body only, and only when there is one:
+    /// a name that is blank once trimmed is left out rather than sent empty.
+    public func redeem(code: String, deviceName: String? = nil, through baseURL: URL) async throws -> String {
         var request = URLRequest(url: baseURL.appending(path: "remote/pair"))
         request.httpMethod = "POST"
         request.timeoutInterval = Self.timeout
@@ -78,9 +86,10 @@ public struct HTTPPairingRedeemer: PairingRedeemer {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("Bearer \(code)", forHTTPHeaderField: "Authorization")
         do {
-            request.httpBody = try JSONEncoder().encode(PairRequest(code: code))
+            request.httpBody = try JSONEncoder().encode(
+                PairRequest(code: code, name: Self.nameWorthSending(deviceName)))
         } catch {
-            // One string field, so this cannot happen — but every failure
+            // At most two plain strings, so this cannot happen — but every failure
             // out of here is a `PairingError` with a sentence, and letting
             // an `EncodingError` past would break that for no gain.
             throw PairingError.unreachable("the request could not be written: \(error)")
@@ -109,8 +118,26 @@ public struct HTTPPairingRedeemer: PairingRedeemer {
         }
     }
 
+    /// A device name fit to send: trimmed, and nil when that leaves nothing.
+    ///
+    /// No length cap and no character filter. gglib's `label()` decides both
+    /// when it stores the name, and a cut made here in `Character`s would not
+    /// agree with one made there in Unicode scalars.
+    private static func nameWorthSending(_ deviceName: String?) -> String? {
+        guard let trimmed = deviceName?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else {
+            return nil
+        }
+        return trimmed
+    }
+
+    /// The body gglib's pairing route reads.
+    ///
+    /// `name` is spelled the way gglib spells it and encoded with default
+    /// keys, so renaming the property would rename the key, and gglib would
+    /// ignore it without a word. A nil name leaves the key out altogether.
     private struct PairRequest: Encodable {
         var code: String
+        var name: String?
     }
 
     private struct PairResponse: Decodable {

@@ -20,6 +20,9 @@ struct EditProviderView: View {
     @State private var apiKey = ""
     @State private var pairing = ""
     @State private var token = ""
+    /// What the other machine will list this device as, if it keeps a list.
+    /// Not `name`, which is what this app calls that machine.
+    @State private var deviceName = ""
     @State private var failure: String?
     /// True from the moment a code goes out until the key comes back.
     @State private var redeeming = false
@@ -78,6 +81,19 @@ struct EditProviderView: View {
                     Text("Pairing string")
                 } footer: {
                     pairingFooter
+                }
+                // Asked for only alongside a code: the name goes out with the
+                // redeem, and a bare ticket redeems nothing.
+                if parsedPairing?.code != nil {
+                    Section {
+                        TextField("Optional", text: $deviceName)
+                            .accessibilityIdentifier("edit-device")
+                            .autocorrectionDisabled()
+                    } header: {
+                        Text("This device")
+                    } footer: {
+                        Text(deviceFooter)
+                    }
                 }
             }
         }
@@ -141,6 +157,12 @@ struct EditProviderView: View {
         }
     }
 
+    /// The same sentence as `AddProviderView`'s, because it is the same field.
+    private var deviceFooter: String {
+        "What the other machine calls this one in its list of devices, if it keeps one. "
+            + "The name above is what this app calls that machine. Leave blank to send none."
+    }
+
     private var canSave: Bool {
         switch provider.kind {
         case .openAICompatible: normalizedURL != nil
@@ -192,7 +214,7 @@ struct EditProviderView: View {
         redeeming = true
         Task {
             do {
-                try await model.updatePairedProvider(config, ticket: ticket, code: code)
+                try await model.updatePairedProvider(config, ticket: ticket, code: code, deviceName: deviceName)
                 dismiss()
             } catch {
                 failure = error.localizedDescription

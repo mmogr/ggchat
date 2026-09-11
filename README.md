@@ -105,11 +105,20 @@ Each claim names the test that keeps it true.
   bearer and the body, the pipe is hung up, and the key that comes back is
   the provider's token. A refused code leaves no provider behind, and the
   form stops asking for a token once it has a code to fetch one with.
-  <!-- test: PairingTests.testPairingDialsRedeemsThroughThatPipeAndHangsUp -->
+  <!-- test: PipePairingTests.testPairingDialsRedeemsThroughThatPipeAndHangsUp -->
   <!-- test: PairingTests.testTheCodeTravelsAsTheBearerAndInTheBody -->
   <!-- test: AppModelPairingTests.testARedeemedCodeBecomesTheProvidersTokenAndThePipeConnects -->
   <!-- test: AppModelPairingTests.testARefusedCodeAddsNoProviderAndSaysWhy -->
   <!-- test: ScreenGalleryUITests.testAPairingCodeIsRedeemedInsteadOfAskingForAToken -->
+- The name typed for this device travels in the redeem's body as `name`,
+  beside the code. A name that is blank once trimmed is not sent at all:
+  the key is left out, not sent empty. The app model never sends the
+  provider's name, which names the other machine, in its place.
+  <!-- test: PairingTests.testADeviceNameTravelsInTheBodyAsName -->
+  <!-- test: PairingTests.testABlankDeviceNameIsNotSentAtAll -->
+  <!-- test: PipePairingTests.testTheDeviceNameRidesTheRedeem -->
+  <!-- test: AppModelPairingTests.testTheNameTypedForThisDeviceIsWhatTheRedeemCarries -->
+  <!-- test: AppModelPairingTests.testWithNoDeviceNameTheProvidersNameIsNotSentInItsPlace -->
 - The modelpipe binding is linked and answers across the boundary: a string
   that is not a ticket comes back as an `MpError` with a sentence in it. The
   xcframework is a binary fetched at resolve time and checked against a uniffi
@@ -161,7 +170,7 @@ Each claim names the test that keeps it true.
   returns once the local port is bound, not once the peer answers, and a
   redeem sent into that gap is answered `502` by the tunnel's own edge — which
   spends the one-time code on nothing and needs a fresh `gglib remote enable`.
-  <!-- test: PairingTests.testAPipeThatNeverReachesTheFarMachineDoesNotSpendTheCode -->
+  <!-- test: PipePairingTests.testAPipeThatNeverReachesTheFarMachineDoesNotSpendTheCode -->
 - The mock pipe walks idle → relayed → direct, can be forced closed, and a
   late subscriber gets the current status first.
   <!-- test: MockPipeTests.testStatusWalksIdleRelayedDirectThenClosedOnDemand -->

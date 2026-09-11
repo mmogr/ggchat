@@ -73,8 +73,8 @@ final class ScreenGalleryUITests: XCTestCase {
     }
 
     /// The pairing half, driven through the real app: a code in the string
-    /// means no token is asked for, and Add spends the code on a redeem
-    /// through the pipe.
+    /// means the form asks what this device is called rather than for a
+    /// token, and Add spends the code on a redeem through the pipe.
     ///
     /// Nothing listens on the mock pipe's loopback port, so the redeem
     /// cannot succeed here. What this asserts is that it is *reached* — that
@@ -99,6 +99,9 @@ final class ScreenGalleryUITests: XCTestCase {
             app.secureTextFields["provider-token"].firstMatch.exists,
             "a code was given and the form still asks for the token that code fetches")
         XCTAssertTrue(app.buttons["Add"].firstMatch.isEnabled, "a ticket and a code left Add disabled")
+        XCTAssertTrue(
+            scrollUntilHittable(app.textFields["provider-device"].firstMatch, in: app),
+            "a code was recognised and the form never asked what this device is called")
         attach(name: "form-pipe-code")
 
         app.buttons["Add"].firstMatch.tap()

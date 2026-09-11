@@ -47,7 +47,7 @@ private final class RefusingStore: Store {
 private struct StubRedeemer: PairingRedeemer {
     let outcome: Result<String, PairingError>
 
-    func redeem(code: String, through baseURL: URL) async throws -> String {
+    func redeem(code: String, deviceName: String?, through baseURL: URL) async throws -> String {
         try outcome.get()
     }
 }
@@ -227,7 +227,7 @@ final class AppModelProviderTests: XCTestCase {
 
         var edited = config
         edited.kind = .pipe(ticketDigest: Ticket.digest(newTicket))
-        try await model.updatePairedProvider(edited, ticket: newTicket, code: "483920")
+        try await model.updatePairedProvider(edited, ticket: newTicket, code: "483920", deviceName: nil)
 
         XCTAssertEqual(model.providers.map(\.id), [config.id], "the provider was replaced rather than re-paired")
         XCTAssertEqual(try secrets.secret(.ticket, for: config.id), newTicket)
@@ -254,7 +254,7 @@ final class AppModelProviderTests: XCTestCase {
         var edited = config
         edited.kind = .pipe(ticketDigest: Ticket.digest(newTicket))
         do {
-            try await model.updatePairedProvider(edited, ticket: newTicket, code: "000000")
+            try await model.updatePairedProvider(edited, ticket: newTicket, code: "000000", deviceName: nil)
             XCTFail("a refused code re-credentialled the provider")
         } catch let error as PairingError {
             XCTAssertEqual(error, .refused)
