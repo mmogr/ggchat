@@ -4,9 +4,9 @@
 ![coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmmogr%2Fggchat%2Fbadges%2Fcoverage.json)
 
 A native Apple chat client for OpenAI-compatible model servers, built so
-that a server on your desk at home will be reachable from your phone
+that a server on your desk at home is reachable from your phone
 anywhere, with no port forwarding, no VPN, no account, and no cloud in the
-path. That reach will come from [modelpipe](https://github.com/mmogr/modelpipe).
+path. That reach comes from [modelpipe](https://github.com/mmogr/modelpipe).
 The app is generic: any OpenAI-compatible provider works.
 [gglib](https://github.com/mmogr/gglib) is the provider it is built around.
 
@@ -25,7 +25,8 @@ go stale. The first is a real reply from gglib.
 
 ## Status
 
-v0.1.0 is released. What exists today is the core package (the provider
+Each release is on the [releases page](https://github.com/mmogr/ggchat/releases),
+with what it changed. What exists today is the core package (the provider
 protocol, the OpenAI-compatible implementation, the SSE parser, ticket
 shape validation, pairing, the pipe seam with its mock) and the app shell:
 a sidebar of conversations persisted with SwiftData, a providers sheet
@@ -35,7 +36,7 @@ blocks and collapsed reasoning, with a stop button and, when a reply stops
 early, a Continue button. A server added by address lists its models and
 streams; against gglib, a server status pane shows slots, context in use
 and recent requests, and it is hidden for servers that do not answer that
-endpoint. The app has been run: the screens below are photographs of it,
+endpoint. The app has been run: the screens above are photographs of it,
 not mock-ups. A pipe provider is added by pasting the `ticket-code` string
 the other machine showed for it (`gglib remote enable --invite` for the
 first device, `gglib remote invite` for each one after that), or on iOS by
@@ -43,10 +44,11 @@ scanning its QR code: the six-digit code is spent once, through the pipe
 itself, for a key minted for this device alone, so no key is ever read off
 one screen and typed into another. A bare ticket, with no code, is for a
 device that already holds its key. Connecting goes through
-`PipeConnector`, which has two implementations today: a mock that walks
-idle → relayed → direct, and one that refuses. The status pill follows the
-mock, reads "Reconnect" when the pipe closes, and stays pressable in every
-state but a dial in flight, because a connected status can be stale. Going
+`PipeConnector`: a release build dials with `ModelpipeConnector`, and a
+DEBUG build uses a mock that walks idle → relayed → direct. The status pill
+follows the session, reads "Reconnect" when the pipe closes, and stays
+pressable in every state but a dial in flight, because a connected status
+can be stale. Going
 to the background hangs up every pipe and puts down the reply in flight,
 and coming back dials again. A provider's row opens its settings, so a
 machine that has stopped admitting this device, or whose endpoint identity
