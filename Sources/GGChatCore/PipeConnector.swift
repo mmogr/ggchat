@@ -1,10 +1,11 @@
 import Foundation
 
-/// The seam between the app and modelpipe. `MockPipeConnector` implements it
-/// in DEBUG builds, and only there: the mock is compiled out of every other
-/// configuration, so `UnavailablePipeConnector` is the only conformance a
-/// shipped build contains. `ModelpipeConnector` will implement it when
-/// `modelpipe-ffi` lands, and nothing above this protocol changes.
+/// The seam between the app and modelpipe. `PipeConnectorFactory` returns
+/// `ModelpipeConnector`, from `GGChatPipe`, in every build but DEBUG, and
+/// `MockPipeConnector` in DEBUG, the only configuration the mock is compiled
+/// into. `UnavailablePipeConnector` is still compiled and refuses every
+/// ticket, but nothing in the app returns it; it is the sentinel the release
+/// check looks for.
 public protocol PipeConnector: Sendable {
     func connect(ticket: String, token: String) async throws -> any PipeSession
 }
@@ -32,7 +33,7 @@ public protocol PipeSession: Sendable {
     var closeReason: PipeCloseReason? { get }
     /// The port and the relay counters, read at the moment of asking.
     var readings: PipeReadings { get }
-    /// Tell the far endpoint that this device's network may have moved.
+    /// Tell this device's endpoint that the network under it may have moved.
     ///
     /// Declared here rather than arriving with the code that calls it, so
     /// that the seam settles in one change instead of two. A session that

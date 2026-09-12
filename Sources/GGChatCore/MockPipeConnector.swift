@@ -3,20 +3,20 @@
 // the same as not having one: until this guard, `MockPipeConnector` and
 // `MockPipeSession` were `public` symbols in the shipped binary, reachable by
 // anything that could name them and legible to anyone who ran `nm` on it. A
-// build that cannot dial should not carry the machinery for pretending it can.
+// shipped build should not carry the machinery for pretending to dial.
 //
-// `UnavailablePipeConnector` is what a release build has instead, and it is
-// compiled unconditionally.
+// A release build has `ModelpipeConnector` instead. `UnavailablePipeConnector`
+// is compiled unconditionally, as the sentinel the release check looks for.
 #if DEBUG
     import Foundation
     import Synchronization
 
-    /// Stands in for modelpipe until `modelpipe-ffi` lands. Validates the ticket
-    /// shape, mints a loopback base URL bound to a `MockProvider`, and walks the
+    /// Stands in for modelpipe in DEBUG builds. Validates the ticket shape,
+    /// mints a loopback base URL bound to a `MockProvider`, and walks the
     /// status idle → relayed → direct on a `Sleeper`.
     ///
-    /// DEBUG builds only. A release build has `UnavailablePipeConnector` and no
-    /// mock at all.
+    /// DEBUG builds only. A release build has `ModelpipeConnector` and no mock
+    /// at all.
     public struct MockPipeConnector: PipeConnector {
         public var sleeper: any Sleeper
         public var stepDelay: Duration

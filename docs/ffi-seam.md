@@ -32,7 +32,7 @@ Everything below now describes behaviour a shipped build **has**.
 returns it: it is the sentinel `scripts/check_no_mock_in_release.sh` looks for
 to prove it really opened the release objects.
 
-## The protocols (verbatim from `Sources/GGChatCore/PipeConnector.swift`)
+## The protocols (from `Sources/GGChatCore/PipeConnector.swift` and `PipeStatus.swift`)
 
 ```swift
 public protocol PipeConnector: Sendable {
@@ -44,11 +44,21 @@ public protocol PipeSession: Sendable {
     var status: AsyncStream<PipeStatus> { get }   // current value first, then changes
     var closeReason: PipeCloseReason? { get }     // nil while still open
     var readings: PipeReadings { get }            // the port, and the relay counters
-    func notifyNetworkChange() async
+    func notifyNetworkChange() async              // the network under the device moved
     func shutdown() async
 }
 
-public enum PipeStatus: String { case idle, direct, relayed, closed }
+public enum PipeConnectError: Error, Sendable, Equatable, LocalizedError {
+    case invalidTicket(TicketShapeError)          // refused before anything is dialled
+    case missingToken                             // refused before anything is dialled
+    case unavailable                              // nothing in this build can dial
+    case dialFailed(message: String, retryable: Bool)
+}
+
+// PipeStatus.swift
+public enum PipeStatus: String, Sendable, Codable, CaseIterable, Equatable {
+    case idle, direct, relayed, closed
+}
 ```
 
 > **Amended 2026-09-09 — `PipeSession` gained three members, and the heading
@@ -67,11 +77,10 @@ public enum PipeStatus: String { case idle, direct, relayed, closed }
 > The three are requirements rather than defaulted extras. A default here
 > would let a session report a dead pipe as open with nothing failing.
 >
-> Two things the heading still gets wrong, left for the pass that closes
-> issue #8: `PipeStatus` is quoted from `PipeConnector.swift` and does not
-> live there — it is `Sources/GGChatCore/PipeStatus.swift`, and it has more
-> conformances than shown — and `PipeConnectError`, which *does* live in the
-> quoted file, is missing from this block entirely.
+> Two things the heading got wrong were left for the pass that closes
+> issue #8, and that pass was made on 2026-09-12. `PipeStatus` is now quoted
+> from `PipeStatus.swift`, where it lives, with the conformances it has, and
+> `PipeConnectError` is in the block.
 
 ## Behaviours the app relies on
 
@@ -86,6 +95,11 @@ Each is what `MockPipeConnector` and `MockPipeSession` do today and what
 2. **`connect` returns once the listener is up**, not once the peer is
    reached. The session starts at `idle`; the walk to `relayed` or
    `direct` happens afterwards and the app shows it on the status pill.
+   Anything that has to reach the far machine waits for that walk. Pairing
+   learned this on a phone (#55): it redeemed the code the moment `connect`
+   returned, the tunnel's edge answered `502` in the gap before the peer
+   was reached, and the one-time code was spent on nothing. `PipePairing`
+   now waits for `relayed` or `direct` before it spends the code.
 3. **`baseURL` is loopback, ends in `/v1`, and is stable for the life of
    the session.** The app builds `OpenAICompatibleProvider(baseURL:
    session.baseURL, apiKey: token)` and nothing else. See ADR 0001 for
@@ -104,12 +118,23 @@ Each is what `MockPipeConnector` and `MockPipeSession` do today and what
 7. **Errors from the pipe arrive as HTTP.** When the pipe is up but the
    other side is not, requests to `baseURL` return modelpipe's JSON error
    body (`tunnel_unavailable`, `bad_gateway`, …) with the documented
-   status codes. The app already maps every documented code to a
-   where-to-look hint (`ProviderError.whereToLook(forCode:)`).
+   status codes. The app maps every code modelpipe and gglib write,
+   gglib's `device_not_paired` included, to a where-to-look hint
+   (`ProviderError.whereToLook(forCode:)`). The codes are an enum, so a new
+   one does not compile without an answer.
 8. **No credential in any log line.** The ffi's logging, if it surfaces
    through the app's `LogSink`, must never include the ticket or the
-   token. The app's redaction test greps for a distinctive token; extend
-   it to the ffi's output when it lands.
+   token. The binding sends nothing to `LogSink` itself; its one
+   diagnostic line, for an upstream variant it does not know, goes to
+   stderr. What of its output reaches `LogSink` goes through `AppModel`:
+   `MpError.message()` in the dial-failure lines (`AppModel+Pipe.swift`,
+   `AppModel.report`), and the loopback URL in "pipe up for … at …".
+   modelpipe-ffi's `no_error_renders_the_ticket` keeps the ticket out of
+   its errors, and the token never reaches the binding:
+   `ModelpipeConnector` dials with the ticket alone. The app's redaction
+   test (`OpenAICompatibleProviderTests.testNoCredentialEverReachesALogLine`)
+   covers `OpenAICompatibleProvider`'s lines only, so nothing tests the
+   lines `AppModel` writes.
 
 ## Pairing sits above the seam, not inside it
 
@@ -150,14 +175,24 @@ every other dial.
   > moves for a background whether or not the listener was reclaimed.
   > That is open work, named here so an implementer does not read the
   > struck criterion as the acceptance test.
+  >
+  > **Answered 2026-09-12, by not asking it.** The app hangs up every
+  > provider's pipe on its way to the background and dials again when it
+  > comes back (`AppModel+Lifecycle.swift`), so none of them outlives a
+  > suspension, and the ffi never has to say whether a listener was
+  > reclaimed. The one exception is a pairing dial, which belongs to
+  > `PipePairing` rather than the model and is not hung up on the way out;
+  > it ends when its redeem does.
 - The Keychain holds the ticket and token under the provider's id; the
   config holds only a digest, used to count distinct tickets (the app's
   kill criterion, shown in Settings).
 
-## What is out of scope until then
+## What was out of scope
 
-The hole-punching spike from a carrier NAT on a real iPhone belongs to
-the ffi work, not this repo.
+The hole-punching spike from a carrier NAT on a real iPhone belonged to
+the ffi work, not this repo. It has been run: on 2026-09-09 an iPhone on
+cellular, with wifi off, reached a model on a Mac over a direct path
+through carrier-grade NAT (gglib's ADR 0012, fourth reading).
 
 > **Amended 2026-09-09 — the binding is linked; the connector is not written.**
 > `Sources/GGChatPipe` is a target of its own that depends on
@@ -167,3 +202,9 @@ the ffi work, not this repo.
 > `PipeConnectorFactory` still returns the mock in DEBUG and
 > `UnavailablePipeConnector` everywhere else, so everything below still
 > describes behaviour a shipped build does not have.
+
+> **Amended 2026-09-12 — and then it was.** #51 wrote the connector the
+> same day, and #53 made a release build use it: `PipeConnectorFactory`
+> returns `ModelpipeConnector()` in every build but DEBUG, which keeps the
+> mock. The note above is kept as the record of the step between the two;
+> the top of this document says what a shipped build does now.

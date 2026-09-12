@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # The mock pipe is absent from a release build, not merely unchosen by it.
 #
-# `PipeConnectorFactory` picks `UnavailablePipeConnector` outside DEBUG, but
-# that is a choice made at runtime by a binary that still contains the mock.
+# `PipeConnectorFactory` picks `ModelpipeConnector` outside DEBUG, but a mock
+# left unchosen is still in the binary.
 # `MockPipeConnector` and `MockPipeSession` are therefore declared inside an
 # `#if DEBUG`, and this is what holds them there: a release build alone would
 # not, because the mock compiles perfectly well in one.
