@@ -39,8 +39,7 @@ final class ScreenGalleryUITests: XCTestCase {
         XCTAssertTrue(address.waitForExistence(timeout: 10))
         attach(name: "form-server-empty")
 
-        address.tap()
-        address.typeText("nope")
+        enter("nope", into: address)
         XCTAssertTrue(
             app.staticTexts["That is not an http or https address."].waitForExistence(timeout: 5),
             "a bad address gets no explanation")
@@ -59,13 +58,10 @@ final class ScreenGalleryUITests: XCTestCase {
     func testTheProviderFormExplainsABadTicket() {
         launch()
         openAddProvider()
-        app.buttons["Pipe"].firstMatch.tap()
-        let ticket = app.textFields["provider-ticket"].firstMatch
-        XCTAssertTrue(ticket.waitForExistence(timeout: 10), "the ticket field is not reachable")
+        let ticket = choosePipe(in: app)
         attach(name: "form-pipe-empty")
 
-        ticket.tap()
-        ticket.typeText("nope")
+        enter("nope", into: ticket)
         XCTAssertTrue(
             app.staticTexts["A ticket starts with “pipe”."].waitForExistence(timeout: 5),
             "a bad ticket gets no explanation")
@@ -85,11 +81,8 @@ final class ScreenGalleryUITests: XCTestCase {
     func testAPairingCodeIsRedeemedInsteadOfAskingForAToken() {
         launch()
         openAddProvider()
-        app.buttons["Pipe"].firstMatch.tap()
-        let ticket = app.textFields["provider-ticket"].firstMatch
-        XCTAssertTrue(ticket.waitForExistence(timeout: 10), "the ticket field is not reachable")
-        ticket.tap()
-        ticket.typeText("\(wellFormedTicket)-483920")
+        let ticket = choosePipe(in: app)
+        enter("\(wellFormedTicket)-483920", into: ticket)
 
         XCTAssertTrue(
             app.staticTexts["A ticket and a code. The code is redeemed once, for a key of this device's own."]
@@ -118,22 +111,17 @@ final class ScreenGalleryUITests: XCTestCase {
     func testAPipeConnectsAndTheStatusPillWalks() {
         launch()
         openAddProvider()
-        app.buttons["Pipe"].firstMatch.tap()
-
-        let ticket = app.textFields["provider-ticket"].firstMatch
-        XCTAssertTrue(ticket.waitForExistence(timeout: 10))
-        ticket.tap()
-        ticket.typeText(wellFormedTicket)
+        let ticket = choosePipe(in: app)
+        enter(wellFormedTicket, into: ticket)
         let token = app.secureTextFields["provider-token"].firstMatch
         XCTAssertTrue(token.waitForExistence(timeout: 5), "the token field is not reachable")
-        token.tap()
-        token.typeText("a-token")
+        enter("a-token", into: token)
         attach(name: "form-pipe-filled")
 
         let addButton = app.buttons["Add"].firstMatch
         XCTAssertTrue(addButton.isEnabled, "a good ticket and token left Add disabled")
         clearingThePasswordManagerPrompt(in: app) {
-            addButton.tap()
+            submitProviderForm(in: app)
         }
         attach(name: "pipe-after-add")
 
@@ -197,9 +185,8 @@ final class ScreenGalleryUITests: XCTestCase {
         openAddProvider()
         let address = app.textFields["provider-address"].firstMatch
         XCTAssertTrue(address.waitForExistence(timeout: 10))
-        address.tap()
         // Port 9 is discard: nothing serves HTTP there.
-        address.typeText("http://127.0.0.1:9/v1")
+        enter("http://127.0.0.1:9/v1", into: address)
         app.buttons["Add"].firstMatch.tap()
 
         openConversation(in: app)

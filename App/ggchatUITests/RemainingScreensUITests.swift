@@ -35,8 +35,7 @@ final class RemainingScreensUITests: XCTestCase {
         addProvider.tap()
         let address = app.textFields["provider-address"].firstMatch
         XCTAssertTrue(address.waitForExistence(timeout: 10))
-        address.tap()
-        address.typeText(live.baseURL)
+        enter(live.baseURL, into: address)
         typeAPIKey(live.apiKey, in: app)
         submitProviderForm(in: app)
 
@@ -73,21 +72,17 @@ final class RemainingScreensUITests: XCTestCase {
         let addProvider = app.buttons["Add a provider"].firstMatch
         XCTAssertTrue(addProvider.waitForExistence(timeout: 30))
         addProvider.tap()
-        app.buttons["Pipe"].firstMatch.tap()
-        let ticket = app.textFields["provider-ticket"].firstMatch
-        XCTAssertTrue(ticket.waitForExistence(timeout: 10))
-        ticket.tap()
+        let ticket = choosePipe(in: app)
         // modelpipe's normative vector 1. Nothing shorter will do: the form
         // refuses a ticket under 67 characters, so Add would stay disabled
         // and there would be no pipe here to close.
-        ticket.typeText("pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na")
+        enter("pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na", into: ticket)
         let token = app.secureTextFields["provider-token"].firstMatch
         XCTAssertTrue(token.waitForExistence(timeout: 5))
-        token.tap()
-        token.typeText("a-token")
+        enter("a-token", into: token)
 
         clearingThePasswordManagerPrompt(in: app) {
-            app.buttons["Add"].firstMatch.tap()
+            submitProviderForm(in: app)
         }
 
         openConversation(in: app)
