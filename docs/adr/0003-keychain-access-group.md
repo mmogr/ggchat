@@ -1,10 +1,12 @@
 # ADR 0003 — One Keychain access group for the iOS and macOS builds
 
-- **Status:** Proposed (blocked on a signing team — and, per the 2026-09-07
-  note under "Decision", on two other things this ADR did not know about)
+- **Status:** Rejected, 2026-09-12 — see the note at the top of "Decision".
+  It had been Proposed, blocked on a signing team and, per the 2026-09-07
+  note under "Decision", on two other things this ADR did not know about.
 - **Date:** 2026-09-06 (amended 2026-09-07 — the stated blocker is not the
   only blocker, the premise about CI is false, and the entitlement it
-  proposes is already half-declared under a different name)
+  proposes is already half-declared under a different name; rejected
+  2026-09-12 — credentials stay per device and per build)
 - **Supersedes:** nothing
 - **Superseded by:** nothing
 
@@ -46,6 +48,31 @@ group cannot be declared yet.~~
 > than "when a signing team is set".
 
 ## Decision
+
+> **Rejected 2026-09-12 — credentials stay per device and per build.**
+>
+> Not for want of a team: `App/project.yml` has named one since
+> 2026-09-09, which clears the blocker this ADR was written to wait for.
+> It is rejected on what sharing would do.
+>
+> With a key per device (gglib #1027), a pipe's token is that device's own
+> identity on the serving machine, and `gglib remote forget` retires it by
+> removing that one key from the tunnel's edge. A token synced to a second
+> device would be one identity behind two devices, so a single `forget`,
+> meant for a lost phone, would cut off the Mac beside it as well.
+>
+> The cost of not sharing is the one the note below measured: one round of
+> typing per machine, once. Each machine pairs with a code of its own, or
+> has its key typed in once, and keeps what it was given.
+>
+> Nothing in the code changes. `KeychainSecrets` still writes items that are
+> not synchronizable into the build's default access group, and the app
+> still constructs it with no group. The `keychain-access-groups` entry in
+> `ggchat-iOS.entitlements` stays: it names the app's own group, which is
+> the default anyway.
+>
+> What follows is kept as the record of what was proposed and what was
+> found.
 
 When a signing team is set in `App/project.yml`, both platforms declare the
 access group ~~`$(TeamIdentifierPrefix)com.mattogrady.ggchat`~~ and
@@ -115,6 +142,10 @@ read a token.
   > `kSecAttrSynchronizable` is set would produce a row in the table below
   > that reads like evidence against the decision and is evidence of
   > nothing.
+
+  > **Amended 2026-09-12 — nothing left to measure.** The decision was not
+  > taken, so the hand test has no decision to test: run now, it answers
+  > "not present" by design. The table below stays as it was, unrun.
 
 - If sharing works but a user reports a credential appearing on a device
   they did not expect, drop the group and keep items per-build.

@@ -113,8 +113,10 @@ public final class InMemorySecrets: Secrets, Sendable {
         }
     }
 
-    /// Generic-password items, one per (provider, kind). `accessGroup` stays
-    /// nil until a signing team exists; see ADR 0003.
+    /// Generic-password items, one per (provider, kind), in this build's own
+    /// default access group and never synchronizable, so a credential stays
+    /// on the device that saved it. ADR 0003 proposed sharing them and was
+    /// rejected; the app passes no `accessGroup`.
     public struct KeychainSecrets: Secrets {
         public var service: String
         public var accessGroup: String?

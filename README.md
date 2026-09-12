@@ -485,8 +485,9 @@ against the mock.
   port, not a request API, at the ffi seam.
 - [ADR 0002](docs/adr/0002-an-in-flight-request-is-kept-not-re-sent.md): an
   in-flight request on reconnect is kept, not re-sent.
-- [ADR 0003](docs/adr/0003-keychain-access-group.md): one Keychain access
-  group for both builds, once there is a signing team.
+- [ADR 0003](docs/adr/0003-keychain-access-group.md): rejected. Credentials
+  stay on the device and build that saved them; each machine is paired, or
+  has its key typed, once.
 
 ## Releases
 
