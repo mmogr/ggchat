@@ -78,11 +78,11 @@ Each claim names the test that keeps it true.
   <!-- test: WireTests.testReasoningArrivesAsReasoningContent -->
   <!-- test: WireTests.testUsageChunkHasEmptyChoicesAndCachedTokens -->
 - A server's error sentence is shown verbatim, and every code modelpipe and
-  gglib write says either which machine to look at or that the answer is to
-  wait. The side named is the side that wrote the refusal, which is not
-  always the side you are sitting at. The codes are an enum, so the mapping
-  is exhaustive by the compiler rather than by a list someone remembers to
-  extend.
+  gglib write says which machine to look at, that the request itself was
+  refused, or that the answer is to wait. The side named is the side that
+  wrote the refusal, which is not always the side you are sitting at. The
+  codes are an enum, so the mapping is exhaustive by the compiler rather
+  than by a list someone remembers to extend.
   <!-- test: ErrorTests.testServerMessageIsRenderedVerbatim -->
   <!-- test: ErrorTests.testEveryDocumentedCodeNamesWhereToLook -->
   <!-- test: ErrorTests.testTheSideNamedIsTheSideThatWroteTheRefusal -->

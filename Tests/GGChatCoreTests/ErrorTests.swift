@@ -27,6 +27,8 @@ final class ErrorTests: XCTestCase {
     /// could not read, and can only write `incomplete_request` after the head
     /// has already gone upstream — which makes it "your upload stopped", not
     /// "your JSON is wrong". Both used to point at the other machine.
+    /// gglib's `device_not_paired` is the same kind: it reads like this
+    /// device's problem, and the serving machine's device gate writes it.
     func testTheSideNamedIsTheSideThatWroteTheRefusal() {
         let expectations: [(ProviderError.Code, WhereToLook)] = [
             (.badGateway, .servingSide),
@@ -35,10 +37,14 @@ final class ErrorTests: XCTestCase {
             (.backendUnreachable, .servingSide),
             (.tunnelUnavailable, .connectingSide),
             (.badRequest, .request),
+            (.deviceNotPaired, .servingSide),
         ]
         for (code, expected) in expectations {
             XCTAssertEqual(code.whereToLook, expected, code.rawValue)
         }
+        // The string the gate puts on the wire, not only the case: a raw value
+        // spelt wrong would pass every line above and reach nobody.
+        XCTAssertEqual(ProviderError.whereToLook(forCode: "device_not_paired"), .servingSide)
     }
 
     /// A model still loading and a queue that never reached the request are
