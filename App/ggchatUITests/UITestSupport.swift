@@ -27,12 +27,18 @@ extension XCTestCase {
     /// password manager, and that offer can arrive seconds after the sheet
     /// closes, so the wait dismisses whatever is on top as it goes rather
     /// than clearing once up front and hoping.
+    ///
+    /// Inside the provider sheet that sweep is the one thing that must not
+    /// happen, and `sweeping: false` waits without it: one of the titles the
+    /// sweep reaches for is "Cancel", which is also the sheet's own way out,
+    /// so a sweep while the sheet is up closes it. ``submitProviderForm(in:)``
+    /// learned that first.
     @MainActor
-    func waitUntilHittable(_ element: XCUIElement, timeout: TimeInterval) -> Bool {
+    func waitUntilHittable(_ element: XCUIElement, timeout: TimeInterval, sweeping: Bool = true) -> Bool {
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
             if element.exists, element.isHittable { return true }
-            dismissAnythingOnTop()
+            if sweeping { dismissAnythingOnTop() }
             _ = element.waitForExistence(timeout: 0.5)
         }
         return false
@@ -82,15 +88,73 @@ extension XCTestCase {
     /// Taps, then checks the tap actually did something, and tries again if
     /// it did not. The password manager's offer can arrive a second time,
     /// after the first has been dismissed, and swallow the tap that follows.
+    ///
+    /// Pass `sweeping: false` for a control inside the provider sheet; see
+    /// ``waitUntilHittable(_:timeout:sweeping:)`` for why.
     @MainActor
     @discardableResult
-    func tap(_ element: XCUIElement, untilExists witness: XCUIElement, attempts: Int = 4) -> Bool {
-        for _ in 0..<attempts where waitUntilHittable(element, timeout: 15) {
+    func tap(
+        _ element: XCUIElement, untilExists witness: XCUIElement, attempts: Int = 4, sweeping: Bool = true
+    ) -> Bool {
+        for _ in 0..<attempts where waitUntilHittable(element, timeout: 15, sweeping: sweeping) {
             element.tap()
             if witness.waitForExistence(timeout: 8) { return true }
-            dismissAnythingOnTop()
+            if sweeping { dismissAnythingOnTop() }
         }
         return witness.exists
+    }
+
+    /// Switches the provider sheet to its Pipe half, and returns the ticket
+    /// field that proves it did.
+    ///
+    /// The sheet can still be presenting when the tap that opened it returns
+    /// -- on a loaded simulator XCUI stops waiting for it to settle -- and a
+    /// bare tap on "Pipe" then either finds no such button or lands on a
+    /// segment that is still moving and changes nothing. CI saw the first
+    /// once, on the iPhone contrast leg, and the second three times, on the
+    /// iPad leg, each early in its leg while the simulator was cold.
+    @MainActor
+    func choosePipe(in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) -> XCUIElement {
+        let ticket = app.textFields["provider-ticket"].firstMatch
+        XCTAssertTrue(
+            tap(app.buttons["Pipe"].firstMatch, untilExists: ticket, sweeping: false),
+            "the Pipe half of the provider form never opened", file: file, line: line)
+        return ticket
+    }
+
+    /// Types into a field of the provider sheet once that field has the
+    /// keyboard.
+    ///
+    /// A bare tap can miss a field the form is still moving -- the sheet
+    /// still settling, or the form scrolling for a keyboard that has just come
+    /// up -- or land before a loaded simulator gives the field focus, and
+    /// `typeText` then fails with "Neither element nor any descendant has
+    /// keyboard focus". The keyboard itself is no witness, because it is
+    /// already up from the field before, so the field's own focus is what is
+    /// waited for. Without a sweep, for the reason
+    /// ``waitUntilHittable(_:timeout:sweeping:)`` gives.
+    ///
+    /// Not called `type`, which would hide `Swift.type(of:)` in every test
+    /// case in the target.
+    @MainActor
+    func enter(
+        _ text: String, into field: XCUIElement, attempts: Int = 3,
+        file: StaticString = #filePath, line: UInt = #line
+    ) {
+        let focused = NSPredicate(format: "hasKeyboardFocus == true")
+        var tapped = false
+        for _ in 0..<attempts where waitUntilHittable(field, timeout: 15, sweeping: false) {
+            field.tap()
+            tapped = true
+            let took = XCTNSPredicateExpectation(predicate: focused, object: field)
+            if XCTWaiter().wait(for: [took], timeout: 5) == .completed {
+                field.typeText(text)
+                return
+            }
+        }
+        XCTFail(
+            tapped ? "the field was tapped and never took the keyboard" : "the field never became tappable",
+            file: file, line: line)
     }
 
     /// Puts the caret in a field and waits for the keyboard, because
@@ -198,8 +262,7 @@ extension XCTestCase {
         guard !key.isEmpty else { return }
         let field = app.secureTextFields["provider-key"].firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 10), "the API key field is not reachable")
-        field.tap()
-        field.typeText(key)
+        enter(key, into: field)
     }
 
     /// Submits the provider form: taps Add, then waits for the sheet to go.

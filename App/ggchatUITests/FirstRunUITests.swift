@@ -49,8 +49,7 @@ final class FirstRunUITests: XCTestCase {
         if let live {
             let address = app.textFields["provider-address"].firstMatch
             XCTAssertTrue(address.waitForExistence(timeout: 10), "the address field is not reachable")
-            address.tap()
-            address.typeText(live.baseURL)
+            enter(live.baseURL, into: address)
             typeAPIKey(live.apiKey, in: app)
             XCTAssertTrue(app.buttons["Add"].firstMatch.isEnabled, "a valid address left the Add button disabled")
             submitProviderForm(in: app)
