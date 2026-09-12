@@ -90,7 +90,7 @@ import XCTest
             XCTAssertEqual(add.query.account, apiKeyAccount)
             XCTAssertEqual(add.query.text, "sk-abc")
             XCTAssertEqual(add.query.accessible, kSecAttrAccessibleAfterFirstUnlock as String)
-            XCTAssertNil(add.query.accessGroup, "no signing team, so no access group; see ADR 0003")
+            XCTAssertNil(add.query.accessGroup, "the app shares no access group; see ADR 0003, rejected")
         }
 
         /// The update's query identifies the item and its attributes carry the
