@@ -77,6 +77,7 @@ extension ProviderError {
         // `upstream_timeout` it writes into a stream that has already begun.
         case admissionTimeout = "admission_timeout"
         case contextLengthExceeded = "context_length_exceeded"
+        case deviceNotPaired = "device_not_paired"
         case embeddingModelCannotChat = "embedding_model_cannot_chat"
         case hostNotAllowed = "host_not_allowed"
         case internalError = "internal_error"
@@ -110,7 +111,13 @@ extension ProviderError.Code {
         // `invalid_api_key` is here for the same kind of reason: both doors
         // it can fail at, modelpipe's bearer check and gglib's, stand on the
         // serving machine.
-        case .invalidAPIKey, .badGateway, .backendUnreachable, .hostNotAllowed, .internalError,
+        // `device_not_paired` reads like this device's fault and is not one.
+        // gglib's device gate writes it, on the serving machine, when the
+        // tunnel let a request in without naming a device — a pairing code
+        // used as a key, most likely — and the code that fixes it is handed
+        // out there. A device that machine has forgotten never gets this far:
+        // the edge refuses its key first, with `invalid_api_key`.
+        case .invalidAPIKey, .badGateway, .backendUnreachable, .deviceNotPaired, .hostNotAllowed, .internalError,
             .invalidPairingCode, .mcpNotAllowedOverTunnel, .modelFileNotFound, .upstreamError:
             .servingSide
 
