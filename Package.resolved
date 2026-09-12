@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mmogr/modelpipe-ffi.git",
       "state" : {
-        "revision" : "6f0d982d7a7ed741682eed0ce67a33d5484b5ad0",
-        "version" : "0.1.2"
+        "revision" : "35ee960b14f669909094fd1dc0df7511241bd0e6",
+        "version" : "0.1.3"
       }
     },
     {
