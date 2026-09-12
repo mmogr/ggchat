@@ -4,14 +4,15 @@
 /// ticket and a real token would get a status pill reading "Direct", a model
 /// list that never came off their machine, and replies no server wrote.
 ///
-/// So the release build gets this instead. It refuses every dial with a
-/// sentence, and `PipeConnectorFactory` is the one place that chooses
-/// between the two.
+/// So a release build got this instead, and refused every dial with a
+/// sentence, until #53 gave it `ModelpipeConnector` to dial with. Nothing
+/// in the app returns it now. It stays because
+/// `scripts/check_no_mock_in_release.sh` looks for it, to prove it really
+/// opened the release objects.
 ///
-/// The choice is not the whole of it: outside DEBUG there is nothing to
-/// choose. `MockPipeConnector` and `MockPipeSession` are declared inside an
-/// `#if DEBUG`, so a release binary carries neither the types nor their
-/// symbols, and this is the only `PipeConnector` in it.
+/// Leaving the mock unchosen was never the whole of it. `MockPipeConnector`
+/// and `MockPipeSession` are declared inside an `#if DEBUG`, so a release
+/// binary carries neither the types nor their symbols.
 public struct UnavailablePipeConnector: PipeConnector {
     public init() {}
 
