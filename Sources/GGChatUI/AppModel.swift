@@ -59,6 +59,10 @@ public final class AppModel {
     let registry: LoopbackProviderRegistry
     let pipeConnector: any PipeConnector
     let redeemer: any PairingRedeemer
+    /// What says the network under this device has changed, and the task that
+    /// passes it on to the pipes; see `startWatchingTheNetwork()`.
+    let networkWatcher: any NetworkPathWatching
+    var networkTask: Task<Void, Never>?
     let now: () -> Date
 
     /// Where the in-process mock provider answers in DEBUG builds, the same
@@ -72,6 +76,7 @@ public final class AppModel {
         registry: LoopbackProviderRegistry = .shared,
         pipeConnector: any PipeConnector = PipeConnectorFactory.make(),
         redeemer: any PairingRedeemer = HTTPPairingRedeemer(),
+        networkWatcher: any NetworkPathWatching = NWPathNetworkWatcher(),
         diagnostics: Diagnostics = Diagnostics(),
         now: @escaping () -> Date = { Date() }
     ) {
@@ -81,6 +86,7 @@ public final class AppModel {
         self.registry = registry
         self.pipeConnector = pipeConnector
         self.redeemer = redeemer
+        self.networkWatcher = networkWatcher
         self.diagnostics = diagnostics
         self.now = now
         #if DEBUG
@@ -104,6 +110,7 @@ public final class AppModel {
         } catch {
             report(error)
         }
+        startWatchingTheNetwork()
     }
 
     // MARK: - Conversations
