@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.2](https://github.com/mmogr/ggchat/compare/v0.2.1...v0.2.2) (2026-09-12)
+
+
+### What the app now does
+
+* **pipe:** a device says what it is called when it pairs ([#61](https://github.com/mmogr/ggchat/issues/61)) ([50bbb5d](https://github.com/mmogr/ggchat/commit/50bbb5d465a3ca84f7ae8655a59ad22a536d52a3))
+* **pipe:** a pipe is told when the network under it changes ([#65](https://github.com/mmogr/ggchat/issues/65)) ([e20dc4d](https://github.com/mmogr/ggchat/commit/e20dc4de8d0784a893d38683c4a75aed8b65a4a8))
+* **pipe:** a pipe that drops says why, and shows its numbers ([#58](https://github.com/mmogr/ggchat/issues/58)) ([aabfc67](https://github.com/mmogr/ggchat/commit/aabfc6708c97a0fe48b4ce97f6170830f7dbc2b3))
+
+
+### What the app stopped getting wrong
+
+* **core:** gglib's device_not_paired says to look at the serving machine ([#63](https://github.com/mmogr/ggchat/issues/63)) ([63e39ab](https://github.com/mmogr/ggchat/commit/63e39aba3f037c75152b89faa810b0a11201cec3))
+* **pipe:** pairing names the gglib commands that hand out a code ([#62](https://github.com/mmogr/ggchat/issues/62)) ([af1cf37](https://github.com/mmogr/ggchat/commit/af1cf37c4507755c11a4f624d86166a45498ef5b))
+
+
+### Documentation
+
+* **adr:** credentials are not shared between devices, and ADR 0003 says so ([#64](https://github.com/mmogr/ggchat/issues/64)) ([b5c7ee2](https://github.com/mmogr/ggchat/commit/b5c7ee20e6cfa1662613220e12a22262057e3452))
+* **seam:** the seam document says what was built ([#66](https://github.com/mmogr/ggchat/issues/66)) ([a770e65](https://github.com/mmogr/ggchat/commit/a770e6546b4af87a367add0e8691087918bece51))
+
 ## [0.2.1](https://github.com/mmogr/ggchat/compare/v0.2.0...v0.2.1) (2026-09-09)
 
 
