@@ -255,6 +255,14 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundHangsUpEveryPipeAndComingBackDialsAgain -->
   <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundKeepsThePartialReplyInsteadOfLosingIt -->
   <!-- test: AppModelLifecycleTests.testComingBackDoesNotDialAPipeTheAppNeverOpened -->
+- When the network under the device changes while the app is open, every
+  pipe it holds is told, so its endpoint looks at the network again then,
+  whether or not iroh's own watch on the routing socket noticed the move.
+  A pipe already hung up is not told, and watching starts as the app
+  launches rather than on its first return to the foreground.
+  <!-- test: AppModelNetworkChangeTests.testAChangeToTheNetworkTellsEveryLivePipe -->
+  <!-- test: AppModelNetworkChangeTests.testAPipeThatWasHungUpIsNotTold -->
+  <!-- test: AppModelNetworkChangeTests.testLoadingStartsWatchingTheNetworkOnce -->
 - Every close the app shows is a close it counts, whoever wrote it down: ADR
   0002's denominator moves for a background and for a refused dial, not only
   for a close a live session reported. A close is counted once — a background
