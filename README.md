@@ -37,20 +37,22 @@ streams; against gglib, a server status pane shows slots, context in use
 and recent requests, and it is hidden for servers that do not answer that
 endpoint. The app has been run: the screens below are photographs of it,
 not mock-ups. A pipe provider is added by pasting the `ticket-code` string
-`gglib remote enable` printed, or on iOS by scanning its QR code: the
-six-digit code is spent once, through the pipe itself, for that machine's
-API key, so no key is ever read off one screen and typed into another. A
-bare ticket is the form every later pairing takes. Connecting goes through
+the other machine showed for it (`gglib remote enable --invite` for the
+first device, `gglib remote invite` for each one after that), or on iOS by
+scanning its QR code: the six-digit code is spent once, through the pipe
+itself, for a key minted for this device alone, so no key is ever read off
+one screen and typed into another. A bare ticket, with no code, is for a
+device that already holds its key. Connecting goes through
 `PipeConnector`, which has two implementations today: a mock that walks
 idle → relayed → direct, and one that refuses. The status pill follows the
 mock, reads "Reconnect" when the pipe closes, and stays pressable in every
 state but a dial in flight, because a connected status can be stale. Going
 to the background hangs up every pipe and puts down the reply in flight,
 and coming back dials again. A provider's row opens its settings, so a
-machine re-enabled with a fresh ticket is re-paired in place and keeps its
-conversations. Settings shows the readings the ADRs name, each with its
-denominator. In DEBUG builds a mock provider streams canned replies
-without a server.
+machine that has stopped admitting this device, or whose endpoint identity
+was deleted, is re-paired in place and keeps its conversations. Settings
+shows the readings the ADRs name, each with its denominator. In DEBUG
+builds a mock provider streams canned replies without a server.
 
 **A shipped build now dials for real.** `GGChatPipe` is a target of its own
 that links `modelpipe-ffi`, and it is the only place the boundary check
@@ -169,7 +171,7 @@ Each claim names the test that keeps it true.
 - Pairing waits for the far machine before spending the code. `connect`
   returns once the local port is bound, not once the peer answers, and a
   redeem sent into that gap is answered `502` by the tunnel's own edge — which
-  spends the one-time code on nothing and needs a fresh `gglib remote enable`.
+  spends the one-time code on nothing and needs a fresh `gglib remote invite`.
   <!-- test: PipePairingTests.testAPipeThatNeverReachesTheFarMachineDoesNotSpendTheCode -->
 - The mock pipe walks idle → relayed → direct, can be forced closed, and a
   late subscriber gets the current status first.
@@ -270,8 +272,8 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelPipeTests.testAPipeThatGoesAwayMidReplyIsCountedAsAMidReplyClose -->
   <!-- test: AppModelLifecycleTests.testABackgroundThatCutsAReplyShortCountsAMidReplyClose -->
 - A provider's row opens its settings, and its name and credentials are
-  edited in place, keeping the id — so a machine paired again with the
-  ticket its next `gglib remote enable` printed keeps its conversations.
+  edited in place, keeping the id — so a machine that invites this device
+  again with `gglib remote invite` keeps its conversations.
   A blank credential keeps the one stored, an edit that will not save puts
   back what it found, and a new ticket is dialled rather than saved and
   ignored.

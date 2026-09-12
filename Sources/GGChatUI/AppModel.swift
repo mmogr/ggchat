@@ -184,9 +184,9 @@ public final class AppModel {
     /// Keeping the id is what makes this an edit and not a delete plus a
     /// re-add: a conversation names its provider by that id as a plain
     /// value, and every secret is filed under it, so a new id would orphan
-    /// both. `gglib remote enable` mints a fresh ticket every session, so
-    /// without this a pipe provider had to be thrown away and rebuilt each
-    /// time, taking its conversations with it.
+    /// both. A pipe is paired again when its machine stops admitting this
+    /// device or has a new ticket, and without this that meant throwing the
+    /// provider away and rebuilding it, taking its conversations with it.
     ///
     /// Only the credentials named here are written, and an empty one is
     /// skipped: the form asks for a replacement, not for what is already

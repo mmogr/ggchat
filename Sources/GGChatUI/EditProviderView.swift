@@ -4,10 +4,11 @@ import SwiftUI
 /// Re-credentials a provider that is already there, keeping its id and so
 /// its conversations.
 ///
-/// For a pipe this is the ordinary path rather than a repair: `gglib remote
-/// enable` mints a fresh ticket every session, so a machine that has been
-/// re-enabled has to be re-pasted here, and the alternative was deleting the
-/// provider and adding it back — which takes every conversation with it.
+/// For a pipe this is the repair path. gglib's ticket lasts across restarts,
+/// but a machine that has stopped admitting this device, or whose endpoint
+/// identity was deleted, has to invite it again, and what that invite shows
+/// is pasted here. The alternative was deleting the provider and adding it
+/// back — which takes every conversation with it.
 ///
 /// A credential field left blank keeps what is stored. Nothing is read back
 /// into the form: a token that is already in the Keychain has no business
@@ -144,10 +145,10 @@ struct EditProviderView: View {
     private var pairingFooter: some View {
         switch pairingShape {
         case nil:
-            Text("Blank keeps the ticket and token already stored. Paste what `gglib remote enable` printed last.")
+            Text("Blank keeps the ticket and token already stored. Paste what `gglib remote invite` shows.")
         case .success(let parsed) where parsed.code != nil:
             Label(
-                "A ticket and a code. The code is redeemed once, for that machine's key.",
+                "A ticket and a code. The code is redeemed once, for a key of this device's own.",
                 systemImage: "checkmark.circle")
         case .success:
             Label("Looks like a ticket. Leave the token blank to keep the one stored.", systemImage: "checkmark.circle")
@@ -208,7 +209,7 @@ struct EditProviderView: View {
 
     /// Redeeming is a round trip through the pipe, so the form stays up with
     /// Save replaced by a spinner and leaves only once the key is stored.
-    /// A refused code is spent either way, and this is where that has to be
+    /// A refused code may be dead for good, and this is where that has to be
     /// said — see ``AddProviderView``, which does the same on the way in.
     private func pair(_ config: ProviderConfig, ticket: String, code: String) {
         redeeming = true

@@ -65,7 +65,7 @@ final class PipePairingTests: XCTestCase {
     /// machine answers -- modelpipe's contract, and the seam says so. A redeem
     /// sent into that gap is answered `502` by the tunnel's own edge, because
     /// there is no peer to forward it to, and the one-time code is spent on
-    /// that 502. The next attempt needs a fresh `gglib remote enable`.
+    /// that 502. The next attempt needs a fresh `gglib remote invite`.
     ///
     /// Not a rare race. A hole punch through carrier-grade NAT took about two
     /// seconds to reach its first path when this was measured, and the redeem

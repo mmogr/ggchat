@@ -14,7 +14,7 @@ public enum PairingStringError: Error, Sendable, Equatable, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .empty:
-            "Paste the “ticket-code” string `gglib remote enable` shows, or a bare ticket "
+            "Paste the “ticket-code” string `gglib remote invite` shows, or a bare ticket "
                 + "once this device holds the key."
         case .suffixIsNotACode:
             "The part after the last “-” should be the \(PairingString.codeLength)-digit pairing code."
@@ -24,15 +24,15 @@ public enum PairingStringError: Error, Sendable, Equatable, LocalizedError {
     }
 }
 
-/// The one string `gglib remote enable` prints, taken apart: a ticket saying
-/// who to dial, and — the first time — a one-time code to redeem for that
-/// machine's API key.
+/// The one string `gglib remote invite` or `enable --invite` shows, taken
+/// apart: a ticket saying who to dial, and — the first time — a one-time code
+/// to redeem for a key of this device's own.
 ///
 /// This is the Swift half of gglib's `remote/pairing_string.rs`, and the
 /// split rule is its rule: on the **last** `-`. A ticket's alphabet is
 /// `pipe` and base32, which has no hyphen, so the only `-` that can appear
-/// is the separator `enable` put there. A bare ticket is the later-session
-/// form, once the key is already stored.
+/// is the separator the invite put there. A bare ticket is the form for a
+/// device that already holds the key.
 public struct PairingString: Sendable, Equatable {
     /// The ticket, lowercased. A printed QR encodes the whole string
     /// uppercased, and a paste arrives as printed, so both normalise here
