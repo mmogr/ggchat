@@ -16,7 +16,7 @@ let package = Package(
         // xcframework are two halves of one artifact checked against each
         // other by a uniffi checksum, and a mismatch is a `fatalError` at the
         // first dial on a device rather than an error at build time.
-        .package(url: "https://github.com/mmogr/modelpipe-ffi.git", from: "0.1.2"),
+        .package(url: "https://github.com/mmogr/modelpipe-ffi.git", from: "0.1.3"),
     ],
     targets: [
         .target(
