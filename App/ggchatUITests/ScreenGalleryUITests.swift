@@ -3,8 +3,8 @@ import XCTest
 /// Visits the screens the first-run walk never reaches and photographs each
 /// one, so nothing ships that no one has looked at: the provider form and
 /// what it says about a bad address or a bad ticket, a pipe connecting and
-/// its status pill, the providers list, settings and its readings, and what
-/// a failed request looks like under a partial reply.
+/// its status pill, the providers list, settings and its readings, and a
+/// server that is not there.
 final class ScreenGalleryUITests: XCTestCase {
     private var app: XCUIApplication!
 
@@ -177,8 +177,8 @@ final class ScreenGalleryUITests: XCTestCase {
         attach(name: "settings-diagnostics")
     }
 
-    /// A server that is not there: the reply stops and says so, and the
-    /// partial stays with a way to carry on.
+    /// A server that is not there lists no model, so there is nothing to
+    /// send, and the alert is all it says.
     @MainActor
     func testAServerThatIsNotThereSaysSo() {
         launch()
@@ -204,15 +204,12 @@ final class ScreenGalleryUITests: XCTestCase {
         XCTAssertTrue(caret(in: field, of: app), "the composer never took the caret")
         field.typeText("Anyone home?")
 
-        // Without a model there is nothing to send, which is its own sentence.
+        // A server that is not there lists no model, and without one there
+        // is nothing to send: the refusal is the alert above. What a request
+        // refused on its way looks like is `RefusalUITests`'s walk.
         let send = app.buttons["Send"].firstMatch
-        if send.isEnabled {
-            send.tap()
-            XCTAssertTrue(
-                app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Could not reach the server'"))
-                    .firstMatch.waitForExistence(timeout: 60),
-                "a dead server produced no sentence")
-        }
+        XCTAssertTrue(send.waitForExistence(timeout: 5))
+        XCTAssertFalse(send.isEnabled, "a server that listed no model still offered Send")
         attach(name: "server-unreachable")
     }
 

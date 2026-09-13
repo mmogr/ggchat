@@ -40,9 +40,9 @@ extension AppModel {
     /// user's question with no answer under it and no error either.
     ///
     /// Which provider that reply belonged to has to be read before it is put
-    /// down. `finish(_:finished:)` clears `liveReply`, so by the time the
-    /// pipes are hung up below nothing is left to say that the close about to
-    /// be shown is the one that ended a reply — and ADR 0002 counts that
+    /// down. `finish(_:finished:cancelled:)` clears `liveReply`, so by the time
+    /// the pipes are hung up below nothing is left to say that the close about
+    /// to be shown is the one that ended a reply — and ADR 0002 counts that
     /// close as mid-reply, because the partial written a line earlier is
     /// exactly what Continue is offered on.
     public func didEnterBackground() async {

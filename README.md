@@ -33,7 +33,8 @@ a sidebar of conversations persisted with SwiftData, a providers sheet
 that adds a server by address or a pipe by its pairing string, and
 settings. The transcript streams replies as markdown with copyable code
 blocks and collapsed reasoning, with a stop button and, when a reply stops
-early, a Continue button. A server added by address lists its models and
+early, a Continue button; a request refused before anything arrived says why
+under the question, with a Retry button. A server added by address lists its models and
 streams; against gglib, a server status pane shows slots, context in use
 and recent requests, and it is hidden for servers that do not answer that
 endpoint. The app has been run: the screens above are photographs of it,
@@ -84,7 +85,12 @@ Each claim names the test that keeps it true.
   refused, or that the answer is to wait. The side named is the side that
   wrote the refusal, which is not always the side you are sitting at. The
   codes are an enum, so the mapping is exhaustive by the compiler rather
-  than by a list someone remembers to extend.
+  than by a list someone remembers to extend. A key the serving machine no
+  longer admits says so, and the line after it says where a new key comes
+  from, which depends on the kind of provider: a pipe pairs again with
+  `gglib remote invite`, and a server's key is checked in its settings.
+  <!-- test: ErrorTests.testAKeyTheServingMachineNoLongerAdmitsSaysSo -->
+  <!-- test: AppModelRefusalTests.testTheAdviceUnderARefusalFollowsTheKindOfProvider -->
   <!-- test: ErrorTests.testServerMessageIsRenderedVerbatim -->
   <!-- test: ErrorTests.testEveryDocumentedCodeNamesWhereToLook -->
   <!-- test: ErrorTests.testTheSideNamedIsTheSideThatWroteTheRefusal -->
@@ -218,6 +224,23 @@ Each claim names the test that keeps it true.
   Continue extends that same message rather than starting a new one.
   <!-- test: AppModelStreamingTests.testSendStreamsAReplyIntoTheConversation -->
   <!-- test: AppModelStreamingTests.testADroppedStreamKeepsThePartialAndContinueCarriesOn -->
+- A request refused before anything arrived has no reply to sit under, so
+  the sentence that says why, the line about where to look and a Retry
+  button go under the question instead. That covers a key the serving
+  machine has stopped admitting, a request it refuses outright, such as one
+  too long for the model's context, and a server that has gone away since
+  its models were listed. Retry asks the same question again and adds
+  no second copy of it. The sentence is kept with the message that ended the
+  turn, the question or the partial reply, so it is still there after a
+  relaunch. A question left with no reply by a stop, or by going to the
+  background, is not a failure: it keeps a Retry and no sentence.
+  <!-- test: AppModelRefusalTests.testARefusalBeforeTheFirstTokenIsKeptOnTheQuestion -->
+  <!-- test: AppModelRefusalTests.testRetryAsksAgainAndClearsTheRefusal -->
+  <!-- test: AppModelRefusalTests.testAStopBeforeTheFirstTokenWritesNoFailureEvenIfAnErrorRaced -->
+  <!-- test: AppModelRefusalTests.testABackgroundBeforeTheFirstTokenWritesNoFailure -->
+  <!-- test: AppModelRefusalTests.testAQuestionLeftWithNoReplyCanBeAskedAgain -->
+  <!-- test: SwiftDataStoreTests.testAFailureSurvivesTheRoundTrip -->
+  <!-- test: RefusalUITests.testARefusalIsDrawnUnderTheQuestionAndSurvivesARelaunch -->
 - Exactly three custom glass surfaces exist, all in one file inside one
   `GlassEffectContainer`; `scripts/check_glass_sites.sh` counts them, and
   `scripts/check_no_hand_drawn_glass.sh` refuses any material or

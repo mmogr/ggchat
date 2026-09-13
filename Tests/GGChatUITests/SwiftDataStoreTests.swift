@@ -68,4 +68,29 @@ final class SwiftDataStoreTests: XCTestCase {
             reloaded.selectedConversationID, conversation.id,
             "reopening returns you to the most recent conversation")
     }
+
+    /// The sentence under the turn that failed is written and read back by
+    /// the store, on the question and on a partial reply alike, and clearing
+    /// it clears it: the path that updates a row writes the field as well as
+    /// the one that inserts it.
+    @MainActor
+    func testAFailureSurvivesTheRoundTrip() throws {
+        let store = makeStore()
+        let stamp = Date(timeIntervalSince1970: 1_700_000_000)
+        let refused = Failure(.server(status: 401, code: "invalid_api_key", message: "invalid or missing bearer token"))
+        let dropped = Failure(.transport("the network went away"))
+        var conversation = Conversation(title: "t", createdAt: stamp, updatedAt: stamp)
+        conversation.messages = [
+            Message(role: .user, content: "anyone?", failure: refused, createdAt: stamp),
+            Message(role: .user, content: "go on", createdAt: stamp),
+            Message(role: .assistant, content: "half", isPartial: true, failure: dropped, createdAt: stamp),
+        ]
+        try store.save(conversation: conversation)
+        XCTAssertEqual(try store.loadConversations(), [conversation])
+
+        conversation.messages[0].failure = nil
+        conversation.messages[2].failure = refused
+        try store.save(conversation: conversation)
+        XCTAssertEqual(try store.loadConversations(), [conversation], "an existing row did not take the new value")
+    }
 }

@@ -112,7 +112,8 @@ public final class SwiftDataStore: Store {
                 messages: record.messages.sorted { $0.order < $1.order }.map { message in
                     Message(
                         id: message.uuid, role: Role(rawValue: message.role) ?? .user, content: message.content,
-                        reasoning: message.reasoning, isPartial: message.isPartial, createdAt: message.createdAt)
+                        reasoning: message.reasoning, isPartial: message.isPartial,
+                        failure: Self.failure(from: message.failureData), createdAt: message.createdAt)
                 },
                 createdAt: record.createdAt, updatedAt: record.updatedAt)
         }
@@ -134,16 +135,18 @@ public final class SwiftDataStore: Store {
         }
         var existing = Dictionary(record.messages.map { ($0.uuid, $0) }, uniquingKeysWith: { first, _ in first })
         for (order, message) in conversation.messages.enumerated() {
+            let failureData = try message.failure.map { try JSONEncoder().encode($0) }
             if let row = existing.removeValue(forKey: message.id) {
                 row.content = message.content
                 row.reasoning = message.reasoning
                 row.isPartial = message.isPartial
+                row.failureData = failureData
                 row.order = order
             } else {
                 let row = MessageRecord(
                     id: message.id, role: message.role.rawValue, content: message.content,
                     reasoning: message.reasoning, isPartial: message.isPartial, createdAt: message.createdAt,
-                    order: order)
+                    order: order, failureData: failureData)
                 row.conversation = record
                 context.insert(row)
             }
@@ -159,6 +162,12 @@ public final class SwiftDataStore: Store {
             context.delete(record)
             try context.save()
         }
+    }
+
+    /// A failure this build cannot read costs the failure and not the
+    /// conversation, so it is `try?`: the transcript is what matters.
+    private static func failure(from data: Data?) -> Failure? {
+        data.flatMap { try? JSONDecoder().decode(Failure.self, from: $0) }
     }
 
     private func fetchConversation(_ id: UUID) throws -> ConversationRecord? {

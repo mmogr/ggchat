@@ -68,6 +68,11 @@ public final class AppModel {
     /// Where the in-process mock provider answers in DEBUG builds, the same
     /// address after every launch so a saved mock provider keeps working.
     public static let mockBaseURL = URL(string: "http://127.0.0.1:49151/v1")!
+    /// Where the DEBUG build's refusing mock answers. Every chat request it
+    /// gets is refused before its first token, with the code and the sentence
+    /// modelpipe's edge wrote to a phone whose key the serving machine had
+    /// forgotten, so the screen that refusal lands on can be walked to.
+    public static let refusingMockBaseURL = URL(string: "http://127.0.0.1:49152/v1")!
 
     public init(
         store: any Store,
@@ -92,6 +97,11 @@ public final class AppModel {
         #if DEBUG
             registry.register(
                 MockProvider(sleeper: ContinuousClockSleeper(), tokenDelay: .milliseconds(25)), at: Self.mockBaseURL)
+            registry.register(
+                MockProvider(
+                    scripts: [.init(text: "")],
+                    failure: .server(status: 401, code: "invalid_api_key", message: "invalid or missing bearer token")),
+                at: Self.refusingMockBaseURL)
         #endif
     }
 

@@ -73,9 +73,9 @@ final class AppModelPipeTests: XCTestCase {
     /// ADR 0002's numerator on the close it was written for: the far machine
     /// goes away while a reply is arriving. The reply is held open by a
     /// provider that never finishes, because `MockProvider` always reaches a
-    /// terminal event and `finish(_:finished:)` clears `liveReply` when it
-    /// does — so with the canned provider the reply is over before the close
-    /// lands, and "mid-reply" cannot be observed at all.
+    /// terminal event and `finish(_:finished:cancelled:)` clears `liveReply`
+    /// when it does — so with the canned provider the reply is over before the
+    /// close lands, and "mid-reply" cannot be observed at all.
     ///
     /// Nothing here cancels the stream: `forceClosed()` leaves the session's
     /// loopback provider registered, so the reply goes on hanging and is
@@ -100,7 +100,7 @@ final class AppModelPipeTests: XCTestCase {
             "a close that arrived on the session's own status stream stopped being counted as mid-reply")
         XCTAssertTrue(
             model.isStreaming,
-            "a close does not end the reply it interrupts, so nothing counted in finish(_:finished:) can be "
+            "a close does not end the reply it interrupts, so nothing counted in finish(_:finished:cancelled:) can be "
                 + "asserted alongside this one")
     }
 

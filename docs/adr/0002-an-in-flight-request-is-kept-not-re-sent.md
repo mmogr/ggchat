@@ -2,7 +2,9 @@
 
 - **Status:** Accepted
 - **Date:** 2026-09-06 (amended 2026-09-07 — the decision stands; what its
-  counters count is not "a reply was interrupted", see "Kill criteria")
+  counters count is not "a reply was interrupted", see "Kill criteria";
+  amended 2026-09-13 — a request refused before anything arrived has no
+  partial to keep, so the question gets a Retry, see "Decision")
 - **Supersedes:** nothing
 - **Superseded by:** nothing
 
@@ -43,6 +45,28 @@ stopped by the user, the transcript shows the text with a Continue button,
 and nothing is sent until the user presses it. gglib's error sentences are
 shown verbatim beneath the partial text, with the `WhereToLook` hint as a
 second line.
+
+> **Amended 2026-09-13 — when nothing arrived, the question gets a Retry.**
+> A request refused before its first token leaves no partial for Continue
+> to sit under, and through 0.2.3 it drew nothing at all:
+> `finish(_:finished:)` appended no message, and the sentence was kept only
+> in memory, handed to a last message that was the user's own and so never
+> drawn (ggchat #72). The failure is now kept on the message that ended the
+> turn, the question when nothing arrived and the partial when some of it
+> did, so it is drawn and it outlives a relaunch. An unanswered question,
+> the last message with nothing under it, has a Retry, which sends the same
+> conversation again and adds no second copy of the question. The second line under either is the code's own
+> sentence where it has one, `invalid_api_key` so far, and the
+> `WhereToLook` hint otherwise.
+>
+> This is not option 1. Nothing is sent until the user presses Retry, and
+> there is no generation to replace, so nothing the user was reading can
+> change under them. Retry is deliberately not counted in K. K asks whether
+> a half-reply is worth resuming; Retry answers a different question,
+> whether an unanswered question is worth asking again. If that ever needs
+> a reading, it is a counter of its own beside K, not an addition to it. A
+> stop or a background before the first token is still not a failure: the
+> question keeps its Retry, and no sentence.
 
 ## Kill criteria
 

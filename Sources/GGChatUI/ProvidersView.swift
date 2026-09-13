@@ -49,6 +49,16 @@ struct ProvidersView: View {
                                 credentials: [:])
                         }
                     }
+                    ToolbarItem(placement: .automatic) {
+                        Button("Add refusing mock provider", systemImage: "hand.raised") {
+                            try? model.addProvider(
+                                ProviderConfig(
+                                    name: "Refusing mock",
+                                    kind: .openAICompatible(baseURL: AppModel.refusingMockBaseURL),
+                                    defaultModel: "mock-27b"),
+                                credentials: [:])
+                        }
+                    }
                 #endif
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
