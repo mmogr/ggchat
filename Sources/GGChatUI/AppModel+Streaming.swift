@@ -133,19 +133,22 @@ extension AppModel {
         // transport error after a resume, for the diagnostics below.
         let error = cancelled ? nil : live.error
         let failure = error.map(Failure.init)
+        // gglib's notice of that failure, written as text before the error
+        // itself. The error is drawn, so the notice is not kept as a reply.
+        let content = error != nil && Self.isAProxyNotice(live.content) ? "" : live.content
         if let continuingID = live.continuingMessageID,
             let index = conversation.messages.firstIndex(where: { $0.id == continuingID })
         {
-            conversation.messages[index].content += live.content
+            conversation.messages[index].content += content
             if !live.reasoning.isEmpty {
                 conversation.messages[index].reasoning = (conversation.messages[index].reasoning ?? "") + live.reasoning
             }
             conversation.messages[index].isPartial = !finished
             conversation.messages[index].failure = failure
-        } else if !live.content.isEmpty || !live.reasoning.isEmpty || finished {
+        } else if !content.isEmpty || !live.reasoning.isEmpty || finished {
             conversation.messages.append(
                 Message(
-                    role: .assistant, content: live.content,
+                    role: .assistant, content: content,
                     reasoning: live.reasoning.isEmpty ? nil : live.reasoning,
                     isPartial: !finished, failure: failure, createdAt: stamp))
         } else if let failure, let last = conversation.messages.indices.last,
@@ -162,6 +165,26 @@ extension AppModel {
             log.log(.error, "stream ended with \(error.code ?? "no code"): \(error.whereToLook)")
         }
         update(conversation)
+    }
+
+    /// Whether a reply is nothing but gglib's own notice of a failure, which
+    /// it writes as ordinary text before the error itself, for clients that
+    /// cannot draw an error inside a stream (`gglib-proxy/src/forward.rs`,
+    /// `visible_content_frame`). This app draws the error, so when a stream
+    /// ended with one the notice is dropped. Kept, it would be the reply, and
+    /// Continue would send it back to the model as the start of one.
+    ///
+    /// The marker is `[proxy] `, space included, within the first three
+    /// characters: the notice starts with an emoji, which is one `Character`
+    /// however many bytes it takes. The space matters. gglib's
+    /// reasoning-only notice reads `[proxy: reasoning-only response]` and is
+    /// followed by real output from the model, which must never be dropped.
+    /// Every notice this matches is written before generation starts, so no
+    /// text from the model can come before one.
+    static func isAProxyNotice(_ content: String) -> Bool {
+        let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let marker = trimmed.range(of: "[proxy] ") else { return false }
+        return trimmed.distance(from: trimmed.startIndex, to: marker.lowerBound) <= 3
     }
 
     /// What to do about a failure, from the provider behind this

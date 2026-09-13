@@ -1,0 +1,8 @@
+:
+
+data: {"choices":[{"delta":{"content":"⚠️ [proxy] upstream model server did not begin responding within 300s — it may be overloaded or wedged. Retry; if it persists the model will be recycled."},"finish_reason":null,"index":0}],"created":1788621986,"id":"chatcmpl-9b1e7d2c4a6f48e0b3c5d7e9f1a2b4c6","model":"Qwen3.8-27B","object":"chat.completion.chunk"}
+
+data: {"error":{"code":"upstream_timeout","message":"upstream did not respond within 300s","type":"server_error"}}
+
+data: [DONE]
+

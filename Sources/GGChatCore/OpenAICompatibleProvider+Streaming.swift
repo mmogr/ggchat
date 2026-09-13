@@ -66,6 +66,13 @@ extension OpenAICompatibleProvider {
                         }
                         if let reason = choice.finishReason { finishReason = reason }
                     }
+                    // A failure written into the stream ends the reply here.
+                    // gglib sends `[DONE]` after it, and returning is what
+                    // keeps that from counting the reply as finished.
+                    if let failure = chunk.error {
+                        continuation.yield(.error(.stream(code: failure.code, message: failure.message)))
+                        return
+                    }
                 }
             }
             if !finished {
