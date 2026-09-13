@@ -14,7 +14,7 @@ jobs:
     name: Open or update the release PR
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         with:
           # A PR opened with the default token does not trigger CI. Set
           # RELEASE_PLEASE_TOKEN (a fine-grained PAT with contents and
