@@ -210,6 +210,15 @@ Each claim names the test that keeps it true.
   <!-- test: OpenAICompatibleProviderTests.testNoCredentialEverReachesALogLine -->
 - gglib's proxy status endpoint decodes when it answers and is `nil` on 404.
   <!-- test: OpenAICompatibleProviderTests.testProxyStatusIsNilOn404AndDecodesOn200 -->
+- A pipe with no session is not asked for its status pane, so the probe as a
+  conversation opens raises no alert and keeps no answer. The pane is asked
+  for again each time the pipe comes up, and a probe called off before it was
+  answered keeps nothing.
+  <!-- test: AppModelProxyStatusTests.testProbingAPipeWithNoSessionRaisesNothingAndCachesNothing -->
+  <!-- test: AppModelProxyStatusTests.testTheStatusPaneIsAskedForAgainWhenThePipeConnects -->
+  <!-- test: AppModelProxyStatusTests.testAProbeCalledOffBeforeItsAnswerKeepsNothing -->
+  <!-- test: AppModelProxyStatusTests.testAnAnswerThatArrivesAfterThePipeReconnectedIsNotKept -->
+  <!-- test: AppModelProxyStatusTests.testTheStatusProbeIsKeyedOnTheProviderAndThePulse -->
 - An unterminated code fence, as seen mid-stream, renders as a code block.
   <!-- test: MarkdownTests.testUnterminatedFenceIsStillACodeBlock -->
 - A `ProviderConfig` holds no credential; a pipe config carries only a

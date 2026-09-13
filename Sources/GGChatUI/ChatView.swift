@@ -12,6 +12,22 @@ struct ChatView: View {
         model.provider(for: conversation)
     }
 
+    /// What the status probe is keyed on. It runs again for another provider
+    /// and each time a pipe comes up, because a pipe has no session to ask
+    /// through before then. Not `private`, so a test can pin that a new pulse
+    /// is a new key; the `.task(id:)` that reads it is the view's, and no
+    /// test CI runs reaches it.
+    struct StatusProbe: Equatable {
+        let providerID: UUID?
+        let connectedPulse: Int
+
+        // Written out: periphery does not see a synthesized `==` read these,
+        // and reports both as assigned and never used.
+        static func == (lhs: Self, rhs: Self) -> Bool {
+            lhs.providerID == rhs.providerID && lhs.connectedPulse == rhs.connectedPulse
+        }
+    }
+
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 20) {
@@ -60,7 +76,7 @@ struct ChatView: View {
                 ProxyStatusView(provider: provider)
             }
         }
-        .task(id: provider?.id) {
+        .task(id: StatusProbe(providerID: provider?.id, connectedPulse: model.connectedPulse)) {
             if let provider {
                 await model.probeProxyStatus(for: provider)
             }
