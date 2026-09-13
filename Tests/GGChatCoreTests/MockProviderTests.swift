@@ -34,6 +34,23 @@ final class MockProviderTests: XCTestCase {
         XCTAssertEqual(events.last, .error(.transport("the mock connection dropped")))
     }
 
+    /// On its own, a failure follows the whole script in place of the
+    /// finish, the way a server ends a stream it wrote an error into; with an
+    /// empty script it is a refusal before the first token.
+    func testAFailureOnItsOwnEndsTheScriptInPlaceOfTheFinish() async {
+        let refused = ProviderError.server(status: 401, code: "invalid_api_key", message: "no")
+        let whole = await collect(MockProvider(scripts: [.init(text: "a b")], failure: refused))
+        XCTAssertEqual(whole, [.delta("a "), .delta("b"), .error(refused)])
+        let empty = await collect(MockProvider(scripts: [.init(text: "")], failure: refused))
+        XCTAssertEqual(empty, [.error(refused)])
+    }
+
+    func testAFailureWithFailAfterTokensReplacesTheTransportError() async {
+        let stopped = ProviderError.server(status: 500, code: "upstream_error", message: "gone")
+        let events = await collect(MockProvider(scripts: [.init(text: "a b c")], failAfterTokens: 1, failure: stopped))
+        XCTAssertEqual(events, [.delta("a "), .error(stopped)])
+    }
+
     func testModelsAreListed() async throws {
         let models = try await MockProvider().models()
         XCTAssertEqual(models.map(\.id), ["mock-27b", "mock-4b"])

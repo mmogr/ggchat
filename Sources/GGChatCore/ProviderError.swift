@@ -2,7 +2,12 @@ import Foundation
 
 /// Which machine the user should look at when a request fails. modelpipe's
 /// and gglib's error codes already say this; the UI shows it as a second line.
-public enum WhereToLook: Sendable, Equatable {
+///
+/// The raw values are stored: the message that ended a turn keeps the
+/// ``Failure`` that ended it, and this is part of it. Renaming a case would
+/// turn every failure saved with it into `.unknown`, so `ErrorTests` pins the
+/// five strings.
+public enum WhereToLook: String, Codable, Sendable, Equatable, Hashable {
     case servingSide
     case connectingSide
     case request
@@ -32,8 +37,10 @@ public enum ProviderError: Error, Sendable, Equatable, LocalizedError {
     }
 
     public var code: String? {
-        if case .server(_, let code, _) = self { return code }
-        return nil
+        switch self {
+        case .server(_, let code, _): code
+        case .transport, .decoding, .invalidResponse: nil
+        }
     }
 
     public var whereToLook: WhereToLook {
@@ -50,6 +57,21 @@ public enum ProviderError: Error, Sendable, Equatable, LocalizedError {
     public static func whereToLook(forCode code: String?) -> WhereToLook {
         guard let code, let known = Code(rawValue: code) else { return .unknown }
         return known.whereToLook
+    }
+
+    /// The second line under a failure with this code: the code's own
+    /// sentence where it has one, then the side the code names today, and
+    /// `side` only for a failure with no code this build knows. A saved
+    /// failure is drawn by this build's reading of its code, so a better one
+    /// reaches old conversations too.
+    public static func hint(forCode code: String?, on side: WhereToLook) -> String? {
+        guard let known = code.flatMap(Code.init(rawValue:)) else { return side.hint }
+        return known.hint ?? known.whereToLook.hint
+    }
+
+    /// The second line under this error.
+    public var hint: String? {
+        Self.hint(forCode: code, on: whereToLook)
     }
 }
 
@@ -139,6 +161,33 @@ extension ProviderError.Code {
         // reach this request in time, a first byte that has not arrived.
         case .admissionTimeout, .modelLoading, .upstreamTimeout:
             .waitAndRetry
+        }
+    }
+}
+
+extension ProviderError.Code {
+    /// A sentence of the code's own, for the few whose side alone would send
+    /// someone the wrong way, and nil for the rest, which say where to look
+    /// and nothing more. No `default`, for `whereToLook`'s reason: a code
+    /// added above is looked at here too.
+    ///
+    /// `invalid_api_key` is the one so far. "Look at the machine that is
+    /// serving the model" is true of it and no help: the machine is doing its
+    /// job, and what is wrong is the key this app sent. The sentence is the
+    /// condition only, and true of a pipe and a server alike. Where a new key
+    /// comes from depends on the kind of provider, which Core does not know,
+    /// so the app says that beside it.
+    public var hint: String? {
+        switch self {
+        case .invalidAPIKey:
+            "The serving machine did not accept the key this app sent."
+        case .badRequest, .badGateway, .backendUnreachable, .tunnelUnavailable, .incompleteRequest,
+            .admissionTimeout, .contextLengthExceeded, .deviceNotPaired, .embeddingModelCannotChat,
+            .hostNotAllowed, .internalError, .invalidPairingCode, .invalidRequest, .loopDetected,
+            .mcpNotAllowedOverTunnel, .modelFileNotFound, .modelLoading, .modelNotFound,
+            .notAnEmbeddingModel, .pinnedModelMismatch, .profileNotFound, .stagnationDetected,
+            .upstreamError, .upstreamTimeout:
+            nil
         }
     }
 }

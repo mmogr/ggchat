@@ -50,18 +50,24 @@ public final class MessageRecord {
     public var content: String
     public var reasoning: String?
     public var isPartial: Bool
+    /// The `Failure` that ended this turn early, as JSON, or nil. Optional,
+    /// so SwiftData's lightweight migration adds it to a store written before
+    /// it existed, with every row reading nil.
+    public var failureData: Data?
     public var createdAt: Date
     public var order: Int
     public var conversation: ConversationRecord?
 
     public init(
-        id: UUID, role: String, content: String, reasoning: String?, isPartial: Bool, createdAt: Date, order: Int
+        id: UUID, role: String, content: String, reasoning: String?, isPartial: Bool, createdAt: Date, order: Int,
+        failureData: Data? = nil
     ) {
         self.uuid = id
         self.role = role
         self.content = content
         self.reasoning = reasoning
         self.isPartial = isPartial
+        self.failureData = failureData
         self.createdAt = createdAt
         self.order = order
     }

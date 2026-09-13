@@ -16,22 +16,30 @@ public struct MockProvider: Provider {
     public var scripts: [Script]
     public var sleeper: any Sleeper
     public var tokenDelay: Duration
-    /// When set, the stream drops with a transport error after this many
-    /// content tokens, to exercise the partial-reply path.
+    /// When set, the stream drops after this many content tokens, to
+    /// exercise the partial-reply path: with `failure`, or with a transport
+    /// error when there is none.
     public var failAfterTokens: Int?
+    /// The error the stream ends with. With `failAfterTokens` it replaces the
+    /// transport error at that token. On its own it follows the whole script
+    /// in place of the finish, and with an empty script it is a refusal
+    /// before the first token.
+    public var failure: ProviderError?
 
     public init(
         models: [ModelInfo] = MockProvider.sampleModels,
         scripts: [Script] = [MockProvider.sampleScript],
         sleeper: any Sleeper = ImmediateSleeper(),
         tokenDelay: Duration = .milliseconds(30),
-        failAfterTokens: Int? = nil
+        failAfterTokens: Int? = nil,
+        failure: ProviderError? = nil
     ) {
         self.modelList = models
         self.scripts = scripts
         self.sleeper = sleeper
         self.tokenDelay = tokenDelay
         self.failAfterTokens = failAfterTokens
+        self.failure = failure
     }
 
     public func models() async throws -> [ModelInfo] {
@@ -54,15 +62,19 @@ public struct MockProvider: Provider {
                     }
                     for (index, token) in Self.tokens(of: script.text).enumerated() {
                         if let limit = failAfterTokens, index >= limit {
-                            continuation.yield(.error(.transport("the mock connection dropped")))
+                            continuation.yield(.error(failure ?? .transport("the mock connection dropped")))
                             continuation.finish()
                             return
                         }
                         try await sleeper.sleep(for: tokenDelay)
                         continuation.yield(.delta(token))
                     }
-                    let words = script.text.split(separator: " ").count
-                    continuation.yield(.finished(reason: "stop", usage: Usage(completionTokens: words)))
+                    if let failure {
+                        continuation.yield(.error(failure))
+                    } else {
+                        let words = script.text.split(separator: " ").count
+                        continuation.yield(.finished(reason: "stop", usage: Usage(completionTokens: words)))
+                    }
                 } catch {
                     // Cancelled: end without a terminal event, like the real provider.
                 }

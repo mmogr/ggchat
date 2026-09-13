@@ -34,7 +34,7 @@ final class AppModelStreamingTests: XCTestCase {
         XCTAssertEqual(messages[1].content, "Hello **there**.")
         XCTAssertEqual(messages[1].reasoning, "think")
         XCTAssertFalse(messages[1].isPartial)
-        XCTAssertNil(model.streamError(for: messages[0].id))
+        XCTAssertNil(model.streamError(for: try XCTUnwrap(model.selectedConversationID)))
     }
 
     @MainActor
@@ -61,6 +61,7 @@ final class AppModelStreamingTests: XCTestCase {
         XCTAssertTrue(last.isPartial)
         XCTAssertEqual(last.content, "one two ")
         XCTAssertEqual(model.streamError(for: conversationID)?.whereToLook, .connectingSide)
+        XCTAssertEqual(last.failure?.whereToLook, .connectingSide, "the sentence is kept with the partial it ended")
 
         registry.register(MockProvider(scripts: [.init(text: "three four")]), at: baseURL)
         let second = try XCTUnwrap(model.continueReply())
@@ -69,6 +70,7 @@ final class AppModelStreamingTests: XCTestCase {
         XCTAssertFalse(last.isPartial)
         XCTAssertEqual(last.content, "one two three four")
         XCTAssertEqual(model.selectedConversation?.messages.count, 2, "Continue extends the partial message")
+        XCTAssertNil(last.failure, "a Continue that finishes clears the sentence")
         XCTAssertNil(model.streamError(for: conversationID))
     }
 

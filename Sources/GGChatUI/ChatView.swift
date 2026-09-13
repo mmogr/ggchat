@@ -18,9 +18,9 @@ struct ChatView: View {
                 ForEach(conversation.messages) { message in
                     MessageRow(
                         message: message,
-                        isLast: message.id == conversation.messages.last?.id,
-                        error: message.id == conversation.messages.last?.id
-                            ? model.streamError(for: conversation.id) : nil
+                        showsEnding: message.id == conversation.messages.last?.id
+                            && !model.isStreaming(conversation.id),
+                        advice: message.failure.flatMap { model.advice(for: $0, in: conversation) }
                     )
                 }
                 if let live = model.liveReply, live.conversationID == conversation.id {
