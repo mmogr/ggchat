@@ -73,9 +73,51 @@ public struct Usage: Codable, Sendable, Equatable {
 
 /// A streamed chunk. gglib's first chunks carry `prompt_progress` and no
 /// `choices` key at all; the usage chunk has `choices: []`. Both decode.
+///
+/// `error` is the other thing a chunk can be: a failure written into a stream
+/// that had already begun. gglib writes it bare, an `error` object and no
+/// `choices` key, so that clients tell it from a chunk by that shape. This
+/// reads a wire it does not own, so an `error` member ends the reply whether
+/// or not `choices` sits beside it.
 struct ChatCompletionChunk: Decodable {
     var choices: [Choice]?
     var usage: Usage?
+    var error: StreamError?
+
+    /// The `error` member, as an object with a message and a code, or as a
+    /// bare string, which llama.cpp has been seen to send and gglib accepts
+    /// (`gglib-core/src/sse/parser.rs`, `parse_inline_error_frame`). A code
+    /// may be a number, as in `APIErrorBody`.
+    struct StreamError: Decodable, Equatable {
+        var message: String
+        var code: String?
+
+        enum CodingKeys: String, CodingKey { case message, code }
+
+        init(message: String, code: String?) {
+            self.message = message
+            self.code = code
+        }
+
+        init(from decoder: any Decoder) throws {
+            if let text = try? decoder.singleValueContainer().decode(String.self) {
+                message = text
+                code = nil
+                return
+            }
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            message =
+                (try? container.decodeIfPresent(String.self, forKey: .message))
+                ?? "the server reported an error part-way through the reply"
+            if let text = try? container.decodeIfPresent(String.self, forKey: .code) {
+                code = text
+            } else if let number = try? container.decodeIfPresent(Int.self, forKey: .code) {
+                code = String(number)
+            } else {
+                code = nil
+            }
+        }
+    }
 
     struct Choice: Decodable {
         var delta: Delta?

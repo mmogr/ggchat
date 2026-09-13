@@ -38,6 +38,68 @@ final class OpenAICompatibleProviderTests: XCTestCase {
         XCTAssertEqual(events.filter { if case .finished = $0 { true } else { false } }.count, 1)
     }
 
+    private func stream(_ body: String, host: String) async -> [ChatEvent] {
+        StubURLProtocol.register(
+            host: host, path: "/v1/chat/completions",
+            .init(status: 200, headers: ["Content-Type": "text/event-stream"], chunks: [Data(body.utf8)]))
+        return await collect(provider(host: host))
+    }
+
+    private func finishes(_ events: [ChatEvent]) -> Int {
+        events.filter { if case .finished = $0 { true } else { false } }.count
+    }
+
+    /// gglib answers a stream that breaks part-way with `200`, the text so far,
+    /// a bare `{"error":…}` event and `[DONE]`. The error ends the reply, and
+    /// the `[DONE]` after it no longer counts it as finished (#73).
+    func testAnErrorEventInsideAStreamEndsItWithTheErrorAndNoFinished() async throws {
+        let fixture = try Fixtures.data("gglib-stream-upstream-error.sse")
+        StubURLProtocol.register(
+            host: "broken.test", path: "/v1/chat/completions",
+            .init(status: 200, headers: ["Content-Type": "text/event-stream"], chunks: [fixture]))
+        let events = await collect(provider(host: "broken.test"))
+        let text = events.compactMap { if case .delta(let text) = $0 { text } else { nil } }.joined()
+        XCTAssertEqual(text, "The answer is", "the text before the error survives")
+        XCTAssertEqual(
+            events.last, .error(.stream(code: "upstream_error", message: "error decoding response body")))
+        XCTAssertEqual(finishes(events), 0, "a reply that broke was counted as finished")
+    }
+
+    /// For three of its in-stream errors gglib first writes a visible notice as
+    /// an ordinary chunk. The provider passes it on as text; keeping it out of
+    /// the reply is the app's business, not the wire's.
+    func testTheProxysVisibleNoticeArrivesAsAnOrdinaryDeltaBeforeTheError() async throws {
+        let fixture = try Fixtures.data("gglib-stream-upstream-timeout.sse")
+        StubURLProtocol.register(
+            host: "timeout.test", path: "/v1/chat/completions",
+            .init(status: 200, headers: ["Content-Type": "text/event-stream"], chunks: [fixture]))
+        let events = await collect(provider(host: "timeout.test"))
+        guard case .delta(let notice)? = events.first else { return XCTFail("no notice first: \(events)") }
+        XCTAssertTrue(notice.hasPrefix("\u{26A0}\u{FE0F} [proxy] "), notice)
+        XCTAssertEqual(
+            events.last, .error(.stream(code: "upstream_timeout", message: "upstream did not respond within 300s")))
+        XCTAssertEqual(finishes(events), 0)
+    }
+
+    /// gglib's frame has no `choices` key, but this reads a wire it does not
+    /// own: an `error` beside an empty `choices` still ends the reply.
+    func testAnErrorFrameThatAlsoCarriesChoicesStillEndsTheStream() async {
+        let events = await stream(
+            #"data: {"choices":[{"delta":{"content":"half"},"index":0}]}"# + "\n\n"
+                + #"data: {"choices":[],"error":{"message":"gone","code":"upstream_error"}}"# + "\n\n"
+                + "data: [DONE]\n\n",
+            host: "both.test")
+        XCTAssertEqual(events, [.delta("half"), .error(.stream(code: "upstream_error", message: "gone"))])
+    }
+
+    /// llama.cpp has been seen to send `error` as a bare string. It is still
+    /// an error, with no code, and not a decoding failure.
+    func testAnErrorSentAsABareStringIsStillAnError() async {
+        let events = await stream(
+            #"data: {"error":"model crashed"}"# + "\n\ndata: [DONE]\n\n", host: "string.test")
+        XCTAssertEqual(events, [.error(.stream(code: nil, message: "model crashed"))])
+    }
+
     func testUnauthorizedBecomesTheServersOwnSentence() async {
         StubURLProtocol.register(
             host: "auth.test", path: "/v1/chat/completions",

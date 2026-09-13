@@ -239,6 +239,15 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelRefusalTests.testAStopBeforeTheFirstTokenWritesNoFailureEvenIfAnErrorRaced -->
   <!-- test: AppModelRefusalTests.testABackgroundBeforeTheFirstTokenWritesNoFailure -->
   <!-- test: AppModelRefusalTests.testAQuestionLeftWithNoReplyCanBeAskedAgain -->
+- An error written into a stream that had already begun ends the reply
+  there. gglib writes it as a bare `error` event and then `[DONE]`, and the
+  `[DONE]` no longer counts the reply as finished. Text that had arrived stays
+  as a partial reply with the error under it and Continue. When a stream ends
+  with an error and the only text is gglib's own `⚠️ [proxy]` notice of it,
+  the notice is dropped, because the app draws the error itself.
+  <!-- test: OpenAICompatibleProviderTests.testAnErrorEventInsideAStreamEndsItWithTheErrorAndNoFinished -->
+  <!-- test: AppModelStreamErrorTests.testAnErrorAfterSomeTextLeavesAPartialWithItsCode -->
+  <!-- test: AppModelStreamErrorTests.testTheProxysNoticeIsNotKeptAsTheReply -->
   <!-- test: SwiftDataStoreTests.testAFailureSurvivesTheRoundTrip -->
   <!-- test: RefusalUITests.testARefusalIsDrawnUnderTheQuestionAndSurvivesARelaunch -->
 - Exactly three custom glass surfaces exist, all in one file inside one

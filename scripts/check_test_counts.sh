@@ -38,8 +38,8 @@ floor() {
 
 markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/null || true; })
 
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 199
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 210
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 21
-floor "README test markers" "${markers:-0}" 118
+floor "README test markers" "${markers:-0}" 121
 
 exit $status

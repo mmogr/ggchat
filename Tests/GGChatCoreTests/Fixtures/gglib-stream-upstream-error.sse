@@ -1,0 +1,8 @@
+data: {"choices":[{"delta":{"content":"The answer"},"finish_reason":null,"index":0}],"created":1788621986,"id":"chatcmpl-5f0c4a1be2d94d7c8a7e1c3b9d2f6a40","model":"Qwen3.8-27B","object":"chat.completion.chunk"}
+
+data: {"choices":[{"delta":{"content":" is"},"finish_reason":null,"index":0}],"created":1788621986,"id":"chatcmpl-5f0c4a1be2d94d7c8a7e1c3b9d2f6a40","model":"Qwen3.8-27B","object":"chat.completion.chunk"}
+
+data: {"error":{"code":"upstream_error","message":"error decoding response body","type":"server_error"}}
+
+data: [DONE]
+

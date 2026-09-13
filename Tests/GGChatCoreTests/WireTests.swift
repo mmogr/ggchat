@@ -67,6 +67,19 @@ final class WireTests: XCTestCase {
         XCTAssertNoThrow(try JSONDecoder().decode(ProxyStatus.self, from: Data(event.data.utf8)))
     }
 
+    /// The frame gglib writes into a stream decodes as a chunk with an error
+    /// and no choices, whether its code is text or a number and whether the
+    /// error is an object or a bare string. An ordinary chunk has no error.
+    func testABareErrorFrameDecodesAsAnErrorAndNoChoices() throws {
+        let decode = { (json: String) in try JSONDecoder().decode(ChatCompletionChunk.self, from: Data(json.utf8)) }
+        let bare = try decode(#"{"error":{"code":"upstream_error","message":"gone","type":"server_error"}}"#)
+        XCTAssertNil(bare.choices)
+        XCTAssertEqual(bare.error, .init(message: "gone", code: "upstream_error"))
+        XCTAssertEqual(try decode(#"{"error":{"message":"busy","code":503}}"#).error?.code, "503")
+        XCTAssertEqual(try decode(#"{"error":"model crashed"}"#).error, .init(message: "model crashed", code: nil))
+        XCTAssertNil(try XCTUnwrap(try chunks().last).error)
+    }
+
     func testErrorBodyFromGGLib() throws {
         let body = try JSONDecoder().decode(
             APIErrorBody.self, from: try Fixtures.data("gglib-error-profile-not-found.json"))

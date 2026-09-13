@@ -121,6 +121,20 @@ final class ErrorTests: XCTestCase {
         XCTAssertEqual(dropped.hint, WhereToLook.connectingSide.hint)
     }
 
+    /// An error written into a stream keeps its code, so it names the same
+    /// side a refusal with that code would, and its sentence is framed as a
+    /// reply that stopped rather than shown as a bare socket message.
+    func testAnErrorWrittenIntoAStreamKeepsItsCodeAndItsSentence() {
+        let broke = ProviderError.stream(code: "upstream_error", message: "error decoding response body")
+        XCTAssertEqual(broke.errorDescription, "The reply stopped: error decoding response body")
+        XCTAssertEqual(broke.code, "upstream_error")
+        XCTAssertEqual(broke.whereToLook, .servingSide)
+        let waited = ProviderError.stream(code: "upstream_timeout", message: "upstream did not respond within 300s")
+        XCTAssertEqual(waited.whereToLook, .waitAndRetry)
+        XCTAssertEqual(waited.hint, WhereToLook.waitAndRetry.hint)
+        XCTAssertEqual(ProviderError.stream(code: nil, message: "m").whereToLook, .unknown)
+    }
+
     func testRedactionKeepsOnlySchemeHostPortPath() throws {
         let url = try XCTUnwrap(URL(string: "http://user:secret@example.test:8080/v1/models?key=abc#frag"))
         XCTAssertEqual(Redaction.describe(url), "http://example.test:8080/v1/models")

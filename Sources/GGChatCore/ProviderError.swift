@@ -22,6 +22,12 @@ public enum WhereToLook: String, Codable, Sendable, Equatable, Hashable {
 public enum ProviderError: Error, Sendable, Equatable, LocalizedError {
     /// A non-2xx reply. `message` is the server's own sentence, shown verbatim.
     case server(status: Int, code: String?, message: String)
+    /// An error the server wrote into a stream it had already begun with a
+    /// `200`: gglib's `upstream_error` and `upstream_timeout`, written as a
+    /// bare `{"error":…}` event (`gglib-core/src/sse/encoder.rs`,
+    /// `upstream_error_frame`). Not a `.server`, which is a reply that was
+    /// refused outright; this one usually has some of the reply before it.
+    case stream(code: String?, message: String)
     /// The request never completed: DNS, refused, dropped mid-stream.
     case transport(String)
     case decoding(String)
@@ -30,6 +36,10 @@ public enum ProviderError: Error, Sendable, Equatable, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .server(_, _, let message): message
+        // Framed, like `.transport`: gglib's message here is often a socket
+        // sentence ("error decoding response body") that reads as nothing
+        // on its own.
+        case .stream(_, let message): "The reply stopped: \(message)"
         case .transport(let detail): "Could not reach the server: \(detail)"
         case .decoding(let detail): "The server sent something this app could not read: \(detail)"
         case .invalidResponse(let detail): "The server did not answer as an HTTP server: \(detail)"
@@ -38,14 +48,14 @@ public enum ProviderError: Error, Sendable, Equatable, LocalizedError {
 
     public var code: String? {
         switch self {
-        case .server(_, let code, _): code
+        case .server(_, let code, _), .stream(let code, _): code
         case .transport, .decoding, .invalidResponse: nil
         }
     }
 
     public var whereToLook: WhereToLook {
         switch self {
-        case .server(_, let code, _): Self.whereToLook(forCode: code)
+        case .server(_, let code, _), .stream(let code, _): Self.whereToLook(forCode: code)
         case .transport: .connectingSide
         case .decoding, .invalidResponse: .unknown
         }
