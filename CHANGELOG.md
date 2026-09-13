@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.3](https://github.com/mmogr/ggchat/compare/v0.2.2...v0.2.3) (2026-09-12)
+
+
+### What the app stopped getting wrong
+
+* **deps:** the binding runs the modelpipe the serving side runs ([#75](https://github.com/mmogr/ggchat/issues/75)) ([4205d9d](https://github.com/mmogr/ggchat/commit/4205d9d8102923483c9696d8bc20218eab71255a))
+
+
+### Documentation
+
+* **readme:** the status paragraph says what shipped ([#67](https://github.com/mmogr/ggchat/issues/67)) ([927ccb7](https://github.com/mmogr/ggchat/commit/927ccb7ec4a5b443718c1539ff1ed08418c06243))
+
 ## [0.2.2](https://github.com/mmogr/ggchat/compare/v0.2.1...v0.2.2) (2026-09-12)
 
 
