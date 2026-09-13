@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.4](https://github.com/mmogr/ggchat/compare/v0.2.3...v0.2.4) (2026-09-13)
+
+
+### What the app stopped getting wrong
+
+* **core:** an error gglib writes into a stream ends the reply there, partial, instead of finishing it ([#81](https://github.com/mmogr/ggchat/issues/81)) ([b46f129](https://github.com/mmogr/ggchat/commit/b46f1299fa758a1c1f3cb295c8a8baea606d6049)), closes [#73](https://github.com/mmogr/ggchat/issues/73)
+* **ui:** a request refused before its first token says why under the question, with Retry ([#79](https://github.com/mmogr/ggchat/issues/79)) ([7cf051d](https://github.com/mmogr/ggchat/commit/7cf051d158e6ec65e4aea0e2b802872f992f9806)), closes [#72](https://github.com/mmogr/ggchat/issues/72)
+
 ## [0.2.3](https://github.com/mmogr/ggchat/compare/v0.2.2...v0.2.3) (2026-09-12)
 
 
