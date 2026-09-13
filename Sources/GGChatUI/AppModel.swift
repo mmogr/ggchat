@@ -48,8 +48,12 @@ public final class AppModel {
     /// late can tell that its session is no longer the one to install.
     var dialGeneration: [UUID: Int] = [:]
     var proxyStatusAvailability: [UUID: Bool] = [:]
+    /// Moved on by every new probe and by every pipe that comes up, so an
+    /// answer from before either is discarded rather than kept.
+    var probeGeneration: [UUID: Int] = [:]
     /// Changes once each time a pipe first reaches a connected state; the
-    /// one haptic in the app fires on it.
+    /// one haptic in the app fires on it, and the chat view probes the status
+    /// pane again.
     public internal(set) var connectedPulse = 0
 
     public let diagnostics: Diagnostics
