@@ -240,6 +240,12 @@ extension AppModel {
         }
         if status?.isConnected == true, previous?.isConnected != true {
             connectedPulse &+= 1
+            // Any answer the status probe kept came from before this
+            // connection, through a session not answering yet or an earlier
+            // one, and so is any answer still on its way. The chat view asks
+            // again on the pulse.
+            proxyStatusAvailability[providerID] = nil
+            probeGeneration[providerID] = (probeGeneration[providerID] ?? 0) + 1
         }
     }
 
