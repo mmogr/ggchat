@@ -144,11 +144,13 @@ Each claim names the test that keeps it true.
   of its own.
   <!-- test: ModelpipeConnectorTests.testATicketOfTheWrongShapeIsRefusedWithoutDialling -->
   <!-- test: ModelpipeConnectorTests.testAnEmptyTokenIsRefusedEvenThoughTheBindingWouldNotWantIt -->
-- A failure from the transport reaches the person as a sentence, never as the
-  binding's own debug rendering, and says whether dialling again is worth it.
+- A failure from the transport, or from an identity file this device cannot
+  use, reaches the person as a sentence, never as the binding's own debug
+  rendering, and says whether dialling again is worth it.
   <!-- test: ModelpipeConnectorTests.testATransportErrorArrivesAsASentenceAndNotADebugRendering -->
   <!-- test: ModelpipeConnectorTests.testABadTicketIsNotWorthDiallingAgain -->
   <!-- test: ModelpipeConnectorTests.testTheBindingDecidesWhatIsWorthRepeating -->
+  <!-- test: ModelpipeConnectorTests.testAnIdentityFileThatCannotBeUsedIsASentenceAndNotWorthDiallingAgain -->
 - A pipe that dies on its own still says `closed`. The binding ends its status
   sequence on any close, and nothing above the seam writes a status when a
   stream merely finishes, so the session writes it before finishing.
