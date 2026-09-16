@@ -22,30 +22,75 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BANNED='MockPipeConnector|MockPipeSession'
-CORE="$ROOT/.build/release/GGChatCore.build"
-PIPE="$ROOT/.build/release/GGChatPipe.build"
-UI="$ROOT/.build/release/GGChatUI.build"
+
+# Where a module's release objects are depends on which build system `swift
+# build` ran. The native one writes `.build/release/<Module>.build/<File>.swift.o`;
+# the swiftbuild one, the default from Swift 6.4, writes one object per source
+# under `.build/out/Intermediates.noindex/<package>.build/Release/<Module>-*.build/
+# Objects-normal/<arch>/<File>.o`, and leaves `.build/release` pointing at the
+# products, which hold each module as one merged object and a static library.
+# Either per-file layout is read; the merged object is not, because the
+# sentinel check below wants the object of one named source.
+#
+# The layout is decided once, from where `.build/release` points: `swift build`
+# repoints that symlink on every build, at `out/Products/Release` under
+# swiftbuild and at `<triple>/release` under the native system. Deciding from
+# the build that just ran is what keeps a leftover tree from the other build
+# system out of the reading: a native build does not clean `.build/out`, so a
+# tree that has seen both systems keeps swiftbuild's objects indefinitely, and
+# a check that fell back to them when a native module directory was missing
+# certified that module from a build that was not this one. Under the layout
+# chosen, a module with no objects fails below.
+#
+# The link is followed, not read as a label: a dangling link, a link at another
+# configuration or no link at all is refused here, rather than answered from a
+# glob that never looked where the link points.
+case "$(cd "$ROOT/.build/release" 2>/dev/null && pwd -P)" in
+    */out/Products/Release) LAYOUT=swiftbuild ;;
+    */release) LAYOUT=native ;;
+    *)
+        echo "release: $ROOT/.build/release is missing or is not a release build directory; run 'make build-release'" >&2
+        exit 1
+        ;;
+esac
+
+release_objects() {
+    local module=$1 dir
+    if [ "$LAYOUT" = native ]; then
+        find "$ROOT/.build/release/$module.build" -name '*.o' 2>/dev/null || true
+        return
+    fi
+    for dir in "$ROOT"/.build/out/Intermediates.noindex/*.build/Release/"$module"-*.build/Objects-normal; do
+        [ -d "$dir" ] || continue
+        find "$dir" -name '*.o' 2>/dev/null || true
+    done
+}
+
 # Compiled in every configuration, so its presence is the proof that the module
 # declaring the mock was really read. Looked for in its own object and not
 # across the union of both targets' symbols: the name also appears in three
 # GGChatUI objects that call the factory, so a union check stays green with
-# GGChatCore.build deleted -- certifying the mock absent from a module it never
-# opened. Per target for the same reason: each must have yielded objects.
+# GGChatCore's objects deleted -- certifying the mock absent from a module it
+# never opened. Per target for the same reason: each must have yielded objects.
 SENTINEL='UnavailablePipeConnector'
-SENTINEL_OBJECT="$CORE/$SENTINEL.swift.o"
 
 objects=''
-for target in "$CORE" "$PIPE" "$UI"; do
-    found=$(find "$target" -name '*.o' 2>/dev/null || true)
+for module in GGChatCore GGChatPipe GGChatUI; do
+    found=$(release_objects "$module")
     if [ -z "$found" ]; then
-        echo "release: no objects under $target; run 'make build-release'" >&2
+        echo "release: no objects for $module under the $LAYOUT layout of $ROOT/.build; run 'make build-release'" >&2
         exit 1
     fi
     objects="$objects$found"$'\n'
 done
 
-if [ ! -f "$SENTINEL_OBJECT" ]; then
-    echo "release: $SENTINEL_OBJECT is missing, so GGChatCore was not really read" >&2
+# `UnavailablePipeConnector.swift.o` under the native layout,
+# `UnavailablePipeConnector.o` under swiftbuild; exactly one either way.
+SENTINEL_OBJECT=$(release_objects GGChatCore | grep -E "/$SENTINEL(\.swift)?\.o\$" || true)
+if [ "$(printf '%s' "$SENTINEL_OBJECT" | grep -c .)" -ne 1 ]; then
+    echo "release: expected one $SENTINEL object among GGChatCore's, found:" >&2
+    printf '%s\n' "$SENTINEL_OBJECT" >&2
+    echo "release: so GGChatCore was not really read" >&2
     exit 1
 fi
 # `grep -c` and not `grep -q`: `-q` closes the pipe on its first match and
@@ -71,4 +116,4 @@ if [ "$count" -ne 0 ]; then
     exit 1
 fi
 
-echo "release: ok, no mock pipe in the release build"
+echo "release: ok, no mock pipe in the release build ($LAYOUT layout)"

@@ -165,7 +165,10 @@ UITEST = $(LIVE_ENV) xcodebuild test -project App/ggchat.xcodeproj -scheme ggcha
 # display setting has to be applied to the same device the walk then runs on,
 # and `name=` never says which device that was. Sorted on a tuple of integers
 # because sorting the runtime keys as strings puts iOS-18-4 above iOS-26-5.
-udid = $$(xcrun simctl list devices available --json | python3 -c "import json,re,sys;d=json.load(sys.stdin)['devices'];v=lambda k:tuple(map(int,re.findall(r'\d+',k)));print(next(x['udid'] for k in sorted((k for k in d if 'iOS' in k),key=v,reverse=True) for x in d[k] if x['name']=='$(SIMULATOR)'))")
+# A name no installed runtime has is a sentence on stderr and an empty
+# result, and each recipe below refuses an empty udid rather than handing
+# xcodebuild `id=`.
+udid = $$(xcrun simctl list devices available --json | python3 -c "import json,re,sys;d=json.load(sys.stdin)['devices'];v=lambda k:tuple(map(int,re.findall(r'\d+',k)));u=next((x['udid'] for k in sorted((k for k in d if 'iOS' in k),key=v,reverse=True) for x in d[k] if x['name']=='$(SIMULATOR)'),None);print(u) if u else sys.exit('no available iOS simulator named $(SIMULATOR)')")
 
 # Drives the app on a booted iPhone simulator. The live half runs against
 # GGCHAT_LIVE_BASE_URL when it is set, typing GGCHAT_LIVE_API_KEY into the
@@ -174,7 +177,8 @@ udid = $$(xcrun simctl list devices available --json | python3 -c "import json,r
 #
 #   GGCHAT_LIVE_BASE_URL=http://127.0.0.1:8080/v1 GGCHAT_LIVE_API_KEY=sk-... make uitest
 uitest:
-	$(UITEST) -destination 'platform=iOS Simulator,name=$(SIMULATOR)'
+	udid=$(udid); [ -n "$$udid" ] || { echo 'uitest: no simulator udid' >&2; exit 1; }; \
+	$(UITEST) -destination "id=$$udid"
 
 # Which iPad. The layout is the point rather than the model: the root is a
 # NavigationSplitView, a stack on an iPhone and two columns here.
@@ -195,14 +199,14 @@ uitest-ipad:
 # reads, so the setting is checked and not assumed, and the trap puts the
 # simulator back the way it was found even when the walk fails.
 uitest-dark:
-	udid=$(udid); xcrun simctl boot "$$udid" || true; xcrun simctl bootstatus "$$udid" -b; \
+	udid=$(udid); [ -n "$$udid" ] || { echo 'uitest: no simulator udid' >&2; exit 1; }; xcrun simctl boot "$$udid" || true; xcrun simctl bootstatus "$$udid" -b; \
 	trap 'xcrun simctl ui "$$udid" appearance light' EXIT; \
 	xcrun simctl ui "$$udid" appearance dark; \
 	[ "$$(xcrun simctl ui "$$udid" appearance)" = dark ] || { echo 'the simulator stayed light' >&2; exit 1; }; \
 	$(UITEST) -destination "id=$$udid"
 
 uitest-contrast:
-	udid=$(udid); xcrun simctl boot "$$udid" || true; xcrun simctl bootstatus "$$udid" -b; \
+	udid=$(udid); [ -n "$$udid" ] || { echo 'uitest: no simulator udid' >&2; exit 1; }; xcrun simctl boot "$$udid" || true; xcrun simctl bootstatus "$$udid" -b; \
 	trap 'xcrun simctl ui "$$udid" increase_contrast disabled' EXIT; \
 	xcrun simctl ui "$$udid" increase_contrast enabled; \
 	[ "$$(xcrun simctl ui "$$udid" increase_contrast)" = enabled ] || { echo 'increase contrast did not take' >&2; exit 1; }; \
@@ -212,8 +216,30 @@ uitest-contrast:
 screenshots:
 	scripts/screenshots.sh '$(SIMULATOR)'
 
+# Periphery reads an index store, and its own build writes one only under the
+# native build system; from Swift 6.4 `swift build` defaults to swiftbuild,
+# which writes a store only when asked. Asked for in a scratch path of its own,
+# built from nothing each time, as `analyze` does with its compile log and for
+# the same reason: a compiler writes a unit only for a file it compiles, so a
+# warm path recompiles nothing and leaves the store describing an earlier
+# tree, and a store shared with `build` and `test` goes stale the moment
+# either recompiles a file without the flag. Periphery would then judge a
+# source the store no longer describes. About half a minute cold.
+# The gate also refuses to pass vacuously, as `analyze` does: periphery handed
+# an empty store says "no unused code", so one source per module must have a
+# unit in the store before it is asked. A unit is named after its object,
+# `<File>.o-<hash>` under swiftbuild and `<File>.swift.o-<hash>` under the
+# native build system, the same split as the release objects.
+PERIPHERY_PATH = .build/periphery
+PERIPHERY_STORE = $(PERIPHERY_PATH)/debug/index/store
 unused:
-	periphery scan --quiet --strict
+	rm -rf $(PERIPHERY_PATH)
+	swift build --build-tests --enable-index-store --scratch-path $(PERIPHERY_PATH)
+	for unit in Ticket ModelpipeConnector RootView; do \
+		find $(PERIPHERY_STORE) \( -name "$$unit.o-*" -o -name "$$unit.swift.o-*" \) -print -quit 2>/dev/null | grep -q . \
+			|| { echo "unused: no index unit for $$unit, so periphery would scan nothing" >&2; exit 1; }; \
+	done
+	periphery scan --quiet --strict --index-store-path $(PERIPHERY_STORE)
 
 docs:
 	mkdir -p .build/docs

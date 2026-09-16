@@ -6,8 +6,15 @@ import SwiftUI
 public struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
+    // Read only through their bindings (`$showingProviders` and the rest),
+    // which the Swift 6.4 indexer records as no read of the property, so
+    // periphery reports each as unused. Periphery's repository was archived
+    // in August 2026 and will not learn otherwise; the indexer may.
+    // periphery:ignore - read only through its binding, see above
     @State private var showingProviders = false
+    // periphery:ignore - read only through its binding, see above
     @State private var showingSettings = false
+    // periphery:ignore - read only through its binding, see above
     @State private var addingProvider = false
 
     public init() {}

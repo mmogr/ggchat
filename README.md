@@ -445,10 +445,20 @@ swiftlint that log.
 `make build-release` compiles the package in its Release configuration and
 then reads the symbols out of the objects it produced, failing if the
 DEBUG-only mock pipe is among them. A release build on its own would not
-catch it: the mock compiles perfectly well in one. `make build-app-release`
+catch it: the mock compiles perfectly well in one. The check finds the
+objects under either layout `swift build` writes, the native build
+system's and, from Swift 6.4, swiftbuild's. `make build-app-release`
 compiles the app target in Release and is the only thing that does, but it
-goes through xcodebuild and leaves no `.build/release` objects to read,
-which is why both targets exist.
+goes through xcodebuild and leaves no package objects to read, which is
+why both targets exist.
+
+`make unused` builds the package and its tests once more, from nothing, in a
+scratch path of its own with an index store switched on, and hands that store
+to periphery: periphery's own build writes one only under the native build
+system, a compiler writes a unit only for a file it compiles, so only a fresh
+build's store describes the tree as it is, and a store shared with `make
+build` and `make test` goes stale as soon as either recompiles a file without
+it. It refuses to pass on an empty store.
 
 The app target is generated from `App/project.yml` by xcodegen
 (`make project`) and committed. Open `App/ggchat.xcodeproj` in Xcode, or
