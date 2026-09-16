@@ -34,6 +34,16 @@ final class HeldShutdownConnector: PipeConnector {
         HeldSession(inner: try await inner.connect(ticket: ticket, token: token), connector: self)
     }
 
+    /// Hangs up like the mock's, and is held like every other session here:
+    /// what this connector exists for is the window a slow hang-up opens.
+    func pair(pairing: String, deviceName: String?) async throws -> PairedPipe {
+        let paired = try await inner.pair(pairing: pairing, deviceName: deviceName)
+        guard let session = paired.session else { return paired }
+        return PairedPipe(
+            session: HeldSession(inner: session, connector: self), token: paired.token,
+            device: paired.device)
+    }
+
     fileprivate func shutdownStarted() {
         started.withLock { $0 += 1 }
     }

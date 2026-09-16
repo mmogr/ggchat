@@ -218,8 +218,8 @@ struct AddProviderView: View {
                 let config = ProviderConfig(
                     name: trimmedName.isEmpty ? "Pipe" : trimmedName,
                     kind: .pipe(ticketDigest: Ticket.digest(parsed.ticket)))
-                if let code = parsed.code {
-                    pair(config, ticket: parsed.ticket, code: code)
+                if parsed.code != nil {
+                    pair(config, pairing: parsed.canonical, ticket: parsed.ticket)
                     return
                 }
                 try model.addProvider(config, credentials: [.ticket: parsed.ticket, .token: token])
@@ -238,11 +238,12 @@ struct AddProviderView: View {
     /// reason a code was refused away with it, and a refused code is the
     /// failure this form most has to explain: it may be dead for good, and
     /// then the next attempt starts on the other machine.
-    private func pair(_ config: ProviderConfig, ticket: String, code: String) {
+    private func pair(_ config: ProviderConfig, pairing: String, ticket: String) {
         redeeming = true
         Task {
             do {
-                try await model.addPairedProvider(config, ticket: ticket, code: code, deviceName: deviceName)
+                try await model.addPairedProvider(
+                    config, pairing: pairing, ticket: ticket, deviceName: deviceName)
                 dismiss()
             } catch {
                 failure = error.localizedDescription

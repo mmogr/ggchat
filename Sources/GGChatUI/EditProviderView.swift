@@ -193,8 +193,8 @@ struct EditProviderView: View {
                     break
                 }
                 updated.kind = .pipe(ticketDigest: Ticket.digest(parsed.ticket))
-                if let code = parsed.code {
-                    pair(updated, ticket: parsed.ticket, code: code)
+                if parsed.code != nil {
+                    pair(updated, pairing: parsed.canonical, ticket: parsed.ticket)
                     return
                 }
                 try model.updateProvider(updated, credentials: [.ticket: parsed.ticket, .token: token])
@@ -211,11 +211,12 @@ struct EditProviderView: View {
     /// Save replaced by a spinner and leaves only once the key is stored.
     /// A refused code may be dead for good, and this is where that has to be
     /// said — see ``AddProviderView``, which does the same on the way in.
-    private func pair(_ config: ProviderConfig, ticket: String, code: String) {
+    private func pair(_ config: ProviderConfig, pairing: String, ticket: String) {
         redeeming = true
         Task {
             do {
-                try await model.updatePairedProvider(config, ticket: ticket, code: code, deviceName: deviceName)
+                try await model.updatePairedProvider(
+                    config, pairing: pairing, ticket: ticket, deviceName: deviceName)
                 dismiss()
             } catch {
                 failure = error.localizedDescription

@@ -91,15 +91,19 @@ Each is what `MockPipeConnector` and `MockPipeSession` do today and what
    `Ticket.validateShape` and an empty token are refused with
    `PipeConnectError`, whose cases are sentences. The ffi may add its own
    errors for a ticket that decodes badly; they must be `LocalizedError`
-   with a sentence that names which side to look at.
+   with a sentence that names which side to look at. `pair` validates
+   nothing here: modelpipe reads the pairing string, so a string that is
+   not one comes back as `MpPairError.BadPairingString` with its own
+   sentence.
 2. **`connect` returns once the listener is up**, not once the peer is
    reached. The session starts at `idle`; the walk to `relayed` or
    `direct` happens afterwards and the app shows it on the status pill.
    Anything that has to reach the far machine waits for that walk. Pairing
    learned this on a phone (#55): it redeemed the code the moment `connect`
    returned, the tunnel's edge answered `502` in the gap before the peer
-   was reached, and the one-time code was spent on nothing. `PipePairing`
-   now waits for `relayed` or `direct` before it spends the code.
+   was reached, and the one-time code was spent on nothing. The wait is
+   now modelpipe's: `mpPair` calls `wait_reachable` before it presents the
+   code, and `relayed` counts as reached there as it does here.
 3. **`baseURL` is loopback, ends in `/v1`, and is stable for the life of
    the session.** The app builds `OpenAICompatibleProvider(baseURL:
    session.baseURL, apiKey: token)` and nothing else. See ADR 0001 for
@@ -136,19 +140,48 @@ Each is what `MockPipeConnector` and `MockPipeSession` do today and what
    covers `OpenAICompatibleProvider`'s lines only, so nothing tests the
    lines `AppModel` writes.
 
-## Pairing sits above the seam, not inside it
+## Pairing is inside the seam
 
 The first connection to a machine trades a six-digit code for a key of
-this device's own, and the route that does it (`POST /v1/remote/pair` on
-gglib's proxy) is reachable only *through* the pipe. That did not become a
-third parameter on `connect`. `PipePairing` builds the exchange out of the
-two protocols above instead: `connect(ticket:token:)` with the code as the
-token, a POST to `session.baseURL`, `shutdown()`, and the key handed back
-to be stored and dialled with. So this design asks nothing extra of the
-ffi for pairing, although from 0.2.0 the binding offers `mpPair` of its
-own, which nothing here uses yet — and the token it is handed on a pairing
-dial is the code, which modelpipe's `connect` ignores exactly as it ignores
-the token on every other dial.
+this device's own, and the route that does it is reachable only *through*
+the pipe. It was built above the seam once, out of the two protocols
+above: `connect(ticket:token:)` with the code as the token, a POST to
+`session.baseURL`, `shutdown()`, and the key handed back to be stored and
+dialled with. That asked nothing extra of the ffi, and it cost a second
+dial for every first pairing.
+
+**Amended 2026-09-16.** modelpipe-ffi 0.2.0 brought `mpPair`, which does
+all of it — parse, dial, wait for the far machine, present the code, check
+the answer names the ticket's endpoint — and hands back the key *and* the
+pipe, still up. So `PipeConnector` has a third requirement now:
+
+```swift
+func pair(pairing: String, deviceName: String?) async throws -> PairedPipe
+```
+
+What the ffi owes here, beyond the two protocols above:
+
+- **The whole pairing string goes in.** `ticket-code`, in either ASCII
+  case, because the two halves are one argument to whatever dials.
+- **The code is not presented before the far machine is reached**, for
+  #2's reason. A redeem sent into that gap is answered `502` by the
+  tunnel's edge and the one-time code is spent on nothing.
+- **The pipe comes back up**, and becomes the provider's first session.
+  Hanging it up to dial again would cost a second hole punch, and without
+  a lasting connect identity a second endpoint identity as well — so the
+  fingerprint the far machine recorded as it minted the key would never be
+  the one this device then chats from.
+- **The key is the only thing that must be kept**, and it goes to the
+  Keychain as the provider's token. `PairedPipe` spells it `token` so that
+  `scripts/check_log_calls.sh` catches a log line carrying it.
+- **Every failure is a sentence.** `MpPairError.message()`, never
+  `localizedDescription`, which uniffi generates as `String(reflecting:)`.
+  `Refused` keeps a case of its own above the seam, because it is the one
+  pairing failure with somewhere to send the person.
+
+The route itself is modelpipe's `POST /modelpipe/pair`, not gglib's old
+`/v1/remote/pair`: a phone on this build pairs with gglib G1 and later,
+and not with gglib 0.18.
 
 ## Platform facts already in place
 
@@ -182,9 +215,11 @@ the token on every other dial.
   > comes back (`AppModel+Lifecycle.swift`), and since 2026-09-16 the two
   > passes take turns rather than racing, so none of them outlives a
   > suspension, and the ffi never has to say whether a listener was
-  > reclaimed. The one exception is a pairing dial, which belongs to
-  > `PipePairing` rather than the model and is not hung up on the way out;
-  > it ends when its redeem does.
+  > reclaimed. The one exception is a pairing dial, which belongs to the
+  > connector rather than the model and is not hung up on the way out; it
+  > ends when the pairing does, and the pipe it leaves up is installed by
+  > the same guard every other dial goes through — so one that lands after
+  > the hang-up pass is hung up rather than kept.
 - The Keychain holds the ticket and token under the provider's id; the
   config holds only a digest, used to count distinct tickets (the app's
   kill criterion, shown in Settings).

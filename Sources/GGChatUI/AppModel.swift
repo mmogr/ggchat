@@ -70,7 +70,6 @@ public final class AppModel {
     let log: any LogSink
     let registry: LoopbackProviderRegistry
     let pipeConnector: any PipeConnector
-    let redeemer: any PairingRedeemer
     /// What says the network under this device has changed, and the task that
     /// passes it on to the pipes; see `startWatchingTheNetwork()`.
     let networkWatcher: any NetworkPathWatching
@@ -92,7 +91,6 @@ public final class AppModel {
         log: any LogSink = OSLogSink(category: "app"),
         registry: LoopbackProviderRegistry = .shared,
         pipeConnector: any PipeConnector = PipeConnectorFactory.make(),
-        redeemer: any PairingRedeemer = HTTPPairingRedeemer(),
         networkWatcher: any NetworkPathWatching = NWPathNetworkWatcher(),
         diagnostics: Diagnostics = Diagnostics(),
         now: @escaping () -> Date = { Date() }
@@ -102,7 +100,6 @@ public final class AppModel {
         self.log = log
         self.registry = registry
         self.pipeConnector = pipeConnector
-        self.redeemer = redeemer
         self.networkWatcher = networkWatcher
         self.diagnostics = diagnostics
         self.now = now

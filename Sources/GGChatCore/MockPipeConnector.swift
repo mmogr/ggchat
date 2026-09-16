@@ -22,17 +22,23 @@
         public var stepDelay: Duration
         public var provider: any Provider
         public var registry: LoopbackProviderRegistry
+        /// What a pairing does here, and what it was asked. A class rather
+        /// than a stored `Result` so a test can read back the device names
+        /// after handing the connector to something that copied it.
+        public var pairings: MockPairings
 
         public init(
             sleeper: any Sleeper = ImmediateSleeper(),
             stepDelay: Duration = .milliseconds(700),
             provider: any Provider = MockProvider(),
-            registry: LoopbackProviderRegistry = .shared
+            registry: LoopbackProviderRegistry = .shared,
+            pairings: MockPairings = MockPairings()
         ) {
             self.sleeper = sleeper
             self.stepDelay = stepDelay
             self.provider = provider
             self.registry = registry
+            self.pairings = pairings
         }
 
         public func connect(ticket: String, token: String) async throws -> any PipeSession {
@@ -42,8 +48,60 @@
             guard !token.trimmingCharacters(in: .whitespaces).isEmpty else {
                 throw PipeConnectError.missingToken
             }
+            return makeSession()
+        }
+
+        /// Pairs the way the real connector does, minus the machine: the
+        /// scripted outcome decides, and a success hands back a session on a
+        /// pipe that was never hung up — which is the whole of what
+        /// ``PairedPipe`` promises.
+        public func pair(pairing: String, deviceName: String?) async throws -> PairedPipe {
+            let token = try pairings.redeeming(for: deviceName)
+            return PairedPipe(
+                session: makeSession(), token: token,
+                device: MockPairings.device(named: deviceName))
+        }
+
+        private func makeSession() -> MockPipeSession {
             let baseURL = registry.register(provider)
             return MockPipeSession(baseURL: baseURL, sleeper: sleeper, stepDelay: stepDelay, registry: registry)
+        }
+    }
+
+    /// The answer ``MockPipeConnector/pair(pairing:deviceName:)`` gives, and
+    /// the device names it was handed.
+    ///
+    /// The default succeeds, because the DEBUG app is where the screens are
+    /// walked and a build that could never pair would leave the paired
+    /// provider's own screens unreachable. A test that wants the refusal
+    /// scripts one.
+    public final class MockPairings: Sendable {
+        private let outcome: Result<String, PipeConnectError>
+        private let names = Mutex<[String?]>([])
+
+        public init(outcome: Result<String, PipeConnectError> = .success("mock-device-key")) {
+            self.outcome = outcome
+        }
+
+        /// Every device name a pairing was handed, in order — `nil` and the
+        /// empty string included, because passing the provider's name in
+        /// place of a missing one is the mistake worth catching.
+        public var deviceNames: [String?] {
+            names.withLock { $0 }
+        }
+
+        /// What the far machine would list this device as: the name it was
+        /// given, or its own word for a device that sent none.
+        public static func device(named deviceName: String?) -> String {
+            guard let trimmed = deviceName?.trimmingCharacters(in: .whitespaces), !trimmed.isEmpty else {
+                return "this device"
+            }
+            return trimmed
+        }
+
+        fileprivate func redeeming(for deviceName: String?) throws -> String {
+            names.withLock { $0.append(deviceName) }
+            return try outcome.get()
         }
     }
 

@@ -70,13 +70,15 @@ final class ScreenGalleryUITests: XCTestCase {
 
     /// The pairing half, driven through the real app: a code in the string
     /// means the form asks what this device is called rather than for a
-    /// token, and Add spends the code on a redeem through the pipe.
+    /// token, and Add spends the code through the pipe rather than asking
+    /// anyone to type a key.
     ///
-    /// Nothing listens on the mock pipe's loopback port, so the redeem
-    /// cannot succeed here. What this asserts is that it is *reached* — that
-    /// the form, the app model, the pairing step and the HTTP exchange are
-    /// wired to each other — and that a failure keeps the sheet up with its
-    /// reason instead of adding a provider whose token is a spent code.
+    /// The mock pairs, because that is what a DEBUG build is for: the walk
+    /// then reaches the screens a paired provider has, and the refusal is
+    /// asserted in the unit tests, where the sentence can be read rather
+    /// than photographed. What this asserts is that the form, the app model
+    /// and the connector's pairing are wired to each other, and that the
+    /// provider that comes out of it is on the list with its pipe up.
     @MainActor
     func testAPairingCodeIsRedeemedInsteadOfAskingForAToken() {
         launch()
@@ -97,13 +99,26 @@ final class ScreenGalleryUITests: XCTestCase {
             "a code was recognised and the form never asked what this device is called")
         attach(name: "form-pipe-code")
 
-        app.buttons["Add"].firstMatch.tap()
-        let unreachable = app.staticTexts.matching(
-            NSPredicate(format: "label BEGINSWITH 'The pairing request did not get through'")
+        clearingThePasswordManagerPrompt(in: app) {
+            submitProviderForm(in: app)
+        }
+        attach(name: "form-pipe-code-paired")
+
+        // The provider the pairing produced, on the list and connected over
+        // the very pipe the code was spent on: nothing was dialled twice.
+        let pill = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Model, '")).firstMatch
+        if !tap(app.buttons["New conversation"].firstMatch, untilExists: pill) {
+            attachElementTree(app, name: "blocked-tree")
+            XCTFail("the conversation never opened; something is over the app")
+            return
+        }
+        let connected = app.buttons.matching(
+            NSPredicate(format: "label == 'Connection Direct' OR label == 'Connection Relayed'")
         ).firstMatch
-        XCTAssertTrue(unreachable.waitForExistence(timeout: 30), "the code was never redeemed anywhere")
-        attach(name: "form-pipe-code-unreachable")
-        XCTAssertTrue(app.buttons["Add"].firstMatch.exists, "the sheet closed and took the reason with it")
+        XCTAssertTrue(
+            connected.waitForExistence(timeout: 30),
+            "the pipe the code was redeemed over never became the provider's")
+        attach(name: "pipe-paired-connected")
     }
 
     /// A pipe provider connects and the status pill walks to a connected state.

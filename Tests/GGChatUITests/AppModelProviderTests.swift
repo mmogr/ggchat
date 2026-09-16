@@ -42,16 +42,6 @@ private final class RefusingStore: Store {
     }
 }
 
-/// A redeemer with a fixed answer, so the re-pairing path can be walked
-/// with no machine on the other end of anything.
-private struct StubRedeemer: PairingRedeemer {
-    let outcome: Result<String, PairingError>
-
-    func redeem(code: String, deviceName: String?, through baseURL: URL) async throws -> String {
-        try outcome.get()
-    }
-}
-
 /// Forgetting a provider, and re-credentialling one in place.
 final class AppModelProviderTests: XCTestCase {
     /// modelpipe's normative vector 1 from `docs/ticket-format-v0.md`, and a
@@ -60,16 +50,23 @@ final class AppModelProviderTests: XCTestCase {
     private let ticket = "pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na"
     private let newTicket = "pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaadesk2na"
 
+    /// The sentence modelpipe writes for a refused code.
+    private static let refusedSentence =
+        "The other machine did not accept that code. It may be wrong, expired or already used, "
+        + "so ask for a new one."
+
     @MainActor
     private func makeModel(
-        store: any Store, secrets: any Secrets, redeemer: any PairingRedeemer = StubRedeemer(outcome: .success("key"))
+        store: any Store, secrets: any Secrets,
+        pairing outcome: Result<String, PipeConnectError> = .success("key")
     ) -> AppModel {
         let registry = LoopbackProviderRegistry()
         let defaults = UserDefaults(suiteName: "AppModelProviderTests.\(UUID().uuidString)")!
         return AppModel(
             store: store, secrets: secrets, log: NoopLogSink(), registry: registry,
-            pipeConnector: MockPipeConnector(sleeper: ImmediateSleeper(), registry: registry),
-            redeemer: redeemer, diagnostics: Diagnostics(defaults: defaults),
+            pipeConnector: MockPipeConnector(
+                sleeper: ImmediateSleeper(), registry: registry, pairings: MockPairings(outcome: outcome)),
+            diagnostics: Diagnostics(defaults: defaults),
             now: { Date(timeIntervalSince1970: 1_700_000_000) })
     }
 
@@ -212,14 +209,15 @@ final class AppModelProviderTests: XCTestCase {
     }
 
     /// The whole edit, through the door a user comes in by: paste what the
-    /// machine's `gglib remote invite` showed, redeem the code for this
-    /// device's key, dial the new ticket. The old one was never read again,
-    /// so nothing would have noticed the ticket had changed without the redial.
+    /// machine's `gglib remote invite` showed, spend the code for this
+    /// device's key over the new ticket's pipe, and keep that pipe. The old
+    /// session is hung up, so a provider that has moved machines is not left
+    /// talking to the one it left.
     @MainActor
     func testRePairingRedeemsTheNewCodeAndDialsTheNewTicket() async throws {
         let secrets = InMemorySecrets()
         let model = makeModel(
-            store: InMemoryStore(), secrets: secrets, redeemer: StubRedeemer(outcome: .success("far-machine-key")))
+            store: InMemoryStore(), secrets: secrets, pairing: .success("far-machine-key"))
         let config = pipeConfig()
         try model.addProvider(config, credentials: [.ticket: ticket, .token: "old-token"])
         await model.connectPipe(for: config)
@@ -227,7 +225,8 @@ final class AppModelProviderTests: XCTestCase {
 
         var edited = config
         edited.kind = .pipe(ticketDigest: Ticket.digest(newTicket))
-        try await model.updatePairedProvider(edited, ticket: newTicket, code: "483920", deviceName: nil)
+        try await model.updatePairedProvider(
+            edited, pairing: "\(newTicket)-483920", ticket: newTicket, deviceName: nil)
 
         XCTAssertEqual(model.providers.map(\.id), [config.id], "the provider was replaced rather than re-paired")
         XCTAssertEqual(try secrets.secret(.ticket, for: config.id), newTicket)
@@ -242,26 +241,35 @@ final class AppModelProviderTests: XCTestCase {
     }
 
     /// A refused code leaves the provider exactly as it was: still pointing
-    /// at the machine it was already paired with.
+    /// at the machine it was already paired with, and still connected to it.
+    /// The pairing runs before anything is written or hung up, so there is
+    /// nothing to put back.
     @MainActor
     func testARefusedCodeLeavesTheProviderPairedWithTheMachineItHad() async throws {
         let secrets = InMemorySecrets()
         let model = makeModel(
-            store: InMemoryStore(), secrets: secrets, redeemer: StubRedeemer(outcome: .failure(.refused)))
+            store: InMemoryStore(), secrets: secrets,
+            pairing: .failure(.pairingRefused(message: Self.refusedSentence)))
         let config = pipeConfig()
         try model.addProvider(config, credentials: [.ticket: ticket, .token: "old-token"])
+        await model.connectPipe(for: config)
+        let firstSession = try XCTUnwrap(model.pipeSession(for: config.id))
 
         var edited = config
         edited.kind = .pipe(ticketDigest: Ticket.digest(newTicket))
         do {
-            try await model.updatePairedProvider(edited, ticket: newTicket, code: "000000", deviceName: nil)
+            try await model.updatePairedProvider(
+                edited, pairing: "\(newTicket)-000000", ticket: newTicket, deviceName: nil)
             XCTFail("a refused code re-credentialled the provider")
-        } catch let error as PairingError {
-            XCTAssertEqual(error, .refused)
+        } catch let error as PipeConnectError {
+            XCTAssertEqual(error, .pairingRefused(message: Self.refusedSentence))
         }
 
         XCTAssertEqual(try secrets.secret(.ticket, for: config.id), ticket)
         XCTAssertEqual(try secrets.secret(.token, for: config.id), "old-token")
         XCTAssertEqual(model.providers.first?.kind, config.kind)
+        XCTAssertEqual(
+            model.pipeSession(for: config.id)?.baseURL, firstSession.baseURL,
+            "a refused code hung up the pipe the provider still has")
     }
 }

@@ -61,4 +61,9 @@ final class GatedConnector: PipeConnector {
         if let mock = session as? MockPipeSession { state.withLock { $0.sessions.append(mock) } }
         return session
     }
+
+    /// Nothing here pairs; these tests are about what a dial leaves behind.
+    func pair(pairing: String, deviceName: String?) async throws -> PairedPipe {
+        throw PipeConnectError.unavailable
+    }
 }

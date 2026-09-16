@@ -32,6 +32,40 @@ final class BindingTests: XCTestCase {
         }
     }
 
+    /// Pairing waits for the far machine before it spends the code, and this
+    /// is the real `mpPair` proving it offline.
+    ///
+    /// The ticket is modelpipe's normative vector 1, which names an endpoint
+    /// that does not exist; discovery is off so nothing is asked of the
+    /// network beyond the relay dial, and the wait is 150 ms so the test
+    /// costs a fraction of a second. Reaching `Unreached` means the string
+    /// parsed, a pipe was dialled, the wait ran out — and the code was never
+    /// presented. A redeem sent into that gap is answered `502` by the
+    /// tunnel's own edge, which spends the one-time code on nothing and needs
+    /// a fresh `gglib remote invite`.
+    func testPairingWaitsForTheFarMachineBeforeSpendingTheCode() async {
+        let vector = "pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na"
+        var options = MpConnectOptions()
+        options.discovery = false
+        do {
+            _ = try await mpPair(
+                pairing: "\(vector)-483920", label: "a test", options: options, reachWithinMs: 150)
+            XCTFail("a machine that does not exist accepted a pairing code")
+        } catch let error as MpPairError {
+            guard case .Unreached = error else {
+                return XCTFail("expected Unreached, got \(error.message())")
+            }
+            XCTAssertTrue(
+                error.isRetryable(),
+                "a machine that did not answer in time is one that may answer next time")
+            XCTAssertFalse(
+                error.message().isEmpty,
+                "an error the app has to show a person came back with nothing to say")
+        } catch {
+            XCTFail("the binding threw something that is not an MpPairError: \(error)")
+        }
+    }
+
     /// The two enums match one for one, and this is what keeps that true. It
     /// is written out rather than looped so that a case added on either side
     /// is a compile error here and not a silent gap.
