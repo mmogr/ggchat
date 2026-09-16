@@ -122,7 +122,8 @@ second line.
   > used to be recorded nowhere: `RootView` acted on `scenePhase == .active`
   > and on nothing else, so a process suspended while streaming lost the
   > partial text outright. It acts on `.background` now.
-  > `AppModel.didEnterBackground()` cancels the reply and awaits it before it
+  > `AppModel.didEnterBackground()` (since 2026-09-16 the hang-up pass of
+  > `scene(_:)`) cancels the reply and awaits it before it
   > hangs anything up, so `finish(_:finished:)` writes the partial into the
   > conversation with `isPartial` set and the transcript offers Continue; the
   > hang-up then leaves `.closed` behind rather than nothing, which puts it
