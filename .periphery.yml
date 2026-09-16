@@ -4,3 +4,10 @@
 # coders, so they are kept too.
 retain_public: true
 retain_codable_properties: true
+# Three `periphery:ignore` comments in RootView.swift are needed under Swift
+# 6.4, whose indexer records no read of a property used only through its `$`
+# binding, and are superfluous under 6.3, where periphery would otherwise
+# report each of them as an issue. The price: a stale ignore is never
+# reported, on either toolchain, so the day those three can go, nothing here
+# will say so.
+superfluous_ignore_comments: false
