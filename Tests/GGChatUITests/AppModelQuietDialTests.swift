@@ -28,6 +28,11 @@ private final class SlowRefusingConnector: PipeConnector {
         }
         throw refusal
     }
+
+    /// Nothing here pairs; these tests are about what a dial leaves behind.
+    func pair(pairing: String, deviceName: String?) async throws -> PairedPipe {
+        throw PipeConnectError.unavailable
+    }
 }
 
 /// A connector that hands back a session whose status stream can be ended on
@@ -39,6 +44,11 @@ private final class ClosableConnector: PipeConnector {
         let session = ClosableSession()
         sessions.withLock { $0.append(session) }
         return session
+    }
+
+    /// Nothing here pairs; these tests are about what a dial leaves behind.
+    func pair(pairing: String, deviceName: String?) async throws -> PairedPipe {
+        throw PipeConnectError.unavailable
     }
 }
 

@@ -59,8 +59,7 @@ extension AppModel {
             lastError = "The ticket or token for \(config.name) is missing from the Keychain."
             return
         }
-        let generation = (dialGeneration[config.id] ?? 0) + 1
-        dialGeneration[config.id] = generation
+        let generation = nextDialGeneration(for: config.id)
         connecting.insert(config.id)
         // Only if this is still the dial in flight: a superseded one must not
         // clear the flag its successor is relying on.
@@ -68,52 +67,7 @@ extension AppModel {
         setPipeStatus(.idle, for: config.id)
         do {
             let session = try await pipeConnector.connect(ticket: ticket, token: token)
-            guard dialGeneration[config.id] == generation, !isAway else {
-                // Called off, dialled again, or overtaken by the app going to
-                // the background while this one was in flight. The last is a
-                // dial a view started after the hang-up pass had already gone
-                // by, which nothing else would ever close.
-                // Installing it now would leave a live connection, a bound
-                // port and a status task belonging to a provider nothing on
-                // screen still points at, so this dial hangs up its own
-                // session and says nothing. The close runs in whichever task
-                // the dial belonged to, and none of those holds the grace the
-                // hang-up pass takes, so this takes its own: with a real
-                // connector the close tells the far side, and a suspension
-                // part-way through would leave it to time out instead.
-                let assertion = BackgroundAssertion(name: "hang up a dial that landed away")
-                await session.shutdown()
-                assertion.end()
-                return
-            }
-            pipeSessions[config.id] = session
-            diagnostics.recordTicket(digest: Ticket.digest(ticket))
-            log.log(.info, "pipe up for \(config.name) at \(Redaction.describe(session.baseURL))")
-            statusTasks[config.id]?.cancel()
-            statusTasks[config.id] = Task { [weak self] in
-                for await status in session.status {
-                    // Read at the moment the close arrives, and only for a
-                    // close: an open session answers `nil`, which is also what
-                    // "no reason" looks like, so asking at any other time
-                    // would be asking a question the session cannot answer.
-                    let reason = status == .closed ? session.closeReason : nil
-                    self?.setPipeStatus(status, for: config.id, because: reason)
-                    if let reason { self?.announce(reason, for: config) }
-                }
-                // The stream ends only after a close, so the session behind it
-                // is finished. Forgetting it is what lets the next dial
-                // happen: `connectPipe` refuses while one is installed, and
-                // both the composer's task and the foreground pass ask for a
-                // dial only when there is none — so a pipe that died quietly
-                // used to leave a dead session in the dictionary that nothing
-                // but a manual press would clear.
-                //
-                // Only if this is still the current dial. A teardown has
-                // already moved the generation on and installed nothing, and a
-                // later dial may have installed a live session that this one
-                // must not remove.
-                self?.forgetSessionIfCurrent(config.id, generation: generation)
-            }
+            await installPipe(session, for: config, ticket: ticket, generation: generation)
         } catch is CancellationError {
             // The view asked for this dial and went away again — the composer
             // dials inside a `.task(id:)` that SwiftUI cancels on every
@@ -135,36 +89,80 @@ extension AppModel {
         }
     }
 
-    /// Says why a pipe went away — once, and only when the app did not ask it
-    /// to.
-    ///
-    /// Through the alert rather than the sentence under a partial reply. That
-    /// second channel exists only while a partial assistant message is the
-    /// last one on screen, so a pipe that dies while an older conversation is
-    /// open has nothing to hang a sentence under — and that is the ordinary
-    /// case, not the exceptional one. It is also typed `ProviderError`, which
-    /// would put a connection sentence behind "Could not reach the server:", a
-    /// prefix about a request nobody made.
-    ///
-    /// `lastError == nil` is the rule `makePipeProvider(for:)` already
-    /// follows: never written over the top of a sentence still waiting to be
-    /// read. A close the app performed says nothing at all, which is what
-    /// keeps a walk to the background silent.
-    private func announce(_ reason: PipeCloseReason, for config: ProviderConfig) {
-        guard reason.wasUnexpected, let sentence = reason.sentence(naming: config.name) else { return }
-        log.log(.info, "\(config.name): \(sentence)")
-        if lastError == nil { lastError = sentence }
+    /// The next dial stamp for a provider, taken and recorded. See
+    /// ``disconnectPipe(for:leaving:cutShort:)`` for what else moves it on.
+    func nextDialGeneration(for providerID: UUID) -> Int {
+        let generation = (dialGeneration[providerID] ?? 0) + 1
+        dialGeneration[providerID] = generation
+        return generation
     }
 
-    /// Why the pipe behind a provider last closed, while it is closed.
-    public func pipeCloseReason(for providerID: UUID) -> PipeCloseReason? {
-        pipeCloseReasons[providerID]
-    }
-
-    /// Drops a finished session, unless a newer dial has already replaced it.
-    private func forgetSessionIfCurrent(_ providerID: UUID, generation: Int) {
-        guard dialGeneration[providerID] == generation else { return }
-        pipeSessions[providerID] = nil
+    /// Makes a live session this provider's, and follows it from here on.
+    ///
+    /// The success half of ``connectPipe(for:quietly:)``, in a function of
+    /// its own because a dial is no longer the only thing that produces a
+    /// session: pairing hands back the pipe the code was redeemed over, still
+    /// up, and that pipe becomes the provider's first session rather than
+    /// being hung up and dialled again. Two callers writing `pipeSessions`,
+    /// the generation, the diagnostics reading and the status task by hand
+    /// would be two chances to forget one of them.
+    ///
+    /// - Parameters:
+    ///   - session: the live session to install. Hung up here if it is no
+    ///     longer wanted, so a caller never has to.
+    ///   - config: the provider it belongs to.
+    ///   - ticket: the ticket behind it, for the digest the kill criterion
+    ///     counts.
+    ///   - generation: the stamp this session belongs to.
+    func installPipe(
+        _ session: any PipeSession, for config: ProviderConfig, ticket: String, generation: Int
+    ) async {
+        guard dialGeneration[config.id] == generation, !isAway else {
+            // Called off, dialled again, or overtaken by the app going to
+            // the background while this one was in flight. The last is a
+            // dial a view started after the hang-up pass had already gone
+            // by, which nothing else would ever close.
+            // Installing it now would leave a live connection, a bound
+            // port and a status task belonging to a provider nothing on
+            // screen still points at, so this dial hangs up its own
+            // session and says nothing. The close runs in whichever task
+            // the dial belonged to, and none of those holds the grace the
+            // hang-up pass takes, so this takes its own: with a real
+            // connector the close tells the far side, and a suspension
+            // part-way through would leave it to time out instead.
+            let assertion = BackgroundAssertion(name: "hang up a dial that landed away")
+            await session.shutdown()
+            assertion.end()
+            return
+        }
+        pipeSessions[config.id] = session
+        diagnostics.recordTicket(digest: Ticket.digest(ticket))
+        log.log(.info, "pipe up for \(config.name) at \(Redaction.describe(session.baseURL))")
+        statusTasks[config.id]?.cancel()
+        statusTasks[config.id] = Task { [weak self] in
+            for await status in session.status {
+                // Read at the moment the close arrives, and only for a
+                // close: an open session answers `nil`, which is also what
+                // "no reason" looks like, so asking at any other time
+                // would be asking a question the session cannot answer.
+                let reason = status == .closed ? session.closeReason : nil
+                self?.setPipeStatus(status, for: config.id, because: reason)
+                if let reason { self?.announce(reason, for: config) }
+            }
+            // The stream ends only after a close, so the session behind it
+            // is finished. Forgetting it is what lets the next dial
+            // happen: `connectPipe` refuses while one is installed, and
+            // both the composer's task and the foreground pass ask for a
+            // dial only when there is none — so a pipe that died quietly
+            // used to leave a dead session in the dictionary that nothing
+            // but a manual press would clear.
+            //
+            // Only if this is still the current dial. A teardown has
+            // already moved the generation on and installed nothing, and a
+            // later dial may have installed a live session that this one
+            // must not remove.
+            self?.forgetSessionIfCurrent(config.id, generation: generation)
+        }
     }
 
     /// Tears the session down and dials again. The reconnect affordance.
@@ -212,61 +210,6 @@ extension AppModel {
             pipeSessions[providerID] = nil
         }
         setPipeStatus(status, for: providerID, cutShort: cutShort)
-    }
-
-    /// The one place `pipeStatuses` is written, and so the one place a close
-    /// is counted. Being shown as closed and being counted as a close are the
-    /// same event; they used to be two.
-    ///
-    /// ADR 0002's denominator was kept where a status was *observed*, which
-    /// is only what a live session sends. The two closes that come from this
-    /// side set the pill and told the counter nothing: a dial that was
-    /// refused, and the hang-up on the way to the background. The second is
-    /// the phone's commonest close by a distance, so the reading was shown
-    /// over a denominator that omitted the case it exists to measure.
-    ///
-    /// `previous != .closed` is what stops one close being counted twice: a
-    /// refused dial leaves `.closed` behind, and the background that follows
-    /// it hangs up a provider with nothing left to hang up.
-    ///
-    /// The reason travels through here rather than beside it, and is
-    /// *assigned* rather than merged: a reason left behind by an earlier close
-    /// would be a sentence about the wrong event. `nil` is therefore the right
-    /// answer for every close this side performs — the hang-up on the way to
-    /// the background, the manual reconnect, a provider deleted — because a
-    /// close the app asked for has nothing to explain.
-    private func setPipeStatus(
-        _ status: PipeStatus?, for providerID: UUID, cutShort: Bool = false,
-        because reason: PipeCloseReason? = nil
-    ) {
-        let previous = pipeStatuses[providerID]
-        pipeStatuses[providerID] = status
-        pipeCloseReasons[providerID] = status == .closed ? reason : nil
-        if status == .closed, previous != .closed {
-            let midReply = cutShort || streamingProviderID == providerID
-            diagnostics.recordClosed(whileStreaming: midReply)
-            log.log(.info, "pipe closed\(midReply ? " mid-reply" : "")\(reason.map { ": \($0)" } ?? "")")
-        }
-        if status?.isConnected == true, previous?.isConnected != true {
-            connectedPulse &+= 1
-            // Any answer the status probe kept came from before this
-            // connection, through a session not answering yet or an earlier
-            // one, and so is any answer still on its way. The chat view asks
-            // again on the pulse.
-            proxyStatusAvailability[providerID] = nil
-            probeGeneration[providerID] = (probeGeneration[providerID] ?? 0) + 1
-        }
-    }
-
-    /// The provider the reply in flight is going through, if there is one.
-    ///
-    /// Not `private`: the hang-up pass reads it, and it lives in
-    /// `AppModel+Lifecycle` — a different file, which is what `private` means
-    /// in Swift even for two extensions of the same type.
-    var streamingProviderID: UUID? {
-        liveReply.flatMap { live in
-            conversations.first { $0.id == live.conversationID }?.providerID
-        }
     }
 
     /// The pipe's provider: an ordinary OpenAI-compatible provider at the

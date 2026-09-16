@@ -28,10 +28,11 @@ go stale. The first is a real reply from gglib.
 Each release is on the [releases page](https://github.com/mmogr/ggchat/releases),
 with what it changed. What exists today is the core package (the provider
 protocol, the OpenAI-compatible implementation, the SSE parser, ticket
-shape validation, pairing, the pipe seam with its mock) and the app shell:
-a sidebar of conversations persisted with SwiftData, a providers sheet
-that adds a server by address or a pipe by its pairing string, and
-settings. The transcript streams replies as markdown with copyable code
+shape validation, the pipe seam with its mock and its pairing) and the
+app shell: a sidebar of conversations persisted with SwiftData, a
+providers sheet
+that adds a server by address or a pipe by its pairing string,
+and settings. The transcript streams replies as markdown with copyable code
 blocks and collapsed reasoning, with a stop button and, when a reply stops
 early, a Continue button; a request refused before anything arrived says why
 under the question, with a Retry button. A server added by address lists its models and
@@ -43,10 +44,12 @@ the other machine showed for it (`gglib remote enable --invite` for the
 first device, `gglib remote invite` for each one after that), or on iOS by
 scanning its QR code: the six-digit code is spent once, through the pipe
 itself, for a key minted for this device alone, so no key is ever read off
-one screen and typed into another. A bare ticket, with no code, is for a
-device that already holds its key. Connecting goes through
-`PipeConnector`: a release build dials with `ModelpipeConnector`, and a
-DEBUG build uses a mock that walks idle → relayed → direct. The status pill
+one screen and typed into another — and the pipe it was spent over is the
+one that provider keeps, so a first pairing costs one hole punch and not
+two. A bare ticket, with no code, is for a device that already holds its
+key. Connecting goes through `PipeConnector`: a release build dials and
+pairs with `ModelpipeConnector`, and a DEBUG build uses a mock that walks
+idle → relayed → direct. The status pill
 follows the session, reads "Reconnect" when the pipe closes, and stays
 pressable in every state but a dial in flight, because a connected status
 can be stale. Going
@@ -112,23 +115,33 @@ Each claim names the test that keeps it true.
   problem rather than swallowed.
   <!-- test: PairingStringTests.testTheOneStringGGLibPrintsIsAccepted -->
   <!-- test: PairingStringTests.testASuffixThatIsNotSixDigitsIsNamedAsTheProblem -->
-- Pairing is a step before the seam, not a third parameter on it: the
-  ticket is dialled, the code is redeemed through that pipe as both the
-  bearer and the body, the pipe is hung up, and the key that comes back is
-  the provider's token. A refused code leaves no provider behind, and the
-  form stops asking for a token once it has a code to fetch one with.
-  <!-- test: PipePairingTests.testPairingDialsRedeemsThroughThatPipeAndHangsUp -->
-  <!-- test: PairingTests.testTheCodeTravelsAsTheBearerAndInTheBody -->
+- Pairing is modelpipe's own, and the pipe a device paired over is the one
+  it keeps: the whole `ticket-code` string goes to `PipeConnector.pair`,
+  which dials the ticket, waits for the far machine, spends the code there,
+  and hands back this device's key over a pipe still up. The key becomes
+  the provider's token and that pipe becomes its first session, so nothing
+  is dialled twice. A refused code leaves no provider behind and says where
+  the next attempt starts, and the form stops asking for a token once it
+  has a code to fetch one with.
+  <!-- test: ModelpipeConnectorPairingTests.testThePipeTheCodeWasRedeemedOverIsTheSession -->
+  <!-- test: ModelpipeConnectorPairingTests.testARefusedCodeKeepsItsOwnCaseAndSaysWhereToGetANewOne -->
   <!-- test: AppModelPairingTests.testARedeemedCodeBecomesTheProvidersTokenAndThePipeConnects -->
   <!-- test: AppModelPairingTests.testARefusedCodeAddsNoProviderAndSaysWhy -->
   <!-- test: ScreenGalleryUITests.testAPairingCodeIsRedeemedInsteadOfAskingForAToken -->
-- The name typed for this device travels in the redeem's body as `name`,
-  beside the code. A name that is blank once trimmed is not sent at all:
-  the key is left out, not sent empty. The app model never sends the
-  provider's name, which names the other machine, in its place.
-  <!-- test: PairingTests.testADeviceNameTravelsInTheBodyAsName -->
-  <!-- test: PairingTests.testABlankDeviceNameIsNotSentAtAll -->
-  <!-- test: PipePairingTests.testTheDeviceNameRidesTheRedeem -->
+- A pairing is the longest wait in the app, so the app being left under one
+  is ordinary rather than exotic: the pipe it was about to install is hung up
+  instead of kept, the key is stored all the same, and the provider is left
+  with a pill to press and a status the next resume will dial. While a pairing
+  is out, Reconnect is not offered for that provider, because pressing it
+  would dial the machine being replaced with the token being replaced.
+  <!-- test: AppModelPairingTests.testAPairingThatLandsWhileTheAppIsAwayKeepsItsKeyAndItsPill -->
+  <!-- test: AppModelPairingTests.testReconnectIsNotOfferedWhileAPairingIsOut -->
+- The name typed for this device travels with the pairing as its label, and
+  the other machine lists this device under it. A name that is blank once
+  trimmed is not sent at all: no label, rather than an empty one. The app
+  model never sends the provider's name, which names the other machine, in
+  its place.
+  <!-- test: ModelpipeConnectorPairingTests.testTheLabelRidesAsGivenAndABlankOneIsNotSent -->
   <!-- test: AppModelPairingTests.testTheNameTypedForThisDeviceIsWhatTheRedeemCarries -->
   <!-- test: AppModelPairingTests.testWithNoDeviceNameTheProvidersNameIsNotSentInItsPlace -->
 - The modelpipe binding is linked and answers across the boundary: a string
@@ -141,14 +154,16 @@ Each claim names the test that keeps it true.
   <!-- test: BindingTests.testEveryPipeStatusCrossesUnchanged -->
   <!-- test: BindingTests.testARelayedPipeCountsAsConnected -->
 - A real connector validates before it dials, so a ticket of the wrong shape
-  and an empty token each cost nothing — which matters because pairing dials
-  with the six-digit code as the token, and `PipePairing` does no shape check
-  of its own.
+  and an empty token each cost nothing — which matters for the bare ticket a
+  device that already holds its key is added by, where every request through
+  the pipe would be refused at the far edge after a dial spent finding out.
   <!-- test: ModelpipeConnectorTests.testATicketOfTheWrongShapeIsRefusedWithoutDialling -->
   <!-- test: ModelpipeConnectorTests.testAnEmptyTokenIsRefusedEvenThoughTheBindingWouldNotWantIt -->
-- A failure from the transport, or from an identity file this device cannot
-  use, reaches the person as a sentence, never as the binding's own debug
-  rendering, and says whether dialling again is worth it.
+- A failure from the transport, from a pairing, or from an identity file
+  this device cannot use, reaches the person as a sentence, never as the
+  binding's own debug rendering, and says whether trying again is worth it.
+  <!-- test: ModelpipeConnectorPairingTests.testEveryPairingErrorArrivesAsASentenceAndNotADebugRendering -->
+  <!-- test: ModelpipeConnectorPairingTests.testTheFailuresNoRetryCanFixAgreeWithTheBinding -->
   <!-- test: ModelpipeConnectorTests.testATransportErrorArrivesAsASentenceAndNotADebugRendering -->
   <!-- test: ModelpipeConnectorTests.testABadTicketIsNotWorthDiallingAgain -->
   <!-- test: ModelpipeConnectorTests.testTheBindingDecidesWhatIsWorthRepeating -->
@@ -180,11 +195,12 @@ Each claim names the test that keeps it true.
   instead of finding a dead session installed and refusing.
   <!-- test: AppModelQuietDialTests.testASessionThatEndedIsForgottenSoAResumeCanDialAgain -->
   <!-- test: AppModelQuietDialTests.testAnOldSessionEndingDoesNotRemoveTheOneThatReplacedIt -->
-- Pairing waits for the far machine before spending the code. `connect`
-  returns once the local port is bound, not once the peer answers, and a
-  redeem sent into that gap is answered `502` by the tunnel's own edge — which
-  spends the one-time code on nothing and needs a fresh `gglib remote invite`.
-  <!-- test: PipePairingTests.testAPipeThatNeverReachesTheFarMachineDoesNotSpendTheCode -->
+- Pairing waits for the far machine before spending the code, and the real
+  `mpPair` is what waits. A dial returns once the local port is bound, not
+  once the peer answers, and a redeem sent into that gap is answered `502` by
+  the tunnel's own edge — which spends the one-time code on nothing and needs
+  a fresh `gglib remote invite`.
+  <!-- test: BindingTests.testPairingWaitsForTheFarMachineBeforeSpendingTheCode -->
 - The mock pipe walks idle → relayed → direct, can be forced closed, and a
   late subscriber gets the current status first.
   <!-- test: MockPipeTests.testStatusWalksIdleRelayedDirectThenClosedOnDemand -->
@@ -532,7 +548,7 @@ so its test sets it through Settings and measures the result instead.
 ## Layout
 
 ```
-Sources/GGChatCore/   no SwiftUI; the provider protocol, wire types, SSE, ticket, pairing, pipe seam, mocks
+Sources/GGChatCore/   no SwiftUI; the provider protocol, wire types, SSE, ticket, the pipe seam, mocks
 Sources/GGChatPipe/   the only target that links modelpipe-ffi; no UI framework either
 Sources/GGChatUI/     SwiftUI; the app model, views, and SwiftData persistence
 App/                  the xcodegen spec, the generated project, and a @main struct with assets

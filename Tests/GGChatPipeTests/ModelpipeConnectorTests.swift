@@ -37,7 +37,7 @@ final class ModelpipeConnectorTests: XCTestCase {
         }
         XCTAssertFalse(
             dialled.withLock { $0 },
-            "the shape check has to come first: PipePairing does none of its own")
+            "the shape check has to come first: a bare ticket added with no token costs a dial otherwise")
     }
 
     func testAnEmptyTokenIsRefusedEvenThoughTheBindingWouldNotWantIt() async {

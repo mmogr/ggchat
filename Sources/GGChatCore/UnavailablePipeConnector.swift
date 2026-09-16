@@ -22,4 +22,11 @@ public struct UnavailablePipeConnector: PipeConnector {
     public func connect(ticket: String, token: String) async throws -> any PipeSession {
         throw PipeConnectError.unavailable
     }
+
+    /// Always throws `PipeConnectError.unavailable`, and for the same reason:
+    /// a build with nothing to dial with has nothing to pair over either, and
+    /// the code is not spent finding that out.
+    public func pair(pairing: String, deviceName: String?) async throws -> PairedPipe {
+        throw PipeConnectError.unavailable
+    }
 }

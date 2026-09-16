@@ -40,6 +40,11 @@ private final class RefusingConnector: PipeConnector {
         while !state.withLock({ $0.open }) { await Task.yield() }
         throw PipeConnectError.unavailable
     }
+
+    /// Nothing here pairs; these tests are about what a dial leaves behind.
+    func pair(pairing: String, deviceName: String?) async throws -> PairedPipe {
+        throw PipeConnectError.unavailable
+    }
 }
 
 /// What a dial that fails leaves behind.
