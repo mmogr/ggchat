@@ -179,7 +179,8 @@ the token on every other dial.
   >
   > **Answered 2026-09-12, by not asking it.** The app hangs up every
   > provider's pipe on its way to the background and dials again when it
-  > comes back (`AppModel+Lifecycle.swift`), so none of them outlives a
+  > comes back (`AppModel+Lifecycle.swift`), and since 2026-09-16 the two
+  > passes take turns rather than racing, so none of them outlives a
   > suspension, and the ffi never has to say whether a listener was
   > reclaimed. The one exception is a pairing dial, which belongs to
   > `PipePairing` rather than the model and is not hung up on the way out;

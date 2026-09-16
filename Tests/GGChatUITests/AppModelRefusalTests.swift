@@ -180,7 +180,7 @@ final class AppModelRefusalTests: XCTestCase {
             await Task.yield()
         }
         XCTAssertNotNil(model.liveReply?.error, "the error never arrived, so this proves nothing")
-        await model.didEnterBackground()
+        await model.scene(.background).value
         let messages = try XCTUnwrap(model.selectedConversation?.messages)
         XCTAssertEqual(messages.map(\.role), [.user])
         XCTAssertNil(messages[0].failure, "a background was kept as a refusal")

@@ -41,7 +41,8 @@ immediately after foregrounding.~~
 > argument for a delay or a retry; the failure it should have described is an
 > argument for noticing the session is dead and redialling. The app does that
 > now — going to the background hangs up every pipe, and coming back dials
-> again the ones it had — so the work this paragraph called separate is done,
+> again the ones it had, the two passes taking turns since 2026-09-16 — so
+> the work this paragraph called separate is done,
 > and done without the reading. What is still uncosted is the ffi telling a
 > reclaimed listener from a slow one, which is what the reading was for.
 >
@@ -93,7 +94,8 @@ and `MockPipeConnector` implements them the way `ModelpipeConnector` will.
   > `finish(_:finished:)` in `AppModel+Streaming.swift`. A `connectPipe` that throws goes to
   > `report(_:)`, which sets `lastError` and logs — it touches no counter.
   >
-  > **The denominator.** `recordResume` is called from `didBecomeActive()`,
+  > **The denominator.** `recordResume` is called from `didBecomeActive()`
+  > (since 2026-09-16, from the foreground pass of `scene(_:)`),
   > which `RootView` invokes on every `scenePhase` transition to `.active`.
   > `.active` is reached from `.inactive` as well as from `.background`, so
   > dismissing Control Center or the notification shade, and dismissing a call

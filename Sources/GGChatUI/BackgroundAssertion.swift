@@ -4,11 +4,12 @@
 
 /// A little more time to finish going to the background.
 ///
-/// ``AppModel/didEnterBackground()`` now awaits real work: it puts the reply
-/// in flight down, and then hangs up each pipe, which with a real connector
-/// means a QUIC close that tells the far side rather than leaving it to time
-/// out. It is started from an un-awaited `Task` off the scene phase, so
-/// nothing holds the process open while it runs.
+/// The hang-up pass of ``AppModel/scene(_:)`` awaits real work: it puts the
+/// reply in flight down, and then hangs up each pipe, which with a real
+/// connector means a QUIC close that tells the far side rather than leaving
+/// it to time out. It runs in a task the view does not wait on, so nothing
+/// holds the process open while it runs; this is taken before that task's
+/// first await.
 ///
 /// If iOS suspends the app part-way through, the `.closed` that
 /// `disconnectPipe` writes never lands. The pill comes back reading whatever

@@ -43,7 +43,7 @@ final class AppModelLifecycleTests: XCTestCase {
         await waitForStatus(.direct, model, config.id)
         let session = try XCTUnwrap(model.pipeSession(for: config.id))
 
-        await model.didEnterBackground()
+        await model.scene(.background).value
 
         XCTAssertNil(model.pipeSession(for: config.id), "the pipe was held open across a background")
         XCTAssertEqual(
@@ -51,7 +51,7 @@ final class AppModelLifecycleTests: XCTestCase {
             "the pill would have gone on saying Direct about a socket the system had taken back")
         XCTAssertNil(registry.provider(for: session.baseURL), "the session's port was left bound")
 
-        await model.didBecomeActive()
+        await model.scene(.foreground).value
         await waitForStatus(.direct, model, config.id)
 
         XCTAssertNotNil(model.pipeSession(for: config.id), "coming back left the pipe down with no way in")
@@ -74,7 +74,7 @@ final class AppModelLifecycleTests: XCTestCase {
         await model.connectPipe(for: config)
         await waitForStatus(.direct, model, config.id)
 
-        await model.didEnterBackground()
+        await model.scene(.background).value
 
         XCTAssertEqual(model.pipeStatus(for: config.id), .closed)
         XCTAssertEqual(
@@ -82,9 +82,9 @@ final class AppModelLifecycleTests: XCTestCase {
             "the pill was shown as Closed and ADR 0002's denominator never heard about it")
         XCTAssertEqual(model.diagnostics.closedWhileStreaming, 0, "nothing was streaming")
 
-        await model.didBecomeActive()
+        await model.scene(.foreground).value
         await waitForStatus(.direct, model, config.id)
-        await model.didEnterBackground()
+        await model.scene(.background).value
 
         XCTAssertEqual(model.diagnostics.closedTransitions, 2, "the second background was folded into the first")
     }
@@ -109,7 +109,7 @@ final class AppModelLifecycleTests: XCTestCase {
         for _ in 0..<200 where model.liveReply?.content.isEmpty != false { await Task.yield() }
         XCTAssertEqual(model.liveReply?.content, "half ", "the reply never started")
 
-        await model.didEnterBackground()
+        await model.scene(.background).value
 
         XCTAssertTrue(
             try XCTUnwrap(model.selectedConversation?.messages.last).isPartial,
@@ -127,7 +127,7 @@ final class AppModelLifecycleTests: XCTestCase {
         let model = makeModel(registry: LoopbackProviderRegistry())
         let config = try addPipe(to: model)
 
-        await model.didBecomeActive()
+        await model.scene(.foreground).value
 
         XCTAssertNil(model.pipeSession(for: config.id), "a pipe the user never opened was dialled on a resume")
         XCTAssertNil(model.pipeStatus(for: config.id))
@@ -154,7 +154,7 @@ final class AppModelLifecycleTests: XCTestCase {
         for _ in 0..<200 where model.liveReply?.content.isEmpty != false { await Task.yield() }
         XCTAssertEqual(model.liveReply?.content, "half ", "the reply never started")
 
-        await model.didEnterBackground()
+        await model.scene(.background).value
 
         XCTAssertFalse(model.isStreaming, "the reply was left running into a process about to be suspended")
         let last = try XCTUnwrap(model.selectedConversation?.messages.last)

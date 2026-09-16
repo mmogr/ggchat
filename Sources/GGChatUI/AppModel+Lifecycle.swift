@@ -1,22 +1,78 @@
 import GGChatCore
 
-// The two ends of a scene phase, split from `AppModel+Pipe` because that file
-// is at its size budget and because these are not about pipes: they are about
-// the app being taken away and given back, and what a pipe has to do about
-// that is one of the consequences rather than the subject.
+/// The two ends of a scene phase, as the model hears them.
+public enum ScenePassage: Sendable {
+    case foreground
+    case background
+}
+
+// Split from `AppModel+Pipe` because that file is at its size budget and
+// because these are not about pipes: they are about the app being taken away
+// and given back, and what a pipe has to do about that is one of the
+// consequences rather than the subject.
 extension AppModel {
+    /// The one entry point for a scene phase, and so the one owner of the
+    /// order its two passes run in.
+    ///
+    /// `RootView` used to start an un-awaited `Task` for each phase, and
+    /// nothing ordered them. A hang-up could land while a resume was still
+    /// dialling: the dial in flight hung itself up, but the resume then moved
+    /// on to the next provider, and no hang-up was left to see that one. And
+    /// a resume could land while a hang-up was still awaiting a session's
+    /// shutdown, in which case it skipped every provider still installed and
+    /// the app came back to nothing.
+    ///
+    /// Now a hang-up calls off the resume in flight, and a resume waits for
+    /// the hang-up in flight. Each pass returns its task so a test can wait
+    /// on it; the view does not.
+    @discardableResult
+    public func scene(_ passage: ScenePassage) -> Task<Void, Never> {
+        switch passage {
+        case .background:
+            isAway = true
+            resumeInFlight?.cancel()
+            // Taken before any await, so the grace covers the whole pass. See
+            // `BackgroundAssertion` for what is lost when the system suspends
+            // the app part-way through.
+            let assertion = BackgroundAssertion(name: "hang up the pipes")
+            let previous = hangUpInFlight
+            let pass = Task {
+                await previous?.value
+                await hangUpEveryPipe()
+                assertion.end()
+            }
+            hangUpInFlight = pass
+            return pass
+        case .foreground:
+            isAway = false
+            resumeInFlight?.cancel()
+            // Counted at the change rather than after the wait: this is ADR
+            // 0001's denominator, a resume, whether or not a dial follows.
+            diagnostics.recordResume(at: now())
+            let pending = hangUpInFlight
+            let pass = Task {
+                await pending?.value
+                await resumeEveryPipe()
+            }
+            resumeInFlight = pass
+            return pass
+        }
+    }
+
     /// ADR 0001's reading, and the way back in: the app came to the
     /// foreground.
     ///
     /// Every pipe this app has dialled before and is not holding now is
     /// dialled again here. Nothing survives a background — see
-    /// ``didEnterBackground()`` — and the composer's `task` does not run a
+    /// ``hangUpEveryPipe()`` — and the composer's `task` does not run a
     /// second time for a conversation that was already on screen, so without
     /// this the app comes back to a pipe that is gone and never notices.
-    public func didBecomeActive() async {
-        diagnostics.recordResume(at: now())
+    func resumeEveryPipe() async {
         for config in providers
         where config.isPipe && pipeSessions[config.id] == nil && pipeStatuses[config.id] != nil {
+            // A hang-up that arrived since this pass began has called it off,
+            // and the next dial must not go out.
+            guard !Task.isCancelled else { return }
             await connectPipe(for: config, quietly: true)
         }
     }
@@ -45,14 +101,7 @@ extension AppModel {
     /// to be shown is the one that ended a reply — and ADR 0002 counts that
     /// close as mid-reply, because the partial written a line earlier is
     /// exactly what Continue is offered on.
-    public func didEnterBackground() async {
-        // Held for the whole of it, because all of it is now real work: the
-        // reply is awaited down and each pipe is closed over the network. See
-        // `BackgroundAssertion` for what is lost when the system suspends the
-        // app part-way through.
-        let assertion = BackgroundAssertion(name: "hang up the pipes")
-        defer { assertion.end() }
-
+    func hangUpEveryPipe() async {
         let cutShort = streamingProviderID
         if let inFlight = streamTask {
             inFlight.cancel()

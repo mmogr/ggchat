@@ -7,7 +7,7 @@ extension AppModel {
     /// Starts passing changes to the network under this device on to every
     /// pipe the app holds. Once: a second call finds the task already there.
     ///
-    /// From `load()` rather than `didBecomeActive()`. `RootView` hears scene
+    /// From `load()` rather than the foreground pass. `RootView` hears scene
     /// phases through `onChange`, which does not fire for the phase the app
     /// launches in, so a watcher started there would miss the whole first
     /// stretch in the foreground. Nothing stops it on the way to the

@@ -47,6 +47,14 @@ public final class AppModel {
     /// dial starts and again when one is called off, so a dial that returns
     /// late can tell that its session is no longer the one to install.
     var dialGeneration: [UUID: Int] = [:]
+    /// The resume pass in flight, so a hang-up can call it off between dials.
+    var resumeInFlight: Task<Void, Never>?
+    /// The hang-up pass in flight, so a resume waits for it instead of
+    /// skipping every pipe it is still taking down.
+    var hangUpInFlight: Task<Void, Never>?
+    /// Set on the way to the background and cleared on the way back, so a
+    /// dial that lands in between hangs itself up.
+    var isAway = false
     var proxyStatusAvailability: [UUID: Bool] = [:]
     /// Moved on by every new probe and by every pipe that comes up, so an
     /// answer from before either is discarded rather than kept.
