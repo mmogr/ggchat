@@ -2,6 +2,10 @@ import XCTest
 
 @testable import GGChatCore
 
+#if canImport(CryptoKit)
+    import CryptoKit
+#endif
+
 final class ErrorTests: XCTestCase {
     /// The whole vocabulary, not a list maintained beside it. The list this
     /// replaces named ten codes while the switch handled eleven, so
@@ -23,6 +27,51 @@ final class ErrorTests: XCTestCase {
         }
         XCTAssertEqual(ProviderError.whereToLook(forCode: "something_new"), .unknown)
         XCTAssertEqual(ProviderError.whereToLook(forCode: nil), .unknown)
+    }
+
+    /// The vocabulary is modelpipe's published list, `docs/error-codes-v0.json`
+    /// at v0.6.0, vendored byte for byte, plus the codes only gglib writes. The
+    /// two lists are a partition of the vocabulary's provenance, not of who
+    /// can write a code in the wild: `invalid_pairing_code` is in modelpipe's
+    /// list because its edge answers the pairing route from 0.6, and gglib
+    /// has written the same code from its own route since v0.16.0. The list supplies
+    /// the vocabulary and nothing else; which side to look at stays decided
+    /// here, because `incomplete_request` is written by the serving side and
+    /// still means "your upload stopped". The digest catches an edit by hand;
+    /// a change upstream shows only when the copy is refreshed on purpose.
+    func testThePublishedHalfOfTheVocabularyIsModelpipesOwnList() throws {
+        let data = try Fixtures.data("modelpipe-error-codes-v0.json")
+        #if canImport(CryptoKit)
+            let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+            XCTAssertEqual(
+                digest, "3bac9cebc2a933e2f663272e62d6d2cae296b7471358ca306405ebc1c993f5bc",
+                "the vendored list differs from modelpipe v0.6.0's: refresh it from the tag, not by hand")
+        #endif
+
+        struct Published: Decodable {
+            struct Entry: Decodable { let code: String }
+            let codes: [Entry]
+        }
+        let publishedCodes = Set(try JSONDecoder().decode(Published.self, from: data).codes.map(\.code))
+
+        let published: Set<ProviderError.Code> = [
+            .invalidAPIKey, .badRequest, .badGateway, .backendUnreachable, .tunnelUnavailable,
+            .incompleteRequest, .invalidPairingCode,
+        ]
+        let gglibOnly: Set<ProviderError.Code> = [
+            .admissionTimeout, .contextLengthExceeded, .deviceNotPaired, .embeddingModelCannotChat,
+            .hostNotAllowed, .internalError, .invalidRequest, .loopDetected, .mcpNotAllowedOverTunnel,
+            .modelFileNotFound, .modelLoading, .modelNotFound, .notAnEmbeddingModel,
+            .pinnedModelMismatch, .profileNotFound, .stagnationDetected, .upstreamError,
+            .upstreamTimeout,
+        ]
+        XCTAssertEqual(
+            Set(published.map(\.rawValue)), publishedCodes,
+            "the published half here is not what modelpipe publishes")
+        XCTAssertTrue(published.isDisjoint(with: gglibOnly), "a code is filed under both lists")
+        XCTAssertEqual(
+            published.union(gglibOnly), Set(ProviderError.Code.allCases),
+            "a code in the vocabulary is filed under neither list")
     }
 
     /// The side named is the side that *wrote* the refusal. modelpipe writes

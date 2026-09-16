@@ -85,7 +85,8 @@ Each claim names the test that keeps it true.
   refused, or that the answer is to wait. The side named is the side that
   wrote the refusal, which is not always the side you are sitting at. The
   codes are an enum, so the mapping is exhaustive by the compiler rather
-  than by a list someone remembers to extend. A key the serving machine no
+  than by a list someone remembers to extend, and the half of it modelpipe
+  publishes is checked against modelpipe's own list. A key the serving machine no
   longer admits says so, and the line after it says where a new key comes
   from, which depends on the kind of provider: a pipe pairs again with
   `gglib remote invite`, and a server's key is checked in its settings.
@@ -93,6 +94,7 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelRefusalTests.testTheAdviceUnderARefusalFollowsTheKindOfProvider -->
   <!-- test: ErrorTests.testServerMessageIsRenderedVerbatim -->
   <!-- test: ErrorTests.testEveryDocumentedCodeNamesWhereToLook -->
+  <!-- test: ErrorTests.testThePublishedHalfOfTheVocabularyIsModelpipesOwnList -->
   <!-- test: ErrorTests.testTheSideNamedIsTheSideThatWroteTheRefusal -->
   <!-- test: ErrorTests.testAMachineThatIsMerelyBusySaysToWaitRatherThanNamingASide -->
 - A ticket's shape is validated without decoding it: `pipe` prefix in any
