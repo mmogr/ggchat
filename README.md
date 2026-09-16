@@ -296,10 +296,17 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelFailedDialTests.testARefusalThatArrivesAfterItsDialWasCalledOffSaysNothing -->
 - Going to the background hangs up every pipe and writes the reply that was
   in flight into the conversation as a partial rather than losing it; coming
-  back dials again, and only the pipes the app already had.
+  back dials again, and only the pipes the app already had. The two take
+  turns: a hang-up calls off a resume that is still dialling, a resume waits
+  for a hang-up that is still closing, and a dial that lands while the app
+  is away hangs itself up, so no pipe outlives a suspension and none stays
+  down after a return.
   <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundHangsUpEveryPipeAndComingBackDialsAgain -->
   <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundKeepsThePartialReplyInsteadOfLosingIt -->
   <!-- test: AppModelLifecycleTests.testComingBackDoesNotDialAPipeTheAppNeverOpened -->
+  <!-- test: AppModelScenePhaseTests.testABackgroundDuringAResumeLeavesNoPipeBehind -->
+  <!-- test: AppModelScenePhaseTests.testAReturnDuringAHangUpWaitsForItAndDialsAgain -->
+  <!-- test: AppModelScenePhaseTests.testADialThatLandsWhileTheAppIsAwayHangsItselfUp -->
 - When the network under the device changes while the app is open, every
   pipe it holds is told, so its endpoint looks at the network again then,
   whether or not iroh's own watch on the routing socket noticed the move.

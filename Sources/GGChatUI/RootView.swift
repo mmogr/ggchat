@@ -47,8 +47,8 @@ public struct RootView: View {
         .task { model.load() }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
-            case .active: Task { await model.didBecomeActive() }
-            case .background: Task { await model.didEnterBackground() }
+            case .active: model.scene(.foreground)
+            case .background: model.scene(.background)
             // `.inactive` is a transient — the notification shade, a call
             // banner, a window losing focus — and a pipe is worth holding
             // through one. Only `.background` means the process is about to

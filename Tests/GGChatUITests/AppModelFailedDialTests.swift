@@ -62,7 +62,7 @@ final class AppModelFailedDialTests: XCTestCase {
     /// A refused dial leaves `closed` rather than no status at all, because
     /// no status is no way back by two separate roads: `Composer` draws the
     /// status pill only `if let status`, so there is nothing on screen to
-    /// press; and `didBecomeActive()` dials again only the providers it has
+    /// press; and the foreground pass dials again only the providers it has
     /// a status for, so the resume will not retry it either. One dial that
     /// failed while the machine was asleep would otherwise be a dead end
     /// until the app was relaunched.
@@ -79,7 +79,7 @@ final class AppModelFailedDialTests: XCTestCase {
         XCTAssertNotNil(model.lastError, "the refusal was swallowed")
         XCTAssertNil(model.pipeSession(for: config.id))
 
-        await model.didBecomeActive()
+        await model.scene(.foreground).value
 
         XCTAssertEqual(connector.dials, 2, "the resume did not retry the failed dial")
         XCTAssertEqual(model.pipeStatus(for: config.id), .closed, "and the pill did not survive the resume either")
@@ -103,7 +103,7 @@ final class AppModelFailedDialTests: XCTestCase {
         await model.connectPipe(for: config)
         XCTAssertEqual(model.diagnostics.closedTransitions, 1)
 
-        await model.didEnterBackground()
+        await model.scene(.background).value
 
         XCTAssertEqual(model.pipeStatus(for: config.id), .closed, "the pill that is the way back was taken away")
         XCTAssertEqual(

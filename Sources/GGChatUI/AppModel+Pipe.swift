@@ -37,13 +37,13 @@ extension AppModel {
     ///
     /// A provider that is no longer on the list has no pipe to dial. Callers
     /// hold a `ProviderConfig` by value across suspensions — the resume in
-    /// ``didBecomeActive()`` walks a whole list of them — so one deleted in
+    /// the foreground pass walks a whole list of them — so one deleted in
     /// between would otherwise be dialled, and then reported as missing its
     /// credentials, which it is: they were deleted with it.
     /// - Parameters:
     ///   - config: the provider whose pipe to dial.
     ///   - quietly: whether a failure should raise an alert.
-    ///     ``didBecomeActive()`` dials every pipe it is holding none of, and
+    ///     the foreground pass dials every pipe it is holding none of, and
     ///     a machine that is asleep would otherwise put an alert in front of
     ///     the person on every single return to the foreground — one they did
     ///     not ask for and cannot act on, carrying only the last provider's
@@ -68,13 +68,22 @@ extension AppModel {
         setPipeStatus(.idle, for: config.id)
         do {
             let session = try await pipeConnector.connect(ticket: ticket, token: token)
-            guard dialGeneration[config.id] == generation else {
-                // Called off, or dialled again, while this one was in flight.
+            guard dialGeneration[config.id] == generation, !isAway else {
+                // Called off, dialled again, or overtaken by the app going to
+                // the background while this one was in flight. The last is a
+                // dial a view started after the hang-up pass had already gone
+                // by, which nothing else would ever close.
                 // Installing it now would leave a live connection, a bound
                 // port and a status task belonging to a provider nothing on
                 // screen still points at, so this dial hangs up its own
-                // session and says nothing.
+                // session and says nothing. The close runs in whichever task
+                // the dial belonged to, and none of those holds the grace the
+                // hang-up pass takes, so this takes its own: with a real
+                // connector the close tells the far side, and a suspension
+                // part-way through would leave it to time out instead.
+                let assertion = BackgroundAssertion(name: "hang up a dial that landed away")
                 await session.shutdown()
+                assertion.end()
                 return
             }
             pipeSessions[config.id] = session
@@ -94,7 +103,7 @@ extension AppModel {
                 // The stream ends only after a close, so the session behind it
                 // is finished. Forgetting it is what lets the next dial
                 // happen: `connectPipe` refuses while one is installed, and
-                // both the composer's task and `didBecomeActive` ask for a
+                // both the composer's task and the foreground pass ask for a
                 // dial only when there is none — so a pipe that died quietly
                 // used to leave a dead session in the dictionary that nothing
                 // but a manual press would clear.
@@ -180,7 +189,7 @@ extension AppModel {
     ///     is compiled with `.defaultIsolation(MainActor.self)`, so nothing
     ///     could run between that write and the caller's.
     ///   - cutShort: whether this hang-up is what ended a reply in flight.
-    ///     Only ``didEnterBackground()`` can say so, because it puts the
+    ///     Only the hang-up pass, ``scene(_:)``, can say so, because it puts the
     ///     reply down before it hangs up — see there.
     ///
     /// Calling off the dial is what the generation is for. This can only ever
@@ -251,7 +260,7 @@ extension AppModel {
 
     /// The provider the reply in flight is going through, if there is one.
     ///
-    /// Not `private`: `didEnterBackground` reads it, and it lives in
+    /// Not `private`: the hang-up pass reads it, and it lives in
     /// `AppModel+Lifecycle` — a different file, which is what `private` means
     /// in Swift even for two extensions of the same type.
     var streamingProviderID: UUID? {

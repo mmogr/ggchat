@@ -119,7 +119,7 @@ final class AppModelQuietDialTests: XCTestCase {
         XCTAssertNotNil(model.lastError, "the dial the person asked for stayed quiet")
         model.lastError = nil
 
-        await model.didBecomeActive()
+        await model.scene(.foreground).value
 
         XCTAssertEqual(connector.dialCount, 2, "the resume did not retry")
         XCTAssertEqual(model.pipeStatus(for: config.id), .closed, "the pill is still the way back")
@@ -167,7 +167,7 @@ final class AppModelQuietDialTests: XCTestCase {
             "the dead session is still installed, so nothing will dial again")
         XCTAssertEqual(model.pipeStatus(for: config.id), .closed)
 
-        await model.didBecomeActive()
+        await model.scene(.foreground).value
         XCTAssertNotNil(
             model.pipeSession(for: config.id), "the resume did not bring the pipe back")
     }
