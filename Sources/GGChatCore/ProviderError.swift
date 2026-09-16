@@ -95,15 +95,22 @@ extension ProviderError {
     /// switch handled eleven. As an enum the mapping below is exhaustive by
     /// the compiler and `allCases` *is* the list, so neither can drift again.
     public enum Code: String, CaseIterable, Sendable {
-        // modelpipe, `modelpipe/src/refusal.rs`. All six are synthesized at
-        // the edge and never relayed, so which side of the tunnel wrote one
-        // is knowable, and is the whole answer.
+        // modelpipe, `modelpipe/src/refusal.rs`, published as
+        // `docs/error-codes-v0.json` and checked against a vendored copy by
+        // ErrorTests. All seven are synthesized at the edge and never relayed,
+        // so which side of the tunnel wrote one is knowable, and is the whole
+        // answer. `invalid_pairing_code` is in modelpipe's list because from
+        // 0.6 the tunnel edge answers the pairing route itself. gglib has
+        // written the same code from its own proxy route since v0.16.0,
+        // whichever modelpipe it vendors, and stops when it moves that route
+        // to the edge. Either way it is the serving side.
         case invalidAPIKey = "invalid_api_key"
         case badRequest = "bad_request"
         case badGateway = "bad_gateway"
         case backendUnreachable = "backend_unreachable"
         case tunnelUnavailable = "tunnel_unavailable"
         case incompleteRequest = "incomplete_request"
+        case invalidPairingCode = "invalid_pairing_code"
 
         // gglib, `gglib-proxy`'s `ErrorResponse` constructors plus the
         // `upstream_timeout` it writes into a stream that has already begun.
@@ -113,7 +120,6 @@ extension ProviderError {
         case embeddingModelCannotChat = "embedding_model_cannot_chat"
         case hostNotAllowed = "host_not_allowed"
         case internalError = "internal_error"
-        case invalidPairingCode = "invalid_pairing_code"
         case invalidRequest = "invalid_request"
         case loopDetected = "loop_detected"
         case mcpNotAllowedOverTunnel = "mcp_not_allowed_over_tunnel"
