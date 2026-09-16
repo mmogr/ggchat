@@ -70,13 +70,28 @@ final class MockPipeTests: XCTestCase {
         XCTAssertNotEqual(one.baseURL, two.baseURL)
     }
 
-    func testBadTicketOrMissingTokenIsRefused() async {
+    /// A blank ticket, not a malformed one: the mock reads no tickets, and
+    /// `"nope"` is now accepted here and refused by modelpipe in the build
+    /// that dials. What is left to assert is that the mock does not dial on
+    /// nothing at all.
+    func testBlankTicketOrMissingTokenIsRefused() async {
         let connector = MockPipeConnector(registry: LoopbackProviderRegistry())
         do {
-            _ = try await connector.connect(ticket: "nope", token: "t")
+            _ = try await connector.connect(ticket: "  ", token: "t")
             XCTFail("expected a refusal")
         } catch let error as PipeConnectError {
-            XCTAssertEqual(error, .invalidTicket(.badPrefix))
+            XCTAssertEqual(error, .invalidTicket(message: "The ticket is empty."))
+        } catch {
+            XCTFail("\(error)")
+        }
+        // A newline-only ticket is blank under modelpipe's ASCII rule and was
+        // not under the `.whitespaces` trim this guard used to apply; the case
+        // pins that the mock reads blankness through `PairingField.isBlank`.
+        do {
+            _ = try await connector.connect(ticket: "\r\n", token: "t")
+            XCTFail("expected a refusal")
+        } catch let error as PipeConnectError {
+            XCTAssertEqual(error, .invalidTicket(message: "The ticket is empty."))
         } catch {
             XCTFail("\(error)")
         }

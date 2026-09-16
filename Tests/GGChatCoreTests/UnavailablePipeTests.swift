@@ -33,10 +33,21 @@ final class UnavailablePipeTests: XCTestCase {
     /// `PipeConnectError` and forgotten here ships with no sentence and this
     /// test still passes. Anything added there is added here in the same
     /// commit.
+    ///
+    /// What it proves differs by case, and three of the five now carry their
+    /// own sentence rather than composing one. For `invalidTicket` and
+    /// `dialFailed` this says only that the payload is passed through and not
+    /// dropped; that the sentence is worth reading is proved where it is
+    /// written, in `PairingReaderTests` and `ModelpipeConnectorTests`, which
+    /// assert it is not the paste and names no binding type. `pairingRefused`
+    /// is here because it does compose — it adds the line naming where the
+    /// next attempt starts — and `missingToken` and `unavailable` are the two
+    /// written here outright.
     func testEveryRefusalHasASentence() {
         let errors: [PipeConnectError] = [
-            .invalidTicket(.badPrefix), .missingToken, .unavailable,
+            .invalidTicket(message: "That is not a ticket."), .missingToken, .unavailable,
             .dialFailed(message: "The other machine did not answer.", retryable: true),
+            .pairingRefused(message: "That pairing code was not accepted."),
         ]
         for error in errors {
             XCTAssertFalse(error.errorDescription?.isEmpty ?? true, "\(error)")
@@ -48,7 +59,7 @@ final class UnavailablePipeTests: XCTestCase {
     /// ticket is still wrong, the token is still missing, the build still has
     /// no pipe in it.
     func testOnlyADialThatWasActuallyMadeIsWorthRepeating() {
-        XCTAssertFalse(PipeConnectError.invalidTicket(.badPrefix).isRetryable)
+        XCTAssertFalse(PipeConnectError.invalidTicket(message: "That is not a ticket.").isRetryable)
         XCTAssertFalse(PipeConnectError.missingToken.isRetryable)
         XCTAssertFalse(PipeConnectError.unavailable.isRetryable)
         XCTAssertTrue(

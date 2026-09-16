@@ -70,6 +70,12 @@ public final class AppModel {
     let log: any LogSink
     let registry: LoopbackProviderRegistry
     let pipeConnector: any PipeConnector
+    /// Who reads a pairing string for the forms and the scanner. The real
+    /// one in every build; see `PipeConnectorFactory.makePairingReader()`.
+    ///
+    /// Internal, like `pipeConnector` above it: nothing outside `GGChatUI`
+    /// reads it, and the test that asserts what it is uses `@testable`.
+    let pairingReader: any PairingReader
     /// What says the network under this device has changed, and the task that
     /// passes it on to the pipes; see `startWatchingTheNetwork()`.
     let networkWatcher: any NetworkPathWatching
@@ -91,6 +97,7 @@ public final class AppModel {
         log: any LogSink = OSLogSink(category: "app"),
         registry: LoopbackProviderRegistry = .shared,
         pipeConnector: any PipeConnector = PipeConnectorFactory.make(),
+        pairingReader: any PairingReader = PipeConnectorFactory.makePairingReader(),
         networkWatcher: any NetworkPathWatching = NWPathNetworkWatcher(),
         diagnostics: Diagnostics = Diagnostics(),
         now: @escaping () -> Date = { Date() }
@@ -100,6 +107,7 @@ public final class AppModel {
         self.log = log
         self.registry = registry
         self.pipeConnector = pipeConnector
+        self.pairingReader = pairingReader
         self.networkWatcher = networkWatcher
         self.diagnostics = diagnostics
         self.now = now

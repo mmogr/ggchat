@@ -1,8 +1,9 @@
 import GGChatCore
 import SwiftUI
 
-/// URL and key, or the pairing string a machine printed. Its shape is
-/// checked as it is typed and the reason it fails is shown as a sentence.
+/// URL and key, or the pairing string a machine printed. modelpipe reads
+/// the pairing string as it is typed and the reason it will not read is
+/// shown as a sentence.
 ///
 /// A pairing string is `ticket-code` the first time and a bare ticket after
 /// that, so the token field is asked for only when there is no code to
@@ -82,7 +83,7 @@ struct AddProviderView: View {
                         // A code is redeemed for the token, so asking for
                         // one as well would be asking for the thing the
                         // code exists to fetch.
-                        if parsedPairing?.code == nil {
+                        if readPairing?.hasCode != true {
                             SecureField("Token", text: $token)
                                 .accessibilityIdentifier("provider-token")
                         }
@@ -98,7 +99,7 @@ struct AddProviderView: View {
                     }
                     // Asked for only alongside a code: the name goes out with
                     // the redeem, and a bare ticket redeems nothing.
-                    if parsedPairing?.code != nil {
+                    if readPairing?.hasCode == true {
                         Section {
                             TextField("Optional", text: $deviceName)
                                 .accessibilityIdentifier("provider-device")
@@ -124,7 +125,7 @@ struct AddProviderView: View {
             .navigationTitle("Add provider")
             #if os(iOS)
                 .sheet(isPresented: $scanning) {
-                    ScanTicketView { scanned in
+                    ScanTicketView(reader: model.pairingReader) { scanned in
                         pairing = scanned
                         scanning = false
                     }
@@ -159,13 +160,28 @@ struct AddProviderView: View {
         return "That is not an http or https address."
     }
 
-    private var pairingShape: Result<PairingString, PairingStringError>? {
-        pairing.isEmpty ? nil : PairingString.parse(pairing)
+    /// The field's text once there is something in it, or nil while there is
+    /// not — a field nobody has filled in yet, which is not a mistake and
+    /// gets the guidance below rather than a refusal.
+    ///
+    /// ``PairingField/isBlank(_:)`` decides that, over modelpipe's own
+    /// whitespace and no other set, so this view holds no opinion about which
+    /// spaces count. And it decides only that: what goes to the reader is the
+    /// text exactly as typed, with the trimming left to modelpipe.
+    private var typedPairing: String? {
+        PairingField.isBlank(pairing) ? nil : pairing
     }
 
-    private var parsedPairing: PairingString? {
-        guard case .success(let parsed)? = pairingShape else { return nil }
-        return parsed
+    /// What modelpipe makes of the field, or nil while nothing is typed. The
+    /// same read `mpPair` will make of it when Add is pressed, so nothing
+    /// the form accepts is refused a moment later by the pairing.
+    private var pairingShape: Result<ReadPairing, PairingReadError>? {
+        typedPairing.map(model.pairingReader.read)
+    }
+
+    private var readPairing: ReadPairing? {
+        guard case .success(let read)? = pairingShape else { return nil }
+        return read
     }
 
     @ViewBuilder
@@ -173,7 +189,7 @@ struct AddProviderView: View {
         switch pairingShape {
         case nil:
             Text("Paste or scan what `gglib remote enable --invite` shows. A bare ticket works once the key is stored.")
-        case .success(let parsed) where parsed.code != nil:
+        case .success(let read) where read.hasCode:
             Label(
                 "A ticket and a code. The code is redeemed once, for a key of this device's own.",
                 systemImage: "checkmark.circle")
@@ -196,7 +212,7 @@ struct AddProviderView: View {
         case .server:
             normalizedURL != nil
         case .pipe:
-            if let parsed = parsedPairing { parsed.code != nil || !token.isEmpty } else { false }
+            if let read = readPairing { read.hasCode || !token.isEmpty } else { false }
         }
     }
 
@@ -214,15 +230,19 @@ struct AddProviderView: View {
                     kind: .openAICompatible(baseURL: url))
                 try model.addProvider(config, credentials: [.apiKey: apiKey])
             case .pipe:
-                guard let parsed = parsedPairing else { return }
+                guard let read = readPairing else { return }
                 let config = ProviderConfig(
                     name: trimmedName.isEmpty ? "Pipe" : trimmedName,
-                    kind: .pipe(ticketDigest: Ticket.digest(parsed.ticket)))
-                if parsed.code != nil {
-                    pair(config, pairing: parsed.canonical, ticket: parsed.ticket)
+                    kind: .pipe(ticketDigest: Ticket.digest(read.ticket)))
+                if read.hasCode {
+                    // The field's text as typed, not a string rebuilt from
+                    // the ticket and a code this never saw: `mpPair` reads
+                    // it the same way the reader just did, and rebuilding it
+                    // here would be a second place that knows the format.
+                    pair(config, pairing: pairing, ticket: read.ticket)
                     return
                 }
-                try model.addProvider(config, credentials: [.ticket: parsed.ticket, .token: token])
+                try model.addProvider(config, credentials: [.ticket: read.ticket, .token: token])
                 Task { await model.connectPipe(for: config) }
             }
         } catch {

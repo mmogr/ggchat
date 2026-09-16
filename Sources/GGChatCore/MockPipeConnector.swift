@@ -11,9 +11,17 @@
     import Foundation
     import Synchronization
 
-    /// Stands in for modelpipe in DEBUG builds. Validates the ticket shape,
-    /// mints a loopback base URL bound to a `MockProvider`, and walks the
-    /// status idle → relayed → direct on a `Sleeper`.
+    /// Stands in for modelpipe in DEBUG builds: mints a loopback base URL
+    /// bound to a `MockProvider` and walks the status idle → relayed →
+    /// direct on a `Sleeper`.
+    ///
+    /// **This mock does not read tickets.** modelpipe does, behind
+    /// `ModelpipeConnector`, and this target cannot call the binding — which
+    /// is the whole reason `PairingReader` is a seam of its own. So a ticket
+    /// is refused here only for being blank, and anything else is accepted:
+    /// a rule invented here would be a third opinion about a format neither
+    /// this app nor this module owns, and the screens walked in DEBUG would
+    /// be walked against it rather than against modelpipe's.
     ///
     /// DEBUG builds only. A release build has `ModelpipeConnector` and no mock
     /// at all.
@@ -42,8 +50,8 @@
         }
 
         public func connect(ticket: String, token: String) async throws -> any PipeSession {
-            if case .failure(let shape) = Ticket.validateShape(ticket) {
-                throw PipeConnectError.invalidTicket(shape)
+            guard !PairingField.isBlank(ticket) else {
+                throw PipeConnectError.invalidTicket(message: "The ticket is empty.")
             }
             guard !token.trimmingCharacters(in: .whitespaces).isEmpty else {
                 throw PipeConnectError.missingToken

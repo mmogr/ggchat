@@ -21,6 +21,9 @@ final class ModelpipeConnectorTests: XCTestCase {
 
     // MARK: - Refused before anything is dialled
 
+    /// The read is modelpipe's `mpReadPairing`, the same call the form reads
+    /// what is typed with, and it happens before the dial rather than
+    /// instead of it.
     func testATicketOfTheWrongShapeIsRefusedWithoutDialling() async {
         let dialled = Mutex(false)
         let connector = connector { _ in
@@ -31,13 +34,39 @@ final class ModelpipeConnectorTests: XCTestCase {
             _ = try await connector.connect(ticket: "nope", token: "a-token")
             XCTFail("a string that is not a ticket was dialled")
         } catch let error as PipeConnectError {
-            XCTAssertEqual(error, .invalidTicket(.badPrefix))
+            guard case .invalidTicket(let message) = error else { return XCTFail("\(error)") }
+            XCTAssertFalse(message.isEmpty)
+            XCTAssertFalse(message.contains("nope"), "the sentence repeats what was pasted: \(message)")
+            XCTAssertFalse(message.contains("MpPairError"), message)
         } catch {
             XCTFail("\(error)")
         }
         XCTAssertFalse(
             dialled.withLock { $0 },
-            "the shape check has to come first: a bare ticket added with no token costs a dial otherwise")
+            "the read has to come first: a bare ticket added with no token costs a dial otherwise")
+    }
+
+    /// A code is spent once, through `pair`. Dialling a string that carries
+    /// one would burn it on a connect that never presents it, so the read
+    /// that happens before the dial refuses it — with a sentence that says
+    /// where it does belong.
+    func testAPairingStringWithACodeIsRefusedWithoutDialling() async {
+        let dialled = Mutex(false)
+        let connector = connector { _ in
+            dialled.withLock { $0 = true }
+            return FakePipe()
+        }
+        do {
+            _ = try await connector.connect(ticket: realTicket + "-483920", token: "a-token")
+            XCTFail("a string carrying a code was dialled")
+        } catch let error as PipeConnectError {
+            guard case .invalidTicket(let message) = error else { return XCTFail("\(error)") }
+            XCTAssertTrue(message.contains("code"), message)
+            XCTAssertFalse(message.contains("483920"), "the sentence carries the code: \(message)")
+        } catch {
+            XCTFail("\(error)")
+        }
+        XCTAssertFalse(dialled.withLock { $0 }, "a one-time code was spent on a dial")
     }
 
     func testAnEmptyTokenIsRefusedEvenThoughTheBindingWouldNotWantIt() async {

@@ -74,7 +74,7 @@ struct EditProviderView: View {
                         #endif
                     // A code is redeemed for the token, so asking for one as
                     // well would be asking for the thing the code fetches.
-                    if parsedPairing?.code == nil {
+                    if readPairing?.hasCode != true {
                         SecureField("New token", text: $token)
                             .accessibilityIdentifier("edit-token")
                     }
@@ -85,7 +85,7 @@ struct EditProviderView: View {
                 }
                 // Asked for only alongside a code: the name goes out with the
                 // redeem, and a bare ticket redeems nothing.
-                if parsedPairing?.code != nil {
+                if readPairing?.hasCode == true {
                     Section {
                         TextField("Optional", text: $deviceName)
                             .accessibilityIdentifier("edit-device")
@@ -130,15 +130,23 @@ struct EditProviderView: View {
         return "Requests go to \(Redaction.describe(url)). Leave the key blank to keep the one stored."
     }
 
-    /// Nil while the field is empty, which here means "keep what is stored"
-    /// rather than "not typed yet".
-    private var pairingShape: Result<PairingString, PairingStringError>? {
-        pairing.isEmpty ? nil : PairingString.parse(pairing)
+    /// The field's text once there is something in it. Nil while there is
+    /// not, which here means "keep what is stored" rather than "not typed
+    /// yet" — a stray space is not a new ticket. Same rule as the add form's,
+    /// asked in the same place: ``PairingField/isBlank(_:)``, over modelpipe's
+    /// own whitespace, deciding only whether anything was typed.
+    private var typedPairing: String? {
+        PairingField.isBlank(pairing) ? nil : pairing
     }
 
-    private var parsedPairing: PairingString? {
-        guard case .success(let parsed)? = pairingShape else { return nil }
-        return parsed
+    /// What modelpipe makes of the field, or nil while nothing is typed.
+    private var pairingShape: Result<ReadPairing, PairingReadError>? {
+        typedPairing.map(model.pairingReader.read)
+    }
+
+    private var readPairing: ReadPairing? {
+        guard case .success(let read)? = pairingShape else { return nil }
+        return read
     }
 
     @ViewBuilder
@@ -146,7 +154,7 @@ struct EditProviderView: View {
         switch pairingShape {
         case nil:
             Text("Blank keeps the ticket and token already stored. Paste what `gglib remote invite` shows.")
-        case .success(let parsed) where parsed.code != nil:
+        case .success(let read) where read.hasCode:
             Label(
                 "A ticket and a code. The code is redeemed once, for a key of this device's own.",
                 systemImage: "checkmark.circle")
@@ -167,7 +175,7 @@ struct EditProviderView: View {
     private var canSave: Bool {
         switch provider.kind {
         case .openAICompatible: normalizedURL != nil
-        case .pipe: pairing.isEmpty || parsedPairing != nil
+        case .pipe: typedPairing == nil || readPairing != nil
         }
     }
 
@@ -185,19 +193,22 @@ struct EditProviderView: View {
                 updated.kind = .openAICompatible(baseURL: url)
                 try model.updateProvider(updated, credentials: [.apiKey: apiKey])
             case .pipe:
-                guard let parsed = parsedPairing else {
+                guard let read = readPairing else {
                     // Nothing new pasted: the name, and the token if one was
                     // typed. A token takes effect on the next request, so
                     // there is nothing to redial for.
                     try model.updateProvider(updated, credentials: [.token: token])
                     break
                 }
-                updated.kind = .pipe(ticketDigest: Ticket.digest(parsed.ticket))
-                if parsed.code != nil {
-                    pair(updated, pairing: parsed.canonical, ticket: parsed.ticket)
+                updated.kind = .pipe(ticketDigest: Ticket.digest(read.ticket))
+                if read.hasCode {
+                    // The field's text as typed; `mpPair` reads it the same
+                    // way, and rebuilding `ticket-code` here would be a
+                    // second place that knows the format.
+                    pair(updated, pairing: pairing, ticket: read.ticket)
                     return
                 }
-                try model.updateProvider(updated, credentials: [.ticket: parsed.ticket, .token: token])
+                try model.updateProvider(updated, credentials: [.ticket: read.ticket, .token: token])
                 Task { await model.reconnectPipe(for: updated) }
             }
         } catch {

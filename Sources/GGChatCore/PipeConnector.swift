@@ -98,7 +98,13 @@ public protocol PipeSession: Sendable {
 /// and which the mock therefore never did — the seam described a world where
 /// the only way to fail was to be wrong about the input.
 public enum PipeConnectError: Error, Sendable, Equatable, LocalizedError {
-    case invalidTicket(TicketShapeError)
+    /// The ticket was not one, and the dial was never made.
+    ///
+    /// The payload is the sentence to show, not an enum of reasons. Why a
+    /// ticket is not a ticket is modelpipe's to say — it is what decodes one
+    /// — and a case list here would be this app's second opinion about a
+    /// format it does not own.
+    case invalidTicket(message: String)
     case missingToken
     /// Nothing in this build can dial a ticket. The ticket and the token were
     /// fine; the build has no `modelpipe-ffi` behind the seam, and the mock
@@ -132,7 +138,7 @@ public enum PipeConnectError: Error, Sendable, Equatable, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .invalidTicket(let shape): shape.errorDescription
+        case .invalidTicket(let message): message
         case .missingToken: "A token is required alongside the ticket."
         case .unavailable: "This build cannot open a pipe yet; add the machine by its address instead."
         case .dialFailed(let message, _): message
