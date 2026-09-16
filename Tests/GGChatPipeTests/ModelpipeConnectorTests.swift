@@ -125,6 +125,34 @@ final class ModelpipeConnectorTests: XCTestCase {
             "retryability was decided here instead of being carried from the binding")
     }
 
+    /// `MpError.Identity` is new in 0.2.0, and both arms of `refusal(for:)`
+    /// answer the same for it today, because the binding says an identity
+    /// failure is not worth repeating; so no test can tell the arms apart. What
+    /// this pins is that the refusal is a failed dial, that the person sees the
+    /// binding's sentence and not its debug rendering, and that retryability is
+    /// the binding's answer and is `false` — so a binding that changes its mind
+    /// fails here loudly, at the release that changes it.
+    func testAnIdentityFileThatCannotBeUsedIsASentenceAndNotWorthDiallingAgain() {
+        let error = MpError.Identity(path: "/nowhere/identity")
+        let refusal = ModelpipeConnector.refusal(for: error)
+
+        guard case .dialFailed(let message, let retryable) = refusal else {
+            return XCTFail("an identity failure was not reported as a failed dial: \(refusal)")
+        }
+        XCTAssertFalse(
+            message.contains("MpError"),
+            "the debug rendering of the binding's own enum reached the sentence: \(message)")
+        XCTAssertFalse(message.contains("modelpipe_ffi"), message)
+        XCTAssertEqual(
+            retryable, error.isRetryable(),
+            "retryability was decided here instead of being carried from the binding")
+        XCTAssertFalse(
+            retryable,
+            "the binding now calls an identity failure worth repeating: "
+                + "revisit this test's name and the arm the case sits in"
+        )
+    }
+
     func testAnErrorFromTheDialIsNotSwallowed() async {
         let connector = connector { _ in throw MpError.PeerUnreachable }
         do {

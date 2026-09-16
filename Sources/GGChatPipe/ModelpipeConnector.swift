@@ -85,7 +85,7 @@ public struct ModelpipeConnector: PipeConnector {
         switch error {
         case .BadTicket, .UnsupportedTicketVersion:
             return .dialFailed(message: error.message(), retryable: false)
-        case .Bind, .Endpoint, .InvalidRelay, .PeerUnreachable, .Unknown:
+        case .Bind, .Endpoint, .InvalidRelay, .PeerUnreachable, .Identity, .Unknown:
             return .dialFailed(message: error.message(), retryable: error.isRetryable())
         }
     }

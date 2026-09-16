@@ -16,7 +16,12 @@ let package = Package(
         // xcframework are two halves of one artifact checked against each
         // other by a uniffi checksum, and a mismatch is a `fatalError` at the
         // first dial on a device rather than an error at build time.
-        .package(url: "https://github.com/mmogr/modelpipe-ffi.git", from: "0.1.3"),
+        //
+        // Up to the next minor, not the next major: every ffi feature is a
+        // minor release, and a minor can add a protocol requirement, as 0.2.0
+        // did to `MpPipeProtocol`. Taking one is then a deliberate pull
+        // request rather than a dependency bump that arrives red.
+        .package(url: "https://github.com/mmogr/modelpipe-ffi.git", .upToNextMinor(from: "0.2.0")),
     ],
     targets: [
         .target(

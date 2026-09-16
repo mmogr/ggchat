@@ -144,10 +144,11 @@ gglib's proxy) is reachable only *through* the pipe. That did not become a
 third parameter on `connect`. `PipePairing` builds the exchange out of the
 two protocols above instead: `connect(ticket:token:)` with the code as the
 token, a POST to `session.baseURL`, `shutdown()`, and the key handed back
-to be stored and dialled with. So the ffi has nothing extra to implement
-for pairing — and the token it is handed on a pairing dial is the code,
-which modelpipe's `connect` ignores exactly as it ignores the token on
-every other dial.
+to be stored and dialled with. So this design asks nothing extra of the
+ffi for pairing, although from 0.2.0 the binding offers `mpPair` of its
+own, which nothing here uses yet — and the token it is handed on a pairing
+dial is the code, which modelpipe's `connect` ignores exactly as it ignores
+the token on every other dial.
 
 ## Platform facts already in place
 

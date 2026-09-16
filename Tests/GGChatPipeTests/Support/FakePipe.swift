@@ -49,6 +49,24 @@ final class FakePipe: MpPipeProtocol, @unchecked Sendable {
     func baseUrl() -> String { url }
     func closeReason() -> MpCloseReason? { state.withLock { $0.reason } }
     func port() -> UInt16 { 51234 }
+    func peerId() -> String { String(repeating: "0", count: 64) }
+    /// Honours the contract rather than answering "reached" for a pipe that has
+    /// reached nothing: `direct` and `relayed` are reached, `closed` throws with
+    /// the recorded reason, and `idle` throws `TimedOut`, since a fake has no far
+    /// machine to wait for. It does not wait, for the reason `statusChangedSince`
+    /// does not: the grace is the injected `Sleeper`'s job.
+    func waitReachable(withinMs: UInt64) async throws -> MpPipeStatus {
+        let now = status()
+        switch now {
+        case .direct, .relayed: return now
+        case .closed: throw MpUnreached.Closed(reason: closeReason())
+        case .idle: throw MpUnreached.TimedOut(withinMs: withinMs)
+        }
+    }
+    /// The protocol asks for the concrete `MpWatch`, and `init(noHandle:)` is the
+    /// only way to make one without a live pipe. Nothing in ggchat calls `watch()`;
+    /// calling anything on this placeholder would crash.
+    func watch() -> MpWatch { MpWatch(noHandle: MpWatch.NoHandle()) }
 
     func networkMetrics() -> MpNetworkMetrics {
         MpNetworkMetrics(
