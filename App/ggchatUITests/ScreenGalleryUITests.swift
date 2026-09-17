@@ -53,7 +53,14 @@ final class ScreenGalleryUITests: XCTestCase {
         attach(name: "form-server-bare-host")
     }
 
-    /// The pipe half of the form, and the sentence for a ticket that is not one.
+    /// The pipe half of the form, and the sentence for a ticket that is not
+    /// one.
+    ///
+    /// The sentence is modelpipe's, not this app's: the form reads what is
+    /// typed with the same `mpReadPairing` that `mpPair` reads it with.
+    /// `PairingReaderTests.testARefusalIsModelpipesOwnSentenceAndNotThePaste`
+    /// quotes this same string off a real call, so the two cannot drift
+    /// without one of them going red.
     @MainActor
     func testTheProviderFormExplainsABadTicket() {
         launch()
@@ -63,7 +70,8 @@ final class ScreenGalleryUITests: XCTestCase {
 
         enter("nope", into: ticket)
         XCTAssertTrue(
-            app.staticTexts["A ticket starts with “pipe”."].waitForExistence(timeout: 5),
+            app.staticTexts["That pairing string could not be read (the part before the code is not a ticket)."]
+                .waitForExistence(timeout: 5),
             "a bad ticket gets no explanation")
         attach(name: "form-pipe-bad-ticket")
     }

@@ -21,7 +21,7 @@ let package = Package(
         // minor release, and a minor can add a protocol requirement, as 0.2.0
         // did to `MpPipeProtocol`. Taking one is then a deliberate pull
         // request rather than a dependency bump that arrives red.
-        .package(url: "https://github.com/mmogr/modelpipe-ffi.git", .upToNextMinor(from: "0.2.0")),
+        .package(url: "https://github.com/mmogr/modelpipe-ffi.git", .upToNextMinor(from: "0.3.0")),
     ],
     targets: [
         .target(

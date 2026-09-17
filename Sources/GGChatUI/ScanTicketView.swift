@@ -9,14 +9,26 @@
     ///
     /// What gglib prints in that QR is `TICKET-CODE`, uppercased, because
     /// uppercase base32 is a QR alphanumeric payload and lowercase is not.
-    /// So the whole candidate goes through ``GGChatCore/PairingString``,
-    /// which owns the split on the last `-` and the case folding both; this
-    /// view holds no parsing of its own.
+    /// So the whole candidate goes to modelpipe's reader, which owns the
+    /// split on the last `-` and the case folding both; this view holds no
+    /// parsing of its own.
     ///
-    /// A candidate that does not parse is dropped without a word, because
+    /// What it hands back is the candidate as the lens saw it, upper case
+    /// and all. `mpPair` reads it the same way the reader just did, so
+    /// lower-casing it here would only be this view having an opinion about
+    /// a format it is trying not to know.
+    ///
+    /// A candidate that does not read is dropped without a word, because
     /// the text recogniser reports every string the lens can see: a scanner
     /// that complained about each one would be complaining about the room.
     struct ScanTicketView: View {
+        /// Handed in rather than taken from `@Environment(AppModel.self)`,
+        /// which traps when the model is absent. The presenting form holds
+        /// the model already, and nothing on a simulator can open this view —
+        /// `DataScannerViewController.isSupported` is false there — so a
+        /// mistake here would first be seen on a phone, by a person, with the
+        /// camera up.
+        let reader: any PairingReader
         let onScan: (String) -> Void
         @Environment(\.dismiss) private var dismiss
         @State private var seen: String?
@@ -28,9 +40,9 @@
         var body: some View {
             NavigationStack {
                 DataScanner { candidate in
-                    guard case .success(let parsed) = PairingString.parse(candidate), seen == nil else { return }
-                    seen = parsed.canonical
-                    onScan(parsed.canonical)
+                    guard case .success = reader.read(candidate), seen == nil else { return }
+                    seen = candidate
+                    onScan(candidate)
                 }
                 .ignoresSafeArea()
                 .overlay(alignment: .bottom) {

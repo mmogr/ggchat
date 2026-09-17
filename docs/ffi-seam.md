@@ -49,7 +49,7 @@ public protocol PipeSession: Sendable {
 }
 
 public enum PipeConnectError: Error, Sendable, Equatable, LocalizedError {
-    case invalidTicket(TicketShapeError)          // refused before anything is dialled
+    case invalidTicket(message: String)           // refused before anything is dialled
     case missingToken                             // refused before anything is dialled
     case unavailable                              // nothing in this build can dial
     case dialFailed(message: String, retryable: Bool)
@@ -87,14 +87,24 @@ public enum PipeStatus: String, Sendable, Codable, CaseIterable, Equatable {
 Each is what `MockPipeConnector` and `MockPipeSession` do today and what
 `AppModelPipeTests` and `MockPipeTests` assert.
 
-1. **`connect` validates before it dials.** A ticket whose shape fails
-   `Ticket.validateShape` and an empty token are refused with
-   `PipeConnectError`, whose cases are sentences. The ffi may add its own
-   errors for a ticket that decodes badly; they must be `LocalizedError`
-   with a sentence that names which side to look at. `pair` validates
-   nothing here: modelpipe reads the pairing string, so a string that is
-   not one comes back as `MpPairError.BadPairingString` with its own
-   sentence.
+1. **`connect` has modelpipe read the ticket before it dials.** The call is
+   `mpReadPairing`, the same one the form reads what is typed with, and it
+   is synchronous — one C call — so there is a per-keystroke answer as well
+   as a per-dial one. A string it refuses, and a string that carries a
+   pairing code, are refused with `PipeConnectError.invalidTicket`, whose
+   payload is modelpipe's sentence rather than a reason this app named; an
+   empty token is refused with `missingToken`. A code is spent through
+   `pair`, which validates nothing here either: modelpipe reads the whole
+   string, so one that is not a pairing string comes back as
+   `MpPairError.BadPairingString` with its own sentence.
+
+   Above the seam this is the `PairingReader` protocol in `GGChatCore`,
+   implemented by `ModelpipePairingReader` in `GGChatPipe` and handed to
+   `AppModel` by `PipeConnectorFactory` — the real one in every build,
+   DEBUG included, because the mock stands in for the far machine and not
+   for modelpipe's parser. `MockPipeConnector`, which cannot call the
+   binding from `GGChatCore`, therefore reads no tickets at all: it refuses
+   a blank one and accepts everything else.
 2. **`connect` returns once the listener is up**, not once the peer is
    reached. The session starts at `idle`; the walk to `relayed` or
    `direct` happens afterwards and the app shows it on the status pill.

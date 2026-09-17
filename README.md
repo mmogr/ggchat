@@ -27,8 +27,8 @@ go stale. The first is a real reply from gglib.
 
 Each release is on the [releases page](https://github.com/mmogr/ggchat/releases),
 with what it changed. What exists today is the core package (the provider
-protocol, the OpenAI-compatible implementation, the SSE parser, ticket
-shape validation, the pipe seam with its mock and its pairing) and the
+protocol, the OpenAI-compatible implementation, the SSE parser, the pipe
+seam with its mock, its pairing and its reader) and the
 app shell: a sidebar of conversations persisted with SwiftData, a
 providers sheet
 that adds a server by address or a pipe by its pairing string,
@@ -62,8 +62,9 @@ builds a mock provider streams canned replies without a server.
 
 **A shipped build now dials for real.** `GGChatPipe` is a target of its own
 that links `modelpipe-ffi`, and it is the only place the boundary check
-permits `import Modelpipe`; `ModelpipeConnector` behind it validates a ticket,
-dials, and hands back a session whose loopback URL is the far machine. The
+permits `import Modelpipe`; `ModelpipeConnector` behind it has modelpipe read
+a ticket, dials, and hands back a session whose loopback URL is the far
+machine. The
 mock stays on the DEBUG side of `PipeConnectorFactory` rather than being
 replaced, because it is what the Settings screen's "Force closed" control and
 twenty-odd app-model tests are written against. It is absent from a release
@@ -100,21 +101,29 @@ Each claim names the test that keeps it true.
   <!-- test: ErrorTests.testThePublishedHalfOfTheVocabularyIsModelpipesOwnList -->
   <!-- test: ErrorTests.testTheSideNamedIsTheSideThatWroteTheRefusal -->
   <!-- test: ErrorTests.testAMachineThatIsMerelyBusySaysToWaitRatherThanNamingASide -->
-- A ticket's shape is validated without decoding it: `pipe` prefix in any
-  ASCII case, base32 body, no padding, between 67 and 1643 characters, and
-  non-ASCII is rejected before any case folding. 67 is modelpipe's minimal
-  ticket — one endpoint id and nothing else — and a real ticket from
-  `modelpipe serve` is 81 characters and is accepted in either case.
-  <!-- test: TicketTests.testTheShapeARealTicketHas -->
-  <!-- test: TicketTests.testATicketTooShortToCarryAnEndpointIdIsRefused -->
-  <!-- test: TicketTests.testLongestPossibleTicketIsAcceptedAndOneMoreIsNot -->
-  <!-- test: TicketTests.testNonASCIIIsRejectedBeforeCaseFolding -->
-- A pairing string comes apart the way gglib's does: on the last `-`, with
-  a six-digit code after it, and the whole thing uppercased is what the
-  printed QR carries. A suffix that is not six digits is named as the
-  problem rather than swallowed.
-  <!-- test: PairingStringTests.testTheOneStringGGLibPrintsIsAccepted -->
-  <!-- test: PairingStringTests.testASuffixThatIsNotSixDigitsIsNamedAsTheProblem -->
+- A pairing string is read by modelpipe as it is typed and as it is scanned,
+  against `docs/pairing-v0.md`'s normative vectors: the ticket comes back in
+  its canonical lower-case form, so a QR scan and a paste of the same machine
+  store one digest; whether a code is there is all that crosses, never the
+  digits; and the sentence under the field when it will not read is
+  modelpipe's own, with neither the paste nor the binding's type names in it.
+  It is a decode and not a glance at the shape, so a ticket with a bad
+  checksum is refused where it was typed — and, as the spec says, ASCII
+  whitespace around a paste is trimmed and Unicode whitespace is not. The one
+  thing the form decides for itself, whether anything has been typed yet, is
+  decided over that same ASCII set, so the app holds no second opinion about
+  which spaces count in a pairing string or a ticket, and a field holding one
+  non-breaking space is read and refused rather than passed off as empty. The
+  app keeps no parser of its own, in a debug build either.
+  <!-- test: PairingReaderTests.testTheAcceptedVectorsReadAsTheSpecSays -->
+  <!-- test: PairingReaderTests.testAQRScanReadsTheSameTicketAsThePaste -->
+  <!-- test: PairingReaderTests.testABareTicketCarriesNoCode -->
+  <!-- test: PairingReaderTests.testARefusalIsModelpipesOwnSentenceAndNotThePaste -->
+  <!-- test: PairingReaderTests.testATicketWithABadChecksumIsRefusedAsItIsTyped -->
+  <!-- test: PairingReaderTests.testUnicodeWhitespaceIsNotTrimmed -->
+  <!-- test: PairingFieldTests.testOnlyModelpipesOwnWhitespaceCountsAsNothingTyped -->
+  <!-- test: PairingReaderWiringTests.testTheFactoryHandsOutModelpipesReaderInDebugToo -->
+  <!-- test: PairingReaderWiringTests.testTheAppModelTakesThatReaderByDefault -->
 - Pairing is modelpipe's own, and the pipe a device paired over is the one
   it keeps: the whole `ticket-code` string goes to `PipeConnector.pair`,
   which dials the ticket, waits for the far machine, spends the code there,
@@ -153,11 +162,15 @@ Each claim names the test that keeps it true.
   <!-- test: BindingTests.testTheBindingIsLinkedAndAnswersAcrossTheBoundary -->
   <!-- test: BindingTests.testEveryPipeStatusCrossesUnchanged -->
   <!-- test: BindingTests.testARelayedPipeCountsAsConnected -->
-- A real connector validates before it dials, so a ticket of the wrong shape
-  and an empty token each cost nothing — which matters for the bare ticket a
+- A real connector has modelpipe read the ticket before it dials, with the
+  same call the form reads what is typed with, so a ticket that is not one and
+  an empty token each cost nothing — which matters for the bare ticket a
   device that already holds its key is added by, where every request through
-  the pipe would be refused at the far edge after a dial spent finding out.
+  the pipe would be refused at the far edge after a dial spent finding out. A
+  string that carries a code is refused there too: a code is redeemed once,
+  through the pairing, and dialling it would spend it on nothing.
   <!-- test: ModelpipeConnectorTests.testATicketOfTheWrongShapeIsRefusedWithoutDialling -->
+  <!-- test: ModelpipeConnectorTests.testAPairingStringWithACodeIsRefusedWithoutDialling -->
   <!-- test: ModelpipeConnectorTests.testAnEmptyTokenIsRefusedEvenThoughTheBindingWouldNotWantIt -->
 - A failure from the transport, from a pairing, or from an identity file
   this device cannot use, reaches the person as a sentence, never as the
@@ -548,7 +561,7 @@ so its test sets it through Settings and measures the result instead.
 ## Layout
 
 ```
-Sources/GGChatCore/   no SwiftUI; the provider protocol, wire types, SSE, ticket, the pipe seam, mocks
+Sources/GGChatCore/   no SwiftUI; the provider protocol, wire types, SSE, the pipe and pairing seams, mocks
 Sources/GGChatPipe/   the only target that links modelpipe-ffi; no UI framework either
 Sources/GGChatUI/     SwiftUI; the app model, views, and SwiftData persistence
 App/                  the xcodegen spec, the generated project, and a @main struct with assets

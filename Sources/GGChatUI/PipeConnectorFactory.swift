@@ -1,10 +1,9 @@
 import GGChatCore
-
-// Only the release arm names anything from it, and `make analyze` compiles in
-// Debug, where an unconditional import is an unused one.
-#if !DEBUG
-    import GGChatPipe
-#endif
+// Unconditional now that the pairing reader is the real one in every build.
+// It used to be under `#if !DEBUG`, because only the release arm of `make()`
+// named anything from this module and `make analyze` compiles in Debug,
+// where an unconditional import would have been an unused one.
+import GGChatPipe
 
 /// The one place the app chooses its pipe implementation.
 public enum PipeConnectorFactory {
@@ -33,5 +32,17 @@ public enum PipeConnectorFactory {
         #else
             ModelpipeConnector()
         #endif
+    }
+
+    /// Who reads a pairing string, in every build including DEBUG.
+    ///
+    /// No `#if` here, unlike ``make()``. The mock stands in for the far
+    /// machine, which a debug build has no way to reach; it does not stand
+    /// in for modelpipe's parser, which needs nothing but the string. A
+    /// DEBUG reader of this app's own would be the second parse this change
+    /// exists to delete, and the form and the scanner would then be walked
+    /// against rules the shipped build does not follow.
+    public static func makePairingReader() -> any PairingReader {
+        ModelpipePairingReader()
     }
 }

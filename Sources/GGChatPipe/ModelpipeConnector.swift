@@ -47,6 +47,12 @@ public struct ModelpipeConnector: PipeConnector {
     /// redeem itself once the pipe is up.
     public static let reachWithinMs: UInt64 = 30_000
 
+    /// Who reads a ticket before it is dialled. Stateless — no stored
+    /// properties, one C call — so one of these is shared rather than made
+    /// per dial, and it is not injectable: a fake here would only prove that
+    /// a test's own parser agrees with the test.
+    static let reader = ModelpipePairingReader()
+
     private let dial: Dial
     private let pairing: Pair
     private let sleeper: any Sleeper
@@ -87,6 +93,19 @@ public struct ModelpipeConnector: PipeConnector {
     /// Validates, dials, and hands back a session once the local port is
     /// bound — not once the far machine answers.
     ///
+    /// modelpipe reads the ticket before anything is dialled, through the
+    /// very ``ModelpipePairingReader`` the form reads what is typed with — not
+    /// a second call to `mpReadPairing` beside it. A refused read has to
+    /// become a sentence somehow, and that mapping, including what to say when
+    /// the binding throws something that is not an `MpPairError` at all, is
+    /// the reader's and is written once. A commit that deletes a parse written
+    /// twice should not leave its error mapping written twice one module down.
+    ///
+    /// It is a decode and not a look at the shape, so a ticket whose checksum
+    /// is wrong costs no dial either. A string that carries a code is refused
+    /// here as well: a code is redeemed, not dialled, and
+    /// ``pair(pairing:deviceName:)`` is the way in for one.
+    ///
     /// The token is checked and then dropped. `mpConnect` takes no credential
     /// because modelpipe's connect side takes none: the listener forwards
     /// `Authorization` verbatim and the far edge is the only thing that checks
@@ -94,12 +113,19 @@ public struct ModelpipeConnector: PipeConnector {
     /// the session's `baseURL`. The check stays for the other way in: a bare
     /// ticket, added by a device that already holds its key, where an empty
     /// token means every request through the pipe would be refused at the far
-    /// edge after a dial spent finding that out. Pairing no longer comes
-    /// through here at all — ``pair(pairing:deviceName:)`` has modelpipe read
-    /// the string, including the ticket in it.
+    /// edge after a dial spent finding that out.
     public func connect(ticket: String, token: String) async throws -> any PipeSession {
-        if case .failure(let shape) = Ticket.validateShape(ticket) {
-            throw PipeConnectError.invalidTicket(shape)
+        let read: ReadPairing
+        switch Self.reader.read(ticket) {
+        case .success(let value):
+            read = value
+        case .failure(.malformed(let message)):
+            throw PipeConnectError.invalidTicket(message: message)
+        }
+        guard !read.hasCode else {
+            throw PipeConnectError.invalidTicket(
+                message: "That string carries a pairing code. A code is redeemed once, not dialled; "
+                    + "add the machine with it instead of storing it as a ticket.")
         }
         guard !token.trimmingCharacters(in: .whitespaces).isEmpty else {
             throw PipeConnectError.missingToken
