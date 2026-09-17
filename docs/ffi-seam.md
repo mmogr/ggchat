@@ -177,10 +177,26 @@ What the ffi owes here, beyond the two protocols above:
   #2's reason. A redeem sent into that gap is answered `502` by the
   tunnel's edge and the one-time code is spent on nothing.
 - **The pipe comes back up**, and becomes the provider's first session.
-  Hanging it up to dial again would cost a second hole punch, and without
+  Hanging it up to dial again would cost a second hole punch, and ~~without
   a lasting connect identity a second endpoint identity as well — so the
   fingerprint the far machine recorded as it minted the key would never be
-  the one this device then chats from.
+  the one this device then chats from.~~
+
+  > **Amended 2026-09-17 — the second half of that is no longer the
+  > reason.** A dial and a pairing both carry an identity now (below), so a
+  > redial would report the same device. Keeping the pipe still saves the
+  > hole punch, which is what `mpPair` returns it for.
+
+- **Somewhere to keep this device's endpoint key**, which is
+  `MpConnectOptions.identityPath`, the one field of that record this app
+  sets. Without it modelpipe mints a key per process, and the endpoint a
+  serving machine records beside this device's token stops existing the
+  moment the app is quit. The file is modelpipe's to write and to refuse;
+  what this side owes is a path — one per far machine, because a relay allows
+  one live connection per endpoint id — and the judgement to throw a key
+  away when it is the thing refusing a dial.
+  [ADR 0004](adr/0004-the-connect-identity-is-a-file.md) is why it is a file
+  at all, in an app whose other secrets are in the Keychain.
 - **The key is the only thing that must be kept**, and it goes to the
   Keychain as the provider's token. `PairedPipe` spells it `token` so that
   `scripts/check_log_calls.sh` catches a log line carrying it.

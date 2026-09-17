@@ -172,6 +172,31 @@ Each claim names the test that keeps it true.
   <!-- test: ModelpipeConnectorTests.testATicketOfTheWrongShapeIsRefusedWithoutDialling -->
   <!-- test: ModelpipeConnectorTests.testAPairingStringWithACodeIsRefusedWithoutDialling -->
   <!-- test: ModelpipeConnectorTests.testAnEmptyTokenIsRefusedEvenThoughTheBindingWouldNotWantIt -->
+- This device keeps one endpoint key per machine it pairs with, so the
+  fingerprint the other machine recorded as this device paired still names
+  this device after a relaunch, rather than a peer that stopped existing when
+  the app was quit. modelpipe writes the key into a file under Application
+  Support that no backup carries and no other user can read; two machines are
+  two keys, because a relay allows one live connection per endpoint and a
+  phone talking to two desktops needs two. The key admits nothing — what
+  admits this device is the token beside it in the Keychain — and
+  [ADR 0004](docs/adr/0004-the-connect-identity-is-a-file.md) is why it is a
+  file all the same.
+  <!-- test: BindingTests.testADeviceThatKeepsItsKeyIsTheSameDeviceNextTime -->
+  <!-- test: ModelpipeConnectorIdentityTests.testTheShippedConnectorKeepsAKeyWhereItSaysItDoes -->
+  <!-- test: ModelpipeConnectorIdentityTests.testEveryDialToOneMachineCarriesTheSameKey -->
+  <!-- test: ModelpipeConnectorPairingTests.testAPairingIsMadeAsTheDeviceThatWillDialLater -->
+  <!-- test: PipeIdentityFilesTests.testTwoTicketsGetTwoFiles -->
+  <!-- test: PipeIdentityFilesTests.testTheDirectoryIsMadePrivateAndKeptOutOfTheBackup -->
+- A key that machine's modelpipe will not accept — one half written by a
+  process that was killed, say — is thrown away and the dial tried once more,
+  because the advice it is refused with, remove the file or choose another
+  path, is not something a phone offers anybody. Once only: with nothing left
+  to throw away the refusal is about the path rather than the key, and the
+  person gets the sentence instead.
+  <!-- test: ModelpipeConnectorIdentityTests.testAKeyThisDeviceCannotUseIsThrownAwayAndTheDialTriedAgain -->
+  <!-- test: ModelpipeConnectorIdentityTests.testAnIdentityRefusalWithNoKeyToThrowAwayIsNotRetried -->
+  <!-- test: PipeIdentityFilesTests.testAFileOfNothingIsThrownAwayBeforeItIsHandedOver -->
 - A failure from the transport, from a pairing, or from an identity file
   this device cannot use, reaches the person as a sentence, never as the
   binding's own debug rendering, and says whether trying again is worth it.
@@ -589,6 +614,9 @@ against the mock.
 - [ADR 0003](docs/adr/0003-keychain-access-group.md): rejected. Credentials
   stay on the device and build that saved them; each machine is paired, or
   has its key typed, once.
+- [ADR 0004](docs/adr/0004-the-connect-identity-is-a-file.md): this device's
+  endpoint key is a file, one per machine — not a credential, and not in the
+  Keychain, because the binding writes it itself.
 
 ## Releases
 
