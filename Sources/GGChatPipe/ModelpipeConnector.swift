@@ -13,39 +13,14 @@ import Modelpipe
 /// without a network, a port or a far machine.
 public struct ModelpipeConnector: PipeConnector {
     /// How a ticket becomes a pipe. Defaults to modelpipe's own `mpConnect`.
-    public typealias Dial = @Sendable (String) async throws -> any MpPipeProtocol
-
-    /// What `mpPair` hands back, in the three fields this app uses.
     ///
-    /// A type of its own rather than `MpPaired`, because no test can build
-    /// one of those: its `pipe` is the concrete `MpPipe`, and an
-    /// `MpPipe(noHandle:)` crashes the moment anything asks it for a base
-    /// URL. `any MpPipeProtocol` is what a fake can be.
-    public struct Paired: Sendable {
-        /// The pipe the code was redeemed over, still up.
-        public var pipe: any MpPipeProtocol
-        /// This device's key from now on.
-        public var apiKey: String
-        /// The name the far machine holds the key under.
-        public var device: String
-
-        public init(pipe: any MpPipeProtocol, apiKey: String, device: String) {
-            self.pipe = pipe
-            self.apiKey = apiKey
-            self.device = device
-        }
-    }
-
-    /// How a pairing string becomes a key and the pipe it was redeemed over.
-    /// Defaults to modelpipe's own `mpPair`.
-    public typealias Pair = @Sendable (String, String?) async throws -> Paired
-
-    /// How long the far machine has to answer the dial the code is redeemed
-    /// over. Thirty seconds because that is roughly what iroh spends failing
-    /// to reach a machine that is switched off, and it is what gglib's own
-    /// connect side waits. modelpipe adds its own fixed deadline for the
-    /// redeem itself once the pipe is up.
-    public static let reachWithinMs: UInt64 = 30_000
+    /// The second argument is where this device keeps its endpoint key for
+    /// the machine being dialled, or `nil` to let modelpipe mint one for this
+    /// process alone. A path rather than a whole `MpConnectOptions` because it
+    /// is the only field of that record this app chooses; the rest are left at
+    /// the documented defaults, which is a thing to assert about the real
+    /// closure rather than a thing to pass through a fake.
+    public typealias Dial = @Sendable (String, String?) async throws -> any MpPipeProtocol
 
     /// Who reads a ticket before it is dialled. Stateless — no stored
     /// properties, one C call — so one of these is shared rather than made
@@ -53,39 +28,68 @@ public struct ModelpipeConnector: PipeConnector {
     /// a test's own parser agrees with the test.
     static let reader = ModelpipePairingReader()
 
-    private let dial: Dial
-    private let pairing: Pair
-    private let sleeper: any Sleeper
-    private let grace: Duration
+    // Internal rather than private: `ModelpipeConnector+Pairing.swift` is the
+    // other half of this type and reads them, and `private` in Swift reaches
+    // only as far as the file.
+    let dial: Dial
+    let pairing: Pair
+    let sleeper: any Sleeper
+    let grace: Duration
+    let identities: PipeIdentityFiles?
 
     public init(
         sleeper: any Sleeper = ContinuousClockSleeper(),
         grace: Duration = .milliseconds(1200)
     ) {
-        // Every field of `MpConnectOptions` is defaulted and the defaults are
-        // the documented right answer. Spelled with its label because uniffi
-        // emits the memberwise initialiser in Rust declaration order, so a
-        // reordered record silently reorders the arguments here.
-        self.init(sleeper: sleeper, grace: grace) { ticket in
-            try await mpConnect(ticket: ticket, options: MpConnectOptions())
-        } pairing: { pairing, label in
-            let paired = try await mpPair(
-                pairing: pairing, label: label, options: MpConnectOptions(),
-                reachWithinMs: Self.reachWithinMs)
-            return Paired(pipe: paired.pipe, apiKey: paired.apiKey, device: paired.device)
-        }
+        self = .live(sleeper: sleeper, grace: grace, identities: .applicationSupport())
     }
 
+    /// The connector exactly as it ships, keeping its keys wherever it is told
+    /// to.
+    ///
+    /// Internal, and apart from the public initialiser, so that a test can
+    /// point the real closures at a directory of its own: the two calls below
+    /// are the ones a shipped build makes, and a test that built its own
+    /// version of them would prove only that it agreed with itself.
+    static func live(
+        sleeper: any Sleeper = ContinuousClockSleeper(),
+        grace: Duration = .milliseconds(1200),
+        identities: PipeIdentityFiles?
+    ) -> ModelpipeConnector {
+        // Every other field of `MpConnectOptions` is defaulted and the
+        // defaults are the documented right answer. Spelled with its label
+        // because uniffi emits the memberwise initialiser in Rust declaration
+        // order, so a reordered record silently reorders the arguments here.
+        ModelpipeConnector(
+            sleeper: sleeper, grace: grace, identities: identities,
+            dial: { ticket, identityPath in
+                try await mpConnect(
+                    ticket: ticket, options: MpConnectOptions(identityPath: identityPath))
+            },
+            pairing: { pairing, label, identityPath in
+                let paired = try await mpPair(
+                    pairing: pairing, label: label,
+                    options: MpConnectOptions(identityPath: identityPath),
+                    reachWithinMs: Self.reachWithinMs)
+                return Paired(pipe: paired.pipe, apiKey: paired.apiKey, device: paired.device)
+            })
+    }
+
+    /// Internal, and `identities` defaults to none: a test that drives a fake
+    /// dial says for itself whether this device is keeping a key, and one that
+    /// forgot to would otherwise write into the real app's directory.
     init(
         sleeper: any Sleeper = ContinuousClockSleeper(),
         grace: Duration = .milliseconds(1200),
+        identities: PipeIdentityFiles? = nil,
         dial: @escaping Dial,
-        pairing: @escaping Pair = { _, _ in
+        pairing: @escaping Pair = { _, _, _ in
             throw PipeConnectError.unavailable
         }
     ) {
         self.sleeper = sleeper
         self.grace = grace
+        self.identities = identities
         self.dial = dial
         self.pairing = pairing
     }
@@ -132,73 +136,38 @@ public struct ModelpipeConnector: PipeConnector {
         }
         do {
             return try ModelpipeSession(
-                pipe: try await dial(ticket), sleeper: sleeper, grace: grace)
+                pipe: try await dialKeepingIdentity(ticket, forMachine: read.ticket),
+                sleeper: sleeper, grace: grace)
         } catch let error as MpError {
             throw Self.refusal(for: error)
         }
     }
 
-    /// Trades the code in a pairing string for this device's key, and keeps
-    /// the pipe it was redeemed over.
+    /// Dial, carrying this device's key for that machine, and dial once more
+    /// without the old key if the key was the thing that stopped it.
     ///
-    /// The whole string goes to modelpipe, which parses it, dials the ticket
-    /// in it, waits for the far machine, and only then presents the code —
-    /// the wait that stops a redeem being answered `502` by the tunnel's own
-    /// edge before there is a peer to forward it to, which spends the
-    /// one-time code on nothing.
+    /// The retry is the only way out of a key file this device cannot use.
+    /// modelpipe refuses one that is not a key, or that somebody else can
+    /// read, and the sentence it refuses with — choose another path or remove
+    /// it — asks for something nobody can do on a phone; a file half written
+    /// by a process that was killed is enough to earn it. Throwing that file
+    /// away costs this device its fingerprint on the far machine, which
+    /// records fingerprints and does not pin them, and buys back a device that
+    /// can connect at all.
     ///
-    /// A pipe that comes up somewhere this app will not send a request is
-    /// hung up, but the key still comes back: the code was spent to mint it,
-    /// and throwing it away would make the person ask the other machine for a
-    /// fresh invite to fix something on this one.
-    public func pair(pairing string: String, deviceName: String?) async throws -> PairedPipe {
-        let paired: Paired
+    /// Exactly once, and only when there was a file to throw away: a second
+    /// refusal is about the directory or the path rather than the key, and
+    /// dialling again would fail the same way for as long as anyone let it.
+    private func dialKeepingIdentity(
+        _ ticket: String, forMachine canonical: String
+    ) async throws -> any MpPipeProtocol {
+        let identity = identities?.path(forTicket: canonical)
         do {
-            paired = try await pairing(string, Self.labelWorthSending(deviceName))
-        } catch let error as MpPairError {
-            throw Self.refusal(for: error)
-        }
-        do {
-            return PairedPipe(
-                session: try ModelpipeSession(pipe: paired.pipe, sleeper: sleeper, grace: grace),
-                token: paired.apiKey, device: paired.device)
-        } catch {
-            await paired.pipe.shutdown()
-            return PairedPipe(session: nil, token: paired.apiKey, device: paired.device)
-        }
-    }
-
-    /// A device name fit to send: trimmed, and nil when that leaves nothing.
-    ///
-    /// No length cap and no character filter. modelpipe's edge decides both
-    /// when it records the name — it drops control and invisible formatting
-    /// characters and cuts to 64 — and a cut made here in `Character`s would
-    /// not agree with one made there in Unicode scalars.
-    static func labelWorthSending(_ deviceName: String?) -> String? {
-        guard let trimmed = deviceName?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else {
-            return nil
-        }
-        return trimmed
-    }
-
-    /// A pairing error as something worth showing a person.
-    ///
-    /// Exhaustive and with no `default`, so a case modelpipe adds is a
-    /// compile error here rather than a sentence nobody wrote. `message()`
-    /// and never `localizedDescription`, for the reason below.
-    ///
-    /// A refused code keeps its own case. It is the one failure with
-    /// somewhere to send the person — the next attempt starts on the other
-    /// machine — and `PipeConnectError.pairingRefused` is where the line
-    /// saying so is added to modelpipe's sentence.
-    static func refusal(for error: MpPairError) -> PipeConnectError {
-        switch error {
-        case .Refused:
-            return .pairingRefused(message: error.message())
-        case .NoCode, .BadPairingString, .Unexpected:
-            return .dialFailed(message: error.message(), retryable: false)
-        case .Dial, .Unreached, .Exchange, .Unknown:
-            return .dialFailed(message: error.message(), retryable: error.isRetryable())
+            return try await dial(ticket, identity)
+        } catch let error as MpError {
+            guard case .Identity = error, let identity, identities?.discard(at: identity) == true
+            else { throw error }
+            return try await dial(ticket, identity)
         }
     }
 

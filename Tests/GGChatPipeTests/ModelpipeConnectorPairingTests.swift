@@ -18,7 +18,7 @@ final class ModelpipeConnectorPairingTests: XCTestCase {
     /// A connector whose pairing is a fake, and whose dial fails the test if
     /// anything reaches it: keeping the paired pipe means never dialling.
     private func pairingConnector(
-        dial: @escaping ModelpipeConnector.Dial = { _ in
+        dial: @escaping ModelpipeConnector.Dial = { _, _ in
             XCTFail("the paired pipe was hung up and a second dial went out")
             return FakePipe()
         },
@@ -33,7 +33,7 @@ final class ModelpipeConnectorPairingTests: XCTestCase {
     /// fingerprint the far machine recorded as it minted the key would never
     /// be the one this device chats from.
     func testThePipeTheCodeWasRedeemedOverIsTheSession() async throws {
-        let connector = pairingConnector { _, _ in
+        let connector = pairingConnector { _, _, _ in
             .init(
                 pipe: FakePipe(baseUrl: "http://127.0.0.1:49333/v1"), apiKey: "far-machine-key",
                 device: "Kitchen iPad")
@@ -51,7 +51,7 @@ final class ModelpipeConnectorPairingTests: XCTestCase {
     /// rather than empty when they typed nothing.
     func testTheLabelRidesAsGivenAndABlankOneIsNotSent() async throws {
         let seen = Mutex<[(String, String?)]>([])
-        let connector = pairingConnector { pairing, label in
+        let connector = pairingConnector { pairing, label, _ in
             seen.withLock { $0.append((pairing, label)) }
             return .init(pipe: FakePipe(), apiKey: "far-machine-key", device: "this device")
         }
@@ -65,10 +65,70 @@ final class ModelpipeConnectorPairingTests: XCTestCase {
         XCTAssertEqual(calls.map(\.1), ["Kitchen iPad", nil, nil])
     }
 
+    /// A pairing dials, so it carries the same endpoint key a later dial to
+    /// that machine will: the fingerprint the far machine records beside the
+    /// key as it mints it is then the device that goes on chatting through the
+    /// pipe, rather than one that existed for the length of the exchange.
+    func testAPairingIsMadeAsTheDeviceThatWillDialLater() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(
+            path: "ggchat-pairing-\(UUID().uuidString)")
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+        let identities = PipeIdentityFiles(directory: root)
+        let seen = Mutex<[String?]>([])
+        let connector = ModelpipeConnector(
+            sleeper: ImmediateSleeper(), grace: .milliseconds(1), identities: identities,
+            dial: { _, _ in FakePipe() },
+            pairing: { _, _, identityPath in
+                seen.withLock { $0.append(identityPath) }
+                return .init(pipe: FakePipe(), apiKey: "far-machine-key", device: "this device")
+            })
+
+        _ = try await connector.pair(pairing: "\(realTicket)-483920", deviceName: nil)
+
+        XCTAssertEqual(
+            seen.withLock { $0 }, [identities.path(forTicket: realTicket)],
+            "the pairing introduced this device by a name no later dial will use")
+    }
+
+    /// What modelpipe says about a string that is not a pairing string.
+    private static let unreadable = MpPairError.BadPairingString(
+        reason: "the part before the code is not a ticket")
+
+    /// A string this app cannot read is handed over with no key rather than
+    /// refused here: modelpipe is about to read the same string and refuse it
+    /// in its own words, and a refusal written here as well would be the
+    /// second copy of a sentence this seam exists to keep in one place.
+    func testAPairingStringThatCannotBeReadIsStillModelpipesToRefuse() async {
+        let root = FileManager.default.temporaryDirectory.appending(
+            path: "ggchat-pairing-\(UUID().uuidString)")
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+        let seen = Mutex<[String?]>([])
+        let connector = ModelpipeConnector(
+            sleeper: ImmediateSleeper(), grace: .milliseconds(1),
+            identities: PipeIdentityFiles(directory: root),
+            dial: { _, _ in FakePipe() },
+            pairing: { _, _, identityPath in
+                seen.withLock { $0.append(identityPath) }
+                throw Self.unreadable
+            })
+
+        do {
+            _ = try await connector.pair(pairing: "nope-483920", deviceName: nil)
+            XCTFail("a string that is not a pairing string paired")
+        } catch let error as PipeConnectError {
+            guard case .dialFailed(let message, _) = error else { return XCTFail("\(error)") }
+            XCTAssertEqual(message, Self.unreadable.message())
+        } catch {
+            XCTFail("\(error)")
+        }
+
+        XCTAssertEqual(seen.withLock { $0 }, [nil], "a key was named for a machine nothing could identify")
+    }
+
     /// The key is the one thing here worth stealing, and the session is the
     /// object the app logs the base URL of.
     func testThePairedSessionIsNotCarryingTheKey() async throws {
-        let connector = pairingConnector { _, _ in
+        let connector = pairingConnector { _, _, _ in
             .init(pipe: FakePipe(), apiKey: "far-machine-key", device: "this device")
         }
 
@@ -83,7 +143,7 @@ final class ModelpipeConnectorPairingTests: XCTestCase {
     /// fresh invite to fix something on this one.
     func testAPairedPipeThatIsRefusedStillHandsTheKeyBack() async throws {
         let pipe = FakePipe(baseUrl: "http://192.168.1.4:8080/v1")
-        let connector = pairingConnector { _, _ in
+        let connector = pairingConnector { _, _, _ in
             .init(pipe: pipe, apiKey: "far-machine-key", device: "this device")
         }
 

@@ -14,9 +14,11 @@ final class ModelpipeConnectorTests: XCTestCase {
 
     private func connector(
         sleeper: any Sleeper = ImmediateSleeper(),
+        identities: PipeIdentityFiles? = nil,
         dial: @escaping ModelpipeConnector.Dial
     ) -> ModelpipeConnector {
-        ModelpipeConnector(sleeper: sleeper, grace: .milliseconds(1), dial: dial)
+        ModelpipeConnector(
+            sleeper: sleeper, grace: .milliseconds(1), identities: identities, dial: dial)
     }
 
     // MARK: - Refused before anything is dialled
@@ -26,7 +28,7 @@ final class ModelpipeConnectorTests: XCTestCase {
     /// instead of it.
     func testATicketOfTheWrongShapeIsRefusedWithoutDialling() async {
         let dialled = Mutex(false)
-        let connector = connector { _ in
+        let connector = connector { _, _ in
             dialled.withLock { $0 = true }
             return FakePipe()
         }
@@ -52,7 +54,7 @@ final class ModelpipeConnectorTests: XCTestCase {
     /// where it does belong.
     func testAPairingStringWithACodeIsRefusedWithoutDialling() async {
         let dialled = Mutex(false)
-        let connector = connector { _ in
+        let connector = connector { _, _ in
             dialled.withLock { $0 = true }
             return FakePipe()
         }
@@ -71,7 +73,7 @@ final class ModelpipeConnectorTests: XCTestCase {
 
     func testAnEmptyTokenIsRefusedEvenThoughTheBindingWouldNotWantIt() async {
         let dialled = Mutex(false)
-        let connector = connector { _ in
+        let connector = connector { _, _ in
             dialled.withLock { $0 = true }
             return FakePipe()
         }
@@ -90,7 +92,7 @@ final class ModelpipeConnectorTests: XCTestCase {
 
     func testAGoodTicketDialsAndTheTokenGoesNoFurther() async throws {
         let seen = Mutex<String?>(nil)
-        let connector = connector { ticket in
+        let connector = connector { ticket, _ in
             seen.withLock { $0 = ticket }
             return FakePipe(baseUrl: "http://127.0.0.1:49222/v1")
         }
@@ -105,7 +107,7 @@ final class ModelpipeConnectorTests: XCTestCase {
     }
 
     func testABaseURLThatIsNotAURLFailsTheDialRatherThanCrashing() async {
-        let connector = connector { _ in FakePipe(baseUrl: "not a url at all") }
+        let connector = connector { _, _ in FakePipe(baseUrl: "not a url at all") }
         do {
             _ = try await connector.connect(ticket: realTicket, token: "the-key")
             XCTFail("a base URL that is not one was accepted")
@@ -183,7 +185,7 @@ final class ModelpipeConnectorTests: XCTestCase {
     }
 
     func testAnErrorFromTheDialIsNotSwallowed() async {
-        let connector = connector { _ in throw MpError.PeerUnreachable }
+        let connector = connector { _, _ in throw MpError.PeerUnreachable }
         do {
             _ = try await connector.connect(ticket: realTicket, token: "the-key")
             XCTFail("a failed dial produced a session")
