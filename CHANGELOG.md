@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.3.1](https://github.com/mmogr/ggchat/compare/v0.3.0...v0.3.1) (2026-09-17)
+
+
+### What the app now does
+
+* **pipe:** a device keeps one endpoint key per machine, so the far side sees the same device every time ([#104](https://github.com/mmogr/ggchat/issues/104)) ([97ed69c](https://github.com/mmogr/ggchat/commit/97ed69cc630a535d92a69ea99ccb406e403a2b2d))
+
+
+### What the app stopped getting wrong
+
+* **pipe:** a pairing that cannot be stored hangs up the pipe its code was spent over ([#105](https://github.com/mmogr/ggchat/issues/105)) ([26afb03](https://github.com/mmogr/ggchat/commit/26afb03a689215c15810d1fc4894564fefda5a34))
+
+
+### Documentation
+
+* **pipe:** keeping the pipe a code was redeemed over saves a hole punch, and no longer an identity ([#107](https://github.com/mmogr/ggchat/issues/107)) ([8e42d36](https://github.com/mmogr/ggchat/commit/8e42d36335b96b55cd8024eebecf278f365ab740))
+
 ## [0.3.0](https://github.com/mmogr/ggchat/compare/v0.2.4...v0.3.0) (2026-09-17)
 
 
