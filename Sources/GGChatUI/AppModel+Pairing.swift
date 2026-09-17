@@ -47,7 +47,9 @@ extension AppModel {
         _ config: ProviderConfig, pairing: String, ticket: String, deviceName: String?
     ) async throws {
         let paired = try await pair(pairing, deviceName: deviceName, holding: config.id)
-        try addProvider(config, credentials: [.ticket: ticket, .token: paired.token])
+        try await storing(paired) {
+            try addProvider(config, credentials: [.ticket: ticket, .token: paired.token])
+        }
         log.log(.info, "paired with \(config.name) as \(paired.device); the pipe it paired over is its own")
         await keep(paired, for: config, ticket: ticket)
     }
@@ -74,7 +76,9 @@ extension AppModel {
         _ config: ProviderConfig, pairing: String, ticket: String, deviceName: String?
     ) async throws {
         let paired = try await pair(pairing, deviceName: deviceName, holding: config.id)
-        try updateProvider(config, credentials: [.ticket: ticket, .token: paired.token])
+        try await storing(paired) {
+            try updateProvider(config, credentials: [.ticket: ticket, .token: paired.token])
+        }
         log.log(.info, "paired with \(config.name) again, as \(paired.device); the new pipe is its own")
         await disconnectPipe(for: config.id)
         await keep(paired, for: config, ticket: ticket)
@@ -132,5 +136,35 @@ extension AppModel {
         }
         setPipeStatus(.idle, for: config.id)
         await installPipe(session, for: config, ticket: ticket, generation: nextDialGeneration(for: config.id))
+    }
+
+    /// Runs the write that has to land before a paired pipe is worth keeping,
+    /// and hangs that pipe up if the write throws.
+    ///
+    /// `installPipe` hangs up a session it will not install, so every *dial*
+    /// has somewhere for an unwanted pipe to go. A pairing whose store or
+    /// Keychain write fails never reaches it: it returns before ``keep``, and
+    /// dropping the session does not close anything. Nothing here has a
+    /// `deinit`, and the session's driver task holds the binding's pipe until
+    /// its status stream ends, so the far machine would go on counting this
+    /// device as connected — and the pipe would be absent from `pipeSessions`,
+    /// which is what `networkDidChange` walks and what `hangUpEveryPipe`
+    /// closes for each provider it holds a status for. On the add path the
+    /// provider is not in `providers` either; on the edit path it is, and the
+    /// background pass then closes the session it already had rather than the
+    /// orphan. Either way the orphan would outlive a suspension, which is the
+    /// one thing this app says no pipe does.
+    ///
+    /// The same rule the pairing itself had before it moved behind the
+    /// connector: a pairing that ends badly must not leave a pipe up, because
+    /// there is nothing to retry through it. A retry dials again, and a spent
+    /// code needs a fresh invite on the other machine.
+    private func storing<T>(_ paired: PairedPipe, _ write: () throws -> T) async throws -> T {
+        do {
+            return try write()
+        } catch {
+            await paired.session?.shutdown()
+            throw error
+        }
     }
 }

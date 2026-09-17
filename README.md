@@ -363,6 +363,15 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelScenePhaseTests.testABackgroundDuringAResumeLeavesNoPipeBehind -->
   <!-- test: AppModelScenePhaseTests.testAReturnDuringAHangUpWaitsForItAndDialsAgain -->
   <!-- test: AppModelScenePhaseTests.testADialThatLandsWhileTheAppIsAwayHangsItselfUp -->
+- A pairing that cannot be stored hangs up the pipe its code was spent over,
+  rather than leaving one nothing in the app is holding. Every other pipe is
+  reachable because it is in the session list the background pass and the
+  network watcher walk — so one kept for a provider that was never added, or
+  that went away while the pairing was out, never reaches that list and is the
+  single pipe neither could ever close.
+  <!-- test: AppModelPairingFailureTests.testAPairingWhoseKeyWillNotSaveHangsUpThePipeItWasRedeemedOver -->
+  <!-- test: AppModelPairingFailureTests.testARePairingOfAProviderThatWentAwayHangsUpTheNewPipe -->
+  <!-- test: AppModelPairingFailureTests.testAPairingThatStoresCleanlyKeepsItsPipe -->
 - When the network under the device changes while the app is open, every
   pipe it holds is told, so its endpoint looks at the network again then,
   whether or not iroh's own watch on the routing socket noticed the move.
