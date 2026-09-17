@@ -1,16 +1,25 @@
 name: Deploy Docs to GitHub Pages
 
 on:
-  # The build had two triggers and neither had ever fired one run: the first
-  # release is still unpublished, and nobody had dispatched it by hand. So
-  # the static-hosting build below -- which is not the DocC build `make docs`
-  # and CI's Docs job run, because only this one passes
-  # --transform-for-static-hosting and a hosting base path -- had never been
-  # compiled at all, and the first time it ran would have been the release.
+  # A push to main builds this site and publishes it. The build here is not
+  # the DocC build `make docs` and CI's Docs job run: only this one passes
+  # --transform-for-static-hosting and a hosting base path, so only this one
+  # produces something a browser can serve.
+  #
+  # There was a `release: published` trigger as well, and it could never have
+  # worked. A release run's ref is the tag, and the `github-pages` environment
+  # admits only the branch `main`, so both releases that reached it -- v0.2.4
+  # and v0.3.0 -- were refused with "Tag ... is not allowed to deploy to
+  # github-pages due to environment protection rules". It also shared the
+  # concurrency group below: at v0.3.0 the release was published nine seconds
+  # after the release commit landed, so its run displaced the push run already
+  # queued and then failed the rule itself. Under the guard that used to sit on
+  # the deploy job that push would only have built, so nothing was lost that
+  # day -- but between the two, nothing had published the site since a
+  # hand-dispatched run on 2026-09-09. Publishing from main is what the
+  # environment already permits.
   push:
     branches: [main]
-  release:
-    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -19,9 +28,14 @@ permissions:
   id-token: write
 
 concurrency:
-  # Not cancel-in-progress: with a push trigger, the merge that follows a
-  # release publish now lands in this same group, and cancelling would take
-  # down the deploy of the release that had just been tagged.
+  # Not cancel-in-progress, which is GitHub's own advice for a Pages workflow:
+  # a deployment that has started should be allowed to finish. It is not that
+  # cancelling would strand it -- `deploy-pages` handles SIGTERM by cancelling
+  # the deployment it created -- but that a half-finished publish buys nothing
+  # when the newer run is about to supersede it anyway. Note the setting only
+  # governs runs already in flight; a run merely *queued* in this group is
+  # cancelled by a newer one regardless, which is how the release run displaced
+  # a push above.
   group: pages
   cancel-in-progress: false
 
@@ -52,14 +66,14 @@ jobs:
   deploy:
     name: Deploy
     needs: build
-    # A push builds the site and stops there. Two reasons, and either alone
-    # is enough: GitHub Pages is not enabled on this repository at all
-    # (`gh api repos/mmogr/ggchat/pages` is a 404 and `has_pages` is false),
-    # so `deploy-pages` fails whenever it runs -- and once it is enabled,
-    # publishing every commit on main is a decision for whoever enables it,
-    # not a side effect of wanting the build exercised. Drop this line to
-    # make main deploy on push.
-    if: github.event_name != 'push'
+    # A push used to build the site and stop there, for two reasons its
+    # comment said were each enough on their own. Both have since been
+    # answered: GitHub Pages was not enabled on this repository, and now is
+    # (`gh api repos/mmogr/ggchat/pages` answers, and the site serves); and
+    # publishing every commit on main was left as a decision for whoever
+    # enabled it, which was taken on 2026-09-17. So the guard is gone and main
+    # publishes on push, which is also the only ref the `github-pages`
+    # environment admits.
     runs-on: ubuntu-latest
     environment:
       name: github-pages
