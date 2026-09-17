@@ -16,10 +16,10 @@ extension AppModel {
     /// token and the pipe becomes its first session.
     ///
     /// No second dial. The pipe is up and reached by the time the key exists,
-    /// so hanging it up to dial again would cost another hole punch and
-    /// another endpoint identity — and the fingerprint the far machine
-    /// recorded as it minted the key would never be the one this device then
-    /// chats from.
+    /// so hanging it up to dial again would cost another hole punch for
+    /// nothing. It used to cost another endpoint identity as well, which is
+    /// no longer true: this device keeps one per machine it pairs with, so a
+    /// redial introduces itself as the same device.
     ///
     /// The key is stored before the session is installed, so a redeemed code
     /// is never spent for nothing: whatever happens to the pipe afterwards

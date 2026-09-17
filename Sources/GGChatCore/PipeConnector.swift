@@ -32,10 +32,10 @@ public protocol PipeConnector: Sendable {
 /// machine holds it under, and the pipe the code was redeemed over.
 ///
 /// The pipe comes back still up, and it becomes the provider's first
-/// session. Hanging it up and dialling again would cost a second hole punch
-/// and a second endpoint identity, so the fingerprint the far machine
-/// recorded at redemption would never be the one this device then chats
-/// from.
+/// session. Hanging it up and dialling again would cost a second hole punch.
+/// It cost a second endpoint identity too, until this device began keeping
+/// one per machine it pairs with; now a redial reports the same device, and
+/// what is saved is the punch.
 public struct PairedPipe: Sendable {
     /// The pipe the code was redeemed over, still up.
     ///
