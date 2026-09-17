@@ -29,9 +29,9 @@ final class ModelpipeConnectorPairingTests: XCTestCase {
 
     /// D2, and the reason `mpPair` hands the pipe back at all: the pipe the
     /// code was redeemed over is the provider's first session. A second dial
-    /// would be a second hole punch and a second endpoint identity, so the
-    /// fingerprint the far machine recorded as it minted the key would never
-    /// be the one this device chats from.
+    /// would be a second hole punch for nothing — and, before this device
+    /// kept an endpoint key per machine, a second identity as well, which is
+    /// the half of this rationale that has since stopped being true.
     func testThePipeTheCodeWasRedeemedOverIsTheSession() async throws {
         let connector = pairingConnector { _, _, _ in
             .init(

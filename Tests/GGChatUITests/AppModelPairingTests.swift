@@ -90,8 +90,9 @@ final class AppModelPairingTests: XCTestCase {
     /// The whole point of the branch: the key is fetched over the pipe, not
     /// read off the other machine's screen and typed in here — and the pipe
     /// it was fetched over is the one the provider goes on using. A second
-    /// dial would be a second hole punch and a second endpoint identity, so
-    /// the count of ordinary dials has to stay at zero.
+    /// dial would be a second hole punch for nothing, so the count of
+    /// ordinary dials has to stay at zero. It would no longer be a second
+    /// endpoint identity: this device keeps one per machine now.
     @MainActor
     func testARedeemedCodeBecomesTheProvidersTokenAndThePipeConnects() async throws {
         let rig = makeModel()
