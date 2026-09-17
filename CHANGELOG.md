@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://github.com/mmogr/ggchat/compare/v0.2.4...v0.3.0) (2026-09-17)
+
+
+### What the app now does
+
+* **pipe:** pairing is modelpipe's own, and the pipe a device paired over is the one it keeps ([#100](https://github.com/mmogr/ggchat/issues/100)) ([e4a7148](https://github.com/mmogr/ggchat/commit/e4a7148733b102ac923824e6ef52a63017e71967))
+
+
+### What the app stopped getting wrong
+
+* **ci:** make ci reads the build where Swift 6.4 puts it, and make uitest names a simulator that exists ([#99](https://github.com/mmogr/ggchat/issues/99)) ([79607e1](https://github.com/mmogr/ggchat/commit/79607e183314aa8e49c2f2a733745fb41c6fa3ac))
+* **status:** a pipe's status pane appears once the pipe is up, and a probe never raises an alert ([#93](https://github.com/mmogr/ggchat/issues/93)) ([4264fc9](https://github.com/mmogr/ggchat/commit/4264fc97b35bc33cda684786a6dc5d3b2838398a))
+* **ui:** leaving and coming back take turns, so no pipe outlives a suspension and none stays down after a return ([#97](https://github.com/mmogr/ggchat/issues/97)) ([ebf4dea](https://github.com/mmogr/ggchat/commit/ebf4dea96ff1978b7d96d572695b1c18a7995f8b))
+
 ## [0.2.4](https://github.com/mmogr/ggchat/compare/v0.2.3...v0.2.4) (2026-09-13)
 
 
