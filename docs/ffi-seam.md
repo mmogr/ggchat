@@ -246,6 +246,14 @@ and not with gglib 0.18.
   > ends when the pairing does, and the pipe it leaves up is installed by
   > the same guard every other dial goes through — so one that lands after
   > the hang-up pass is hung up rather than kept.
+  >
+  > **Amended 2026-09-17 — that held only where the pairing reached the
+  > install.** A pairing whose key or whose provider would not save returns
+  > before it, and the pipe it left up was then absent from `pipeSessions` —
+  > the list the background pass and the network watcher walk — so nothing
+  > in the app could reach it, and it alone could outlive a suspension. It is
+  > hung up on that path now, which is the rule the pairing carried for
+  > itself before it moved behind the connector.
 - The Keychain holds the ticket and token under the provider's id; the
   config holds only a digest, used to count distinct tickets (the app's
   kill criterion, shown in Settings).
