@@ -199,7 +199,11 @@ What the ffi owes here, beyond the two protocols above:
   at all, in an app whose other secrets are in the Keychain.
 - **The key is the only thing that must be kept**, and it goes to the
   Keychain as the provider's token. `PairedPipe` spells it `token` so that
-  `scripts/check_log_calls.sh` catches a log line carrying it.
+  `scripts/check_log_calls.sh` catches a log line that reads it, and prints
+  it as `<redacted>` so that one interpolating the whole value carries
+  nothing either. `Paired` and the `OpenAICompatibleProvider` the key is
+  handed to print it the same way, and `ReadPairing` prints its ticket as
+  the ticket's digest.
 - **Every failure is a sentence.** `MpPairError.message()`, never
   `localizedDescription`, which uniffi generates as `String(reflecting:)`.
   `Refused` keeps a case of its own above the seam, because it is the one

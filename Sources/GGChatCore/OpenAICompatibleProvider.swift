@@ -93,3 +93,19 @@ public struct OpenAICompatibleProvider: Provider {
         return .server(status: status, code: nil, message: message)
     }
 }
+
+/// The key never reaches the value's printed form. It is the server's API
+/// key, or for a pipe this device's own, from its pairing. Interpolated,
+/// reflected or dumped, a provider shows its address, as `Redaction` gives
+/// it, and `<redacted>` in the key's place, or `none` when it has no key.
+extension OpenAICompatibleProvider: CustomStringConvertible, CustomReflectable {
+    public var description: String {
+        "OpenAICompatibleProvider(baseURL: \(Redaction.describe(baseURL)), apiKey: \(printedKey))"
+    }
+
+    public var customMirror: Mirror {
+        Mirror(self, children: ["baseURL": Redaction.describe(baseURL), "apiKey": printedKey], displayStyle: .struct)
+    }
+
+    private var printedKey: String { apiKey == nil ? "none" : "<redacted>" }
+}

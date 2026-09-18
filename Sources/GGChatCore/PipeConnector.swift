@@ -46,7 +46,8 @@ public struct PairedPipe: Sendable {
     public let session: (any PipeSession)?
     /// This device's key from now on. Named `token` and not `key` so that
     /// `scripts/check_log_calls.sh`, which refuses a log line interpolating
-    /// `token`, catches one that carries this.
+    /// `token`, catches one that reads it. The whole value prints it as
+    /// `<redacted>`, so a line interpolating `\(paired)` carries nothing either.
     public let token: String
     /// The name the far machine holds the key under, as it recorded it.
     public let device: String
@@ -55,6 +56,23 @@ public struct PairedPipe: Sendable {
         self.session = session
         self.token = token
         self.device = device
+    }
+}
+
+/// A pairing's key never reaches the value's printed form. Interpolated,
+/// reflected or dumped, a `PairedPipe` shows the device, whether a pipe
+/// came back, and `<redacted>` in the key's place. `token` is still there
+/// to read where the key is stored; this covers interpolation, reflection
+/// and `dump`, which `scripts/check_log_calls.sh` cannot see by name.
+extension PairedPipe: CustomStringConvertible, CustomReflectable {
+    public var description: String {
+        "PairedPipe(device: \(device), token: <redacted>, session: \(session == nil ? "none" : "up"))"
+    }
+
+    public var customMirror: Mirror {
+        Mirror(
+            self, children: ["device": device, "token": "<redacted>", "session": session == nil ? "none" : "up"],
+            displayStyle: .struct)
     }
 }
 

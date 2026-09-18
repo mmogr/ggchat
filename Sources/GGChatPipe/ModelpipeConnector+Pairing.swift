@@ -139,3 +139,14 @@ extension ModelpipeConnector {
         }
     }
 }
+
+/// The key never reaches the value's printed form: interpolated, reflected
+/// or dumped, a `Paired` shows the device and `<redacted>` in the key's
+/// place, as `MpPaired`'s own description does.
+extension ModelpipeConnector.Paired: CustomStringConvertible, CustomReflectable {
+    public var description: String { "Paired(device: \(device), apiKey: <redacted>)" }
+
+    public var customMirror: Mirror {
+        Mirror(self, children: ["device": device, "apiKey": "<redacted>"], displayStyle: .struct)
+    }
+}

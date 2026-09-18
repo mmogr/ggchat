@@ -23,6 +23,23 @@ public struct ReadPairing: Sendable, Equatable {
     }
 }
 
+/// The ticket never reaches the value's printed form. Interpolated,
+/// reflected or dumped, a `ReadPairing` shows the ticket's
+/// ``Ticket/digest(_:)`` in its place, the non-secret fingerprint a
+/// `ProviderConfig` already keeps, so two readings can still be told apart
+/// in a failed test.
+extension ReadPairing: CustomStringConvertible, CustomReflectable {
+    public var description: String {
+        "ReadPairing(ticket: <digest \(Ticket.digest(ticket))>, hasCode: \(hasCode))"
+    }
+
+    public var customMirror: Mirror {
+        Mirror(
+            self, children: ["ticket": "<digest \(Ticket.digest(ticket))>", "hasCode": hasCode],
+            displayStyle: .struct)
+    }
+}
+
 /// Why a pairing string could not be read.
 ///
 /// One case, carrying a sentence written elsewhere. The reasons a pairing
