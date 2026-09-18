@@ -252,8 +252,9 @@ jobs:
           DEVICE: ${{ matrix.device }}
         run: |
           # Newest runtime first, sorted on a tuple of integers. Sorting the
-          # keys as strings puts iOS-18-4 above iOS-26-5, which would hand an
-          # iOS 18 device to an app that needs 26 and draws with .glassEffect.
+          # keys as strings would put iOS-9-3 above iOS-18-4, and iOS-26-5
+          # above iOS-26-10, which could hand an older runtime's device to an
+          # app that needs 26 and draws with .glassEffect.
           # The family is the matrix's, not a constant: with it hard-coded to
           # iPhone the iPad leg would boot an iPhone and pass as a fifth copy
           # of the run above it.

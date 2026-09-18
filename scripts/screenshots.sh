@@ -4,6 +4,9 @@
 #
 # Usage: scripts/screenshots.sh [simulator-name]
 #
+# The simulator is the one of that name on the newest runtime that has it
+# (scripts/simulator_udid.sh), as for `make uitest`.
+#
 # Start gglib first: two of the three images below are taken only by the live
 # walks. If yours enforces an API key, set GGCHAT_LIVE_BASE_URL and
 # GGCHAT_LIVE_API_KEY too, or those walks reach a server that refuses them.
@@ -13,6 +16,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SIMULATOR="${1:-iPhone 17 Pro}"
+UDID="$("$ROOT/scripts/simulator_udid.sh" "$SIMULATOR")"
 OUT="$ROOT/docs/screenshots"
 BUNDLE="$(mktemp -d)/ui.xcresult"
 
@@ -30,7 +34,7 @@ cd "$ROOT"
 TEST_RUNNER_GGCHAT_LIVE_BASE_URL="${GGCHAT_LIVE_BASE_URL-}" \
     TEST_RUNNER_GGCHAT_LIVE_API_KEY="${GGCHAT_LIVE_API_KEY-}" \
     xcodebuild test -project App/ggchat.xcodeproj -scheme ggchat \
-    -destination "platform=iOS Simulator,name=$SIMULATOR" \
+    -destination "id=$UDID" \
     -resultBundlePath "$BUNDLE" -only-testing:ggchatUITests \
     CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
 

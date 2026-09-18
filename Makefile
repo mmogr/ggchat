@@ -161,14 +161,16 @@ UITEST = $(LIVE_ENV) xcodebuild test -project App/ggchat.xcodeproj -scheme ggcha
 	-only-testing:ggchatUITests \
 	CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
 
-# The udid of the simulator named $(SIMULATOR), newest runtime first. A
-# display setting has to be applied to the same device the walk then runs on,
-# and `name=` never says which device that was. Sorted on a tuple of integers
-# because sorting the runtime keys as strings puts iOS-18-4 above iOS-26-5.
-# A name no installed runtime has is a sentence on stderr and an empty
-# result, and each recipe below refuses an empty udid rather than handing
-# xcodebuild `id=`.
-udid = $$(xcrun simctl list devices available --json | python3 -c "import json,re,sys;d=json.load(sys.stdin)['devices'];v=lambda k:tuple(map(int,re.findall(r'\d+',k)));u=next((x['udid'] for k in sorted((k for k in d if 'iOS' in k),key=v,reverse=True) for x in d[k] if x['name']=='$(SIMULATOR)'),None);print(u) if u else sys.exit('no available iOS simulator named $(SIMULATOR)')")
+# The udid of the simulator named $(SIMULATOR), and of the one named
+# $(IPAD), each on the newest runtime that has it. `name=` looks only at the
+# newest runtime installed, which need not have that device at all, and never
+# says which device it chose; a display setting has to be applied to the
+# same device the walk then runs on. scripts/simulator_udid.sh picks the
+# device for every recipe here and for scripts/screenshots.sh. A name no
+# installed runtime has is a sentence on stderr and an empty result, and each
+# recipe below refuses an empty udid rather than handing xcodebuild `id=`.
+udid = $$(scripts/simulator_udid.sh '$(SIMULATOR)')
+ipad_udid = $$(scripts/simulator_udid.sh '$(IPAD)')
 
 # Drives the app on a booted iPhone simulator. The live half runs against
 # GGCHAT_LIVE_BASE_URL when it is set, typing GGCHAT_LIVE_API_KEY into the
@@ -191,8 +193,8 @@ IPAD ?= iPad Pro 13-inch (M5)
 # at an iPad runs it and fails there, which is why this target exists rather
 # than a note in the README.
 uitest-ipad:
-	$(UITEST) -skip-testing:ggchatUITests/ReduceTransparencyUITests \
-		-destination 'platform=iOS Simulator,name=$(IPAD)'
+	udid=$(ipad_udid); [ -n "$$udid" ] || { echo 'uitest-ipad: no simulator udid' >&2; exit 1; }; \
+	$(UITEST) -skip-testing:ggchatUITests/ReduceTransparencyUITests -destination "id=$$udid"
 
 # Dark and Increase Contrast are settings on the device, not launch
 # arguments, so the device is booted and set first. `simctl ui` prints what it
