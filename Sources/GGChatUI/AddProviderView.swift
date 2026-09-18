@@ -125,8 +125,8 @@ struct AddProviderView: View {
             .navigationTitle("Add provider")
             #if os(iOS)
                 .sheet(isPresented: $scanning) {
-                    ScanTicketView(reader: model.pairingReader) { scanned in
-                        pairing = scanned
+                    ScanTicketView(reader: model.pairingReader) { scannedPairing in
+                        pairing = scannedPairing
                         scanning = false
                     }
                 }
@@ -180,8 +180,8 @@ struct AddProviderView: View {
     }
 
     private var readPairing: ReadPairing? {
-        guard case .success(let read)? = pairingShape else { return nil }
-        return read
+        guard case .success(let readPairing)? = pairingShape else { return nil }
+        return readPairing
     }
 
     @ViewBuilder
@@ -189,7 +189,7 @@ struct AddProviderView: View {
         switch pairingShape {
         case nil:
             Text("Paste or scan what `gglib remote enable --invite` shows. A bare ticket works once the key is stored.")
-        case .success(let read) where read.hasCode:
+        case .success(let readPairing) where readPairing.hasCode:
             Label(
                 "A ticket and a code. The code is redeemed once, for a key of this device's own.",
                 systemImage: "checkmark.circle")
@@ -212,7 +212,7 @@ struct AddProviderView: View {
         case .server:
             normalizedURL != nil
         case .pipe:
-            if let read = readPairing { read.hasCode || !token.isEmpty } else { false }
+            if let readPairing { readPairing.hasCode || !token.isEmpty } else { false }
         }
     }
 
@@ -230,19 +230,19 @@ struct AddProviderView: View {
                     kind: .openAICompatible(baseURL: url))
                 try model.addProvider(config, credentials: [.apiKey: apiKey])
             case .pipe:
-                guard let read = readPairing else { return }
+                guard let readPairing else { return }
                 let config = ProviderConfig(
                     name: trimmedName.isEmpty ? "Pipe" : trimmedName,
-                    kind: .pipe(ticketDigest: Ticket.digest(read.ticket)))
-                if read.hasCode {
+                    kind: .pipe(ticketDigest: Ticket.digest(readPairing.ticket)))
+                if readPairing.hasCode {
                     // The field's text as typed, not a string rebuilt from
                     // the ticket and a code this never saw: `mpPair` reads
                     // it the same way the reader just did, and rebuilding it
                     // here would be a second place that knows the format.
-                    pair(config, pairing: pairing, ticket: read.ticket)
+                    pair(config, pairing: pairing, ticket: readPairing.ticket)
                     return
                 }
-                try model.addProvider(config, credentials: [.ticket: read.ticket, .token: token])
+                try model.addProvider(config, credentials: [.ticket: readPairing.ticket, .token: token])
                 Task { await model.connectPipe(for: config) }
             }
         } catch {

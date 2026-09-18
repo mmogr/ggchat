@@ -119,14 +119,14 @@ public struct ModelpipeConnector: PipeConnector {
     /// token means every request through the pipe would be refused at the far
     /// edge after a dial spent finding that out.
     public func connect(ticket: String, token: String) async throws -> any PipeSession {
-        let read: ReadPairing
+        let readPairing: ReadPairing
         switch Self.reader.read(ticket) {
-        case .success(let value):
-            read = value
+        case .success(let pairingReading):
+            readPairing = pairingReading
         case .failure(.malformed(let message)):
             throw PipeConnectError.invalidTicket(message: message)
         }
-        guard !read.hasCode else {
+        guard !readPairing.hasCode else {
             throw PipeConnectError.invalidTicket(
                 message: "That string carries a pairing code. A code is redeemed once, not dialled; "
                     + "add the machine with it instead of storing it as a ticket.")
@@ -136,7 +136,7 @@ public struct ModelpipeConnector: PipeConnector {
         }
         do {
             return try ModelpipeSession(
-                pipe: try await dialKeepingIdentity(ticket, forMachine: read.ticket),
+                pipe: try await dialKeepingIdentity(ticket, forMachine: readPairing.ticket),
                 sleeper: sleeper, grace: grace)
         } catch let error as MpError {
             throw Self.refusal(for: error)
@@ -159,9 +159,9 @@ public struct ModelpipeConnector: PipeConnector {
     /// refusal is about the directory or the path rather than the key, and
     /// dialling again would fail the same way for as long as anyone let it.
     private func dialKeepingIdentity(
-        _ ticket: String, forMachine canonical: String
+        _ ticket: String, forMachine canonicalTicket: String
     ) async throws -> any MpPipeProtocol {
-        let identity = identities?.path(forTicket: canonical)
+        let identity = identities?.path(forTicket: canonicalTicket)
         do {
             return try await dial(ticket, identity)
         } catch let error as MpError {

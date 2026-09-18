@@ -145,8 +145,8 @@ struct EditProviderView: View {
     }
 
     private var readPairing: ReadPairing? {
-        guard case .success(let read)? = pairingShape else { return nil }
-        return read
+        guard case .success(let readPairing)? = pairingShape else { return nil }
+        return readPairing
     }
 
     @ViewBuilder
@@ -154,7 +154,7 @@ struct EditProviderView: View {
         switch pairingShape {
         case nil:
             Text("Blank keeps the ticket and token already stored. Paste what `gglib remote invite` shows.")
-        case .success(let read) where read.hasCode:
+        case .success(let readPairing) where readPairing.hasCode:
             Label(
                 "A ticket and a code. The code is redeemed once, for a key of this device's own.",
                 systemImage: "checkmark.circle")
@@ -193,22 +193,22 @@ struct EditProviderView: View {
                 updated.kind = .openAICompatible(baseURL: url)
                 try model.updateProvider(updated, credentials: [.apiKey: apiKey])
             case .pipe:
-                guard let read = readPairing else {
+                guard let readPairing else {
                     // Nothing new pasted: the name, and the token if one was
                     // typed. A token takes effect on the next request, so
                     // there is nothing to redial for.
                     try model.updateProvider(updated, credentials: [.token: token])
                     break
                 }
-                updated.kind = .pipe(ticketDigest: Ticket.digest(read.ticket))
-                if read.hasCode {
+                updated.kind = .pipe(ticketDigest: Ticket.digest(readPairing.ticket))
+                if readPairing.hasCode {
                     // The field's text as typed; `mpPair` reads it the same
                     // way, and rebuilding `ticket-code` here would be a
                     // second place that knows the format.
-                    pair(updated, pairing: pairing, ticket: read.ticket)
+                    pair(updated, pairing: pairing, ticket: readPairing.ticket)
                     return
                 }
-                try model.updateProvider(updated, credentials: [.ticket: read.ticket, .token: token])
+                try model.updateProvider(updated, credentials: [.ticket: readPairing.ticket, .token: token])
                 Task { await model.reconnectPipe(for: updated) }
             }
         } catch {

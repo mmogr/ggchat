@@ -258,11 +258,11 @@ extension XCTestCase {
     /// was -- including not waking the password manager, whose offer arrives
     /// only once something has been put in a `SecureField`.
     @MainActor
-    func typeAPIKey(_ key: String, in app: XCUIApplication) {
-        guard !key.isEmpty else { return }
+    func typeAPIKey(_ apiKey: String, in app: XCUIApplication) {
+        guard !apiKey.isEmpty else { return }
         let field = app.secureTextFields["provider-key"].firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 10), "the API key field is not reachable")
-        enter(key, into: field)
+        enter(apiKey, into: field)
     }
 
     /// Submits the provider form: taps Add, then waits for the sheet to go.

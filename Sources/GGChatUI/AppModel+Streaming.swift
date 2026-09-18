@@ -218,8 +218,8 @@ extension AppModel {
     func makeProvider(for config: ProviderConfig) -> (any Provider)? {
         switch config.kind {
         case .openAICompatible(let baseURL):
-            let key = try? secrets.secret(.apiKey, for: config.id)
-            return registry.makeProvider(baseURL: baseURL, apiKey: key, log: log)
+            let apiKey = try? secrets.secret(.apiKey, for: config.id)
+            return registry.makeProvider(baseURL: baseURL, apiKey: apiKey, log: log)
         case .pipe:
             return makePipeProvider(for: config)
         }

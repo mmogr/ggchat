@@ -72,11 +72,11 @@ extension ModelpipeConnector {
     /// key half written is still healed, because the path is built the same
     /// way for both; a key corrupt in some other way is met by the next dial
     /// to that machine, which does heal. The PR body lists it.
-    public func pair(pairing string: String, deviceName: String?) async throws -> PairedPipe {
+    public func pair(pairing pairingString: String, deviceName: String?) async throws -> PairedPipe {
         let paired: Paired
         do {
             paired = try await pairing(
-                string, Self.labelWorthSending(deviceName), identityForPairing(string))
+                pairingString, Self.labelWorthSending(deviceName), identityForPairing(pairingString))
         } catch let error as MpPairError {
             throw Self.refusal(for: error)
         }
@@ -100,9 +100,9 @@ extension ModelpipeConnector {
     /// mapping the reader exists to prevent, and it would answer a person who
     /// typed a bad code with a different sentence depending on which of two
     /// parsers saw it first.
-    private func identityForPairing(_ string: String) -> String? {
-        guard case .success(let read) = Self.reader.read(string) else { return nil }
-        return identities?.path(forTicket: read.ticket)
+    private func identityForPairing(_ pairingString: String) -> String? {
+        guard case .success(let readPairing) = Self.reader.read(pairingString) else { return nil }
+        return identities?.path(forTicket: readPairing.ticket)
     }
 
     /// A device name fit to send: trimmed, and nil when that leaves nothing.

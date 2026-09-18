@@ -186,8 +186,8 @@ public final class AppModel {
     public func addProvider(_ config: ProviderConfig, credentials: [SecretKind: String]) throws {
         var written: [SecretKind] = []
         do {
-            for (kind, value) in credentials where !value.isEmpty {
-                try secrets.setSecret(value, kind, for: config.id)
+            for (kind, secret) in credentials where !secret.isEmpty {
+                try secrets.setSecret(secret, kind, for: config.id)
                 written.append(kind)
             }
             try store.save(provider: config)
@@ -234,17 +234,17 @@ public final class AppModel {
         guard let index = providers.firstIndex(where: { $0.id == config.id }) else {
             throw ProviderEditError.noLongerThere
         }
-        var replaced: [SecretKind: String?] = [:]
+        var replacedSecrets: [SecretKind: String?] = [:]
         do {
-            for (kind, value) in credentials where !value.isEmpty {
-                let previous = try secrets.secret(kind, for: config.id)
-                replaced.updateValue(previous, forKey: kind)
-                try secrets.setSecret(value, kind, for: config.id)
+            for (kind, secret) in credentials where !secret.isEmpty {
+                let previousSecret = try secrets.secret(kind, for: config.id)
+                replacedSecrets.updateValue(previousSecret, forKey: kind)
+                try secrets.setSecret(secret, kind, for: config.id)
             }
             try store.save(provider: config)
         } catch {
-            for (kind, previous) in replaced {
-                try? secrets.setSecret(previous, kind, for: config.id)
+            for (kind, previousSecret) in replacedSecrets {
+                try? secrets.setSecret(previousSecret, kind, for: config.id)
             }
             log.log(.error, "could not update \(config.name): \(error.localizedDescription)")
             throw error
