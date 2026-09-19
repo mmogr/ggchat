@@ -71,7 +71,9 @@ extension ModelpipeConnector {
     /// and matching on wording is how this project has been caught before. A
     /// key half written is still healed, because the path is built the same
     /// way for both; a key corrupt in some other way is met by the next dial
-    /// to that machine, which does heal. The PR body lists it.
+    /// to that machine, which does heal. The PR body lists it. The one match
+    /// on wording in this file, `tooOldToPairAnswer`, only chooses which
+    /// line a failure's sentence gets, and says why that much is tolerable.
     public func pair(pairing pairingString: String, deviceName: String?) async throws -> PairedPipe {
         let paired: Paired
         do {
@@ -124,20 +126,43 @@ extension ModelpipeConnector {
     /// compile error here rather than a sentence nobody wrote. `message()`
     /// and never `localizedDescription`, for the reason below.
     ///
-    /// A refused code keeps its own case. It is the one failure with
-    /// somewhere to send the person — the next attempt starts on the other
-    /// machine — and `PipeConnectError.pairingRefused` is where the line
-    /// saying so is added to modelpipe's sentence.
+    /// Three failures keep cases of their own, because each has somewhere to
+    /// send the person, and `PipeConnectError` is where the line saying so is
+    /// added to modelpipe's sentence. A refused code: the next attempt starts
+    /// on the other machine. The answer a desktop on gglib 0.18 gives: that
+    /// desktop has to be updated first. Any other answer that is not a
+    /// pairing answer: the code may be gone.
     static func refusal(for error: MpPairError) -> PipeConnectError {
         switch error {
         case .Refused:
             return .pairingRefused(message: error.message())
-        case .NoCode, .BadPairingString, .Unexpected:
+        case .Unexpected(let detail) where detail == Self.tooOldToPairAnswer:
+            return .desktopTooOldToPair(message: error.message())
+        case .Unexpected:
+            return .unexpectedAnswer(message: error.message())
+        case .NoCode, .BadPairingString:
             return .dialFailed(message: error.message(), retryable: false)
         case .Dial, .Unreached, .Exchange, .Unknown:
             return .dialFailed(message: error.message(), retryable: error.isRetryable())
         }
     }
+
+    /// What modelpipe 0.6's `pair` reports, as `MpPairError.Unexpected`'s
+    /// detail, when the far machine answers the code with any status other
+    /// than 200, 401 or 502. A desktop on gglib 0.18 answers that way: its
+    /// edge spends the code and hands the request to a proxy with no such
+    /// route.
+    ///
+    /// Matched on its wording, which `pair(pairing:deviceName:)` warns
+    /// against, because the wording is all `Unexpected` carries. It is
+    /// tolerable here where it was not for healing an identity: a stale
+    /// match deletes nothing and only chooses which line to add. If a later
+    /// modelpipe rewords it, the answer falls to `unexpectedAnswer`, which
+    /// still says the code may have been spent. It was read at modelpipe
+    /// 0.6.0 through modelpipe-ffi 0.3.0, and wants reading again when the
+    /// binding moves. gglib's own `join` matches the same words, from gglib
+    /// `61e06b57` (#1087) on.
+    static let tooOldToPairAnswer = "a status other than 200 or 401"
 }
 
 /// The key never reaches the value's printed form: interpolated, reflected

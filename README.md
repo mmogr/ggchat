@@ -137,6 +137,13 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelPairingTests.testARedeemedCodeBecomesTheProvidersTokenAndThePipeConnects -->
   <!-- test: AppModelPairingTests.testARefusedCodeAddsNoProviderAndSaysWhy -->
   <!-- test: ScreenGalleryUITests.testAPairingCodeIsRedeemedInsteadOfAskingForAToken -->
+- A desktop still on gglib 0.18 pairs another way: its edge spends the code
+  and its proxy has no such route. Pairing with one says that the code has
+  been spent, and that gglib there needs updating to a version newer than
+  0.18 before it is asked for another. Any other answer that is not a
+  pairing answer says the code may have been spent.
+  <!-- test: ModelpipeConnectorPairingTests.testADesktopTooOldToPairSaysToUpdateItAndThatTheCodeIsSpent -->
+  <!-- test: ModelpipeConnectorPairingTests.testAnyOtherAnswerThatIsNotAPairingAnswerSaysTheCodeMayBeSpent -->
 - A pairing is the longest wait in the app, so the app being left under one
   is ordinary rather than exotic: the pipe it was about to install is hung up
   instead of kept, the key is stored all the same, and the provider is left

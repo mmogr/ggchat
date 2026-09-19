@@ -53,6 +53,9 @@ public enum PipeConnectError: Error, Sendable, Equatable, LocalizedError {
     case missingToken                             // refused before anything is dialled
     case unavailable                              // nothing in this build can dial
     case dialFailed(message: String, retryable: Bool)
+    case pairingRefused(message: String)          // the far machine would not take the code
+    case desktopTooOldToPair(message: String)     // the code answered as a desktop on gglib 0.18 answers it
+    case unexpectedAnswer(message: String)        // any other answer that is not a pairing answer
 }
 
 // PipeStatus.swift
@@ -206,8 +209,14 @@ What the ffi owes here, beyond the two protocols above:
   the ticket's digest.
 - **Every failure is a sentence.** `MpPairError.message()`, never
   `localizedDescription`, which uniffi generates as `String(reflecting:)`.
-  `Refused` keeps a case of its own above the seam, because it is the one
-  pairing failure with somewhere to send the person.
+  `Refused` keeps a case of its own above the seam, and so does
+  `Unexpected`, in two: the answer a desktop on gglib 0.18 gives, and any
+  other. Each has somewhere to send the person, and the line saying where
+  is added above the seam. Telling the two apart reads modelpipe's words,
+  "a status other than 200 or 401", so they are part of what the binding
+  owes this app, read at modelpipe 0.6.0 through modelpipe-ffi 0.3.0 and
+  read again when it moves. If they change, that answer gets the other
+  one's line, which says the code may have been spent.
 
 The route itself is modelpipe's `POST /modelpipe/pair`, not gglib's old
 `/v1/remote/pair`: a phone on this build pairs with gglib G1 and later,
@@ -239,6 +248,11 @@ and not with gglib 0.18.
 > Update the desktop first: gglib pairs with this build from
 > `61e06b57` (gglib #1087) on, a commit no gglib release carried on
 > 2026-09-18.
+>
+> **Amended 2026-09-19:** from the build that carries #113's fix, the
+> form says more than that. It says a desktop on gglib 0.18 answers that
+> way, that the code has been spent, and to update gglib there to a
+> version newer than 0.18 before asking it for another.
 
 ## Platform facts already in place
 

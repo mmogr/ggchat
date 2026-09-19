@@ -154,10 +154,9 @@ final class ModelpipeConnectorPairingTests: XCTestCase {
         XCTAssertEqual(pipe.shutdownCount, 1, "a pipe nothing can use was left up")
     }
 
-    /// D3: a refused code is the one pairing failure with somewhere to send
-    /// the person, so it keeps a case of its own — and the case is what lets
-    /// the line naming what to run on the other machine be added to
-    /// modelpipe's sentence.
+    /// D3: a refused code has somewhere to send the person, so it keeps a
+    /// case of its own — and the case is what lets the line naming what to
+    /// run on the other machine be added to modelpipe's sentence.
     func testARefusedCodeKeepsItsOwnCaseAndSaysWhereToGetANewOne() async {
         let refusal = ModelpipeConnector.refusal(for: .Refused)
 
@@ -169,6 +168,40 @@ final class ModelpipeConnectorPairingTests: XCTestCase {
             refusal.localizedDescription.contains("gglib remote invite"),
             "nothing told the person where the next attempt starts: \(refusal.localizedDescription)")
         XCTAssertFalse(refusal.isRetryable, "a spent code was offered as worth retrying")
+    }
+
+    /// #113: a desktop on gglib 0.18 pairs another way. Its edge spends the
+    /// code and its proxy has no such route, which modelpipe reports as an
+    /// answer that is not a pairing answer. Asking it for another code before
+    /// updating it spends that one too, so the person is told to update it
+    /// first. Both the detail and the sentence are spelt out here, not read
+    /// from the source.
+    func testADesktopTooOldToPairSaysToUpdateItAndThatTheCodeIsSpent() {
+        let error = MpPairError.Unexpected(detail: "a status other than 200 or 401")
+        let refusal = ModelpipeConnector.refusal(for: error)
+
+        XCTAssertEqual(refusal, .desktopTooOldToPair(message: error.message()))
+        XCTAssertEqual(
+            refusal.errorDescription,
+            "The other machine's answer was not a pairing answer (a status other than 200 or 401)."
+                + " A desktop on gglib 0.18 answers that way, and the code has been spent."
+                + " Update gglib there to a version newer than 0.18, then run `gglib remote invite` for a new code.")
+        XCTAssertFalse(refusal.isRetryable, "a spent code was offered as worth retrying")
+    }
+
+    /// Any other answer that is not a pairing answer keeps modelpipe's
+    /// sentence, and adds only what is known: the code may be gone. It is
+    /// also where the answer above lands if modelpipe ever rewords it.
+    func testAnyOtherAnswerThatIsNotAPairingAnswerSaysTheCodeMayBeSpent() {
+        let error = MpPairError.Unexpected(detail: "an empty key or device")
+        let refusal = ModelpipeConnector.refusal(for: error)
+
+        XCTAssertEqual(refusal, .unexpectedAnswer(message: error.message()))
+        XCTAssertEqual(
+            refusal.errorDescription,
+            "The other machine's answer was not a pairing answer (an empty key or device)."
+                + " The code may have been spent, so run `gglib remote invite` there for a new one.")
+        XCTAssertFalse(refusal.isRetryable, "an answer nobody gets past by trying again was offered a retry")
     }
 
     /// The mapping is exhaustive and written out rather than looped, so a
@@ -210,19 +243,20 @@ final class ModelpipeConnectorPairingTests: XCTestCase {
         XCTAssertTrue(unreached.isRetryable(), "the binding now calls a timed-out pairing not worth repeating")
     }
 
-    /// The other arm of the mapping answers `false` outright rather than
-    /// asking the binding, because these three are failures nobody gets past
-    /// by trying again: a string with no code in it, a string that is not a
-    /// pairing string, and an answer that was not a pairing answer. Both arms
-    /// agree with the binding today and no test can tell them apart on that,
-    /// so what this pins is the agreement — a release that changes its mind
-    /// fails here, at the release that changes it, rather than quietly
-    /// offering a retry that cannot work.
+    /// The arms that answer `false` outright rather than asking the binding
+    /// do so because these are failures nobody gets past by trying again: a
+    /// string with no code in it, a string that is not a pairing string, and
+    /// an answer that was not a pairing answer, in either of the cases it
+    /// lands in. Those arms and the binding agree today and no test can tell
+    /// them apart on that, so what this pins is the agreement — a release
+    /// that changes its mind fails here, at the release that changes it,
+    /// rather than quietly offering a retry that cannot work.
     func testTheFailuresNoRetryCanFixAgreeWithTheBinding() {
         let hopeless: [MpPairError] = [
             .NoCode,
             .BadPairingString(reason: "the part before the code is not a ticket"),
             .Unexpected(detail: "no api_key"),
+            .Unexpected(detail: "a status other than 200 or 401"),
         ]
         for error in hopeless {
             XCTAssertEqual(

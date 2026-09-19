@@ -111,10 +111,11 @@ public protocol PipeSession: Sendable {
 
 /// Why a connect attempt failed.
 ///
-/// The first three are refusals made here, before anything was dialled. The
-/// last is the dial itself failing, which only a real connector can produce
-/// and which the mock therefore never did — the seam described a world where
-/// the only way to fail was to be wrong about the input.
+/// The first three are refusals made here, before anything was dialled.
+/// `dialFailed` is the dial itself failing, which only a real connector can
+/// produce and which the mock therefore never did — the seam described a
+/// world where the only way to fail was to be wrong about the input. The last
+/// three are what the far machine answered a pairing code with.
 public enum PipeConnectError: Error, Sendable, Equatable, LocalizedError {
     /// The ticket was not one, and the dial was never made.
     ///
@@ -147,12 +148,28 @@ public enum PipeConnectError: Error, Sendable, Equatable, LocalizedError {
     case dialFailed(message: String, retryable: Bool)
     /// The far machine would not take that code.
     ///
-    /// A case of its own rather than one more `dialFailed`, because it is the
-    /// one refusal with somewhere to send the person: the code may be wrong,
-    /// expired or already spent, and the next attempt starts on the other
-    /// machine. The payload is the sentence whoever refused it wrote, and the
-    /// line naming what to run there is added here.
+    /// A case of its own rather than one more `dialFailed`, because the
+    /// person has somewhere to go: the code may be wrong, expired or already
+    /// spent, and the next attempt starts on the other machine. The payload
+    /// is the sentence whoever refused it wrote, and the line naming what to
+    /// run there is added here.
     case pairingRefused(message: String)
+    /// The far machine answered the code with something that is not a
+    /// pairing answer, in the shape a desktop on gglib 0.18 answers it.
+    ///
+    /// That desktop pairs another way. Its edge admits the code as a
+    /// one-time grant, spends it by presenting it, and hands the request to a
+    /// proxy with no such route, so the code is gone, and asking that desktop
+    /// for another one before updating it spends that one too. The payload is
+    /// modelpipe's sentence, and the line saying what to update is added
+    /// here, as `pairingRefused`'s is.
+    case desktopTooOldToPair(message: String)
+    /// The far machine answered the code with something else that is not a
+    /// pairing answer.
+    ///
+    /// Whether the code survived is not known here, so the line added to
+    /// modelpipe's sentence says it may have been spent.
+    case unexpectedAnswer(message: String)
 
     public var errorDescription: String? {
         switch self {
@@ -162,13 +179,20 @@ public enum PipeConnectError: Error, Sendable, Equatable, LocalizedError {
         case .dialFailed(let message, _): message
         case .pairingRefused(let message):
             message + " Run `gglib remote invite` there again."
+        case .desktopTooOldToPair(let message):
+            message
+                + " A desktop on gglib 0.18 answers that way, and the code has been spent."
+                + " Update gglib there to a version newer than 0.18, then run `gglib remote invite` for a new code."
+        case .unexpectedAnswer(let message):
+            message + " The code may have been spent, so run `gglib remote invite` there for a new one."
         }
     }
 
     /// Whether offering the same dial again is worth the person's time.
     public var isRetryable: Bool {
         switch self {
-        case .invalidTicket, .missingToken, .unavailable, .pairingRefused: false
+        case .invalidTicket, .missingToken, .unavailable, .pairingRefused, .desktopTooOldToPair, .unexpectedAnswer:
+            false
         case .dialFailed(_, let retryable): retryable
         }
     }

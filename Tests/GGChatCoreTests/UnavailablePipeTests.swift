@@ -34,20 +34,23 @@ final class UnavailablePipeTests: XCTestCase {
     /// test still passes. Anything added there is added here in the same
     /// commit.
     ///
-    /// What it proves differs by case, and three of the five now carry their
-    /// own sentence rather than composing one. For `invalidTicket` and
-    /// `dialFailed` this says only that the payload is passed through and not
-    /// dropped; that the sentence is worth reading is proved where it is
-    /// written, in `PairingReaderTests` and `ModelpipeConnectorTests`, which
-    /// assert it is not the paste and names no binding type. `pairingRefused`
-    /// is here because it does compose — it adds the line naming where the
-    /// next attempt starts — and `missingToken` and `unavailable` are the two
-    /// written here outright.
+    /// What it proves differs by case. For `invalidTicket` and `dialFailed`
+    /// this says only that the payload is passed through and not dropped;
+    /// that the sentence is worth reading is proved where it is written, in
+    /// `PairingReaderTests` and `ModelpipeConnectorTests`, which assert it is
+    /// not the paste and names no binding type. `pairingRefused`,
+    /// `desktopTooOldToPair` and `unexpectedAnswer` are here because they
+    /// compose — each adds a line saying where the next attempt starts, and
+    /// `ModelpipeConnectorPairingTests` pins the two new sentences whole and
+    /// checks that the refused one names `gglib remote invite` — and
+    /// `missingToken` and `unavailable` are the two written here outright.
     func testEveryRefusalHasASentence() {
         let errors: [PipeConnectError] = [
             .invalidTicket(message: "That is not a ticket."), .missingToken, .unavailable,
             .dialFailed(message: "The other machine did not answer.", retryable: true),
             .pairingRefused(message: "That pairing code was not accepted."),
+            .desktopTooOldToPair(message: "The other machine's answer was not a pairing answer."),
+            .unexpectedAnswer(message: "The other machine's answer was not a pairing answer."),
         ]
         for error in errors {
             XCTAssertFalse(error.errorDescription?.isEmpty ?? true, "\(error)")
