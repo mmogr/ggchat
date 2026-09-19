@@ -1,7 +1,8 @@
 import XCTest
 
-/// Covers ``LiveServer/resolve(environment:probe:)`` and nothing beyond it:
-/// which server a live walk picks, and when it skips instead.
+/// Covers ``LiveServer/resolve(environment:probe:)`` -- which server a live
+/// walk picks, and when it skips instead -- and what a `LiveServer` prints,
+/// and nothing beyond those.
 ///
 /// It deliberately does not claim more. That a walk goes on to type the key
 /// it resolved is not asserted here and cannot be: it needs the app running
@@ -76,5 +77,28 @@ final class LiveServerTests: XCTestCase {
     func testAnAbsentKeyIsEmpty() throws {
         let live = try XCTUnwrap(LiveServer.resolve(environment: [:], probe: Probe(answer: true).reply))
         XCTAssertEqual(live.apiKey, "")
+    }
+
+    /// #120: interpolated, reflected or read through its mirror, a
+    /// `LiveServer` shows its address and never its key. The mirror is read
+    /// here rather than through `dump`, which the print gate refuses under
+    /// `App/` from #118's fix on. The key and the expected text are spelt
+    /// out, so none of it can pass on an empty description.
+    func testALiveServerPrintsItsAddressAndNeverItsKey() {
+        let key = "sk-live-key-that-must-never-print"
+        let live = LiveServer(baseURL: "http://127.0.0.1:49333/v1", apiKey: key)
+        let children = Mirror(reflecting: live).children.map { "\($0.label ?? "?")=\($0.value)" }
+        let renderings = ["\(live)", String(reflecting: live), children.joined(separator: ",")]
+
+        for rendering in renderings {
+            XCTAssertFalse(rendering.contains(key), "the key was printed: \(rendering)")
+            XCTAssertTrue(rendering.contains("http://127.0.0.1:49333/v1"), "the address was not: \(rendering)")
+        }
+        XCTAssertEqual("\(live)", "LiveServer(baseURL: http://127.0.0.1:49333/v1, apiKey: <redacted>)")
+        XCTAssertEqual(String(reflecting: live), "\(live)")
+        XCTAssertEqual(children, ["baseURL=http://127.0.0.1:49333/v1", "apiKey=<redacted>"])
+
+        let keyless = LiveServer(baseURL: "http://127.0.0.1:49333/v1", apiKey: "")
+        XCTAssertEqual("\(keyless)", "LiveServer(baseURL: http://127.0.0.1:49333/v1, apiKey: none)")
     }
 }

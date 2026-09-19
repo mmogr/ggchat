@@ -84,3 +84,20 @@ struct LiveServer {
         return connected == 0
     }
 }
+
+/// The key stays out of what the value prints: interpolated, reflected or
+/// dumped, a `LiveServer` shows its address as it was given and
+/// `<redacted>` in the key's place, or `none` for a walk that types no key,
+/// as the app's own `OpenAICompatibleProvider` does for its key. The walks
+/// still type the key itself with `typeText`, which this does not reach: in
+/// #120's run, XCUITest titled that step with the key's first 18
+/// characters.
+extension LiveServer: CustomStringConvertible, CustomReflectable {
+    var description: String { "LiveServer(baseURL: \(baseURL), apiKey: \(printedKey))" }
+
+    var customMirror: Mirror {
+        Mirror(self, children: ["baseURL": baseURL, "apiKey": printedKey], displayStyle: .struct)
+    }
+
+    private var printedKey: String { apiKey.isEmpty ? "none" : "<redacted>" }
+}
