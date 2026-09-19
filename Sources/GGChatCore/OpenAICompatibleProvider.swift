@@ -94,7 +94,7 @@ public struct OpenAICompatibleProvider: Provider {
     }
 }
 
-/// The key never reaches the value's printed form. It is the server's API
+/// The key stays out of what the value prints. It is the server's API
 /// key, or for a pipe this device's own, from its pairing. Interpolated,
 /// reflected or dumped, a provider shows its address, as `Redaction` gives
 /// it, and `<redacted>` in the key's place, or `none` when it has no key.

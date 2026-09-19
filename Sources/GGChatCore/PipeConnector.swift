@@ -59,7 +59,7 @@ public struct PairedPipe: Sendable {
     }
 }
 
-/// A pairing's key never reaches the value's printed form. Interpolated,
+/// A pairing's key stays out of what the value prints. Interpolated,
 /// reflected or dumped, a `PairedPipe` shows the device, whether a pipe
 /// came back, and `<redacted>` in the key's place. `token` is still there
 /// to read where the key is stored; this covers interpolation, reflection
