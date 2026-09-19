@@ -85,8 +85,8 @@ public enum PairingField {
     /// set — a paste ending in `\r\n` would come out as text somebody typed.
     /// Every byte of a non-ASCII scalar is at least 0x80, so none of them
     /// can match either.
-    public static func isBlank(_ text: String) -> Bool {
-        text.utf8.allSatisfy(asciiWhitespace.contains)
+    public static func isBlank(_ pairingText: String) -> Bool {
+        pairingText.utf8.allSatisfy(asciiWhitespace.contains)
     }
 
     private static let asciiWhitespace: Set<UInt8> = [0x20, 0x09, 0x0a, 0x0c, 0x0d]

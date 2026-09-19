@@ -35,8 +35,8 @@ public struct ModelpipePairingReader: PairingReader {
 
     public func read(_ pairing: String) -> Result<ReadPairing, PairingReadError> {
         do {
-            let read = try mpReadPairing(pairing: pairing)
-            return .success(ReadPairing(ticket: read.ticket, hasCode: read.hasCode))
+            let parsedPairing = try mpReadPairing(pairing: pairing)
+            return .success(ReadPairing(ticket: parsedPairing.ticket, hasCode: parsedPairing.hasCode))
         } catch let error as MpPairError {
             return .failure(Self.refusal(for: error))
         } catch {

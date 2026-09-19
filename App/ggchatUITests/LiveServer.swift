@@ -50,12 +50,12 @@ struct LiveServer {
         // thing here: the Makefile forwards `TEST_RUNNER_GGCHAT_LIVE_BASE_URL`
         // unconditionally, so an empty value is what "the caller set nothing"
         // looks like by the time it arrives.
-        let key = environment["GGCHAT_LIVE_API_KEY"] ?? ""
+        let apiKey = environment["GGCHAT_LIVE_API_KEY"] ?? ""
         if let named = environment["GGCHAT_LIVE_BASE_URL"], !named.isEmpty {
-            return LiveServer(baseURL: named, apiKey: key)
+            return LiveServer(baseURL: named, apiKey: apiKey)
         }
         guard probe(defaultHost, defaultPort) else { return nil }
-        return LiveServer(baseURL: defaultBaseURL, apiKey: key)
+        return LiveServer(baseURL: defaultBaseURL, apiKey: apiKey)
     }
 
     /// Why a walk skipped, in the sentence the developer needs to un-skip it.

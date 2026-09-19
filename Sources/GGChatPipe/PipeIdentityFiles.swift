@@ -72,9 +72,9 @@ struct PipeIdentityFiles: Sendable {
     /// off a QR code, or stored by an earlier version of this app is one
     /// file. ``Ticket/digest(_:)`` folds the case as well, which makes that
     /// belt and braces.
-    func path(forTicket canonical: String) -> String? {
+    func path(forTicket canonicalTicket: String) -> String? {
         guard ensureDirectory() else { return nil }
-        let file = directory.appending(path: Ticket.digest(canonical) + ".key")
+        let file = directory.appending(path: Ticket.digest(canonicalTicket) + ".key")
         discardIfEmpty(file)
         return file.path(percentEncoded: false)
     }

@@ -24,7 +24,7 @@ public enum SecretKind: String, Sendable, CaseIterable {
 /// Where credentials live. Nothing in a `ProviderConfig` is secret; these are.
 public protocol Secrets: Sendable {
     func secret(_ kind: SecretKind, for providerID: UUID) throws -> String?
-    func setSecret(_ value: String?, _ kind: SecretKind, for providerID: UUID) throws
+    func setSecret(_ secret: String?, _ kind: SecretKind, for providerID: UUID) throws
     func removeAll(for providerID: UUID) throws
 }
 
@@ -37,8 +37,8 @@ public final class InMemorySecrets: Secrets, Sendable {
         storage.withLock { $0[Self.key(kind, providerID)] }
     }
 
-    public func setSecret(_ value: String?, _ kind: SecretKind, for providerID: UUID) throws {
-        storage.withLock { $0[Self.key(kind, providerID)] = value }
+    public func setSecret(_ secret: String?, _ kind: SecretKind, for providerID: UUID) throws {
+        storage.withLock { $0[Self.key(kind, providerID)] = secret }
     }
 
     public func removeAll(for providerID: UUID) throws {
@@ -95,9 +95,9 @@ public final class InMemorySecrets: Secrets, Sendable {
     /// wrong. This type is the disclosed untested remainder.
     struct SystemKeychain: KeychainItems {
         func copyMatching(_ query: [String: Any]) -> (status: OSStatus, value: CFTypeRef?) {
-            var result: CFTypeRef?
-            let status = SecItemCopyMatching(query as CFDictionary, &result)
-            return (status, result)
+            var secretResult: CFTypeRef?
+            let status = SecItemCopyMatching(query as CFDictionary, &secretResult)
+            return (status, secretResult)
         }
 
         func update(_ query: [String: Any], with attributes: [String: Any]) -> OSStatus {
@@ -136,11 +136,11 @@ public final class InMemorySecrets: Secrets, Sendable {
             var query = baseQuery(kind, providerID)
             query[kSecReturnData as String] = true
             query[kSecMatchLimit as String] = kSecMatchLimitOne
-            let (status, result) = items.copyMatching(query)
+            let (status, secretResult) = items.copyMatching(query)
             switch status {
             case errSecSuccess:
-                guard let data = result as? Data else { return nil }
-                return String(decoding: data, as: UTF8.self)
+                guard let secretData = secretResult as? Data else { return nil }
+                return String(decoding: secretData, as: UTF8.self)
             case errSecItemNotFound:
                 return nil
             default:
@@ -154,9 +154,9 @@ public final class InMemorySecrets: Secrets, Sendable {
         /// `errSecItemNotFound`. Update first and add only on that one status:
         /// the first save of a credential and every save after it both work,
         /// and any other failure is reported rather than retried.
-        public func setSecret(_ value: String?, _ kind: SecretKind, for providerID: UUID) throws {
+        public func setSecret(_ secret: String?, _ kind: SecretKind, for providerID: UUID) throws {
             let query = baseQuery(kind, providerID)
-            guard let value else {
+            guard let secret else {
                 let status = items.delete(query)
                 guard status == errSecSuccess || status == errSecItemNotFound else {
                     throw KeychainError(status: status, kind: kind)
@@ -164,7 +164,7 @@ public final class InMemorySecrets: Secrets, Sendable {
                 return
             }
             let attributes: [String: Any] = [
-                kSecValueData as String: Data(value.utf8),
+                kSecValueData as String: Data(secret.utf8),
                 kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
             ]
             let update = items.update(query, with: attributes)

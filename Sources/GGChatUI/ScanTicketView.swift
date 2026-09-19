@@ -31,7 +31,7 @@
         let reader: any PairingReader
         let onScan: (String) -> Void
         @Environment(\.dismiss) private var dismiss
-        @State private var seen: String?
+        @State private var seenPairing: String?
 
         static var isSupported: Bool {
             DataScannerViewController.isSupported && DataScannerViewController.isAvailable
@@ -39,10 +39,10 @@
 
         var body: some View {
             NavigationStack {
-                DataScanner { candidate in
-                    guard case .success = reader.read(candidate), seen == nil else { return }
-                    seen = candidate
-                    onScan(candidate)
+                DataScanner { pairingCandidate in
+                    guard case .success = reader.read(pairingCandidate), seenPairing == nil else { return }
+                    seenPairing = pairingCandidate
+                    onScan(pairingCandidate)
                 }
                 .ignoresSafeArea()
                 .overlay(alignment: .bottom) {
@@ -99,9 +99,9 @@
                 for item in addedItems {
                     switch item {
                     case .barcode(let barcode):
-                        if let payload = barcode.payloadStringValue { onCandidate(payload) }
-                    case .text(let text):
-                        onCandidate(text.transcript)
+                        if let pairingCandidate = barcode.payloadStringValue { onCandidate(pairingCandidate) }
+                    case .text(let pairingText):
+                        onCandidate(pairingText.transcript)
                     @unknown default:
                         break
                     }

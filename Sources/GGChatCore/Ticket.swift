@@ -35,13 +35,13 @@ public enum Ticket {
     /// has connected to (the kill-criterion reading). Never logged with the
     /// ticket itself.
     public static func digest(_ ticket: String) -> String {
-        let data = Data(normalized(ticket).utf8)
+        let ticketData = Data(normalized(ticket).utf8)
         #if canImport(CryptoKit)
-            let hash = SHA256.hash(data: data)
+            let hash = SHA256.hash(data: ticketData)
             return hash.prefix(8).map { String(format: "%02x", $0) }.joined()
         #else
             var hash: UInt64 = 0xcbf2_9ce4_8422_2325
-            for byte in data {
+            for byte in ticketData {
                 hash ^= UInt64(byte)
                 hash = hash &* 0x0000_0100_0000_01b3
             }
