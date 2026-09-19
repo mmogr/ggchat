@@ -23,7 +23,7 @@ public struct ReadPairing: Sendable, Equatable {
     }
 }
 
-/// The ticket never reaches the value's printed form. Interpolated,
+/// The ticket stays out of what the value prints. Interpolated,
 /// reflected or dumped, a `ReadPairing` shows the ticket's
 /// ``Ticket/digest(_:)`` in its place, the non-secret fingerprint a
 /// `ProviderConfig` already keeps, so two readings can still be told apart

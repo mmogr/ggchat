@@ -140,7 +140,7 @@ extension ModelpipeConnector {
     }
 }
 
-/// The key never reaches the value's printed form: interpolated, reflected
+/// The key stays out of what the value prints: interpolated, reflected
 /// or dumped, a `Paired` shows the device and `<redacted>` in the key's
 /// place, as `MpPaired`'s own description does.
 extension ModelpipeConnector.Paired: CustomStringConvertible, CustomReflectable {
