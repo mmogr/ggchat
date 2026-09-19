@@ -213,6 +213,33 @@ The route itself is modelpipe's `POST /modelpipe/pair`, not gglib's old
 `/v1/remote/pair`: a phone on this build pairs with gglib G1 and later,
 and not with gglib 0.18.
 
+> **Amended 2026-09-18: what this build does with a desktop on gglib
+> 0.18.0, which serves modelpipe 0.5.** A key this device already holds
+> still dials it. The binding moved from modelpipe 0.5 to 0.6 for
+> dialling as well as for pairing, but the connect side's half of the
+> wire did not change between them. It parses no HTTP, and its
+> forwarder, framing, ticket format and ALPN are the same at both tags.
+> The one new thing on the wire is the lasting endpoint id above.
+>
+> That was measured, not inferred (#112). modelpipe 0.6's connect side
+> was run against a modelpipe 0.5 edge configured as gglib v0.18.0
+> configures its tunnel: with a key file and without one, and over a
+> relay alone. This app's own `ModelpipeConnector` and
+> `OpenAICompatibleProvider` then dialled the same edge twice, streaming
+> a reply each time. Not covered: gglib 0.18's real proxy behind the
+> edge (a backend enforcing its gate's rules stood in); a phone's own
+> network (the harness's connect side ran with port mapping off); iOS
+> suspension; and an upgraded install's own Keychain, which was read
+> rather than run: `Secrets.swift` is the same at v0.2.4 and v0.3.1.
+>
+> Pairing with that desktop does not work, and it costs the code. Its
+> edge admits the code as a one-time grant, spends it on this request,
+> and hands the request to a proxy with no such route. The form then
+> says the other machine's answer was not a pairing answer (#113).
+> Update the desktop first: gglib pairs with this build from
+> `61e06b57` (gglib #1087) on, a commit no gglib release carried on
+> 2026-09-18.
+
 ## Platform facts already in place
 
 - `Info.plist` allows local networking only (`NSAllowsLocalNetworking`),
