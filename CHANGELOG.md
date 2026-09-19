@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/mmogr/ggchat/compare/v0.3.2...v0.3.3) (2026-09-19)
+
+
+### What the app stopped getting wrong
+
+* **ui:** a pipe lists its models once it is up, whatever SwiftUI does to the view that opened it ([#127](https://github.com/mmogr/ggchat/issues/127)) ([46b0800](https://github.com/mmogr/ggchat/commit/46b080062a641c0c038d692e405bc3a6ab034d3e))
+
 ## [0.3.2](https://github.com/mmogr/ggchat/compare/v0.3.1...v0.3.2) (2026-09-19)
 
 
