@@ -64,9 +64,9 @@ extension AppModel {
     ///
     /// Every pipe this app has dialled before and is not holding now is
     /// dialled again here. Nothing survives a background — see
-    /// ``hangUpEveryPipe()`` — and the composer's `task` does not run a
-    /// second time for a conversation that was already on screen, so without
-    /// this the app comes back to a pipe that is gone and never notices.
+    /// ``hangUpEveryPipe()`` — and ``open(_:)`` is not asked a second time
+    /// for a conversation that was already on screen, so without this the app
+    /// comes back to a pipe that is gone and never notices.
     func resumeEveryPipe() async {
         for config in providers
         where config.isPipe && pipeSessions[config.id] == nil && pipeStatuses[config.id] != nil {

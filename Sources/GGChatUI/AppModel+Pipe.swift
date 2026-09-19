@@ -69,10 +69,9 @@ extension AppModel {
             let session = try await pipeConnector.connect(ticket: ticket, token: token)
             await installPipe(session, for: config, ticket: ticket, generation: generation)
         } catch is CancellationError {
-            // The view asked for this dial and went away again — the composer
-            // dials inside a `.task(id:)` that SwiftUI cancels on every
-            // provider switch. Nobody is waiting for an answer, so there is
-            // nobody to tell. Left closed so the pill is still a way back.
+            // The task that asked for this dial was called off, so nobody
+            // is waiting for an answer and there is nobody to tell. Left
+            // closed so the pill is still a way back.
             guard dialGeneration[config.id] == generation else { return }
             setPipeStatus(.closed, for: config.id)
         } catch {
@@ -152,7 +151,7 @@ extension AppModel {
             // The stream ends only after a close, so the session behind it
             // is finished. Forgetting it is what lets the next dial
             // happen: `connectPipe` refuses while one is installed, and
-            // both the composer's task and the foreground pass ask for a
+            // both opening a conversation and the foreground pass ask for a
             // dial only when there is none — so a pipe that died quietly
             // used to leave a dead session in the dictionary that nothing
             // but a manual press would clear.

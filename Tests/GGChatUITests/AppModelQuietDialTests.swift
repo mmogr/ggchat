@@ -136,13 +136,13 @@ final class AppModelQuietDialTests: XCTestCase {
         XCTAssertNil(model.lastError, "a resume nobody asked for raised an alert")
     }
 
-    /// `Composer` dials inside a `.task(id:)` that SwiftUI cancels on every
-    /// provider switch. A real connector throws `CancellationError` there,
-    /// and reporting it shows the person
+    /// A dial whose task is called off has nobody waiting for its answer. A
+    /// real connector throws `CancellationError` there, and reporting it
+    /// would show the person
     /// "The operation couldn't be completed. (Swift.CancellationError error 1.)"
-    /// for having tapped a different conversation.
+    /// about nothing they did.
     @MainActor
-    func testADialCancelledByTheViewGoingAwaySaysNothing() async throws {
+    func testADialThatIsCalledOffSaysNothing() async throws {
         let connector = SlowRefusingConnector()
         let (model, config) = try makeModel(dialling: connector)
 
@@ -158,8 +158,8 @@ final class AppModelQuietDialTests: XCTestCase {
     }
 
     /// A pipe that dies quietly used to leave its dead session installed, and
-    /// every route back asks for a dial only when there is none: the
-    /// composer's task, and the resume. So the only way out was a manual
+    /// every route back asks for a dial only when there is none: opening a
+    /// conversation, and the resume. So the only way out was a manual
     /// press of the pill, for a pipe the app already knew had closed.
     @MainActor
     func testASessionThatEndedIsForgottenSoAResumeCanDialAgain() async throws {

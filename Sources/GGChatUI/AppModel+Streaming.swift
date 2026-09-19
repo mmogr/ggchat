@@ -231,7 +231,18 @@ extension AppModel {
 
     /// Lists the provider's models and remembers them. Errors surface as
     /// the server's sentence.
-    public func refreshModels(for config: ProviderConfig) async {
+    ///
+    /// Except when the task asking was called off. The request then fails
+    /// because it was, and says so as "Could not reach the server:
+    /// cancelled", which is about nothing the person did or can do. That
+    /// alert is what a cancelled view task used to put in front of them
+    /// (#126).
+    ///
+    /// - Parameters:
+    ///   - config: the provider whose models to list.
+    ///   - quietly: logs a failure instead of raising the alert, for a
+    ///     refresh nobody asked for.
+    public func refreshModels(for config: ProviderConfig, quietly: Bool = false) async {
         guard let provider = makeProvider(for: config) else { return }
         do {
             let models = try await provider.models()
@@ -242,6 +253,14 @@ extension AppModel {
                 updateProvider(updated)
             }
         } catch {
+            if Task.isCancelled {
+                log.log(.info, "listing models for \(config.name) was called off")
+                return
+            }
+            if quietly {
+                log.log(.info, "listing models for \(config.name) failed: \(error.localizedDescription)")
+                return
+            }
             report(error)
         }
     }
