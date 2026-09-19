@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.2](https://github.com/mmogr/ggchat/compare/v0.3.1...v0.3.2) (2026-09-19)
+
+
+### What the app stopped getting wrong
+
+* **pipe:** a key and a read ticket print redacted when the value holding them is interpolated, reflected or dumped ([#116](https://github.com/mmogr/ggchat/issues/116)) ([03fd220](https://github.com/mmogr/ggchat/commit/03fd220a4759063f160b207b5c4a4c7e86a81104))
+* **pipe:** pairing with a desktop on gglib 0.18 says to update it, and that the code is spent ([#123](https://github.com/mmogr/ggchat/issues/123)) ([bcbca59](https://github.com/mmogr/ggchat/commit/bcbca596a9914d2552a73fc724fe051e806e1dad))
+
+
+### Documentation
+
+* **pipe:** a secret stays out of what the value prints, in the four redacting types' docs ([#124](https://github.com/mmogr/ggchat/issues/124)) ([56d3e29](https://github.com/mmogr/ggchat/commit/56d3e292289d5d824552d1fdac5943c7bd786b70))
+* **seam:** the seam says what this build does with a desktop still on gglib 0.18 ([#117](https://github.com/mmogr/ggchat/issues/117)) ([485637e](https://github.com/mmogr/ggchat/commit/485637ec110562bdec15e6e6db9ac9d950c6e118))
+
 ## [0.3.1](https://github.com/mmogr/ggchat/compare/v0.3.0...v0.3.1) (2026-09-17)
 
 
