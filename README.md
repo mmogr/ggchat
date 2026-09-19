@@ -233,9 +233,9 @@ Each claim names the test that keeps it true.
   sentence.
   <!-- test: AppModelQuietDialTests.testADialSomebodyAskedForSaysWhatWentWrong -->
   <!-- test: AppModelQuietDialTests.testAResumeThatFindsTheMachineAsleepSaysNothing -->
-- A dial cancelled by the view going away complains to nobody, because the
-  composer dials inside a task SwiftUI cancels on every provider switch.
-  <!-- test: AppModelQuietDialTests.testADialCancelledByTheViewGoingAwaySaysNothing -->
+- A dial whose task is called off complains to nobody: nobody is waiting
+  for its answer.
+  <!-- test: AppModelQuietDialTests.testADialThatIsCalledOffSaysNothing -->
 - A pipe that dies quietly is forgotten, so the next resume dials it again
   instead of finding a dead session installed and refusing.
   <!-- test: AppModelQuietDialTests.testASessionThatEndedIsForgottenSoAResumeCanDialAgain -->
@@ -283,13 +283,33 @@ Each claim names the test that keeps it true.
   <!-- test: OpenAICompatibleProviderTests.testProxyStatusIsNilOn404AndDecodesOn200 -->
 - A pipe with no session is not asked for its status pane, so the probe as a
   conversation opens raises no alert and keeps no answer. The pane is asked
-  for again each time the pipe comes up, and a probe called off before it was
-  answered keeps nothing.
+  for again each time a pipe a conversation has been opened on comes up, and a
+  probe called off before it was answered keeps nothing.
   <!-- test: AppModelProxyStatusTests.testProbingAPipeWithNoSessionRaisesNothingAndCachesNothing -->
   <!-- test: AppModelProxyStatusTests.testTheStatusPaneIsAskedForAgainWhenThePipeConnects -->
   <!-- test: AppModelProxyStatusTests.testAProbeCalledOffBeforeItsAnswerKeepsNothing -->
   <!-- test: AppModelProxyStatusTests.testAnAnswerThatArrivesAfterThePipeReconnectedIsNotKept -->
-  <!-- test: AppModelProxyStatusTests.testTheStatusProbeIsKeyedOnTheProviderAndThePulse -->
+  <!-- test: AppModelOpeningTests.testThePaneIsAskedAboutWhenAFollowedPipeComesUp -->
+- Opening a conversation hands its provider to the model, which dials it if
+  it is down, lists its models once the pipe is up, and asks about its status
+  pane; a server added by address is asked at once. The work is the model's
+  own, so a view task that SwiftUI calls off as it starts does not call it
+  off. A pipe that was not answering yet when the conversation opened lists
+  its models when it comes up, and one whose last try failed asks again the
+  next time it comes up. A list asked for as a pipe comes up raises no alert
+  when it fails, the first after an opening included, and a list the pipe
+  already has is not asked for again. A second opening while the first runs
+  asks nothing more, opening again once it has finished asks again for what
+  it still lacks, and a list asked for by a task that was called off raises
+  no alert.
+  <!-- test: AppModelOpeningTests.testAServerAddedByAddressListsItsModelsAndIsAskedAboutItsPane -->
+  <!-- test: AppModelOpeningTests.testOpeningAgainAfterAnOpeningFinishedAsksAgain -->
+  <!-- test: AppModelOpeningTests.testAPipeNotAnsweringYetWhenTheConversationOpensListsItsModelsOnceItIs -->
+  <!-- test: AppModelOpeningTests.testAPipeTheCodeWasRedeemedOverListsItsModelsOnceItIsUp -->
+  <!-- test: AppModelOpeningTests.testAFollowedPipeThatComesBackAsksAgainForAListThatFailed -->
+  <!-- test: AppModelOpeningTests.testOpeningIsNotCalledOffWithTheTaskThatAskedForIt -->
+  <!-- test: AppModelOpeningTests.testASecondOpeningWhileTheFirstRunsAsksNothingMore -->
+  <!-- test: AppModelOpeningTests.testARefreshWhoseTaskWasCalledOffRaisesNoAlert -->
 - An unterminated code fence, as seen mid-stream, renders as a code block.
   <!-- test: MarkdownTests.testUnterminatedFenceIsStillACodeBlock -->
 - A `ProviderConfig` holds no credential; a pipe config carries only a

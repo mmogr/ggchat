@@ -75,23 +75,8 @@ private final class StatusServer: URLProtocol, @unchecked Sendable {
     override func stopLoading() {}
 }
 
-/// Holds the mock pipe's walk at `idle` until it is let go: the session is
-/// installed and the far machine has not answered yet.
-private final class HeldSleeper: Sleeper {
-    private let held = Mutex(true)
-
-    func release() { held.withLock { $0 = false } }
-
-    func sleep(for duration: Duration) async throws {
-        while held.withLock({ $0 }) {
-            try Task.checkCancellation()
-            await Task.yield()
-        }
-    }
-}
-
-/// When the chat view asks whether a provider has a status pane. It asks as
-/// it appears, which for a pipe is usually before the dial has returned.
+/// When the app asks whether a provider has a status pane. It asks as a
+/// conversation opens, which for a pipe can be before the dial has returned.
 final class AppModelProxyStatusTests: XCTestCase {
     /// modelpipe's normative vector 1, the shortest string that is a ticket.
     private let ticket = "pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na"
@@ -124,7 +109,7 @@ final class AppModelProxyStatusTests: XCTestCase {
     }
 
     /// The probe as a pipe conversation opens on a launch, before the
-    /// composer's dial has returned. Asked through `makeProvider`, it raises
+    /// dial has returned. Asked through `makeProvider`, it raises
     /// "home is not connected yet." over a pill about to read Direct, and
     /// keeps "no pane" for a machine that has one.
     @MainActor
@@ -148,7 +133,7 @@ final class AppModelProxyStatusTests: XCTestCase {
     /// A session is installed before its far machine answers: `connect`
     /// returns once the local port is bound, and the tunnel's own edge
     /// answers `502` in that gap. What a probe finds there is forgotten when
-    /// the pipe comes up, so the chat view's next probe, on the pulse, asks.
+    /// the pipe comes up, so the next probe, on the pulse, asks.
     @MainActor
     func testTheStatusPaneIsAskedForAgainWhenThePipeConnects() async throws {
         let host = "not-answering-yet.status.test"
@@ -165,15 +150,15 @@ final class AppModelProxyStatusTests: XCTestCase {
         sleeper.release()
         await waitForStatus(.direct, model, config.id)
         XCTAssertEqual(
-            model.connectedPulse, 1, "the connected pulse did not move on, so nothing would re-key the view's probe")
+            model.connectedPulse, 1, "the connected pulse did not move on, so nothing would probe again")
         await model.probeProxyStatus(for: config)
 
         XCTAssertEqual(StatusServer.requests(at: host), 2, "the pipe came up and nobody asked again")
         XCTAssertTrue(model.proxyStatusAvailable(for: config.id))
     }
 
-    /// The chat view calls its probe off when a pipe comes up, and asks again.
-    /// The request then fails because it was called off, not because the
+    /// A probe can be called off before its answer arrives, and a new one
+    /// asked. The request then fails because it was called off, not because the
     /// server has no pane; kept, that answer would hide the pane until the
     /// next reconnect whenever the old probe finished after the new one began.
     @MainActor
@@ -234,26 +219,5 @@ final class AppModelProxyStatusTests: XCTestCase {
         StatusServer.answer([200], at: host)
         await model.probeProxyStatus(for: config)
         XCTAssertTrue(model.proxyStatusAvailable(for: config.id), "and the fresh probe after it did not get through")
-    }
-
-    /// The view's probe is keyed on the provider and the connected pulse, so a
-    /// pipe coming up is a new key and the view asks again. What `.task(id:)`
-    /// does with a new key is SwiftUI's, and no test CI runs reaches the view;
-    /// this pins the half that is ours.
-    @MainActor
-    func testTheStatusProbeIsKeyedOnTheProviderAndThePulse() {
-        let provider = UUID()
-        let other = UUID()
-        XCTAssertEqual(
-            ChatView.StatusProbe(providerID: provider, connectedPulse: 1),
-            ChatView.StatusProbe(providerID: provider, connectedPulse: 1))
-        XCTAssertNotEqual(
-            ChatView.StatusProbe(providerID: provider, connectedPulse: 1),
-            ChatView.StatusProbe(providerID: provider, connectedPulse: 2),
-            "a pipe coming up is not a new key, so the view would not ask again")
-        XCTAssertNotEqual(
-            ChatView.StatusProbe(providerID: provider, connectedPulse: 1),
-            ChatView.StatusProbe(providerID: other, connectedPulse: 1),
-            "another provider is not a new key")
     }
 }

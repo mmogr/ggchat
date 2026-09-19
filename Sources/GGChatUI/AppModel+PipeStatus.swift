@@ -80,10 +80,14 @@ extension AppModel {
             connectedPulse &+= 1
             // Any answer the status probe kept came from before this
             // connection, through a session not answering yet or an earlier
-            // one, and so is any answer still on its way. The chat view asks
-            // again on the pulse.
+            // one, and so is any answer still on its way.
             proxyStatusAvailability[providerID] = nil
             probeGeneration[providerID] = (probeGeneration[providerID] ?? 0) + 1
+            // A provider a conversation has been opened on asks again now,
+            // and lists its models if it still has none; see `open(_:)`.
+            if followed.contains(providerID) {
+                Task { await catchUp(providerID, quietly: true) }
+            }
         }
     }
 

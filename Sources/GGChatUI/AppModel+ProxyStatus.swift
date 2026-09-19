@@ -13,10 +13,9 @@ extension AppModel {
     /// nothing is reported to the user.
     ///
     /// A pipe with no session yet is not asked and nothing is kept for it:
-    /// the chat view probes as it appears, which can be before the composer's
-    /// dial has returned, and asking through `makeProvider` then raises its
-    /// "not connected yet" alert. `setPipeStatus` forgets the answer when the pipe
-    /// comes up, and the chat view asks again.
+    /// asking through `makeProvider` then raises its "not connected yet"
+    /// alert. `setPipeStatus` forgets the answer when the pipe comes up, and
+    /// asks again for a provider a conversation has been opened on.
     public func probeProxyStatus(for config: ProviderConfig) async {
         if proxyStatusAvailability[config.id] != nil { return }
         if config.isPipe, pipeSessions[config.id] == nil { return }
@@ -28,12 +27,11 @@ extension AppModel {
         probeGeneration[config.id] = generation
         let snapshot: ProxyStatus?? = try? await provider.proxyStatus()
         // Kept only if nothing moved this probe on while it waited. A pipe
-        // coming up moves it on, and so does a newer probe. The chat view
-        // calls its probe off as well, but it re-keys on a later main-actor
-        // turn, so when the answer is already in this line can be reached
-        // before `cancel()` has been called at all, and an answer from before
-        // the reconnect would then be kept until the next one. The generation
-        // does not depend on that timing.
+        // coming up moves it on, and so does a newer probe. A cancelled
+        // caller is checked as well, but cancellation can arrive after the
+        // answer is already in, and an answer from before the reconnect would
+        // then be kept until the next one. The generation does not depend on
+        // that timing.
         guard probeGeneration[config.id] == generation, !Task.isCancelled else { return }
         let available = snapshot.flatMap { $0 } != nil
         proxyStatusAvailability[config.id] = available

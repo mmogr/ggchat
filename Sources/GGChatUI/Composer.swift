@@ -34,20 +34,10 @@ struct Composer: View {
         .frame(maxWidth: 760)
         .frame(maxWidth: .infinity)
         .task(id: provider?.id) {
-            guard let provider else { return }
-            if provider.isPipe, model.pipeSession(for: provider.id) == nil {
-                await model.connectPipe(for: provider)
-            }
-            // A pipe that did not come up has no models to list, and asking
-            // anyway is how the connector's own sentence got replaced by a
-            // generic one: the refusal lands, then the refresh a moment later
-            // fails for the obvious downstream reason and writes that instead.
-            // The person read "not connected yet" when the app knew the port
-            // was taken, or the machine was asleep.
-            if provider.isPipe, model.pipeSession(for: provider.id) == nil { return }
-            if model.models(for: provider.id).isEmpty {
-                await model.refreshModels(for: provider)
-            }
+            // Handed to the model and not awaited: SwiftUI can cancel this
+            // task as soon as it starts, and the work must outlive that. See
+            // `AppModel+Opening`.
+            if let provider { model.open(provider) }
         }
         .sensoryFeedback(.success, trigger: model.connectedPulse)
     }

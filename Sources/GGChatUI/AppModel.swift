@@ -59,9 +59,12 @@ public final class AppModel {
     /// Moved on by every new probe and by every pipe that comes up, so an
     /// answer from before either is discarded rather than kept.
     var probeGeneration: [UUID: Int] = [:]
+    /// The providers a conversation has been opened on, and each one's
+    /// opening still under way; see `AppModel+Opening`.
+    var followed: Set<UUID> = []
+    var opening: [UUID: Task<Void, Never>] = [:]
     /// Changes once each time a pipe first reaches a connected state; the
-    /// one haptic in the app fires on it, and the chat view probes the status
-    /// pane again.
+    /// one haptic in the app fires on it.
     public internal(set) var connectedPulse = 0
 
     public let diagnostics: Diagnostics
