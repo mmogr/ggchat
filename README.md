@@ -264,6 +264,14 @@ Each claim names the test that keeps it true.
   <!-- test: UnavailablePipeTests.testTheRefusalIsASentenceThatBlamesTheBuildAndNotTheUser -->
 - A bearer token is sent on every request and never reaches a log line.
   <!-- test: OpenAICompatibleProviderTests.testNoCredentialEverReachesALogLine -->
+- `PairedPipe`, `Paired` and `OpenAICompatibleProvider` print the key they
+  hold as `<redacted>`, and a `ReadPairing` prints its ticket as the
+  ticket's digest, whether interpolated, reflected or dumped, so a log line
+  that interpolates one of them whole carries neither.
+  <!-- test: RedactedDescriptionTests.testAPairedPipePrintsItsDeviceAndNeverItsKey -->
+  <!-- test: RedactedDescriptionTests.testAReadPairingPrintsItsDigestAndNeverItsTicket -->
+  <!-- test: PairedDescriptionTests.testPairedPrintsItsDeviceAndNeverItsKey -->
+  <!-- test: RedactedDescriptionTests.testAProviderPrintsItsAddressAndNeverItsKey -->
 - gglib's proxy status endpoint decodes when it answers and is `nil` on 404.
   <!-- test: OpenAICompatibleProviderTests.testProxyStatusIsNilOn404AndDecodesOn200 -->
 - A pipe with no session is not asked for its status pane, so the probe as a
