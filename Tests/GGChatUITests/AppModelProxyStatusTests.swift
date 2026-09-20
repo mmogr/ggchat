@@ -131,9 +131,10 @@ final class AppModelProxyStatusTests: XCTestCase {
     }
 
     /// A session is installed before its far machine answers: `connect`
-    /// returns once the local port is bound, and the tunnel's own edge
-    /// answers `502` in that gap. What a probe finds there is forgotten when
-    /// the pipe comes up, so the next probe, on the pulse, asks.
+    /// returns once the local port is bound, and the connecting side, which
+    /// never had a backend to reach, answers `502` in that gap. What a probe
+    /// finds there is forgotten when the pipe comes up, so the next probe, on
+    /// the pulse, asks.
     @MainActor
     func testTheStatusPaneIsAskedForAgainWhenThePipeConnects() async throws {
         let host = "not-answering-yet.status.test"

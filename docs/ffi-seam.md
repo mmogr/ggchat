@@ -113,10 +113,11 @@ Each is what `MockPipeConnector` and `MockPipeSession` do today and what
    `direct` happens afterwards and the app shows it on the status pill.
    Anything that has to reach the far machine waits for that walk. Pairing
    learned this on a phone (#55): it redeemed the code the moment `connect`
-   returned, the tunnel's edge answered `502` in the gap before the peer
-   was reached, and the one-time code was spent on nothing. The wait is
-   now modelpipe's: `mpPair` calls `wait_reachable` before it presents the
-   code, and `relayed` counts as reached there as it does here.
+   returned, its own end of the pipe — which never had a backend to reach —
+   answered `502` in the gap before the peer was reached, and the one-time
+   code was spent on nothing. The wait is now modelpipe's: `mpPair` calls
+   `wait_reachable` before it presents the code, and `relayed` counts as
+   reached there as it does here.
 3. **`baseURL` is loopback, ends in `/v1`, and is stable for the life of
    the session.** The app builds `OpenAICompatibleProvider(baseURL:
    session.baseURL, apiKey: token)` and nothing else. See ADR 0001 for
@@ -178,7 +179,8 @@ What the ffi owes here, beyond the two protocols above:
   case, because the two halves are one argument to whatever dials.
 - **The code is not presented before the far machine is reached**, for
   #2's reason. A redeem sent into that gap is answered `502` by the
-  tunnel's edge and the one-time code is spent on nothing.
+  connecting side, which never had a backend to reach, and the one-time
+  code is spent on nothing.
 - **The pipe comes back up**, and becomes the provider's first session.
   Hanging it up to dial again would cost a second hole punch, and ~~without
   a lasting connect identity a second endpoint identity as well — so the

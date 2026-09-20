@@ -52,8 +52,8 @@ extension ModelpipeConnector {
     ///
     /// The whole string goes to modelpipe, which parses it, dials the ticket
     /// in it, waits for the far machine, and only then presents the code —
-    /// the wait that stops a redeem being answered `502` by the tunnel's own
-    /// edge before there is a peer to forward it to, which spends the
+    /// the wait that stops a redeem being answered `502` by this device's own
+    /// end of the pipe, which never had a backend to reach; that spends the
     /// one-time code on nothing.
     ///
     /// A pipe that comes up somewhere this app will not send a request is
