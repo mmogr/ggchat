@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/mmogr/ggchat/compare/v0.3.3...v0.3.4) (2026-09-20)
+
+
+### Documentation
+
+* **pipe:** the 502 in the dial's gap is written by this device, not by the far edge ([#130](https://github.com/mmogr/ggchat/issues/130)) ([18678dd](https://github.com/mmogr/ggchat/commit/18678ddddadb0cb83da0f708092cebae0f29a8c5))
+
 ## [0.3.3](https://github.com/mmogr/ggchat/compare/v0.3.2...v0.3.3) (2026-09-19)
 
 
