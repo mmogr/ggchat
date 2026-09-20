@@ -243,8 +243,9 @@ Each claim names the test that keeps it true.
 - Pairing waits for the far machine before spending the code, and the real
   `mpPair` is what waits. A dial returns once the local port is bound, not
   once the peer answers, and a redeem sent into that gap is answered `502` by
-  the tunnel's own edge — which spends the one-time code on nothing and needs
-  a fresh `gglib remote invite`.
+  this device's own end of the pipe, which never had a backend to reach.
+  That spends the one-time code on nothing and needs a fresh
+  `gglib remote invite`.
   <!-- test: BindingTests.testPairingWaitsForTheFarMachineBeforeSpendingTheCode -->
 - The mock pipe walks idle → relayed → direct, can be forced closed, and a
   late subscriber gets the current status first.

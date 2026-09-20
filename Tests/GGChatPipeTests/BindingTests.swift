@@ -47,8 +47,8 @@ final class BindingTests: XCTestCase {
     /// costs a fraction of a second. Reaching `Unreached` means the string
     /// parsed, a pipe was dialled, the wait ran out — and the code was never
     /// presented. A redeem sent into that gap is answered `502` by the
-    /// tunnel's own edge, which spends the one-time code on nothing and needs
-    /// a fresh `gglib remote invite`.
+    /// connecting side, which never had a backend to reach; that spends the
+    /// one-time code on nothing and needs a fresh `gglib remote invite`.
     func testPairingWaitsForTheFarMachineBeforeSpendingTheCode() async {
         var options = MpConnectOptions()
         options.discovery = false
