@@ -192,7 +192,13 @@ Each claim names the test that keeps it true.
   needs two. The key admits nothing — what admits this device is the token
   beside it in the Keychain — and
   [ADR 0004](docs/adr/0004-the-connect-identity-is-a-file.md) is why it is a
-  file all the same.
+  file all the same. Naming each key file used to be this app's job and is
+  now the binding's, so the two have to land on the same name or every
+  already-paired device would quietly introduce itself as a stranger, with no
+  build failure and no log line. A test asserts that name as a literal from
+  both sides of the boundary.
+  <!-- test: BindingTests.testTheKeyFilesNameIsTheSameRuleOnBothSidesOfTheBoundary -->
+  <!-- test: PipeIdentityFilesTests.testTheKeysLiveInADirectoryWhoseNameDoesNotMove -->
   <!-- test: BindingTests.testADeviceThatKeepsItsKeyIsTheSameDeviceNextTime -->
   <!-- test: ModelpipeConnectorIdentityTests.testTheShippedConnectorKeepsAKeyWhereItSaysItDoes -->
   <!-- test: ModelpipeConnectorIdentityTests.testEveryDialCarriesTheDirectoryThisDeviceKeepsItsKeysIn -->
@@ -206,6 +212,7 @@ Each claim names the test that keeps it true.
   the binding now, which is the layer that decides the file's name. Once
   only: a refusal that reaches this app is one the discard could not fix, so
   it is not dialled again here and the person gets the sentence instead.
+  <!-- test: BindingTests.testAKeyThisDeviceCannotUseIsThrownAwayAndTheDialTriedAgain -->
   <!-- test: ModelpipeConnectorIdentityTests.testAnIdentityRefusalIsNotDialledAgainOnThisSide -->
   <!-- test: ModelpipeConnectorTests.testAnIdentityFileThatCannotBeUsedIsASentenceAndNotWorthDiallingAgain -->
 - A failure from the transport, from a pairing, or from an identity file

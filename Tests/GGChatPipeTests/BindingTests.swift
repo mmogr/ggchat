@@ -137,4 +137,120 @@ final class BindingTests: XCTestCase {
         XCTAssertFalse(PipeStatus(MpPipeStatus.idle).isConnected)
         XCTAssertFalse(PipeStatus(MpPipeStatus.closed).isConnected)
     }
+
+    /// The name of the key file, asserted from both sides of the boundary
+    /// against the same literal, with neither side computing it from the
+    /// other.
+    ///
+    /// This is what holds every already-paired device in place across the
+    /// upgrade. Until modelpipe-ffi 0.4.0 this app named the file
+    /// `Ticket.digest(canonicalTicket) + ".key"`; from 0.4.0 the binding
+    /// names it, hashing `Display` of the ticket it parsed. If those two
+    /// disagree, every phone looks for a key file that is no longer written,
+    /// mints a fresh endpoint, and introduces itself to its desktop as a
+    /// stranger — with no build failure and no log line.
+    ///
+    /// So Swift's half here stands in for what a shipped build wrote, and it
+    /// is only a fair stand-in because the argument is the canonical ticket,
+    /// which is the only thing any call site ever passed
+    /// (`ModelpipeConnector` and `ModelpipeConnector+Pairing` both read
+    /// through `mpReadPairing` first, at every commit that ever reached
+    /// `main`).
+    ///
+    /// **What this does not see:** the two are not the same transform.
+    /// `Ticket.digest` folds ASCII case and hashes its argument; the binding
+    /// parses and hashes the canonical form, which also sorts addresses and
+    /// drops an address tag it does not know. On a ticket that is already
+    /// canonical — this vector is — they coincide, so this test would pass
+    /// under either. It pins the constant, not the equivalence of the rules.
+    ///
+    /// `0382e9033d890983` is the digest of modelpipe's normative vector 1,
+    /// which is also modelpipe-ffi's own `GOOD_TICKET`, so the same constant
+    /// is asserted on the Rust side by `identity_file_tests`. It is written
+    /// out here rather than derived, because a test that computed the expected
+    /// name from `Ticket.digest` would pass whatever `Ticket.digest` did.
+    func testTheKeyFilesNameIsTheSameRuleOnBothSidesOfTheBoundary() async throws {
+        let expected = "0382e9033d890983.key"
+
+        // Side one: the rule a shipped 0.3.x build named the file by. A
+        // failure here does not orphan anyone by itself — it means this
+        // stand-in has stopped representing what those builds wrote, and so
+        // has stopped being evidence for side two.
+        XCTAssertEqual(
+            Ticket.digest(Self.vector) + ".key", expected,
+            "Swift's digest moved, so it no longer stands for what 0.3.x wrote")
+
+        // Side two: what the binding actually writes, having parsed the
+        // ticket itself. No Swift-computed *name* reaches this: the ticket
+        // and the directory cross, and the binding derives the name from the
+        // first. That is what makes it independent evidence rather than a
+        // restatement of side one.
+        let root = FileManager.default.temporaryDirectory.appending(
+            path: "ggchat-name-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+        let directory = root.path(percentEncoded: false)
+
+        var options = MpConnectOptions(identityDir: directory)
+        options.discovery = false
+        options.portMapping = false
+        let pipe = try await mpConnect(ticket: Self.vector, options: options)
+        await pipe.shutdown()
+
+        XCTAssertEqual(
+            try FileManager.default.contentsOfDirectory(atPath: directory), [expected],
+            "the binding's name for this ticket's key file moved, and every device "
+                + "paired by a 0.3.x build is looking for the old one")
+    }
+
+    /// A key file this device cannot use is thrown away and the dial tried
+    /// once more — by the binding, which is the only layer that names the
+    /// file, and so the only one that can find the file to remove.
+    ///
+    /// This is the other half of what moved across the seam at modelpipe-ffi
+    /// 0.4.0, and it is load-bearing in the way the name is. The tests that
+    /// asserted it here went down with the code they were written against. If
+    /// the binding ever stops, nothing in this package would notice: the
+    /// manifest takes any 0.4.x, the suite stays green, and a phone whose key
+    /// file was left empty by a process killed mid-write gets a permanent
+    /// `dialFailed` for that machine, whose only remedy is deleting a file a
+    /// phone does not offer anybody.
+    ///
+    /// Empty rather than garbage because that is the case a crash actually
+    /// produces, and it is the one ggchat's own `discardIfEmpty` existed for.
+    /// Offline, like the tests above it: the vector names an endpoint nobody
+    /// is, and `mpConnect` returns once the local port is bound.
+    func testAKeyThisDeviceCannotUseIsThrownAwayAndTheDialTriedAgain() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(
+            path: "ggchat-heal-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+        let directory = root.path(percentEncoded: false)
+        let key = root.appending(path: "0382e9033d890983.key").path(percentEncoded: false)
+
+        // A key half written: the file exists and holds nothing, which is not
+        // a key, and which every later dial to this machine used to be
+        // refused over for good.
+        XCTAssertTrue(FileManager.default.createFile(atPath: key, contents: Data()))
+        XCTAssertEqual(
+            FileManager.default.contents(atPath: key), Data(),
+            "the file this test is about was not empty to begin with")
+
+        var options = MpConnectOptions(identityDir: directory)
+        options.discovery = false
+        options.portMapping = false
+        let pipe = try await mpConnect(ticket: Self.vector, options: options)
+        await pipe.shutdown()
+
+        // The name first: if it moved, the probe file below was never the one
+        // this dial would look at, and "still empty" would be the wrong thing
+        // to report.
+        XCTAssertEqual(
+            try FileManager.default.contentsOfDirectory(atPath: directory), ["0382e9033d890983.key"],
+            "the binding is not naming this ticket's key file what it named it before")
+        let healed = try XCTUnwrap(FileManager.default.contents(atPath: key))
+        XCTAssertFalse(
+            healed.isEmpty,
+            "the binding dialled over a key file of nothing instead of replacing it")
+    }
 }

@@ -74,6 +74,42 @@ final class PipeIdentityFilesTests: XCTestCase {
         XCTAssertNil(identities.directoryPath())
     }
 
+    /// The directory this app keeps keys in is named `pipe-identities` under
+    /// Application Support, and that name is as load-bearing as the name of
+    /// the files inside it: change it and every paired device looks in an
+    /// empty directory, mints a fresh endpoint and introduces itself to its
+    /// desktop as a stranger — the same silent orphaning `BindingTests` pins
+    /// the file's name against, and with no build failure either.
+    ///
+    /// Spelt out rather than read from the source. This is the one test that
+    /// calls `applicationSupport()`, and it is safe to: the call creates the
+    /// platform's own Application Support directory and appends the name
+    /// without creating anything under it, so no key of this machine's real
+    /// app is touched. The second assertion is that safety, and it has to
+    /// sample the directory *before* `applicationSupport()` is ever called —
+    /// building the path by hand to do it. Sampling afterwards reads the
+    /// state the call left behind, so a version that created the directory
+    /// would compare `true` against `true` and pass.
+    ///
+    /// Its one honest limit: on a host that already holds a real
+    /// `pipe-identities`, `before` is `true` and a creating version passes
+    /// here too. It detects on the hosts where the damage would be done.
+    func testTheKeysLiveInADirectoryWhoseNameDoesNotMove() throws {
+        let support = try XCTUnwrap(
+            try? FileManager.default.url(
+                for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil,
+                create: true))
+        let path = support.appending(path: "pipe-identities").path(percentEncoded: false)
+        let before = FileManager.default.fileExists(atPath: path)
+
+        let identities = try XCTUnwrap(PipeIdentityFiles.applicationSupport())
+
+        XCTAssertEqual(identities.directory.lastPathComponent, "pipe-identities")
+        XCTAssertEqual(
+            FileManager.default.fileExists(atPath: path), before,
+            "naming the app's own directory created it, and this test would be writing into it")
+    }
+
     /// The directory is made, and nothing is put in it. This app writes no key
     /// file and names none: the first one appears when modelpipe writes it, on
     /// a dial that was handed this directory.

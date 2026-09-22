@@ -43,8 +43,15 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # pairing refusal now carries brought one back. What is left here is what this
 # side still owes, which is the directory. The claims are not weaker, they are
 # made one layer down, against the code that does the work.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 243
+#
+# 243 -> 246 for the three guards that hold this change's silent failures to
+# account: the key file's name, the discard-and-retry that heals one this
+# device cannot use, and the name of the directory they all live in. Each is a
+# whole guard of its own, so the floor moves past them -- left where it was,
+# any of the three could be deleted and no gate would notice, while a rename
+# on either side of the boundary orphans every paired device in silence.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 246
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 22
-floor "README test markers" "${markers:-0}" 163
+floor "README test markers" "${markers:-0}" 166
 
 exit $status
