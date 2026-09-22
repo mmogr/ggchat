@@ -154,15 +154,16 @@ public enum PipeConnectError: Error, Sendable, Equatable, LocalizedError {
     /// is the sentence whoever refused it wrote, and the line naming what to
     /// run there is added here.
     case pairingRefused(message: String)
-    /// The far machine answered the code with something that is not a
-    /// pairing answer, in the shape a desktop on gglib 0.18 answers it.
+    /// The far machine answered the code `404`, which is how a desktop too
+    /// old to pair this way answers it.
     ///
     /// That desktop pairs another way. Its edge admits the code as a
     /// one-time grant, spends it by presenting it, and hands the request to a
     /// proxy with no such route, so the code is gone, and asking that desktop
-    /// for another one before updating it spends that one too. The payload is
-    /// modelpipe's sentence, and the line saying what to update is added
-    /// here, as `pairingRefused`'s is.
+    /// for another one before updating it spends that one too. modelpipe's
+    /// own sentence names the status and says the far machine is probably too
+    /// old; what is added here is the half no layer below can write — that
+    /// the code is spent, and which version to update to.
     case desktopTooOldToPair(message: String)
     /// The far machine answered the code with something else that is not a
     /// pairing answer.
@@ -181,7 +182,7 @@ public enum PipeConnectError: Error, Sendable, Equatable, LocalizedError {
             message + " Run `gglib remote invite` there again."
         case .desktopTooOldToPair(let message):
             message
-                + " A desktop on gglib 0.18 answers that way, and the code has been spent."
+                + " The code has been spent."
                 + " Update gglib there to a version newer than 0.18, then run `gglib remote invite` for a new code."
         case .unexpectedAnswer(let message):
             message + " The code may have been spent, so run `gglib remote invite` there for a new one."

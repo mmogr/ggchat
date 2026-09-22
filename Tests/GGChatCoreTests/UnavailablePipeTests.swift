@@ -41,7 +41,7 @@ final class UnavailablePipeTests: XCTestCase {
     /// not the paste and names no binding type. `pairingRefused`,
     /// `desktopTooOldToPair` and `unexpectedAnswer` are here because they
     /// compose — each adds a line saying where the next attempt starts, and
-    /// `ModelpipeConnectorPairingTests` pins the two new sentences whole and
+    /// `ModelpipePairRefusalTests` pins the composed sentences whole and
     /// checks that the refused one names `gglib remote invite` — and
     /// `missingToken` and `unavailable` are the two written here outright.
     func testEveryRefusalHasASentence() {
@@ -49,7 +49,8 @@ final class UnavailablePipeTests: XCTestCase {
             .invalidTicket(message: "That is not a ticket."), .missingToken, .unavailable,
             .dialFailed(message: "The other machine did not answer.", retryable: true),
             .pairingRefused(message: "That pairing code was not accepted."),
-            .desktopTooOldToPair(message: "The other machine's answer was not a pairing answer."),
+            .desktopTooOldToPair(
+                message: "The other machine answered the pairing request with HTTP 404."),
             .unexpectedAnswer(message: "The other machine's answer was not a pairing answer."),
         ]
         for error in errors {

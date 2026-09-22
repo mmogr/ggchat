@@ -19,9 +19,10 @@ let package = Package(
         //
         // Up to the next minor, not the next major: every ffi feature is a
         // minor release, and a minor can add a protocol requirement, as 0.2.0
-        // did to `MpPipeProtocol`. Taking one is then a deliberate pull
-        // request rather than a dependency bump that arrives red.
-        .package(url: "https://github.com/mmogr/modelpipe-ffi.git", .upToNextMinor(from: "0.3.0")),
+        // did to `MpPipeProtocol`, or a case to an error, as 0.4.0 did to
+        // `MpPairError`. Taking one is then a deliberate pull request rather
+        // than a dependency bump that arrives red.
+        .package(url: "https://github.com/mmogr/modelpipe-ffi.git", .upToNextMinor(from: "0.4.0")),
     ],
     targets: [
         .target(
@@ -31,9 +32,10 @@ let package = Package(
         // The one target that links modelpipe, and the only place the
         // boundary check permits `import Modelpipe`.
         //
-        // Not `GGChatCore`: that target is kept free of anything Apple-only so
-        // it builds and tests from a command line, and the binding links Apple
-        // frameworks. Not `GGChatUI` either: its `.defaultIsolation(MainActor)`
+        // Not `GGChatCore`: that target is kept free of the *binding* so it
+        // builds and tests from a command line, and the binding links Apple
+        // frameworks. It is not free of Apple frameworks as such — `Ticket`
+        // takes CryptoKit. Not `GGChatUI` either: its `.defaultIsolation(MainActor)`
         // fights `PipeConnector: Sendable`, which the connector must be.
         .target(
             name: "GGChatPipe",

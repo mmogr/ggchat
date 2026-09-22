@@ -5,13 +5,18 @@ import XCTest
 
 @testable import GGChatPipe
 
-/// What the far machine sees this device as, dial after dial: one endpoint
-/// key per machine, kept in a file modelpipe writes, and thrown away only
-/// when it is the thing stopping a dial.
+/// What the far machine sees this device as, dial after dial: one endpoint key
+/// per machine, kept in a directory this app makes and modelpipe writes into.
 ///
-/// A file of its own beside the other two connector suites, which are what a
-/// dial does and what a pairing does; together they would be over this repo's
-/// file-size limit.
+/// From modelpipe-ffi 0.4.0 the binding names the file and heals it. What is
+/// left on this side, and so what is tested here, is which directory a dial
+/// carries, that a dial still goes out when there is none, that a refusal
+/// this side cannot fix is not dialled again here, and that the connector as
+/// it ships really hands the directory over.
+///
+/// A file of its own beside the other connector suites — what a dial does,
+/// what a pairing does, and what a person is shown when one is refused;
+/// together they would be over this repo's file-size limit.
 final class ModelpipeConnectorIdentityTests: XCTestCase {
     /// modelpipe's normative vector 1, so a refusal here is about the code
     /// under test and not about the input.
@@ -36,29 +41,36 @@ final class ModelpipeConnectorIdentityTests: XCTestCase {
 
     // MARK: - The device the far machine sees
 
-    /// Every dial to one machine carries the same key, so the endpoint it
-    /// recorded as this device paired is the one still dialling it on the next
-    /// launch. Whichever way the ticket was written down: the path is
-    /// built from the canonical form the reader hands back, not from what was
-    /// pasted, so a machine scanned off a QR code today and typed tomorrow is
-    /// one device rather than two.
-    func testEveryDialToOneMachineCarriesTheSameKey() async throws {
+    /// Every dial carries the one directory this device keeps its keys in,
+    /// whichever way the ticket was written down — which is all this can now
+    /// assert, because the directory does not depend on the ticket.
+    ///
+    /// That a machine scanned off a QR code today and typed tomorrow is *one
+    /// device* is the binding's rule now, and it is pinned in the binding:
+    /// `identity_file_tests::a_shouted_ticket_names_the_same_file`. Nothing in
+    /// this package asserts it any more. `BindingTests` pins the name against
+    /// a literal, which is a different claim and says so.
+    func testEveryDialCarriesTheDirectoryThisDeviceKeepsItsKeysIn() async throws {
         let identities = temporaryIdentities()
         let seen = Mutex<[String?]>([])
-        let connector = connector(identities: identities) { _, identityPath in
-            seen.withLock { $0.append(identityPath) }
+        let connector = connector(identities: identities) { _, identityDir in
+            seen.withLock { $0.append(identityDir) }
             return FakePipe()
         }
 
         _ = try await connector.connect(ticket: realTicket, token: "the-key")
         _ = try await connector.connect(ticket: realTicket.uppercased(), token: "the-key")
 
+        // Unwrapped, not compared as optionals: `directoryPath()` is the
+        // thing under test here, and `nil == nil` would be a green comparison
+        // for a build that had stopped naming a directory at all.
+        let expected = try XCTUnwrap(identities.directoryPath())
         let carried = seen.withLock { $0 }
         XCTAssertEqual(carried.count, 2)
-        XCTAssertEqual(carried.first, identities.path(forTicket: realTicket))
+        XCTAssertEqual(try XCTUnwrap(carried.first), expected)
         XCTAssertEqual(
             carried.first, carried.last,
-            "the same machine was dialled as two devices: \(carried)")
+            "the same machine was dialled from two places: \(carried)")
     }
 
     /// With nowhere to keep one, the dial goes out without a key and modelpipe
@@ -67,8 +79,8 @@ final class ModelpipeConnectorIdentityTests: XCTestCase {
     /// fingerprint, not the ability to connect.
     func testWithNowhereToKeepAKeyTheDialStillGoesOut() async throws {
         let seen = Mutex<[String?]>([])
-        let connector = connector { _, identityPath in
-            seen.withLock { $0.append(identityPath) }
+        let connector = connector { _, identityDir in
+            seen.withLock { $0.append(identityDir) }
             return FakePipe()
         }
 
@@ -77,44 +89,21 @@ final class ModelpipeConnectorIdentityTests: XCTestCase {
         XCTAssertEqual(seen.withLock { $0 }, [nil])
     }
 
-    /// modelpipe refuses a key file it cannot use and asks for it to be
-    /// removed or replaced, which is not something anybody can do on a phone —
-    /// so a dial that meets that refusal throws the file away itself and dials
-    /// once more. The cost is this device's fingerprint on that machine, which
-    /// records fingerprints rather than pinning them; the alternative is a
-    /// provider that can never connect again.
-    func testAKeyThisDeviceCannotUseIsThrownAwayAndTheDialTriedAgain() async throws {
-        let identities = temporaryIdentities()
-        let path = try XCTUnwrap(identities.path(forTicket: realTicket))
-        FileManager.default.createFile(atPath: path, contents: Data("not a key at all".utf8))
-        let attempts = Mutex(0)
-        let connector = connector(identities: identities) { _, _ in
-            let attempt = attempts.withLock { count -> Int in
-                count += 1
-                return count
-            }
-            if attempt == 1 { throw MpError.Identity(path: path) }
-            return FakePipe()
-        }
-
-        _ = try await connector.connect(ticket: realTicket, token: "the-key")
-
-        XCTAssertEqual(attempts.withLock { $0 }, 2, "the dial was not tried again")
-        XCTAssertFalse(
-            FileManager.default.fileExists(atPath: path),
-            "the key that could not be used is still there to refuse the next dial too")
-    }
-
-    /// Once, though. With no file to throw away the refusal is about the path
-    /// or the directory rather than the key, and dialling again would fail the
-    /// same way for as long as anyone kept trying; the person gets modelpipe's
-    /// sentence instead.
-    func testAnIdentityRefusalWithNoKeyToThrowAwayIsNotRetried() async throws {
+    /// A key this device cannot use is thrown away and the dial tried once more
+    /// *inside the binding*, so an `MpError.Identity` that reaches this side is
+    /// one the discard could not fix: the directory was missing, or the
+    /// replacement could not be written. Whatever the cause, dialling again
+    /// here would fail the same way for as long as anyone kept trying, so this
+    /// side dials once and hands over modelpipe's sentence.
+    ///
+    /// This is the half of the old retry that did not move: the judgement that
+    /// there is nothing left to try.
+    func testAnIdentityRefusalIsNotDialledAgainOnThisSide() async throws {
         let identities = temporaryIdentities()
         let attempts = Mutex(0)
-        let connector = connector(identities: identities) { _, identityPath in
+        let connector = connector(identities: identities) { _, identityDir in
             attempts.withLock { $0 += 1 }
-            throw MpError.Identity(path: identityPath ?? "nowhere")
+            throw MpError.Identity(path: (identityDir ?? "nowhere") + "/a-key.key")
         }
 
         do {
@@ -130,26 +119,26 @@ final class ModelpipeConnectorIdentityTests: XCTestCase {
 
         XCTAssertEqual(
             attempts.withLock { $0 }, 1,
-            "there was nothing to throw away, so trying again could only fail the same way")
+            "the binding had already discarded and retried; this side tried again on top")
     }
 
-    /// And the connector as it ships really hands that path over. The dial is
-    /// a fake closure in every other test, so without this nothing would
-    /// notice a shipped build that quietly dropped the identity and introduced
-    /// itself afresh on every launch.
+    /// And the connector as it ships really hands that directory over, and a
+    /// key really lands in it. The dial is a fake closure in every other test,
+    /// so without this nothing would notice a shipped build that quietly
+    /// dropped the identity and introduced itself afresh on every launch.
     func testTheShippedConnectorKeepsAKeyWhereItSaysItDoes() async throws {
         let root = FileManager.default.temporaryDirectory.appending(
             path: "ggchat-shipped-\(UUID().uuidString)")
         addTeardownBlock { try? FileManager.default.removeItem(at: root) }
         let identities = PipeIdentityFiles(directory: root)
-        let expected = try XCTUnwrap(identities.path(forTicket: realTicket))
+        let directory = try XCTUnwrap(identities.directoryPath())
         let connector = ModelpipeConnector.live(identities: identities)
 
         let session = try await connector.connect(ticket: realTicket, token: "a-key")
         await session.shutdown()
 
-        XCTAssertTrue(
-            FileManager.default.fileExists(atPath: expected),
-            "the shipped dial kept no key at \(expected)")
+        XCTAssertEqual(
+            try FileManager.default.contentsOfDirectory(atPath: directory).count, 1,
+            "the shipped dial kept no key in \(directory)")
     }
 }

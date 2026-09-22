@@ -133,17 +133,20 @@ Each claim names the test that keeps it true.
   the next attempt starts, and the form stops asking for a token once it
   has a code to fetch one with.
   <!-- test: ModelpipeConnectorPairingTests.testThePipeTheCodeWasRedeemedOverIsTheSession -->
-  <!-- test: ModelpipeConnectorPairingTests.testARefusedCodeKeepsItsOwnCaseAndSaysWhereToGetANewOne -->
+  <!-- test: ModelpipePairRefusalTests.testARefusedCodeKeepsItsOwnCaseAndSaysWhereToGetANewOne -->
   <!-- test: AppModelPairingTests.testARedeemedCodeBecomesTheProvidersTokenAndThePipeConnects -->
   <!-- test: AppModelPairingTests.testARefusedCodeAddsNoProviderAndSaysWhy -->
   <!-- test: ScreenGalleryUITests.testAPairingCodeIsRedeemedInsteadOfAskingForAToken -->
 - A desktop still on gglib 0.18 pairs another way: its edge spends the code
-  and its proxy has no such route. Pairing with one says that the code has
-  been spent, and that gglib there needs updating to a version newer than
-  0.18 before it is asked for another. Any other answer that is not a
-  pairing answer says the code may have been spent.
-  <!-- test: ModelpipeConnectorPairingTests.testADesktopTooOldToPairSaysToUpdateItAndThatTheCodeIsSpent -->
-  <!-- test: ModelpipeConnectorPairingTests.testAnyOtherAnswerThatIsNotAPairingAnswerSaysTheCodeMayBeSpent -->
+  and its proxy has no such route, so it answers the pairing request `404`.
+  Pairing with one says that the code has been spent, and that gglib there
+  needs updating to a version newer than 0.18 before it is asked for another.
+  Any other status, and any answer carrying no status at all, says only that
+  the code may have been spent — an unexplained answer is not blamed on a
+  version.
+  <!-- test: ModelpipePairRefusalTests.testADesktopTooOldToPairSaysToUpdateItAndThatTheCodeIsSpent -->
+  <!-- test: ModelpipePairRefusalTests.testAStatusOtherThanNotFoundIsNotBlamedOnTheDesktopsVersion -->
+  <!-- test: ModelpipePairRefusalTests.testAnyOtherAnswerThatIsNotAPairingAnswerSaysTheCodeMayBeSpent -->
 - A pairing is the longest wait in the app, so the app being left under one
   is ordinary rather than exotic: the pipe it was about to install is hung up
   instead of kept, the key is stored all the same, and the provider is left
@@ -182,33 +185,34 @@ Each claim names the test that keeps it true.
 - This device keeps one endpoint key per machine it pairs with, so the
   fingerprint the other machine recorded as this device paired still names
   this device after a relaunch, rather than a peer that stopped existing when
-  the app was quit. modelpipe writes the key into a file under Application
-  Support that no backup carries and no other user can read; two machines are
-  two keys, because a relay allows one live connection per endpoint and a
-  phone talking to two desktops needs two. The key admits nothing — what
-  admits this device is the token beside it in the Keychain — and
+  the app was quit. This app makes one directory under Application Support
+  that no backup carries and no other user can read, and modelpipe names and
+  writes the keys inside it; two machines are two keys, because a relay
+  allows one live connection per endpoint and a phone talking to two desktops
+  needs two. The key admits nothing — what admits this device is the token
+  beside it in the Keychain — and
   [ADR 0004](docs/adr/0004-the-connect-identity-is-a-file.md) is why it is a
   file all the same.
   <!-- test: BindingTests.testADeviceThatKeepsItsKeyIsTheSameDeviceNextTime -->
   <!-- test: ModelpipeConnectorIdentityTests.testTheShippedConnectorKeepsAKeyWhereItSaysItDoes -->
-  <!-- test: ModelpipeConnectorIdentityTests.testEveryDialToOneMachineCarriesTheSameKey -->
+  <!-- test: ModelpipeConnectorIdentityTests.testEveryDialCarriesTheDirectoryThisDeviceKeepsItsKeysIn -->
   <!-- test: ModelpipeConnectorPairingTests.testAPairingIsMadeAsTheDeviceThatWillDialLater -->
-  <!-- test: PipeIdentityFilesTests.testTwoTicketsGetTwoFiles -->
+  <!-- test: PipeIdentityFilesTests.testNamingTheDirectoryPutsNothingInIt -->
   <!-- test: PipeIdentityFilesTests.testTheDirectoryIsMadePrivateAndKeptOutOfTheBackup -->
 - A key that machine's modelpipe will not accept — one half written by a
   process that was killed, say — is thrown away and the dial tried once more,
-  because the advice it is refused with, remove the file or choose another
-  path, is not something a phone offers anybody. Once only: with nothing left
-  to throw away the refusal is about the path rather than the key, and the
-  person gets the sentence instead.
-  <!-- test: ModelpipeConnectorIdentityTests.testAKeyThisDeviceCannotUseIsThrownAwayAndTheDialTriedAgain -->
-  <!-- test: ModelpipeConnectorIdentityTests.testAnIdentityRefusalWithNoKeyToThrowAwayIsNotRetried -->
-  <!-- test: PipeIdentityFilesTests.testAFileOfNothingIsThrownAwayBeforeItIsHandedOver -->
+  because the advice it used to be refused with, remove the file or choose
+  another path, is not something a phone offers anybody. That happens inside
+  the binding now, which is the layer that decides the file's name. Once
+  only: a refusal that reaches this app is one the discard could not fix, so
+  it is not dialled again here and the person gets the sentence instead.
+  <!-- test: ModelpipeConnectorIdentityTests.testAnIdentityRefusalIsNotDialledAgainOnThisSide -->
+  <!-- test: ModelpipeConnectorTests.testAnIdentityFileThatCannotBeUsedIsASentenceAndNotWorthDiallingAgain -->
 - A failure from the transport, from a pairing, or from an identity file
   this device cannot use, reaches the person as a sentence, never as the
   binding's own debug rendering, and says whether trying again is worth it.
-  <!-- test: ModelpipeConnectorPairingTests.testEveryPairingErrorArrivesAsASentenceAndNotADebugRendering -->
-  <!-- test: ModelpipeConnectorPairingTests.testTheFailuresNoRetryCanFixAgreeWithTheBinding -->
+  <!-- test: ModelpipePairRefusalTests.testEveryPairingErrorArrivesAsASentenceAndNotADebugRendering -->
+  <!-- test: ModelpipePairRefusalTests.testTheFailuresNoRetryCanFixAgreeWithTheBinding -->
   <!-- test: ModelpipeConnectorTests.testATransportErrorArrivesAsASentenceAndNotADebugRendering -->
   <!-- test: ModelpipeConnectorTests.testABadTicketIsNotWorthDiallingAgain -->
   <!-- test: ModelpipeConnectorTests.testTheBindingDecidesWhatIsWorthRepeating -->

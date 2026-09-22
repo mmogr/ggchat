@@ -42,8 +42,8 @@ final class BindingTests: XCTestCase {
     /// is the real `mpPair` proving it offline.
     ///
     /// The ticket is modelpipe's normative vector 1, which names an endpoint
-    /// that does not exist; discovery is off so nothing is asked of the
-    /// network beyond the relay dial, and the wait is 150 ms so the test
+    /// that does not exist; discovery and port mapping are off so nothing is
+    /// asked of the network beyond the relay dial, and the wait is 150 ms so the test
     /// costs a fraction of a second. Reaching `Unreached` means the string
     /// parsed, a pipe was dialled, the wait ran out — and the code was never
     /// presented. A redeem sent into that gap is answered `502` by the
@@ -52,6 +52,7 @@ final class BindingTests: XCTestCase {
     func testPairingWaitsForTheFarMachineBeforeSpendingTheCode() async {
         var options = MpConnectOptions()
         options.discovery = false
+        options.portMapping = false
         do {
             _ = try await mpPair(
                 pairing: "\(Self.vector)-483920", label: "a test", options: options, reachWithinMs: 150)
@@ -79,38 +80,42 @@ final class BindingTests: XCTestCase {
     /// app is quit.
     ///
     /// Offline: modelpipe's normative vector 1 names an endpoint that does not
-    /// exist and discovery is off, so nothing is asked of the network beyond
-    /// binding a local port. `mpConnect` returns once that port is bound
-    /// rather than once the far machine answers, which is what makes this
-    /// cheap enough to run on every build.
+    /// exist and carries no transport addresses, and discovery and port
+    /// mapping are both off, so nothing is asked of the network beyond the
+    /// relay dial — the same as the pairing test above. `mpConnect` returns
+    /// once the local port is bound rather than once the far machine answers,
+    /// which is what makes this cheap enough to run on every build.
     func testADeviceThatKeepsItsKeyIsTheSameDeviceNextTime() async throws {
         let root = FileManager.default.temporaryDirectory.appending(
             path: "ggchat-binding-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         addTeardownBlock { try? FileManager.default.removeItem(at: root) }
-        let identity = root.appending(path: "endpoint.key").path(percentEncoded: false)
+        let directory = root.path(percentEncoded: false)
 
-        func peerId(keptAt path: String?) async throws -> String {
-            var options = MpConnectOptions(identityPath: path)
+        func peerId(keptIn path: String?) async throws -> String {
+            var options = MpConnectOptions(identityDir: path)
             options.discovery = false
+            // Both off, or the claim above is not true: port mapping
+            // defaults to on and talks to the gateway over UPnP/NAT-PMP/PCP.
+            options.portMapping = false
             let pipe = try await mpConnect(ticket: Self.vector, options: options)
             let id = pipe.peerId()
             await pipe.shutdown()
             return id
         }
 
-        let first = try await peerId(keptAt: identity)
-        let second = try await peerId(keptAt: identity)
-        let keepingNothing = try await peerId(keptAt: nil)
+        let first = try await peerId(keptIn: directory)
+        let second = try await peerId(keptIn: directory)
+        let keepingNothing = try await peerId(keptIn: nil)
 
-        XCTAssertEqual(first, second, "one identity file, and yet two devices")
+        XCTAssertEqual(first, second, "one identity directory, and yet two devices")
         XCTAssertNotEqual(
             first, keepingNothing,
             "a dial that kept no key reported the same device as one that kept a key, "
                 + "so this test cannot tell the two apart and proves nothing")
-        XCTAssertTrue(
-            FileManager.default.fileExists(atPath: identity),
-            "modelpipe was handed a path and kept nothing at it")
+        XCTAssertEqual(
+            try FileManager.default.contentsOfDirectory(atPath: directory).count, 1,
+            "modelpipe was handed a directory and kept exactly one key in it")
     }
 
     /// The two enums match one for one, and this is what keeps that true. It

@@ -35,9 +35,9 @@ extension ModelpipeConnector {
 
     /// How a pairing string becomes a key and the pipe it was redeemed over.
     /// Defaults to modelpipe's own `mpPair`. The label is this device's name
-    /// for the far machine's list; the third argument is the identity file, as
-    /// on ``Dial``, so that the device the far machine records as it mints the
-    /// key is the one that then chats through the pipe.
+    /// for the far machine's list; the third argument is the identity
+    /// directory, as on ``Dial``, so that the device the far machine records
+    /// as it mints the key is the one that then chats through the pipe.
     public typealias Pair = @Sendable (String, String?, String?) async throws -> Paired
 
     /// How long the far machine has to answer the dial the code is redeemed
@@ -61,24 +61,24 @@ extension ModelpipeConnector {
     /// and throwing it away would make the person ask the other machine for a
     /// fresh invite to fix something on this one.
     ///
-    /// It carries the same identity file a dial to that machine would, so the
-    /// endpoint recorded beside the key as it is minted is the one that then
-    /// chats, rather than one that lived for the length of the exchange.
-    /// Unlike a dial it cannot throw an unusable key away and try
-    /// again: `MpPairError` folds every transport failure into one case
-    /// carrying a sentence, so a pairing cannot tell an unusable key from a
-    /// machine that is switched off without reading modelpipe's words back,
-    /// and matching on wording is how this project has been caught before. A
-    /// key half written is still healed, because the path is built the same
-    /// way for both; a key corrupt in some other way is met by the next dial
-    /// to that machine, which does heal. The PR body lists it. The one match
-    /// on wording in this file, `tooOldToPairAnswer`, only chooses which
-    /// line a failure's sentence gets, and says why that much is tolerable.
+    /// It carries the same identity directory a dial to that machine would,
+    /// so the endpoint recorded beside the key as it is minted is the one
+    /// that then chats, rather than one that lived for the length of the
+    /// exchange. It heals like a dial too, from modelpipe-ffi 0.4.0: a key
+    /// this device cannot use is thrown away and the exchange tried once
+    /// more, inside the binding, against modelpipe's own error types before
+    /// they are flattened into a sentence. That is ADR 0004's open question
+    /// answered — this side used to be unable to tell an unusable key from a
+    /// machine that is switched off without reading modelpipe's words back.
+    ///
+    /// Nothing in this file matches on modelpipe's wording any more. Telling
+    /// a desktop too old to pair from one that answered something else reads
+    /// `MpPairError.UnexpectedStatus`, which carries the status as a number.
     public func pair(pairing pairingString: String, deviceName: String?) async throws -> PairedPipe {
         let paired: Paired
         do {
             paired = try await pairing(
-                pairingString, Self.labelWorthSending(deviceName), identityForPairing(pairingString))
+                pairingString, Self.labelWorthSending(deviceName), identities?.directoryPath())
         } catch let error as MpPairError {
             throw Self.refusal(for: error)
         }
@@ -90,21 +90,6 @@ extension ModelpipeConnector {
             await paired.pipe.shutdown()
             return PairedPipe(session: nil, token: paired.apiKey, device: paired.device)
         }
-    }
-
-    /// Which identity file a pairing string's machine has, if it can be read
-    /// at all.
-    ///
-    /// A string this app cannot read is handed over with no identity rather
-    /// than refused here. modelpipe is about to read the same string and
-    /// refuse it in its own words, which is the one place that sentence is
-    /// written; refusing it here first would be the second copy of that
-    /// mapping the reader exists to prevent, and it would answer a person who
-    /// typed a bad code with a different sentence depending on which of two
-    /// parsers saw it first.
-    private func identityForPairing(_ pairingString: String) -> String? {
-        guard case .success(let readPairing) = Self.reader.read(pairingString) else { return nil }
-        return identities?.path(forTicket: readPairing.ticket)
     }
 
     /// A device name fit to send: trimmed, and nil when that leaves nothing.
@@ -129,16 +114,23 @@ extension ModelpipeConnector {
     /// Three failures keep cases of their own, because each has somewhere to
     /// send the person, and `PipeConnectError` is where the line saying so is
     /// added to modelpipe's sentence. A refused code: the next attempt starts
-    /// on the other machine. The answer a desktop on gglib 0.18 gives: that
-    /// desktop has to be updated first. Any other answer that is not a
-    /// pairing answer: the code may be gone.
+    /// on the other machine. A `404`: that desktop has to be updated first.
+    /// Any other answer that is not a pairing answer: the code may be gone.
+    ///
+    /// `404` and no other status, because 404 is the only one anyone has
+    /// traced to a mechanism — a desktop on gglib 0.18 spends the code at its
+    /// edge and hands the request on to a proxy with no such route. An
+    /// unexplained status must not be blamed on a version: sending somebody
+    /// to update a desktop that may already be current wastes their time, and
+    /// `unexpectedAnswer` still tells them the code may have been spent.
+    /// gglib's `remote::connect_open` draws the same line for the same reason.
     static func refusal(for error: MpPairError) -> PipeConnectError {
         switch error {
         case .Refused:
             return .pairingRefused(message: error.message())
-        case .Unexpected(let detail) where detail == Self.tooOldToPairAnswer:
+        case .UnexpectedStatus(let status) where status == 404:
             return .desktopTooOldToPair(message: error.message())
-        case .Unexpected:
+        case .UnexpectedStatus, .Unexpected:
             return .unexpectedAnswer(message: error.message())
         case .NoCode, .BadPairingString:
             return .dialFailed(message: error.message(), retryable: false)
@@ -146,23 +138,6 @@ extension ModelpipeConnector {
             return .dialFailed(message: error.message(), retryable: error.isRetryable())
         }
     }
-
-    /// What modelpipe 0.6's `pair` reports, as `MpPairError.Unexpected`'s
-    /// detail, when the far machine answers the code with any status other
-    /// than 200, 401 or 502. A desktop on gglib 0.18 answers that way: its
-    /// edge spends the code and hands the request to a proxy with no such
-    /// route.
-    ///
-    /// Matched on its wording, which `pair(pairing:deviceName:)` warns
-    /// against, because the wording is all `Unexpected` carries. It is
-    /// tolerable here where it was not for healing an identity: a stale
-    /// match deletes nothing and only chooses which line to add. If a later
-    /// modelpipe rewords it, the answer falls to `unexpectedAnswer`, which
-    /// still says the code may have been spent. It was read at modelpipe
-    /// 0.6.0 through modelpipe-ffi 0.3.0, and wants reading again when the
-    /// binding moves. gglib's own `join` matches the same words, from gglib
-    /// `61e06b57` (#1087) on.
-    static let tooOldToPairAnswer = "a status other than 200 or 401"
 }
 
 /// The key stays out of what the value prints: interpolated, reflected

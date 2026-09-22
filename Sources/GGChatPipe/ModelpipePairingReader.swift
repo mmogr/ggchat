@@ -48,7 +48,8 @@ public struct ModelpipePairingReader: PairingReader {
     ///
     /// Exhaustive and with no `default`, for the reason `ModelpipeConnector`
     /// gives where it maps the same enum: a case modelpipe adds is a compile
-    /// error here rather than a sentence nobody wrote. `message()` and never
+    /// error here rather than a sentence nobody wrote. `UnexpectedStatus` is
+    /// the one that proved it, at modelpipe-ffi 0.4.0. `message()` and never
     /// `localizedDescription`, because uniffi generates the latter as
     /// `String(reflecting: self)`.
     ///
@@ -59,7 +60,8 @@ public struct ModelpipePairingReader: PairingReader {
     /// handed over could not be read as a pairing string.
     static func refusal(for error: MpPairError) -> PairingReadError {
         switch error {
-        case .NoCode, .BadPairingString, .Dial, .Unreached, .Refused, .Exchange, .Unexpected, .Unknown:
+        case .NoCode, .BadPairingString, .Dial, .Unreached, .Refused, .Exchange, .Unexpected,
+            .UnexpectedStatus, .Unknown:
             .malformed(message: error.message())
         }
     }

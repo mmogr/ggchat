@@ -38,7 +38,12 @@ floor() {
 
 markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/null || true; })
 
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 248
+# 248 -> 243 when the key file's name and its healing moved into the binding
+# (modelpipe-ffi 0.4.0): six cases went down with them, and the status a
+# pairing refusal now carries brought one back. What is left here is what this
+# side still owes, which is the directory. The claims are not weaker, they are
+# made one layer down, against the code that does the work.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 243
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 22
 floor "README test markers" "${markers:-0}" 163
 

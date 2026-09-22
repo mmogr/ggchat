@@ -54,7 +54,7 @@ public enum PipeConnectError: Error, Sendable, Equatable, LocalizedError {
     case unavailable                              // nothing in this build can dial
     case dialFailed(message: String, retryable: Bool)
     case pairingRefused(message: String)          // the far machine would not take the code
-    case desktopTooOldToPair(message: String)     // the code answered as a desktop on gglib 0.18 answers it
+    case desktopTooOldToPair(message: String)     // the code answered `404`, as a desktop too old to pair does
     case unexpectedAnswer(message: String)        // any other answer that is not a pairing answer
 }
 
@@ -192,14 +192,19 @@ What the ffi owes here, beyond the two protocols above:
   > redial would report the same device. Keeping the pipe still saves the
   > hole punch, which is what `mpPair` returns it for.
 
-- **Somewhere to keep this device's endpoint key**, which is
-  `MpConnectOptions.identityPath`, the one field of that record this app
-  sets. Without it modelpipe mints a key per process, and the endpoint a
-  serving machine records beside this device's token stops existing the
-  moment the app is quit. The file is modelpipe's to write and to refuse;
-  what this side owes is a path — one per far machine, because a relay allows
-  one live connection per endpoint id — and the judgement to throw a key
-  away when it is the thing refusing a dial.
+- **Somewhere to keep this device's endpoint keys**, which is
+  `MpConnectOptions.identityDir`, the one field of that record this app sets.
+  Without it modelpipe mints a key per process, and the endpoint a serving
+  machine records beside this device's token stops existing the moment the
+  app is quit. The files are modelpipe's to name, to write and to refuse, and
+  so is throwing one away and dialling again when it is the thing refusing a
+  dial. What this side owes is a directory: made `0o700` in the same step
+  that creates it, and marked out of the backup. Those two are why this half
+  did not move with the rest — neither is something Rust can do portably.
+  There is one directory, and one *file* inside it per far machine, named
+  from that machine's ticket digest. One file per machine is what a relay
+  requires — it allows one live connection per endpoint id, so a phone
+  holding pipes to two desktops needs two keys.
   [ADR 0004](adr/0004-the-connect-identity-is-a-file.md) is why it is a file
   at all, in an app whose other secrets are in the Keychain.
 - **The key is the only thing that must be kept**, and it goes to the
@@ -211,14 +216,23 @@ What the ffi owes here, beyond the two protocols above:
   the ticket's digest.
 - **Every failure is a sentence.** `MpPairError.message()`, never
   `localizedDescription`, which uniffi generates as `String(reflecting:)`.
-  `Refused` keeps a case of its own above the seam, and so does
-  `Unexpected`, in two: the answer a desktop on gglib 0.18 gives, and any
-  other. Each has somewhere to send the person, and the line saying where
-  is added above the seam. Telling the two apart reads modelpipe's words,
+  `Refused` keeps a case of its own above the seam, and so does an answer
+  that is not a pairing answer, in two: a `404`, and anything else. Each has
+  somewhere to send the person, and the line saying where is added above the
+  seam. ~~Telling the two apart reads modelpipe's words,
   "a status other than 200 or 401", so they are part of what the binding
   owes this app, read at modelpipe 0.6.0 through modelpipe-ffi 0.3.0 and
   read again when it moves. If they change, that answer gets the other
-  one's line, which says the code may have been spent.
+  one's line, which says the code may have been spent.~~
+
+  > **Amended 2026-09-22 — the binding carries the status, so no wording is
+  > read.** modelpipe-ffi 0.4.0 added `MpPairError.UnexpectedStatus`, which
+  > carries the status as a number. `404` is the arm that names a version,
+  > because it is the only status anyone has traced to a mechanism; every
+  > other status, and `Unexpected`, which carries no status at all, gets the
+  > line saying the code may have been spent. Nothing above the seam matches
+  > on modelpipe's prose any more, so nothing here wants reading again when
+  > the binding moves.
 
 The route itself is modelpipe's `POST /modelpipe/pair`, not gglib's old
 `/v1/remote/pair`: a phone on this build pairs with gglib G1 and later,
@@ -251,10 +265,24 @@ and not with gglib 0.18.
 > `61e06b57` (gglib #1087) on, a commit no gglib release carried on
 > 2026-09-18.
 >
-> **Amended 2026-09-19:** from the build that carries #113's fix, the
+> **Amended 2026-09-19:** ~~from the build that carries #113's fix, the
 > form says more than that. It says a desktop on gglib 0.18 answers that
 > way, that the code has been spent, and to update gglib there to a
-> version newer than 0.18 before asking it for another.
+> version newer than 0.18 before asking it for another.~~
+>
+> **Amended 2026-09-22 — the same three things, said by two layers rather
+> than one.** That desktop answers `404`: gglib v0.18.0's router carries
+> `/v1/remote/pair` and no `/modelpipe/pair`, and no fallback, so axum's own
+> 404 is what a pairing request meets there. Read from the source rather than
+> observed against a running one — #112's measurement lists that proxy as not
+> covered — and it is what gglib's own `connect_open` branches on. From
+> modelpipe-ffi 0.4.0 the
+> binding carries the status as a number instead of a sentence. modelpipe's
+> own words now name the status and say the far machine is probably too old
+> to pair this way; what this app adds is that the code has been spent, and
+> to update gglib there to a version newer than 0.18 before asking it for
+> another. What changed is how the two are told apart: a number the binding
+> carries, not a sentence this app matched on.
 
 ## Platform facts already in place
 
