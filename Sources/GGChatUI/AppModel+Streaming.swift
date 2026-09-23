@@ -102,7 +102,7 @@ extension AppModel {
         streamErrors[conversation.id] = nil
         let live = LiveReply(conversationID: conversation.id, continuingMessageID: continuing)
         liveReply = live
-        let request = ChatRequest(model: modelID, messages: conversation.messages)
+        let request = ChatRequest(model: modelID, messages: conversation.requestMessages)
         let task = Task { [weak self] in
             var finished = false
             for await event in provider.stream(request) {

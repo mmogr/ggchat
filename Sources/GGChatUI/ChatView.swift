@@ -6,6 +6,7 @@ import SwiftUI
 struct ChatView: View {
     @Environment(AppModel.self) private var model
     @State private var showingStatus = false
+    @State private var editingPrompt = false
     let conversation: Conversation
 
     private var provider: ProviderConfig? {
@@ -47,6 +48,13 @@ struct ChatView: View {
             .navigationBarTitleDisplayMode(.inline)
         #endif
         .toolbar {
+            // Always there, so a prompt can be set before the first message.
+            ToolbarItem(placement: .automatic) {
+                Button("System prompt", systemImage: promptSymbol) {
+                    editingPrompt = true
+                }
+                .accessibilityValue(conversation.hasSystemPrompt ? "Set" : "None")
+            }
             if let provider, model.proxyStatusAvailable(for: provider.id) {
                 ToolbarItem(placement: .automatic) {
                     Button("Server status", systemImage: "gauge.with.dots.needle.33percent") {
@@ -60,6 +68,14 @@ struct ChatView: View {
                 ProxyStatusView(provider: provider)
             }
         }
+        .sheet(isPresented: $editingPrompt) {
+            SystemPromptView(conversation: conversation)
+        }
+    }
+
+    /// Filled while a prompt is set, since the transcript never shows it.
+    private var promptSymbol: String {
+        conversation.hasSystemPrompt ? "person.text.rectangle.fill" : "person.text.rectangle"
     }
 
     private var title: String {

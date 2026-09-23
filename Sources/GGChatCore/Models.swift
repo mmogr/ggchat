@@ -92,8 +92,18 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
     public var providerID: UUID?
     public var model: String?
     public var messages: [Message]
+    /// What the model is told ahead of every request, or nil for nothing. A
+    /// setting of the conversation and never a turn in it: it is not in
+    /// `messages`, so it is never drawn and never stored as one, and an edit
+    /// reaches the next request, Continue included (ADR 0005).
+    public var systemPrompt: String?
     public var createdAt: Date
     public var updatedAt: Date
+
+    /// The id the system turn carries in `requestMessages`. Fixed rather than
+    /// a fresh `UUID()`, so two requests built from the same conversation are
+    /// equal; the turn is never stored, so no saved message can share it.
+    public static let systemPromptMessageID = UUID(uuidString: "5E575E00-0000-4000-8000-000000000000")!
 
     public init(
         id: UUID = UUID(),
@@ -101,6 +111,7 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
         providerID: UUID? = nil,
         model: String? = nil,
         messages: [Message] = [],
+        systemPrompt: String? = nil,
         createdAt: Date,
         updatedAt: Date
     ) {
@@ -109,8 +120,27 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
         self.providerID = providerID
         self.model = model
         self.messages = messages
+        self.systemPrompt = systemPrompt
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+    }
+
+    /// Whether there is a system prompt to send. Blank counts as none, so a
+    /// prompt of only spaces sends nothing rather than an empty turn.
+    public var hasSystemPrompt: Bool {
+        guard let systemPrompt else { return false }
+        return !systemPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// The turns a request carries: the system prompt first when there is
+    /// one, then the transcript. Built here and nowhere else, so send,
+    /// Continue and Retry all send the same prompt. The system turn is dated
+    /// `createdAt` rather than now, so building it twice gives the same value.
+    public var requestMessages: [Message] {
+        guard hasSystemPrompt, let systemPrompt else { return messages }
+        let system = Message(
+            id: Self.systemPromptMessageID, role: .system, content: systemPrompt, createdAt: createdAt)
+        return [system] + messages
     }
 
     /// The first line of the first user message, or empty.
