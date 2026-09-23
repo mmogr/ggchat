@@ -50,8 +50,16 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # whole guard of its own, so the floor moves past them -- left where it was,
 # any of the three could be deleted and no gate would notice, while a rename
 # on either side of the boundary orphans every paired device in silence.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 246
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 22
-floor "README test markers" "${markers:-0}" 166
+#
+# 2026-09-23: 246 -> 255, 22 -> 23 and 166 -> 171 for the system prompt. A
+# prompt that stops being sent fails nothing else: the request still goes out,
+# the reply still streams, and it reads a little less like what was asked for.
+# These tests are the whole of its guard -- that it goes ahead of send,
+# Continue and Retry but is never kept as a message, that blank sends none,
+# that it survives a relaunch, and that the sheet keeps what was saved -- so
+# the floors move past every one of them, the README's markers included.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 255
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
+floor "README test markers" "${markers:-0}" 171
 
 exit $status

@@ -115,7 +115,7 @@ public final class SwiftDataStore: Store {
                         reasoning: message.reasoning, isPartial: message.isPartial,
                         failure: Self.failure(from: message.failureData), createdAt: message.createdAt)
                 },
-                createdAt: record.createdAt, updatedAt: record.updatedAt)
+                systemPrompt: record.systemPrompt, createdAt: record.createdAt, updatedAt: record.updatedAt)
         }
     }
 
@@ -126,11 +126,13 @@ public final class SwiftDataStore: Store {
             record.title = conversation.title
             record.providerID = conversation.providerID
             record.model = conversation.model
+            record.systemPrompt = conversation.systemPrompt
             record.updatedAt = conversation.updatedAt
         } else {
             record = ConversationRecord(
                 id: conversation.id, title: conversation.title, providerID: conversation.providerID,
-                model: conversation.model, createdAt: conversation.createdAt, updatedAt: conversation.updatedAt)
+                model: conversation.model, createdAt: conversation.createdAt, updatedAt: conversation.updatedAt,
+                systemPrompt: conversation.systemPrompt)
             context.insert(record)
         }
         var existing = Dictionary(record.messages.map { ($0.uuid, $0) }, uniquingKeysWith: { first, _ in first })

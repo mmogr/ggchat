@@ -28,16 +28,25 @@ public final class ConversationRecord {
     public var title: String
     public var providerID: UUID?
     public var model: String?
+    /// The conversation's system prompt, or nil. Optional, so SwiftData's
+    /// lightweight migration adds it to a store written before it existed,
+    /// with every row reading nil. A non-optional attribute would fail that
+    /// migration, and the store would fall back to memory, logged but with nothing on screen.
+    public var systemPrompt: String?
     public var createdAt: Date
     public var updatedAt: Date
     @Relationship(deleteRule: .cascade, inverse: \MessageRecord.conversation)
     public var messages: [MessageRecord] = []
 
-    public init(id: UUID, title: String, providerID: UUID?, model: String?, createdAt: Date, updatedAt: Date) {
+    public init(
+        id: UUID, title: String, providerID: UUID?, model: String?, createdAt: Date, updatedAt: Date,
+        systemPrompt: String? = nil
+    ) {
         self.uuid = id
         self.title = title
         self.providerID = providerID
         self.model = model
+        self.systemPrompt = systemPrompt
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }

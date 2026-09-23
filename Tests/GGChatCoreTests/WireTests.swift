@@ -107,6 +107,21 @@ final class WireTests: XCTestCase {
         XCTAssertEqual((object["stream_options"] as? [String: Any])?["include_usage"] as? Bool, true)
         XCTAssertEqual((object["messages"] as? [[String: Any]])?.first?["role"] as? String, "user")
     }
+
+    /// A conversation's prompt goes out as an ordinary turn with the role
+    /// `system`, first, and with nothing on it but its role and its text.
+    func testASystemMessageIsSentWithTheSystemRole() throws {
+        let conversation = Conversation(
+            messages: [Message(role: .user, content: "hi", createdAt: .distantPast)],
+            systemPrompt: "Answer in French.", createdAt: .distantPast, updatedAt: .distantPast)
+        let request = ChatRequest(model: "m", messages: conversation.requestMessages)
+        let data = try JSONEncoder().encode(ChatCompletionRequest(request))
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let messages = try XCTUnwrap(object["messages"] as? [[String: Any]])
+        XCTAssertEqual(messages.map { $0["role"] as? String }, ["system", "user"])
+        XCTAssertEqual(messages.first?["content"] as? String, "Answer in French.")
+        XCTAssertEqual(messages.first?.keys.sorted(), ["content", "role"], "the turn's id and date stay on this side")
+    }
 }
 
 final class ProxyStatusHelperTests: XCTestCase {

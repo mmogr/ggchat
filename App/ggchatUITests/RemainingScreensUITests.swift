@@ -65,6 +65,48 @@ final class RemainingScreensUITests: XCTestCase {
             "the status pane is offered for a provider that does not report one")
     }
 
+    /// The prompt is saved from its sheet and is there again when the sheet
+    /// is reopened, and the toolbar button says one is set.
+    ///
+    /// The sheet's way out is titled "Cancel", which is one of the titles
+    /// `dismissAnythingOnTop()` reaches for, so nothing sweeps while it is up:
+    /// every wait in here is a plain `waitForExistence` or passes
+    /// `sweeping: false`. The mock provider asks for no key, so there is no
+    /// password manager's offer for a sweep to catch.
+    @MainActor
+    func testTheSystemPromptSheetKeepsWhatWasSaved() {
+        launch()
+        addMockProvider()
+        openConversation(in: app)
+
+        // The pill is up once the conversation is, but on a phone the screen
+        // can still be sliding in, so the button is waited for on its own.
+        let promptButton = app.buttons["System prompt"].firstMatch
+        let editor = app.textViews["system-prompt"].firstMatch
+        XCTAssertTrue(promptButton.waitForExistence(timeout: 10), "the conversation offers no system prompt")
+        XCTAssertTrue(
+            tap(promptButton, untilExists: editor, sweeping: false), "the system prompt sheet never opened")
+        enter("Answer in French.", into: editor)
+
+        let save = app.buttons["Save"].firstMatch
+        XCTAssertTrue(waitUntilHittable(save, timeout: 10, sweeping: false), "the sheet offers no Save")
+        save.tap()
+        XCTAssertTrue(editor.waitForNonExistence(timeout: 10), "the sheet did not close after Save")
+        let isSet = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == 'Set'"), object: promptButton)
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [isSet], timeout: 10), .completed,
+            "the toolbar button does not say a prompt is set")
+
+        XCTAssertTrue(
+            tap(promptButton, untilExists: editor, sweeping: false), "the system prompt sheet never reopened")
+        XCTAssertTrue(
+            ((editor.value as? String) ?? "").contains("Answer in French."),
+            "the reopened sheet lost the prompt that was saved")
+        attach(name: "system-prompt")
+        app.buttons["Cancel"].firstMatch.tap()
+        XCTAssertTrue(editor.waitForNonExistence(timeout: 10), "the sheet did not close after Cancel")
+    }
+
     /// A closed pipe turns its pill into a way back.
     @MainActor
     func testAClosedPipeOffersAReconnect() {
