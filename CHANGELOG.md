@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/mmogr/ggchat/compare/v0.3.4...v0.4.0) (2026-09-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* **pipe:** the boundary names the key file, and a pairing refusal carries its status ([#132](https://github.com/mmogr/ggchat/issues/132))
+
+### What the app now does
+
+* **chat:** a conversation carries a system prompt, sent ahead of every request ([#134](https://github.com/mmogr/ggchat/issues/134)) ([68557c1](https://github.com/mmogr/ggchat/commit/68557c1e53fe375b6096d8a36397fc7654a28d57))
+* **pipe:** the boundary names the key file, and a pairing refusal carries its status ([#132](https://github.com/mmogr/ggchat/issues/132)) ([e44bb8f](https://github.com/mmogr/ggchat/commit/e44bb8ff21bcfef334048a81d472ad7ed3c06d16))
+
 ## [0.3.4](https://github.com/mmogr/ggchat/compare/v0.3.3...v0.3.4) (2026-09-20)
 
 
