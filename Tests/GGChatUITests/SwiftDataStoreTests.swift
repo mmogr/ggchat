@@ -93,4 +93,27 @@ final class SwiftDataStoreTests: XCTestCase {
         try store.save(conversation: conversation)
         XCTAssertEqual(try store.loadConversations(), [conversation], "an existing row did not take the new value")
     }
+
+    /// The prompt is written and read back with its conversation, on the row
+    /// that is inserted and on the one that is updated, and clearing it
+    /// clears it. It is never written as a message.
+    @MainActor
+    func testASystemPromptSurvivesTheRoundTrip() throws {
+        let store = makeStore()
+        let stamp = Date(timeIntervalSince1970: 1_700_000_000)
+        var conversation = Conversation(
+            title: "t", messages: [Message(role: .user, content: "hi", createdAt: stamp)],
+            systemPrompt: "Answer in French.", createdAt: stamp, updatedAt: stamp)
+        try store.save(conversation: conversation)
+        XCTAssertEqual(try store.loadConversations(), [conversation])
+        XCTAssertEqual(try store.context.fetch(FetchDescriptor<MessageRecord>()).count, 1, "the prompt became a row")
+
+        conversation.systemPrompt = "Answer in German."
+        try store.save(conversation: conversation)
+        XCTAssertEqual(try store.loadConversations(), [conversation], "an existing row did not take the new value")
+
+        conversation.systemPrompt = nil
+        try store.save(conversation: conversation)
+        XCTAssertEqual(try store.loadConversations(), [conversation], "clearing the prompt left the old one behind")
+    }
 }

@@ -30,6 +30,28 @@ final class LiveGGLibTests: XCTestCase {
         XCTAssertTrue(events.contains { if case .delta = $0 { true } else { false } })
     }
 
+    /// The reading ADR 0005's kill criterion names: gglib takes a system
+    /// turn ahead of the question, and the model does what it says.
+    func testASystemPromptSteersTheReply() async throws {
+        let provider = try liveProvider()
+        let models = try await provider.models()
+        let model = try XCTUnwrap(models.first?.id)
+        let conversation = Conversation(
+            messages: [Message(role: .user, content: "Which fruit should I buy?", createdAt: .distantPast)],
+            systemPrompt: "Reply only with the word PINEAPPLE.", createdAt: .distantPast, updatedAt: .distantPast)
+        let request = ChatRequest(model: model, messages: conversation.requestMessages, maxTokens: 256)
+        var events: [ChatEvent] = []
+        var reply = ""
+        for await event in provider.stream(request) {
+            events.append(event)
+            if case .delta(let text) = event { reply += text }
+        }
+        guard case .finished? = events.last else {
+            return XCTFail("stream ended with \(String(describing: events.last))")
+        }
+        XCTAssertTrue(reply.uppercased().contains("PINEAPPLE"), "the prompt did not reach the reply: \(reply)")
+    }
+
     func testLiveProxyStatusAnswersOrIsAbsent() async throws {
         let provider = try liveProvider()
         _ = try await provider.proxyStatus()
