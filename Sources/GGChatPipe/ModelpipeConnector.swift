@@ -14,12 +14,14 @@ import Modelpipe
 public struct ModelpipeConnector: PipeConnector {
     /// How a ticket becomes a pipe. Defaults to modelpipe's own `mpConnect`.
     ///
-    /// The second argument is where this device keeps its endpoint key for
-    /// the machine being dialled, or `nil` to let modelpipe mint one for this
-    /// process alone. A path rather than a whole `MpConnectOptions` because it
-    /// is the only field of that record this app chooses; the rest are left at
-    /// the documented defaults, which is a thing to assert about the real
-    /// closure rather than a thing to pass through a fake.
+    /// The second argument is the directory this device keeps its endpoint
+    /// keys in, or `nil` to let modelpipe mint one for this process alone.
+    /// A directory and not a file: the binding names the file itself, from
+    /// the ticket it is about to dial. A path rather than a whole
+    /// `MpConnectOptions` because it is the only field of that record this
+    /// app chooses; the rest are left at the documented defaults, which is a
+    /// thing to assert about the real closure rather than a thing to pass
+    /// through a fake.
     public typealias Dial = @Sendable (String, String?) async throws -> any MpPipeProtocol
 
     /// Who reads a ticket before it is dialled. Stateless — no stored
@@ -62,14 +64,14 @@ public struct ModelpipeConnector: PipeConnector {
         // order, so a reordered record silently reorders the arguments here.
         ModelpipeConnector(
             sleeper: sleeper, grace: grace, identities: identities,
-            dial: { ticket, identityPath in
+            dial: { ticket, identityDir in
                 try await mpConnect(
-                    ticket: ticket, options: MpConnectOptions(identityPath: identityPath))
+                    ticket: ticket, options: MpConnectOptions(identityDir: identityDir))
             },
-            pairing: { pairing, label, identityPath in
+            pairing: { pairing, label, identityDir in
                 let paired = try await mpPair(
                     pairing: pairing, label: label,
-                    options: MpConnectOptions(identityPath: identityPath),
+                    options: MpConnectOptions(identityDir: identityDir),
                     reachWithinMs: Self.reachWithinMs)
                 return Paired(pipe: paired.pipe, apiKey: paired.apiKey, device: paired.device)
             })
@@ -134,40 +136,16 @@ public struct ModelpipeConnector: PipeConnector {
         guard !token.trimmingCharacters(in: .whitespaces).isEmpty else {
             throw PipeConnectError.missingToken
         }
+        // The dial carries the directory, not a file. Naming the file from
+        // the ticket is the binding's, and so is throwing away a key this
+        // device cannot use and minting another — which this type used to do
+        // here, and could only do while it knew the name.
         do {
             return try ModelpipeSession(
-                pipe: try await dialKeepingIdentity(ticket, forMachine: readPairing.ticket),
+                pipe: try await dial(ticket, identities?.directoryPath()),
                 sleeper: sleeper, grace: grace)
         } catch let error as MpError {
             throw Self.refusal(for: error)
-        }
-    }
-
-    /// Dial, carrying this device's key for that machine, and dial once more
-    /// without the old key if the key was the thing that stopped it.
-    ///
-    /// The retry is the only way out of a key file this device cannot use.
-    /// modelpipe refuses one that is not a key, or that somebody else can
-    /// read, and the sentence it refuses with — choose another path or remove
-    /// it — asks for something nobody can do on a phone; a file half written
-    /// by a process that was killed is enough to earn it. Throwing that file
-    /// away costs this device its fingerprint on the far machine, which
-    /// records fingerprints and does not pin them, and buys back a device that
-    /// can connect at all.
-    ///
-    /// Exactly once, and only when there was a file to throw away: a second
-    /// refusal is about the directory or the path rather than the key, and
-    /// dialling again would fail the same way for as long as anyone let it.
-    private func dialKeepingIdentity(
-        _ ticket: String, forMachine canonicalTicket: String
-    ) async throws -> any MpPipeProtocol {
-        let identity = identities?.path(forTicket: canonicalTicket)
-        do {
-            return try await dial(ticket, identity)
-        } catch let error as MpError {
-            guard case .Identity = error, let identity, identities?.discard(at: identity) == true
-            else { throw error }
-            return try await dial(ticket, identity)
         }
     }
 
