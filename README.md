@@ -34,8 +34,10 @@ providers sheet
 that adds a server by address or a pipe by its pairing string,
 and settings. The transcript streams replies as markdown with copyable code
 blocks and collapsed reasoning, with a stop button and, when a reply stops
-early, a Continue button; a request refused before anything arrived says why
-under the question, with a Retry button. A server added by address lists its models and
+early, a Continue button, and each conversation can carry a system prompt of
+its own, set from the toolbar and sent ahead of every request without ever
+becoming a row in the transcript; a request refused before anything arrived
+says why under the question, with a Retry button. A server added by address lists its models and
 streams; against gglib, a server status pane shows slots, context in use
 and recent requests, and it is hidden for servers that do not answer that
 endpoint. The app has been run: the screens above are photographs of it,
@@ -338,6 +340,16 @@ Each claim names the test that keeps it true.
   Continue extends that same message rather than starting a new one.
   <!-- test: AppModelStreamingTests.testSendStreamsAReplyIntoTheConversation -->
   <!-- test: AppModelStreamingTests.testADroppedStreamKeepsThePartialAndContinueCarriesOn -->
+- A conversation can carry a system prompt. It goes ahead of every request
+  the conversation makes, Continue and Retry included, and an edit reaches the
+  next one. It is never a row in the transcript and never stored as a
+  message, so the messages a conversation keeps are the ones it shows. A
+  blank prompt sends nothing, and the prompt survives a relaunch.
+  <!-- test: ConversationTests.testASystemPromptGoesAheadOfTheMessagesAndIsNotOneOfThem -->
+  <!-- test: AppModelSystemPromptTests.testTheSystemPromptIsSentAheadOfEveryRequestButNeverKept -->
+  <!-- test: AppModelSystemPromptTests.testContinueAndRetryResendTheSystemPrompt -->
+  <!-- test: SwiftDataStoreTests.testASystemPromptSurvivesTheRoundTrip -->
+  <!-- test: WireTests.testASystemMessageIsSentWithTheSystemRole -->
 - A request refused before anything arrived has no reply to sit under, so
   the sentence that says why, the line about where to look and a Retry
   button go under the question instead. That covers a key the serving
@@ -673,6 +685,9 @@ against the mock.
 - [ADR 0004](docs/adr/0004-the-connect-identity-is-a-file.md): this device's
   endpoint key is a file, one per machine — not a credential, and not in the
   Keychain, because the binding writes it itself.
+- [ADR 0005](docs/adr/0005-a-system-prompt-is-a-conversation-setting.md): a
+  system prompt is a setting of the conversation, sent ahead of every request,
+  not a turn in the transcript.
 
 ## Releases
 
