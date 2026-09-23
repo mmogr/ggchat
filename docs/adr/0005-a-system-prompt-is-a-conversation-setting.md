@@ -48,9 +48,9 @@ It is read in exactly one place, where `AppModel+Streaming` builds the
 `ChatRequest`, and send, Continue and Retry all pass through that place. So
 all three carry the prompt without any of them knowing it exists, and the
 guards they apply to the last message are untouched.
-`finish(_:finished:cancelled:)` fetches the conversation again by id before
-it writes the reply, so the system turn built for the request never reaches
-storage.
+`requestMessages` is computed, not stored: its result goes only into the
+`ChatRequest` and is never assigned back to `messages`, so the system turn
+built for a request never reaches `update(_:)` or storage.
 
 The prompt is live. The next request uses whatever it says at that moment,
 and Continue is a request like any other, so a prompt edited under a partial

@@ -31,7 +31,7 @@ public final class ConversationRecord {
     /// The conversation's system prompt, or nil. Optional, so SwiftData's
     /// lightweight migration adds it to a store written before it existed,
     /// with every row reading nil. A non-optional attribute would fail that
-    /// migration, and the store would fall back to memory without a word.
+    /// migration, and the store would fall back to memory, logged but with nothing on screen.
     public var systemPrompt: String?
     public var createdAt: Date
     public var updatedAt: Date
