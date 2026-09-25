@@ -100,10 +100,11 @@ extension ProviderError {
         // ErrorTests. All seven are synthesized at the edge and never relayed,
         // so which side of the tunnel wrote one is knowable, and is the whole
         // answer. `invalid_pairing_code` is in modelpipe's list because from
-        // 0.6 the tunnel edge answers the pairing route itself. gglib has
-        // written the same code from its own proxy route since v0.16.0,
-        // whichever modelpipe it vendors, and stops when it moves that route
-        // to the edge. Either way it is the serving side.
+        // 0.6 the tunnel edge answers the pairing route itself. gglib's own
+        // proxy route, `POST /v1/remote/pair`, wrote the same code from
+        // v0.16.0 to v0.18.x. From v0.19.0 (gglib #1087) gglib has no such
+        // route, and modelpipe's edge writes the code at
+        // `POST /modelpipe/pair`. Either way it is the serving side.
         case invalidAPIKey = "invalid_api_key"
         case badRequest = "bad_request"
         case badGateway = "bad_gateway"
