@@ -33,12 +33,15 @@ final class ErrorTests: XCTestCase {
     /// at v0.6.0, vendored byte for byte, plus the codes only gglib writes. The
     /// two lists are a partition of the vocabulary's provenance, not of who
     /// can write a code in the wild: `invalid_pairing_code` is in modelpipe's
-    /// list because its edge answers the pairing route from 0.6, and gglib
-    /// has written the same code from its own route since v0.16.0. The list supplies
-    /// the vocabulary and nothing else; which side to look at stays decided
-    /// here, because `incomplete_request` is written by the serving side and
-    /// still means "your upload stopped". The digest catches an edit by hand;
-    /// a change upstream shows only when the copy is refreshed on purpose.
+    /// list because its edge answers the pairing route from 0.6. gglib's own
+    /// proxy route, `POST /v1/remote/pair`, wrote the same code from v0.16.0
+    /// to v0.18.x. From v0.19.0 (gglib #1087) gglib has no such route, and
+    /// modelpipe's edge writes the code at `POST /modelpipe/pair`. The list
+    /// supplies the vocabulary and nothing else; which side to look at stays
+    /// decided here, because `incomplete_request` is written by the serving
+    /// side and still means "your upload stopped". The digest catches an edit
+    /// by hand; a change upstream shows only when the copy is refreshed on
+    /// purpose.
     func testThePublishedHalfOfTheVocabularyIsModelpipesOwnList() throws {
         let data = try Fixtures.data("modelpipe-error-codes-v0.json")
         #if canImport(CryptoKit)
