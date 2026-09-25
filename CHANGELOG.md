@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.1](https://github.com/mmogr/ggchat/compare/v0.4.0...v0.4.1) (2026-09-25)
+
+
+### What got faster
+
+* **ui:** saving or deleting a provider or conversation fetches that one row by its key ([#143](https://github.com/mmogr/ggchat/issues/143)) ([3b474d9](https://github.com/mmogr/ggchat/commit/3b474d9a7e23343e5699aa0303c146b2e671d189))
+
+
+### Documentation
+
+* **core:** the error vocabulary says gglib's own route wrote invalid_pairing_code only from v0.16.0 to v0.18.x ([#135](https://github.com/mmogr/ggchat/issues/135)) ([7a7c474](https://github.com/mmogr/ggchat/commit/7a7c4742302d806148843ad2a2d3b025ac38f7f8))
+
 ## [0.4.0](https://github.com/mmogr/ggchat/compare/v0.3.4...v0.4.0) (2026-09-23)
 
 
