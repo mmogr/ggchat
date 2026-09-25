@@ -99,7 +99,9 @@ public final class SwiftDataStore: Store {
     }
 
     private func fetchProvider(_ id: UUID) throws -> ProviderRecord? {
-        try context.fetch(FetchDescriptor<ProviderRecord>()).first { $0.uuid == id }
+        var descriptor = FetchDescriptor<ProviderRecord>(predicate: #Predicate { $0.uuid == id })
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first
     }
 
     // MARK: - Conversations
@@ -173,6 +175,8 @@ public final class SwiftDataStore: Store {
     }
 
     private func fetchConversation(_ id: UUID) throws -> ConversationRecord? {
-        try context.fetch(FetchDescriptor<ConversationRecord>()).first { $0.uuid == id }
+        var descriptor = FetchDescriptor<ConversationRecord>(predicate: #Predicate { $0.uuid == id })
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first
     }
 }

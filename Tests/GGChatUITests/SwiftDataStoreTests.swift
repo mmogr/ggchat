@@ -116,4 +116,61 @@ final class SwiftDataStoreTests: XCTestCase {
         try store.save(conversation: conversation)
         XCTAssertEqual(try store.loadConversations(), [conversation], "clearing the prompt left the old one behind")
     }
+
+    /// With twenty providers stored, an edit to one lands on that one and
+    /// deleting it takes only that one: every other provider reads back
+    /// exactly as it was saved.
+    @MainActor
+    func testOneProviderAmongManyIsUpdatedAndDeletedByItsOwnKey() throws {
+        let store = makeStore()
+        var providers = (0..<20).map { index in
+            ProviderConfig(name: "p\(index)", kind: .pipe(ticketDigest: "d\(index)"), defaultModel: "m\(index)")
+        }
+        for provider in providers {
+            try store.save(provider: provider)
+        }
+        let byID = { (list: [ProviderConfig]) in Dictionary(uniqueKeysWithValues: list.map { ($0.id, $0) }) }
+        func stored() throws -> [UUID: ProviderConfig] { byID(try store.loadProviders()) }
+        XCTAssertEqual(try stored(), byID(providers))
+
+        providers[7].name = "edited"
+        providers[7].kind = .openAICompatible(baseURL: URL(string: "http://edited/v1")!)
+        providers[7].defaultModel = nil
+        try store.save(provider: providers[7])
+        XCTAssertEqual(try stored(), byID(providers), "the edit landed somewhere other than its own row")
+
+        let deleted = providers.remove(at: 7)
+        try store.deleteProvider(id: deleted.id)
+        XCTAssertEqual(try stored(), byID(providers), "the delete took a row other than its own")
+    }
+
+    /// With twenty conversations stored, an edit to one lands on that one
+    /// and deleting it takes only that one and its messages: every other
+    /// conversation reads back exactly as it was saved.
+    @MainActor
+    func testOneConversationAmongManyIsUpdatedAndDeletedByItsOwnKey() throws {
+        let store = makeStore()
+        let stamp = Date(timeIntervalSince1970: 1_700_000_000)
+        var conversations = (0..<20).map { index in
+            Conversation(
+                title: "c\(index)", messages: [Message(role: .user, content: "m\(index)", createdAt: stamp)],
+                createdAt: stamp, updatedAt: stamp)
+        }
+        for conversation in conversations {
+            try store.save(conversation: conversation)
+        }
+        let byID = { (list: [Conversation]) in Dictionary(uniqueKeysWithValues: list.map { ($0.id, $0) }) }
+        func stored() throws -> [UUID: Conversation] { byID(try store.loadConversations()) }
+        XCTAssertEqual(try stored(), byID(conversations))
+
+        conversations[7].title = "edited"
+        conversations[7].messages.append(Message(role: .assistant, content: "reply", createdAt: stamp))
+        try store.save(conversation: conversations[7])
+        XCTAssertEqual(try stored(), byID(conversations), "the edit landed somewhere other than its own row")
+
+        let deleted = conversations.remove(at: 7)
+        try store.deleteConversation(id: deleted.id)
+        XCTAssertEqual(try stored(), byID(conversations), "the delete took a row other than its own")
+        XCTAssertEqual(try store.context.fetch(FetchDescriptor<MessageRecord>()).count, 19, "messages cascade")
+    }
 }

@@ -58,8 +58,18 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # Continue and Retry but is never kept as a message, that blank sends none,
 # that it survives a relaunch, and that the sheet keeps what was saved -- so
 # the floors move past every one of them, the README's markers included.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 255
+#
+# 2026-09-25: 255 -> 257 and 171 -> 173 for the lookup by key. A save or a
+# delete asks for the one row with that key. A lookup that ignored its key and
+# took the first row would pass any test that keeps one row of its table, and
+# in use it would write an edit onto the wrong row or delete the wrong one. Two
+# new tests guard it, one per table: twenty providers, and twenty
+# conversations, with one of them edited and then deleted. Each fails when its
+# table's save or its delete stops asking by key, and for a delete it is the
+# only test that does, so the floor moves past both. The README claim names
+# both, so the marker floor moves past both markers.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 257
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 171
+floor "README test markers" "${markers:-0}" 173
 
 exit $status
