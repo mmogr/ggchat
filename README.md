@@ -335,6 +335,10 @@ Each claim names the test that keeps it true.
 - Conversations, their messages in order, and providers survive a round
   trip through SwiftData; deleting a conversation cascades to its messages.
   <!-- test: SwiftDataStoreTests.testConversationsRoundTripWithMessagesInOrder -->
+- Saving or deleting one provider or conversation fetches that row by its
+  key.
+  <!-- test: SwiftDataStoreTests.testOneProviderAmongManyIsUpdatedAndDeletedByItsOwnKey -->
+  <!-- test: SwiftDataStoreTests.testOneConversationAmongManyIsUpdatedAndDeletedByItsOwnKey -->
 - Sending streams the reply, with reasoning kept separately, into the
   conversation; a dropped stream keeps the partial reply on screen and
   Continue extends that same message rather than starting a new one.
