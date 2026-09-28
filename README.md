@@ -81,8 +81,9 @@ Each claim names the test that keeps it true.
 - A stream captured from a running gglib parses to the same events whether
   it arrives whole or one byte at a time.
   <!-- test: SSEParserTests.testFeedingOneByteAtATimeGivesTheSameItems -->
-- gglib's first chunks carry no `choices` key; reasoning arrives as
-  `reasoning_content`; the usage chunk has empty `choices`. All three decode.
+- When the request asks for progress, gglib's first chunks carry it and no
+  `choices` key; reasoning arrives as `reasoning_content`; the usage chunk
+  has empty `choices`. All three decode.
   <!-- test: WireTests.testFirstChunkHasNoChoicesKeyAndStillDecodes -->
   <!-- test: WireTests.testReasoningArrivesAsReasoningContent -->
   <!-- test: WireTests.testUsageChunkHasEmptyChoicesAndCachedTokens -->
@@ -390,6 +391,21 @@ Each claim names the test that keeps it true.
   <!-- test: OpenAICompatibleProviderTests.testASkippedChunksBytesNeverReachALogLine -->
   <!-- test: OpenAICompatibleProviderTests.testAnUnreadableChunkThatCarriesAnErrorStillEndsTheReply -->
   <!-- test: OpenAICompatibleProviderTests.testAReplyThatSkippedAChunkAndGotNoTextOrReasoningFails -->
+- A reply gives up only after ten minutes of silence, and while gglib reads a
+  long prompt the reply shows "Reading 8,200 of 11,000 tokens" until its first
+  word. Only gglib is asked for that progress, over a pipe or from a server
+  that answered the status probe at its current address, and none of it is
+  kept.
+  <!-- test: PromptProgressTests.testAProviderTheRegistryBuildsStreamsOnASessionThatWaitsTenMinutes -->
+  <!-- test: PromptProgressTests.testAChatStreamsOnTheStreamingSessionAndNothingElseDoes -->
+  <!-- test: PromptProgressTests.testTheRequestAsksForProgressWhenToldAndHasNoSuchKeyOtherwise -->
+  <!-- test: PromptProgressTests.testTheFixturesProgressFramesDecodeAsGGLibSentThem -->
+  <!-- test: PromptProgressTests.testTheProviderPassesProgressOnBeforeTheFirstReasoningAndStillFinishesOnce -->
+  <!-- test: PromptProgressTests.testAProgressMemberThatDoesNotReadIsDroppedAndTheRestOfTheChunkIsRead -->
+  <!-- test: AppModelPromptProgressTests.testOnlyAPipeOrAServerThatAnsweredTheStatusProbeIsAskedForProgress -->
+  <!-- test: AppModelPromptProgressTests.testAServerMovedAwayFromGGLibIsNotAskedForProgress -->
+  <!-- test: AppModelPromptProgressTests.testTheLiveReplyHoldsTheLatestProgressAndNothingOfItIsKept -->
+  <!-- test: AppModelPromptProgressTests.testTheReadingLineCountsInTheLocalesDigitsUntilSomethingElseArrives -->
 - Exactly three custom glass surfaces exist, all in one file inside one
   `GlassEffectContainer`; `scripts/check_glass_sites.sh` counts them, and
   `scripts/check_no_hand_drawn_glass.sh` refuses any material or

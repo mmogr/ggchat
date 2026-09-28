@@ -11,11 +11,24 @@ public final class LiveReply {
     public let continuingMessageID: UUID?
     public var content = ""
     public var reasoning = ""
+    /// The latest word on how much of the prompt has been read. It lives here
+    /// only: `finish` never reads it, so it is never stored.
+    public var progress: PromptProgress?
     public var error: ProviderError?
 
     init(conversationID: UUID, continuingMessageID: UUID?) {
         self.conversationID = conversationID
         self.continuingMessageID = continuingMessageID
+    }
+
+    /// "Reading 8,200 of 11,000 tokens", in `locale`'s digits, while the
+    /// prompt is read: nil before the first progress frame, and once any text
+    /// or reasoning has arrived.
+    public func readingLine(in locale: Locale) -> String? {
+        guard content.isEmpty, reasoning.isEmpty, let progress else { return nil }
+        let processed = progress.processed.formatted(.number.locale(locale))
+        let total = progress.total.formatted(.number.locale(locale))
+        return "Reading \(processed) of \(total) tokens"
     }
 }
 
@@ -102,13 +115,15 @@ extension AppModel {
         streamErrors[conversation.id] = nil
         let live = LiveReply(conversationID: conversation.id, continuingMessageID: continuing)
         liveReply = live
-        let request = ChatRequest(model: modelID, messages: conversation.requestMessages)
+        let request = ChatRequest(
+            model: modelID, messages: conversation.requestMessages, returnProgress: asksForProgress(config))
         let task = Task { [weak self] in
             var finished = false
             for await event in provider.stream(request) {
                 switch event {
                 case .delta(let text): live.content += text
                 case .reasoning(let text): live.reasoning += text
+                case .progress(let progress): live.progress = progress
                 case .finished: finished = true
                 case .error(let error): live.error = error
                 }

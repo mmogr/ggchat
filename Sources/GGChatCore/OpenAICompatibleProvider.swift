@@ -10,19 +10,26 @@ import Foundation
 public struct OpenAICompatibleProvider: Provider {
     public let baseURL: URL
     let apiKey: String?
+    /// Model lists and status requests, the status stream included.
     let session: URLSession
+    /// Chat replies, which can wait minutes for a long prompt to be read.
+    let streamingSession: URLSession
     let log: any LogSink
     let decoder = JSONDecoder()
 
+    /// Chat replies stream on `streamingSession`, or on `session` when it is
+    /// nil.
     public init(
         baseURL: URL,
         apiKey: String? = nil,
         session: URLSession = .shared,
+        streamingSession: URLSession? = nil,
         log: any LogSink = NoopLogSink()
     ) {
         self.baseURL = baseURL
         self.apiKey = apiKey.flatMap { $0.isEmpty ? nil : $0 }
         self.session = session
+        self.streamingSession = streamingSession ?? session
         self.log = log
     }
 

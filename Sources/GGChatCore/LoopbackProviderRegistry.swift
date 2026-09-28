@@ -1,6 +1,10 @@
 import Foundation
 import Synchronization
 
+#if canImport(FoundationNetworking)
+    import FoundationNetworking
+#endif
+
 /// Lets a mock pipe session hand out a loopback base URL that no socket
 /// listens on, by registering an in-process provider for that URL. The app
 /// asks here first when it builds a provider for a base URL; a real pipe's
@@ -38,8 +42,25 @@ public final class LoopbackProviderRegistry: Sendable {
         providers.withLock { _ = $0.removeValue(forKey: baseURL) }
     }
 
-    /// The one place a base URL becomes a `Provider`.
+    /// The one place a base URL becomes a `Provider`. One built here streams
+    /// its chat replies on `chatSession` and sends the rest over
+    /// `URLSession.shared`.
     public func makeProvider(baseURL: URL, apiKey: String?, log: any LogSink = NoopLogSink()) -> any Provider {
-        provider(for: baseURL) ?? OpenAICompatibleProvider(baseURL: baseURL, apiKey: apiKey, log: log)
+        provider(for: baseURL)
+            ?? OpenAICompatibleProvider(baseURL: baseURL, apiKey: apiKey, streamingSession: Self.chatSession, log: log)
     }
+
+    // gglib's own limit on silence is 300 seconds, so its message arrives first.
+    static let chatIdleTimeout: TimeInterval = 600
+    static let chatTotalTimeout: TimeInterval = 3600
+
+    /// The session every chat reply streams on, built once. A long prompt can
+    /// take minutes to read before the first word, and the default session
+    /// gives up after 60 seconds of silence.
+    static let chatSession: URLSession = {
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = chatIdleTimeout
+        configuration.timeoutIntervalForResource = chatTotalTimeout
+        return URLSession(configuration: configuration)
+    }()
 }
