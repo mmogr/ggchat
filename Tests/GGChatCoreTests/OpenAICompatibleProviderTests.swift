@@ -194,7 +194,7 @@ final class OpenAICompatibleProviderTests: XCTestCase {
         let stop = #"{"choices":[{"delta":{"content":"","reasoning_content":""},"index":0,"finish_reason":"stop"}]}"#
         let progress = #"{"object":"chat.completion.chunk","prompt_progress":{"processed":1,"total":1}}"#
         let read = await stream(sse([progress, first, stop, second, usageChunk]), host: "unreadable-read.test")
-        XCTAssertEqual(read, events, "a reply with no text finished after a skipped chunk")
+        XCTAssertEqual(read, [.progress(.init(processed: 1, total: 1))] + events, "a progress frame counted as text")
         let closed = await stream(sse([first, stop, second, usageChunk], done: false), host: "unreadable-closed.test")
         XCTAssertEqual(closed, events, "a stream that ended without [DONE] ended another way")
         let kept = await stream(sse([first, stop, second, usageChunk], gap: keepalives), host: "unreadable-kept.test")

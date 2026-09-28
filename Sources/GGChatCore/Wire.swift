@@ -71,18 +71,36 @@ public struct Usage: Codable, Sendable, Equatable {
     }
 }
 
-/// A streamed chunk. gglib's first chunks carry `prompt_progress` and no
-/// `choices` key at all; the usage chunk has `choices: []`. Both decode.
+/// A streamed chunk. When the request asks for them, gglib's first chunks
+/// carry `prompt_progress` and no `choices` key at all; the usage chunk has
+/// `choices: []`. Both decode.
 ///
 /// `error` is the other thing a chunk can be: a failure written into a stream
 /// that had already begun. gglib writes it bare, an `error` object and no
 /// `choices` key, so that clients tell it from a chunk by that shape. This
 /// reads a wire it does not own, so an `error` member ends the reply whether
 /// or not `choices` sits beside it.
+///
+/// A `prompt_progress` that does not read is dropped and the rest of the
+/// chunk is read as before, so a chunk that decoded without it still does.
 struct ChatCompletionChunk: Decodable {
     var choices: [Choice]?
     var usage: Usage?
     var error: StreamError?
+    var promptProgress: PromptProgress?
+
+    enum CodingKeys: String, CodingKey {
+        case choices, usage, error
+        case promptProgress = "prompt_progress"
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        choices = try container.decodeIfPresent([Choice].self, forKey: .choices)
+        usage = try container.decodeIfPresent(Usage.self, forKey: .usage)
+        error = try container.decodeIfPresent(StreamError.self, forKey: .error)
+        promptProgress = try? container.decodeIfPresent(PromptProgress.self, forKey: .promptProgress)
+    }
 
     /// The `error` member, as an object with a message and a code, or as a
     /// bare string, which llama.cpp has been seen to send and gglib accepts
@@ -140,12 +158,37 @@ struct ChatCompletionChunk: Decodable {
     }
 }
 
+/// How much of the prompt the server has read, from gglib's
+/// `prompt_progress`: `processed` of `total` tokens, `cache` of them from its
+/// cache, in `timeMs` so far. It is shown while a reply waits and never kept.
+public struct PromptProgress: Decodable, Sendable, Equatable {
+    public var processed: Int
+    public var total: Int
+    public var cache: Int?
+    public var timeMs: Int?
+
+    public init(processed: Int, total: Int, cache: Int? = nil, timeMs: Int? = nil) {
+        self.processed = processed
+        self.total = total
+        self.cache = cache
+        self.timeMs = timeMs
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case processed, total, cache
+        case timeMs = "time_ms"
+    }
+}
+
 struct ChatCompletionRequest: Encodable {
     var model: String
     var messages: [WireMessage]
     var stream = true
     var streamOptions = StreamOptions()
     var maxTokens: Int?
+    /// `true` when asked and absent otherwise, so a server that is not gglib
+    /// never sees the key.
+    var returnProgress: Bool?
 
     struct WireMessage: Encodable {
         var role: String
@@ -161,12 +204,14 @@ struct ChatCompletionRequest: Encodable {
         case model, messages, stream
         case streamOptions = "stream_options"
         case maxTokens = "max_tokens"
+        case returnProgress = "return_progress"
     }
 
     init(_ request: ChatRequest) {
         model = request.model
         messages = request.messages.map { WireMessage(role: $0.role.rawValue, content: $0.content) }
         maxTokens = request.maxTokens
+        returnProgress = request.returnProgress ? true : nil
     }
 }
 

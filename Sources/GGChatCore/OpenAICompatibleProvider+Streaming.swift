@@ -22,7 +22,7 @@ extension OpenAICompatibleProvider {
             let task = Task {
                 do {
                     let request = makeRequest(path: "proxy/status/stream", method: "GET", body: nil)
-                    for try await item in try await eventStream(request) {
+                    for try await item in try await eventStream(request, over: session) {
                         guard case .event(let event) = item else { continue }
                         continuation.yield(try decode(ProxyStatus.self, from: Data(event.data.utf8)))
                     }
@@ -46,7 +46,7 @@ extension OpenAICompatibleProvider {
         let request = makeRequest(path: "chat/completions", method: "POST", body: body)
         var reply = ReplyState()
         do {
-            for try await item in try await eventStream(request) {
+            for try await item in try await eventStream(request, over: streamingSession) {
                 // `[DONE]` stops the reading. The reply then ends as it does
                 // when the stream ends without an error.
                 guard case .event(let event) = item else { break }
@@ -85,17 +85,19 @@ extension OpenAICompatibleProvider {
             return unreadable(data, failing: error, into: &reply)
         }
         if let usage = chunk.usage { reply.usage = usage }
-        var events: [ChatEvent] = []
+        // Progress comes first, and it is neither text nor reasoning.
+        var events: [ChatEvent] = chunk.promptProgress.map { [.progress($0)] } ?? []
         for choice in chunk.choices ?? [] {
             if let reasoning = choice.delta?.reasoningContent, !reasoning.isEmpty {
                 events.append(.reasoning(reasoning))
+                reply.passedTextOrReasoning = true
             }
             if let text = choice.delta?.content, !text.isEmpty {
                 events.append(.delta(text))
+                reply.passedTextOrReasoning = true
             }
             if let reason = choice.finishReason { reply.finishReason = reason }
         }
-        if !events.isEmpty { reply.passedTextOrReasoning = true }
         // A failure written into the stream ends the reply here. gglib sends
         // `[DONE]` after it, and ending here is what keeps that from counting
         // the reply as finished.
@@ -125,9 +127,11 @@ extension OpenAICompatibleProvider {
     /// read that has a top-level `error` member.
     private static let unreadableError = "the server reported an error part-way through the reply"
 
-    /// Opens the connection, maps a non-2xx reply to `ProviderError.server`,
-    /// and hands back parsed SSE items as they arrive.
-    func eventStream(_ request: URLRequest) async throws -> AsyncThrowingStream<SSEItem, any Error> {
+    /// Opens the connection on `session`, maps a non-2xx reply to
+    /// `ProviderError.server`, and hands back parsed SSE items as they arrive.
+    func eventStream(
+        _ request: URLRequest, over session: URLSession
+    ) async throws -> AsyncThrowingStream<SSEItem, any Error> {
         log.log(.debug, "\(request.httpMethod ?? "GET") \(Redaction.describe(request.url!))")
         let bytes: URLSession.AsyncBytes
         let response: URLResponse

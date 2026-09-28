@@ -11,6 +11,9 @@ public final class LiveReply {
     public let continuingMessageID: UUID?
     public var content = ""
     public var reasoning = ""
+    /// The latest word on how much of the prompt has been read. It lives here
+    /// only: `finish` never reads it, so it is never stored.
+    public var progress: PromptProgress?
     public var error: ProviderError?
 
     init(conversationID: UUID, continuingMessageID: UUID?) {
@@ -109,6 +112,7 @@ extension AppModel {
                 switch event {
                 case .delta(let text): live.content += text
                 case .reasoning(let text): live.reasoning += text
+                case .progress(let progress): live.progress = progress
                 case .finished: finished = true
                 case .error(let error): live.error = error
                 }
