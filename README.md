@@ -380,6 +380,16 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelStreamErrorTests.testTheProxysNoticeIsNotKeptAsTheReply -->
   <!-- test: SwiftDataStoreTests.testAFailureSurvivesTheRoundTrip -->
   <!-- test: RefusalUITests.testARefusalIsDrawnUnderTheQuestionAndSurvivesARelaunch -->
+- A chunk of a reply that the app cannot read is skipped and logged by its
+  size alone, unless it has a top-level `error` member, which ends the reply
+  as an error; an empty `data:` event is a keepalive and is ignored. A reply
+  that skipped a chunk and got no text or reasoning fails with the first
+  skipped chunk's decoding error instead of finishing empty.
+  <!-- test: OpenAICompatibleProviderTests.testAnUnreadableChunkWithNoErrorMemberIsSkippedAndTheTextAfterItArrives -->
+  <!-- test: OpenAICompatibleProviderTests.testAnEmptyDataLineIsAKeepaliveNotAFailure -->
+  <!-- test: OpenAICompatibleProviderTests.testASkippedChunksBytesNeverReachALogLine -->
+  <!-- test: OpenAICompatibleProviderTests.testAnUnreadableChunkThatCarriesAnErrorStillEndsTheReply -->
+  <!-- test: OpenAICompatibleProviderTests.testAReplyThatSkippedAChunkAndGotNoTextOrReasoningFails -->
 - Exactly three custom glass surfaces exist, all in one file inside one
   `GlassEffectContainer`; `scripts/check_glass_sites.sh` counts them, and
   `scripts/check_no_hand_drawn_glass.sh` refuses any material or

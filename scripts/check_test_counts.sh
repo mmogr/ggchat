@@ -68,8 +68,14 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # table's save or its delete stops asking by key, and for a delete it is the
 # only test that does, so the floor moves past both. The README claim names
 # both, so the marker floor moves past both markers.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 257
+#
+# 2026-09-28: 257 -> 262 and 173 -> 178 for the chunks a reply skips. Five
+# new tests check what a reply does with a chunk it cannot read. Run with the
+# streaming provider as it was before this change, these five failed and every
+# other test passed, so the floor moves past all five. The README claim names
+# each of them, so the marker floor moves past all five markers.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 262
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 173
+floor "README test markers" "${markers:-0}" 178
 
 exit $status
