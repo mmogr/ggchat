@@ -74,8 +74,15 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # streaming provider as it was before this change, these five failed and every
 # other test passed, so the floor moves past all five. The README claim names
 # each of them, so the marker floor moves past all five markers.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 262
+#
+# 2026-09-28: 262 -> 272 and 178 -> 188 for a long prompt. Ten new tests
+# check that only gglib is asked for progress, that its frames are read and
+# shown and never kept, and that a chat reply waits ten minutes of silence on
+# a session of its own. They are the whole of that guard, so the floor moves
+# past all ten. The README claim names each of them, so the marker floor
+# moves past all ten markers.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 272
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 178
+floor "README test markers" "${markers:-0}" 188
 
 exit $status
