@@ -87,22 +87,29 @@ final class AppModelLastHeardTests: XCTestCase {
     /// `tunnel_unavailable` is this device's end of the pipe saying no
     /// tunnel is up, and a transport error is nothing from the machine
     /// either. A code the machine wrote is hearing, refusal or not.
+    ///
+    /// A send waits for a pipe that is not connected, so these arrive under a
+    /// pill that is, as they do when its status is stale. The time stays the
+    /// one the pipe connected at.
     @MainActor
     func testARefusalWrittenOnThisSideIsNotHearing() async throws {
         let clock = HandClock(start)
         let noTunnel = ProviderError.server(
             status: 502, code: "tunnel_unavailable", message: "no tunnel to the serving side is connected right now")
         let behind = RecordingProvider(wrapping: MockProvider(scripts: [.init(text: "")], failure: noTunnel))
-        let (model, config) = try makeModel(clock: clock, sleeper: HeldSleeper(), behind: behind)
+        let (model, config) = try makeModel(clock: clock, behind: behind)
         await model.connectPipe(for: config)
+        await waitForStatus(.direct, model, config.id)
+        XCTAssertEqual(model.lastHeard(for: config.id), start)
+        clock.now = start.addingTimeInterval(10)
         model.newConversation()
         try await XCTUnwrap(model.send("anyone?")).value
         XCTAssertEqual(model.selectedConversation?.messages.last?.failure?.code, "tunnel_unavailable")
-        XCTAssertNil(model.lastHeard(for: config.id), "this side's refusal was heard as the machine")
+        XCTAssertEqual(model.lastHeard(for: config.id), start, "this side's refusal was heard as the machine")
 
         behind.wrap(MockProvider(scripts: [.init(text: "a b c")], failAfterTokens: 0))
         try await XCTUnwrap(model.retry()).value
-        XCTAssertNil(model.lastHeard(for: config.id), "a transport error was heard as the machine")
+        XCTAssertEqual(model.lastHeard(for: config.id), start, "a transport error was heard as the machine")
 
         clock.now = start.addingTimeInterval(30)
         behind.wrap(

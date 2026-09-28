@@ -110,9 +110,10 @@ extension AppModel {
     /// So the record goes first, and if that will not go, nothing else is
     /// touched and the provider goes back where it was taken from.
     ///
-    /// The reply in flight through it is put down as Stop puts it down, and
-    /// waited for, so what had arrived is kept before its pipe is hung up. A
-    /// reply through another provider goes on.
+    /// The reply in flight through it, streaming or still waiting for its
+    /// pipe, is put down as Stop puts it down, and waited for, so what had
+    /// arrived is kept before its pipe is hung up. A reply through another
+    /// provider goes on.
     public func removeProvider(_ id: UUID) {
         guard let index = providers.firstIndex(where: { $0.id == id }) else { return }
         let removed = providers.remove(at: index)
@@ -124,7 +125,7 @@ extension AppModel {
             return
         }
         forgetLastHeard(id)
-        let reply = streamingProviderID == id ? streamTask : nil
+        let reply = replyProviderID == id ? streamTask : nil
         reply?.cancel()
         Task {
             await reply?.value

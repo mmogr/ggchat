@@ -15,6 +15,9 @@ public final class LiveReply {
     /// only: `finish` never reads it, so it is never stored.
     public var progress: PromptProgress?
     public var error: ProviderError?
+    /// The pipe provider this reply is waiting for, until it connects; nil
+    /// while it streams. See `AppModel+Waiting`.
+    public internal(set) var waitingFor: UUID?
 
     init(conversationID: UUID, continuingMessageID: UUID?) {
         self.conversationID = conversationID
@@ -85,8 +88,9 @@ extension AppModel {
     /// again.
     ///
     /// A refusal on the question is cleared only once the request is on its
-    /// way, so a conversation whose provider has gone, or that has no model,
-    /// keeps its sentence and says why nothing was sent.
+    /// way, or waiting for its pipe, so a conversation whose provider has
+    /// gone, or that has no model, keeps its sentence and says why nothing
+    /// was sent.
     @discardableResult
     public func retry() -> Task<Void, Never>? {
         guard var conversation = selectedConversation, !isStreaming,
@@ -111,13 +115,20 @@ extension AppModel {
             lastError = "Pick a model first."
             return nil
         }
-        guard let provider = makeProvider(for: config) else { return nil }
+        // A pipe that is not connected is waited for, not refused.
+        let waits = config.isPipe && pipeStatuses[config.id]?.isConnected != true
+        let ready = waits ? nil : makeProvider(for: config)
+        if !waits, ready == nil { return nil }
         streamErrors[conversation.id] = nil
         let live = LiveReply(conversationID: conversation.id, continuingMessageID: continuing)
+        live.waitingFor = waits ? config.id : nil
         liveReply = live
         let request = ChatRequest(
             model: modelID, messages: conversation.requestMessages, returnProgress: asksForProgress(config))
         let task = Task { [weak self] in
+            var connected = ready
+            if connected == nil { connected = await self?.providerOnceConnected(config, for: live) }
+            guard let provider = connected else { return }
             var finished = false
             for await event in provider.stream(request) {
                 switch event {
@@ -135,7 +146,26 @@ extension AppModel {
         return task
     }
 
-    private func finish(_ live: LiveReply, finished: Bool, cancelled: Bool) {
+    /// The provider to stream through once the pipe is connected, or nil when
+    /// the wait ended another way, in which case the reply is finished here:
+    /// as Stop finishes it, or with the refused dial's sentence.
+    private func providerOnceConnected(_ config: ProviderConfig, for live: LiveReply) async -> (any Provider)? {
+        switch await waitForPipe(config) {
+        case .connected(let provider):
+            live.waitingFor = nil
+            return provider
+        case .refused(let failure):
+            finish(live, finished: false, cancelled: false, refusal: failure)
+        case .calledOff:
+            finish(live, finished: false, cancelled: true)
+        }
+        return nil
+    }
+
+    /// Writes what arrived into the conversation. `refusal` is a refused
+    /// dial's failure, for a reply that never left the wait for its pipe: it
+    /// is kept where a provider's error would be, and is not counted as one.
+    private func finish(_ live: LiveReply, finished: Bool, cancelled: Bool, refusal: Failure? = nil) {
         defer {
             liveReply = nil
             streamTask = nil
@@ -147,7 +177,7 @@ extension AppModel {
         // whether that arrives before the stream ends is a race. Nor is it a
         // transport error after a resume, for the diagnostics below.
         let error = cancelled ? nil : live.error
-        let failure = error.map(Failure.init)
+        let failure = refusal ?? error.map(Failure.init)
         // gglib's notice of that failure, written as text before the error
         // itself. The error is drawn, so the notice is not kept as a reply.
         let content = error != nil && Self.isAProxyNotice(live.content) ? "" : live.content

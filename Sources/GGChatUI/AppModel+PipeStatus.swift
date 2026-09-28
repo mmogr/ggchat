@@ -91,16 +91,25 @@ extension AppModel {
                 Task { await catchUp(providerID, quietly: true) }
             }
         }
+        wakeWaitingSend(for: providerID)
     }
 
-    /// The provider the reply in flight is going through, if there is one.
+    /// The provider the reply in flight goes through, streaming or still
+    /// waiting for its pipe, if there is one.
+    var replyProviderID: UUID? {
+        liveReply.flatMap { live in
+            conversations.first { $0.id == live.conversationID }?.providerID
+        }
+    }
+
+    /// The provider the reply in flight is streaming through, if there is one.
+    /// A reply still waiting for its pipe is not streaming, so a close then is
+    /// not a close mid-reply: nothing had arrived.
     ///
     /// Not `private`: the hang-up pass reads it, and it lives in
     /// `AppModel+Lifecycle` — a different file, which is what `private` means
     /// in Swift even for two extensions of the same type.
     var streamingProviderID: UUID? {
-        liveReply.flatMap { live in
-            conversations.first { $0.id == live.conversationID }?.providerID
-        }
+        liveReply?.waitingFor == nil ? replyProviderID : nil
     }
 }

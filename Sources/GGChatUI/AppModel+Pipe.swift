@@ -56,14 +56,18 @@ extension AppModel {
         guard let ticket = try? secrets.secret(.ticket, for: config.id),
             let token = try? secrets.secret(.token, for: config.id)
         else {
-            lastError = "The ticket or token for \(config.name) is missing from the Keychain."
+            let sentence = "The ticket or token for \(config.name) is missing from the Keychain."
+            if !handToWaitingSend(sentence, for: config.id) { lastError = sentence }
             return
         }
         let generation = nextDialGeneration(for: config.id)
         connecting.insert(config.id)
-        // Only if this is still the dial in flight: a superseded one must not
-        // clear the flag its successor is relying on.
-        defer { if dialGeneration[config.id] == generation { connecting.remove(config.id) } }
+        defer {
+            // Only if this is still the dial in flight: a superseded one must
+            // not clear the flag its successor is relying on.
+            if dialGeneration[config.id] == generation { connecting.remove(config.id) }
+            wakeWaitingSend(for: config.id)
+        }
         setPipeStatus(.idle, for: config.id)
         do {
             let session = try await pipeConnector.connect(ticket: ticket, token: token)
@@ -81,7 +85,9 @@ extension AppModel {
             // failed is exactly when one is wanted.
             setPipeStatus(.closed, for: config.id)
             notAnswering(config.id)
-            if quietly {
+            // A send waiting on this pipe keeps the sentence on its question,
+            // which is instead of the alert and not as well as it.
+            if handToWaitingSend(error.localizedDescription, for: config.id) || quietly {
                 log.log(.info, "\(config.name) did not answer: \(error.localizedDescription)")
             } else {
                 report(error)
