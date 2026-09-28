@@ -1,7 +1,8 @@
 # ADR 0005 — A system prompt is a conversation setting, not a turn in the transcript
 
 - **Status:** Accepted
-- **Date:** 2026-09-23
+- **Date:** 2026-09-23 (amended 2026-09-28 — a store that will not open now
+  comes with a notice; see the note under the migration paragraph)
 - **Supersedes:** nothing
 - **Superseded by:** nothing
 
@@ -76,13 +77,22 @@ The prompt is kept in an optional `systemPrompt` column on
 `ConversationRecord`. Optional is what lets SwiftData's lightweight
 migration add it to a store written before it existed, with every row
 reading nil; a non-optional attribute would fail that migration, and
-`makeContainer` would fall back to an in-memory store and log it, which to
-the user looks like every conversation gone. The same property cuts the
+`makeContainer` would fall back to an in-memory store and log it, ~~which to
+the user looks like every conversation gone~~. The same property cuts the
 other way: an older build that opens a store carrying the new column meets a
 model it does not know, fails to open it, and falls back to memory in the
 same way. That hazard is not new. `MessageRecord.failureData` was added the
 same way and already carries it, so a downgrade past either change loses the
 store for that launch and not the file on disk.
+
+> **Amended 2026-09-28.** The store now opens through
+> `SwiftDataStore.open(log:)`, inside `ggchat-store`, and `makeContainer` is
+> gone. The fall-back to memory is the same, but it now comes with a notice,
+> which the window is given to show in red with no way to close it: "ggchat
+> could not open your saved conversations. They have not been deleted.
+> Conversations and providers you add now will not be saved." It has been
+> seen on iOS 27 simulators, not in a UI test. A build from before that
+> change still falls back without a word.
 
 ## Kill criteria
 
