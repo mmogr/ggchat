@@ -419,6 +419,21 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelRefusalTests.testAStopBeforeTheFirstTokenWritesNoFailureEvenIfAnErrorRaced -->
   <!-- test: AppModelRefusalTests.testABackgroundBeforeTheFirstTokenWritesNoFailure -->
   <!-- test: AppModelRefusalTests.testAQuestionLeftWithNoReplyCanBeAskedAgain -->
+- A send, Retry or Continue through a pipe that is not connected waits for it
+  (ADR 0006) under "Waiting for home · last heard 08:12", until the pipe
+  connects, its dial is refused, or Stop, the background, a removed provider
+  or a deleted conversation ends the wait. Removing a provider puts down the
+  reply through it first, keeping what had arrived.
+  <!-- test: PipeWaitTests.testASendDuringADialWaitsForItThenStreamsWithNoAlert -->
+  <!-- test: PipeWaitTests.testASendOnAClosedPipeDialsIt -->
+  <!-- test: PipeWaitTests.testARefusedDialPutsItsSentenceOnTheQuestion -->
+  <!-- test: PipeWaitTests.testContinueWaitsForAPipeThatWentQuiet -->
+  <!-- test: PipeWaitEndingTests.testStopWhileWaitingLeavesRetryAndNoFailure -->
+  <!-- test: PipeWaitEndingTests.testABackgroundWhileWaitingLeavesRetryAndNoFailure -->
+  <!-- test: PipeWaitEndingTests.testRemovingTheProviderEndsTheWait -->
+  <!-- test: PipeWaitDeletionTests.testDeletingAConversationEndsItsWait -->
+  <!-- test: ProviderRemovalTests.testRemovingAProviderCancelsTheReplyThroughItAndKeepsThePartial -->
+  <!-- test: ProviderRemovalTests.testRemovingAProviderLeavesAReplyThroughAnotherAlone -->
 - An error written into a stream that had already begun ends the reply
   there. gglib writes it as a bare `error` event and then `[DONE]`, and the
   `[DONE]` no longer counts the reply as finished. Text that had arrived stays

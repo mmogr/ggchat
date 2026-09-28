@@ -92,8 +92,13 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # the store, when the line under the pill names a machine that has stopped
 # answering, and the two sentences that no longer blame only this device.
 # They are the whole of that guard, and the README claim names each of them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 309
+#
+# 2026-09-29: 309 -> 319 and 225 -> 235. Ten new tests pin that a send
+# through a pipe that is not connected waits for it and how the wait ends, and
+# that removing a provider puts down the reply through it first. They are the
+# whole of that guard, and the README claim names each of them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 319
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 225
+floor "README test markers" "${markers:-0}" 235
 
 exit $status
