@@ -192,6 +192,15 @@
             relay.send(.closed)
         }
 
+        /// Simulates the far machine going quiet the way modelpipe reports
+        /// it: the pipe goes back to looking, `idle`, and stays open. The
+        /// binding never closes a pipe whose peer is asleep or out of reach;
+        /// ``dropped()`` is the close, and a quiet machine is not one.
+        public func wentQuiet() {
+            walk.withLock { $0?.cancel() }
+            relay.send(.idle)
+        }
+
         public func shutdown() async {
             reason.withLock { $0 = .shutdown }
             walk.withLock { $0?.cancel() }

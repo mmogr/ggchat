@@ -188,17 +188,24 @@ extension ProviderError.Code {
     /// and nothing more. No `default`, for `whereToLook`'s reason: a code
     /// added above is looked at here too.
     ///
-    /// `invalid_api_key` is the one so far. "Look at the machine that is
-    /// serving the model" is true of it and no help: the machine is doing its
-    /// job, and what is wrong is the key this app sent. The sentence is the
-    /// condition only, and true of a pipe and a server alike. Where a new key
-    /// comes from depends on the kind of provider, which Core does not know,
-    /// so the app says that beside it.
+    /// `invalid_api_key` is one. "Look at the machine that is serving the
+    /// model" is true of it and no help: the machine is doing its job, and
+    /// what is wrong is the key this app sent. The sentence is the condition
+    /// only, and true of a pipe and a server alike. Where a new key comes from
+    /// depends on the kind of provider, which Core does not know, so the app
+    /// says that beside it.
+    ///
+    /// `tunnel_unavailable` is the other. This device's end of the pipe
+    /// writes it, and it writes the same answer when the other machine is
+    /// asleep, off or out of reach, so "look at this device's connection"
+    /// blamed only the side that is often fine.
     public var hint: String? {
         switch self {
         case .invalidAPIKey:
             "The serving machine did not accept the key this app sent."
-        case .badRequest, .badGateway, .backendUnreachable, .tunnelUnavailable, .incompleteRequest,
+        case .tunnelUnavailable:
+            "This device may be offline, or the other machine may be asleep, switched off or out of reach."
+        case .badRequest, .badGateway, .backendUnreachable, .incompleteRequest,
             .admissionTimeout, .contextLengthExceeded, .deviceNotPaired, .embeddingModelCannotChat,
             .hostNotAllowed, .internalError, .invalidPairingCode, .invalidRequest, .loopDetected,
             .mcpNotAllowedOverTunnel, .modelFileNotFound, .modelLoading, .modelNotFound,
