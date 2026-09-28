@@ -15,33 +15,11 @@ public final class SwiftDataStore: Store {
 
     public static let schema = Schema([ProviderRecord.self, ConversationRecord.self, MessageRecord.self])
 
-    /// The on-disk container, or an in-memory one if the disk store cannot
-    /// be opened, so the app still launches and says why.
-    public static func makeContainer(
-        inMemory: Bool = false, log: any LogSink = OSLogSink(category: "store")
-    )
-        -> ModelContainer
-    {
-        #if DEBUG
-            // `-ggchat-reset YES` starts from nothing, so a UI test sees the
-            // first-run screens.
-            if UserDefaults.standard.bool(forKey: "ggchat-reset") {
-                deleteStoreOnDisk(log: log)
-            }
-        #endif
-        if !inMemory {
-            do {
-                // iOS does not ship an Application Support directory, and
-                // SwiftData will not create one, so the store fails to open
-                // and everything silently lives in memory instead.
-                _ = try FileManager.default.url(
-                    for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-                let configuration = ModelConfiguration("ggchat", schema: schema)
-                return try ModelContainer(for: schema, configurations: [configuration])
-            } catch {
-                log.log(.error, "could not open the on-disk store, falling back to memory: \(error)")
-            }
-        }
+    /// A container that keeps nothing on disk: what tests open, and what the
+    /// app runs from for a launch in which its store cannot be kept in
+    /// `ggchat-store`. The on-disk store is opened by `open(log:)`, in
+    /// `StoreDirectory.swift`.
+    public static func inMemoryContainer() -> ModelContainer {
         do {
             let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
             return try ModelContainer(for: schema, configurations: [configuration])
@@ -49,20 +27,6 @@ public final class SwiftDataStore: Store {
             fatalError("SwiftData could not create even an in-memory store: \(error)")
         }
     }
-
-    #if DEBUG
-        /// Removes the store so the next launch is a first run.
-        static func deleteStoreOnDisk(log: any LogSink) {
-            guard
-                let support = try? FileManager.default.url(
-                    for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-            else { return }
-            for suffix in ["", "-shm", "-wal"] {
-                try? FileManager.default.removeItem(at: support.appending(path: "ggchat.store\(suffix)"))
-            }
-            log.log(.info, "store reset on request")
-        }
-    #endif
 
     // MARK: - Providers
 

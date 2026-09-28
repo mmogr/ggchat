@@ -16,22 +16,34 @@ public struct RootView: View {
     @State private var showingSettings = false
     // periphery:ignore - read only through its binding, see above
     @State private var addingProvider = false
+    /// What opening the store had to say.
+    private let storeNotice: ShownStoreNotice
 
-    public init() {}
+    public init(storeNotice: ShownStoreNotice = ShownStoreNotice(nil)) {
+        self.storeNotice = storeNotice
+    }
 
     public var body: some View {
         @Bindable var model = model
-        NavigationSplitView {
-            ConversationSidebar(
-                showingProviders: $showingProviders, showingSettings: $showingSettings,
-                addingProvider: $addingProvider
-            )
-            .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 400)
-        } detail: {
-            if let conversation = model.selectedConversation {
-                ChatView(conversation: conversation)
-            } else {
-                EmptyDetailView(addingProvider: $addingProvider)
+        // The notice is laid out below the split view, not in a bottom inset
+        // over it: under such an inset the chat's composer stayed where it
+        // was on an iPhone, and the notice was drawn over it.
+        VStack(spacing: 0) {
+            NavigationSplitView {
+                ConversationSidebar(
+                    showingProviders: $showingProviders, showingSettings: $showingSettings,
+                    addingProvider: $addingProvider
+                )
+                .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 400)
+            } detail: {
+                if let conversation = model.selectedConversation {
+                    ChatView(conversation: conversation)
+                } else {
+                    EmptyDetailView(addingProvider: $addingProvider)
+                }
+            }
+            if !storeNotice.lines.isEmpty {
+                StoreNoticeView(notice: storeNotice)
             }
         }
         .sheet(isPresented: $showingProviders) {

@@ -188,12 +188,12 @@ Each claim names the test that keeps it true.
 - This device keeps one endpoint key per machine it pairs with, so the
   fingerprint the other machine recorded as this device paired still names
   this device after a relaunch, rather than a peer that stopped existing when
-  the app was quit. This app makes one directory under Application Support
-  that no backup carries and no other user can read, and modelpipe names and
-  writes the keys inside it; two machines are two keys, because a relay
-  allows one live connection per endpoint and a phone talking to two desktops
-  needs two. The key admits nothing — what admits this device is the token
-  beside it in the Keychain — and
+  the app was quit. This app gives the keys a directory of their own under
+  Application Support, readable by this user alone and marked out of the
+  backup, and modelpipe names and writes them inside it; two machines are two
+  keys, because a relay allows one live connection per endpoint and a phone
+  talking to two desktops needs two. The key admits nothing — what admits this
+  device is the token beside it in the Keychain — and
   [ADR 0004](docs/adr/0004-the-connect-identity-is-a-file.md) is why it is a
   file all the same. Naming each key file used to be this app's job and is
   now the binding's, so the two have to land on the same name or every
@@ -340,6 +340,32 @@ Each claim names the test that keeps it true.
   key.
   <!-- test: SwiftDataStoreTests.testOneProviderAmongManyIsUpdatedAndDeletedByItsOwnKey -->
   <!-- test: SwiftDataStoreTests.testOneConversationAmongManyIsUpdatedAndDeletedByItsOwnKey -->
+- Conversations, their messages and providers are kept in `ggchat-store` under
+  Application Support, a directory readable by this user alone and marked out of
+  the backup, and a store an earlier build left where SwiftData put it moves in
+  with every conversation, the main file last, never replacing a file already
+  there. When the store cannot be kept there, the app runs from memory with a
+  notice saying so, and does not open the old place.
+  <!-- test: StoreDirectoryTests.testTheStoreOpensInsideADirectoryNoBackupCarries -->
+  <!-- test: StoreDirectoryTests.testADirectoryMadeWithoutTheMarkIsMarkedWhenTheStoreOpens -->
+  <!-- test: StoreDirectoryTests.testTheStoresDirectoryAndFileNamesDoNotMove -->
+  <!-- test: StoreDirectoryTests.testTheAppsOwnStoreIsInsideTheDirectoryUnderApplicationSupport -->
+  <!-- test: StoreDirectoryTests.testSwiftDataNamesTheOldPlaceWithoutCreatingIt -->
+  <!-- test: StoreMoveTests.testAStoreFromAnEarlierBuildMovesInWithEveryConversation -->
+  <!-- test: StoreMoveTests.testAStoreLeftAsItsMainFileAloneMovesInWithEveryConversation -->
+  <!-- test: StoreMoveTests.testAMoveCutShortFinishesOnTheNextLaunch -->
+  <!-- test: StoreMoveTests.testAMoveStopsRatherThanReplaceAFileAlreadyInTheDirectory -->
+  <!-- test: StoreMoveTests.testAStoreAlreadyInTheDirectoryIsNeverReplacedByAnOlderOne -->
+  <!-- test: StoreDirectoryTests.testWithNowhereToKeepTheStoreNothingIsKeptAndTheNoticeSaysSo -->
+  <!-- test: StoreFallbackTests.testADirectoryThatCannotBeMarkedIsNotUsed -->
+  <!-- test: StoreFallbackTests.testAStoreThatWillNotOpenKeepsItsBytesAndNothingIsKept -->
+  <!-- test: StoreFallbackTests.testAStoreThatWillNotOpenBesideAnOlderOneReportsBoth -->
+  <!-- test: StoreFallbackTests.testWithNoApplicationSupportNothingIsKeptAndTheNoticeSaysSo -->
+  <!-- test: StoreFallbackTests.testAFileAtTheOldPlaceThatCannotBeMarkedIsLoggedWithoutAPath -->
+  <!-- test: StoreDirectoryTests.testANormalOpenHasNothingToSay -->
+  <!-- test: StoreNoticeTests.testTheRedLineComesFirstAndEachLineReadsAsWritten -->
+  <!-- test: StoreNoticeTests.testClosingHidesTheOlderStoresLineAndNeverTheRedOne -->
+  <!-- test: StoreResetTests.testTheResetClearsTheStoreFromBothPlaces -->
 - Sending streams the reply, with reasoning kept separately, into the
   conversation; a dropped stream keeps the partial reply on screen and
   Continue extends that same message rather than starting a new one.

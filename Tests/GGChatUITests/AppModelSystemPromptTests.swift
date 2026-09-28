@@ -119,7 +119,7 @@ final class AppModelSystemPromptTests: XCTestCase {
     /// launch, which sends it with its first request.
     @MainActor
     func testTheSystemPromptSurvivesARelaunch() async throws {
-        let store = SwiftDataStore(container: SwiftDataStore.makeContainer(inMemory: true, log: NoopLogSink()))
+        let store = SwiftDataStore(container: SwiftDataStore.inMemoryContainer())
         let model = AppModel(store: store, secrets: InMemorySecrets(), log: NoopLogSink(), now: { .distantPast })
         try model.addProvider(
             ProviderConfig(name: "p", kind: .openAICompatible(baseURL: baseURL), defaultModel: "m"),

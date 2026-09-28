@@ -3,7 +3,11 @@
 - **Status:** Accepted
 - **Date:** 2026-09-17 (amended 2026-09-22 — the decision stands; the naming
   and the healing moved into the binding, and the open question about pairing
-  is answered; see the notes in "Context", "Decision" and "Consequences")
+  is answered; see the notes in "Context", "Decision" and "Consequences";
+  amended 2026-09-28 — the conversation store is marked out of the backup
+  too, so a phone restored from a later backup would not have the providers
+  its Keychain items belong to (not checked); see the note under "Out of the
+  backup")
 - **Supersedes:** nothing
 - **Superseded by:** nothing
 
@@ -115,8 +119,18 @@ means re-pairing anyway.
 **Out of the backup.** A restored phone is a different device and has to look
 like one; two phones answering to one endpoint id is the one thing a key may
 not allow. The Keychain items go the other way on purpose, so a restored
-phone still holds the tokens that admit it and simply introduces itself
-afresh.
+phone still holds the tokens that admit it ~~and simply introduces itself
+afresh~~.
+
+> **Amended 2026-09-28 — the providers are marked out of the backup too.**
+> The conversation store, provider rows included, now lives in
+> `ggchat-store` under Application Support, a directory marked out of the
+> backup the way `pipe-identities` is. The Keychain items are keyed by
+> provider id, so on a phone restored from a backup made since then they
+> would name providers the phone does not have, and each machine would be
+> added to it again [unverified: what a restore brings back is Apple's
+> behaviour, seen in no run of this repo]. Whether those items should still
+> ride the backup is not decided here.
 
 ## Consequences
 

@@ -81,8 +81,13 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # a session of its own. They are the whole of that guard, so the floor moves
 # past all ten. The README claim names each of them, so the marker floor
 # moves past all ten markers.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 272
+#
+# 2026-09-28: 272 -> 292 and 188 -> 208. Twenty tests pin where the
+# conversation store is kept, how an earlier build's store moves in, what the
+# app does when it cannot keep one, and the words of its notice. The README
+# claim names each of them, so both floors move past all twenty.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 292
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 188
+floor "README test markers" "${markers:-0}" 208
 
 exit $status

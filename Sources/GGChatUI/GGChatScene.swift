@@ -7,16 +7,20 @@ import SwiftUI
 public struct GGChatScene: Scene {
     @State private var model: AppModel
     private let container: ModelContainer
+    /// What opening the store found to say, as the window shows it.
+    @State private var storeNotice: ShownStoreNotice
 
     public init() {
-        let store = SwiftDataStore(container: SwiftDataStore.makeContainer())
+        let opened = SwiftDataStore.open()
+        let store = SwiftDataStore(container: opened.container)
         container = store.container
+        _storeNotice = State(initialValue: ShownStoreNotice(opened.notice))
         _model = State(initialValue: AppModel(store: store, secrets: KeychainSecrets()))
     }
 
     public var body: some Scene {
         WindowGroup {
-            RootView()
+            RootView(storeNotice: storeNotice)
                 .environment(model)
         }
         .modelContainer(container)
