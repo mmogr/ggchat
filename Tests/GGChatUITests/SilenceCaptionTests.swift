@@ -170,30 +170,36 @@ final class SilenceCaptionTests: XCTestCase {
 
     /// A pipe that has never connected reads as looking, like any dial. A
     /// request through it that this side refuses because no tunnel is up is
-    /// the machine failing to answer, until the pipe connects. The same
-    /// refusal under a connected pill does not contradict the pill.
+    /// the machine failing to answer, until the pipe connects. A send is not
+    /// such a request: it waits for the pipe instead. The same refusal under
+    /// a connected pill does not contradict the pill.
     @MainActor
     func testTheCaptionShowsWhenARequestFindsNoTunnel() async throws {
         let clock = HandClock(morning)
-        let noTunnel = ProviderError.server(
-            status: 502, code: "tunnel_unavailable", message: "no tunnel to the serving side is connected right now")
+        let host = "no-tunnel.caption.test"
+        ModelsServer.answer(.refusing, at: host)
         let sleeper = HeldSleeper()
         let (model, config) = try makeModel(clock: clock) { registry in
-            MockPipeConnector(
-                sleeper: sleeper, provider: MockProvider(scripts: [.init(text: "")], failure: noTunnel),
-                registry: registry)
+            MockPipeConnector(sleeper: sleeper, provider: ModelsServer.provider(at: host), registry: registry)
         }
         await model.connectPipe(for: config)
         XCTAssertEqual(model.pipeStatus(for: config.id), .idle)
         XCTAssertNil(try caption(model), "a dial still looking")
 
-        try await XCTUnwrap(model.send("anyone?")).value
+        await model.refreshModels(for: config, quietly: true)
         XCTAssertEqual(try caption(model), "home · not heard from yet")
 
+        let send = try XCTUnwrap(model.send("anyone?"))
+        for _ in 0..<200 { await Task.yield() }
+        XCTAssertEqual(ModelsServer.modelRequests(at: host), 1, "the send asked a pipe that was still looking")
+        XCTAssertNil(model.selectedConversation?.messages.last?.failure, "the send was refused instead of waiting")
+
         sleeper.release()
+        for _ in 0..<5_000 where model.isStreaming { try await Task.sleep(for: .milliseconds(1)) }
+        XCTAssertFalse(model.isStreaming, "the send went on waiting once the pipe connected")
+        send.cancel()
+        await send.value
         await waitForStatus(.direct, model, config.id)
-        XCTAssertNil(try caption(model), "the pipe connected and the caption stayed")
-        try await XCTUnwrap(model.retry()).value
         XCTAssertEqual(model.selectedConversation?.messages.last?.failure?.code, "tunnel_unavailable")
         XCTAssertNil(try caption(model), "a caption under a pill that reads Direct")
     }

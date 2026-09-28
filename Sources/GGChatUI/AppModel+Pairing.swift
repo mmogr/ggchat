@@ -102,12 +102,25 @@ extension AppModel {
     /// nothing today — the provider is not on the list until the code has
     /// been spent — and it is used there anyway so the two paths cannot
     /// drift apart.
+    ///
+    /// A send waiting on this machine is told only when the pairing fails: a
+    /// refusal ends it with the sentence on its question as well as in the
+    /// sheet. A pairing that succeeds goes on to hang up and install, and
+    /// each of those wakes it.
     private func pair(
         _ pairing: String, deviceName: String?, holding providerID: UUID
     ) async throws -> PairedPipe {
         connecting.insert(providerID)
         defer { connecting.remove(providerID) }
-        return try await pipeConnector.pair(pairing: pairing, deviceName: deviceName)
+        do {
+            return try await pipeConnector.pair(pairing: pairing, deviceName: deviceName)
+        } catch let cancelled as CancellationError {
+            wakeWaitingSend(for: providerID)
+            throw cancelled
+        } catch {
+            handToWaitingSend(error.localizedDescription, for: providerID)
+            throw error
+        }
     }
 
     /// Installs the pipe a pairing came up on as the provider's session.

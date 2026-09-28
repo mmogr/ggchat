@@ -53,6 +53,8 @@ public final class AppModel {
     /// opening still under way; see `AppModel+Opening`.
     var followed: Set<UUID> = []
     var opening: [UUID: Task<Void, Never>] = [:]
+    /// The send waiting for its pipe, if one is; see `AppModel+Waiting`.
+    var pipeWait: PipeWait?
     /// Changes once each time a pipe first reaches a connected state; the
     /// one haptic in the app fires on it.
     public internal(set) var connectedPulse = 0
@@ -149,6 +151,9 @@ public final class AppModel {
     }
 
     public func deleteConversation(_ id: UUID) {
+        // Its reply in flight is put down as Stop puts it down. A waiting one
+        // would otherwise wait on, with no Stop left on screen to end it.
+        if liveReply?.conversationID == id { stop() }
         conversations.removeAll { $0.id == id }
         if selectedConversationID == id { selectedConversationID = nil }
         do {

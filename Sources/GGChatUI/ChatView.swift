@@ -85,10 +85,14 @@ struct ChatView: View {
     }
 }
 
-/// Observes only the live reply, so each token redraws this row alone.
+/// Observes only the live reply, so each token redraws this row alone. The
+/// model is read only while the reply waits for its pipe, for the line that
+/// names the machine.
 struct LiveReplyRow: View {
+    @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.locale) private var locale
+    @Environment(\.calendar) private var calendar
     let live: LiveReply
 
     var body: some View {
@@ -97,7 +101,13 @@ struct LiveReplyRow: View {
             if !live.reasoning.isEmpty {
                 ReasoningRow(text: live.reasoning, isThinking: live.content.isEmpty)
             }
-            if let reading = live.readingLine(in: locale) {
+            if let waiting = model.waitingLine(for: live, locale: locale, calendar: calendar) {
+                // Plain text, which VoiceOver reads as it is shown. Stop is the
+                // composer's button, as for any reply in flight.
+                Text(waiting)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            } else if let reading = live.readingLine(in: locale) {
                 // Plain text, which VoiceOver reads as it is shown.
                 Text(reading)
                     .font(.callout)
