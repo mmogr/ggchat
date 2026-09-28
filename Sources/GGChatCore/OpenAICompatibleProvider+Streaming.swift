@@ -44,40 +44,24 @@ extension OpenAICompatibleProvider {
             return
         }
         let request = makeRequest(path: "chat/completions", method: "POST", body: body)
-        var finishReason: String?
-        var usage: Usage?
-        var finished = false
+        var reply = ReplyState()
         do {
             for try await item in try await eventStream(request) {
-                switch item {
-                case .done:
-                    finished = true
-                    continuation.yield(.finished(reason: finishReason, usage: usage))
+                // `[DONE]` stops the reading. The reply then ends as it does
+                // when the stream ends without an error.
+                guard case .event(let event) = item else { break }
+                switch read(event, into: &reply) {
+                case .yield(let events):
+                    for passed in events { continuation.yield(passed) }
+                case .skip:
+                    continue
+                case .end(let events, let failure):
+                    for passed in events { continuation.yield(passed) }
+                    continuation.yield(.error(failure))
                     return
-                case .event(let event):
-                    let chunk = try decode(ChatCompletionChunk.self, from: Data(event.data.utf8))
-                    if let chunkUsage = chunk.usage { usage = chunkUsage }
-                    for choice in chunk.choices ?? [] {
-                        if let reasoning = choice.delta?.reasoningContent, !reasoning.isEmpty {
-                            continuation.yield(.reasoning(reasoning))
-                        }
-                        if let text = choice.delta?.content, !text.isEmpty {
-                            continuation.yield(.delta(text))
-                        }
-                        if let reason = choice.finishReason { finishReason = reason }
-                    }
-                    // A failure written into the stream ends the reply here.
-                    // gglib sends `[DONE]` after it, and returning is what
-                    // keeps that from counting the reply as finished.
-                    if let failure = chunk.error {
-                        continuation.yield(.error(.stream(code: failure.code, message: failure.message)))
-                        return
-                    }
                 }
             }
-            if !finished {
-                continuation.yield(.finished(reason: finishReason, usage: usage))
-            }
+            continuation.yield(reply.ending)
         } catch is CancellationError {
             log.log(.debug, "stream cancelled")
         } catch let error as ProviderError {
@@ -87,6 +71,59 @@ extension OpenAICompatibleProvider {
             continuation.yield(.error(.transport(error.localizedDescription)))
         }
     }
+
+    /// What one event of a chat stream means for the reply.
+    private func read(_ event: SSEEvent, into reply: inout ReplyState) -> EventOutcome {
+        // An event whose data is empty is a keepalive. It is not logged, and
+        // it is not a skipped chunk.
+        if event.data.isEmpty { return .skip }
+        let data = Data(event.data.utf8)
+        let chunk: ChatCompletionChunk
+        do throws(ProviderError) {
+            chunk = try decode(ChatCompletionChunk.self, from: data)
+        } catch {
+            return unreadable(data, failing: error, into: &reply)
+        }
+        if let usage = chunk.usage { reply.usage = usage }
+        var events: [ChatEvent] = []
+        for choice in chunk.choices ?? [] {
+            if let reasoning = choice.delta?.reasoningContent, !reasoning.isEmpty {
+                events.append(.reasoning(reasoning))
+            }
+            if let text = choice.delta?.content, !text.isEmpty {
+                events.append(.delta(text))
+            }
+            if let reason = choice.finishReason { reply.finishReason = reason }
+        }
+        if !events.isEmpty { reply.passedTextOrReasoning = true }
+        // A failure written into the stream ends the reply here. gglib sends
+        // `[DONE]` after it, and ending here is what keeps that from counting
+        // the reply as finished.
+        if let failure = chunk.error {
+            return .end(after: events, with: .stream(code: failure.code, message: failure.message))
+        }
+        return .yield(events)
+    }
+
+    /// A chunk that did not decode. One that JSONSerialization reads as an
+    /// object with a top-level member named `error` ends the reply, so a
+    /// `[DONE]` after it does not finish the reply. Any other is skipped. Its
+    /// log line gives the UTF-8 length of its text and nothing it held, not
+    /// even the decoder's description of the failure, which can quote the
+    /// chunk.
+    private func unreadable(_ data: Data, failing error: ProviderError, into reply: inout ReplyState) -> EventOutcome {
+        let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        if object?["error"] != nil {
+            return .end(after: [], with: .stream(code: nil, message: Self.unreadableError))
+        }
+        if reply.firstSkipped == nil { reply.firstSkipped = error }
+        log.log(.debug, "skipped a chunk this app could not read, \(data.count) bytes")
+        return .skip
+    }
+
+    /// The message of the error a reply ends with at a chunk this app cannot
+    /// read that has a top-level `error` member.
+    private static let unreadableError = "the server reported an error part-way through the reply"
 
     /// Opens the connection, maps a non-2xx reply to `ProviderError.server`,
     /// and hands back parsed SSE items as they arrive.
@@ -130,5 +167,33 @@ extension OpenAICompatibleProvider {
             }
             continuation.onTermination = { _ in task.cancel() }
         }
+    }
+}
+
+/// What one event of a chat stream means for the reply.
+private enum EventOutcome {
+    /// Pass these on, and read on.
+    case yield([ChatEvent])
+    /// Nothing to pass on; read on.
+    case skip
+    /// Pass these on, then end the reply with this error.
+    case end(after: [ChatEvent], with: ProviderError)
+}
+
+/// What a reply has read so far, for the event that ends it.
+private struct ReplyState {
+    var finishReason: String?
+    var usage: Usage?
+    /// Whether any text or reasoning has been passed on.
+    var passedTextOrReasoning = false
+    /// The decoding error of the first chunk that was skipped.
+    var firstSkipped: ProviderError?
+
+    /// How the reply ends when its stream ends without an error, at `[DONE]`
+    /// or without it. A reply that skipped a chunk and passed on no text and
+    /// no reasoning fails with the first skipped chunk's decoding error.
+    var ending: ChatEvent {
+        if !passedTextOrReasoning, let firstSkipped { return .error(firstSkipped) }
+        return .finished(reason: finishReason, usage: usage)
     }
 }
