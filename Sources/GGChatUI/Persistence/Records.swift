@@ -1,10 +1,11 @@
 import Foundation
 import SwiftData
 
-/// SwiftData rows. They mirror the Core value types field for field and
-/// never leave this directory; `SwiftDataStore` converts both ways. The key
-/// is `uuid`, not `id`: a property named `id` shadows PersistentModel's own
-/// and a predicate on it traps at fetch time.
+/// SwiftData rows. They mirror the Core value types field for field, but for
+/// `ProviderRecord.lastHeard`, and never leave this directory;
+/// `SwiftDataStore` converts both ways. The key is `uuid`, not `id`: a
+/// property named `id` shadows PersistentModel's own and a predicate on it
+/// traps at fetch time.
 @Model
 public final class ProviderRecord {
     @Attribute(.unique) public var uuid: UUID
@@ -12,13 +13,21 @@ public final class ProviderRecord {
     public var kindData: Data
     public var defaultModel: String?
     public var createdAt: Date
+    /// When this provider's machine was last heard, or nil. Not part of
+    /// `ProviderConfig`: saving a config never writes it, so an edit made
+    /// from a copy read earlier cannot put an older time back. Optional, so a
+    /// store written before it existed opens with every row reading nil.
+    public var lastHeard: Date?
 
-    public init(id: UUID, name: String, kindData: Data, defaultModel: String?, createdAt: Date) {
+    public init(
+        id: UUID, name: String, kindData: Data, defaultModel: String?, createdAt: Date, lastHeard: Date? = nil
+    ) {
         self.uuid = id
         self.name = name
         self.kindData = kindData
         self.defaultModel = defaultModel
         self.createdAt = createdAt
+        self.lastHeard = lastHeard
     }
 }
 

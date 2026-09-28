@@ -62,6 +62,21 @@ public final class SwiftDataStore: Store {
         }
     }
 
+    public func loadLastHeard() throws -> [UUID: Date] {
+        let records = try context.fetch(FetchDescriptor<ProviderRecord>())
+        var heard: [UUID: Date] = [:]
+        for record in records {
+            if let lastHeard = record.lastHeard { heard[record.uuid] = lastHeard }
+        }
+        return heard
+    }
+
+    public func save(lastHeard: Date, forProvider id: UUID) throws {
+        guard let record = try fetchProvider(id) else { return }
+        record.lastHeard = lastHeard
+        try context.save()
+    }
+
     private func fetchProvider(_ id: UUID) throws -> ProviderRecord? {
         var descriptor = FetchDescriptor<ProviderRecord>(predicate: #Predicate { $0.uuid == id })
         descriptor.fetchLimit = 1

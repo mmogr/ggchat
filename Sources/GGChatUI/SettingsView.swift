@@ -108,27 +108,36 @@ struct SettingsView: View {
     }
 }
 
-/// What each live pipe says about itself: how it is carrying traffic, the
-/// port it bound, and what its endpoint has spent on relays.
+/// Every pipe, with when its machine was last heard, and what each live one
+/// says about itself: how it is carrying traffic, the port it bound, and what
+/// its endpoint has spent on relays.
 ///
-/// Live pipes only. A pipe that has closed is forgotten by `AppModel` so that
-/// the next dial can happen at all, and a row of numbers about a connection
-/// that no longer exists would be a reading with nothing behind it. Why a
-/// pipe closed is said in a sentence when it happens, which is where a reason
-/// belongs; this section is for the numbers.
+/// The numbers are for live pipes only. A pipe that has closed is forgotten by
+/// `AppModel` so that the next dial can happen at all, and a row of numbers
+/// about a connection that no longer exists would be a reading with nothing
+/// behind it. Why a pipe closed is said in a sentence when it happens, which
+/// is where a reason belongs.
 ///
 /// No clock. These change interestingly only when the path does, and the path
 /// is `model.pipeStatus(for:)` — already observed, so the numbers are
-/// refreshed by the thing the section is already watching.
+/// refreshed by the thing the section is already watching. The last-heard
+/// time is the model's, stamped with its own `now`.
 private struct ConnectionsSection: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.locale) private var locale
+    @Environment(\.calendar) private var calendar
 
     var body: some View {
-        let live = model.providers.filter { model.pipeSession(for: $0.id) != nil }
-        if !live.isEmpty {
+        let pipes = model.providers.filter(\.isPipe)
+        if !pipes.isEmpty {
             Section {
-                ForEach(live) { provider in
-                    LabeledContent(provider.name, value: path(for: provider))
+                ForEach(pipes) { provider in
+                    LabeledContent {
+                        Text(path(for: provider))
+                    } label: {
+                        Text(provider.name)
+                        Text(model.lastHeardLine(for: provider.id, locale: locale, calendar: calendar))
+                    }
                     if let readings = model.pipeSession(for: provider.id)?.readings {
                         LabeledContent("Port", value: "\(readings.port)")
                         LabeledContent(

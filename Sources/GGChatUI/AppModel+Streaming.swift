@@ -175,6 +175,9 @@ extension AppModel {
         }
         conversation.updatedAt = stamp
         diagnostics.recordStreamEnd(with: error, at: stamp)
+        if let providerID = conversation.providerID {
+            if finished { heard(providerID) } else if let error { note(error, from: providerID) }
+        }
         if let error {
             streamErrors[conversation.id] = error
             log.log(.error, "stream ended with \(error.code ?? "no code"): \(error.whereToLook)")

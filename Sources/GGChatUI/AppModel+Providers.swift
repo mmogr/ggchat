@@ -119,6 +119,7 @@ extension AppModel {
             report(error)
             return
         }
+        forgetLastHeard(id)
         Task { await disconnectPipe(for: id) }
         do {
             try secrets.removeAll(for: id)
@@ -164,6 +165,7 @@ extension AppModel {
         guard let provider = makeProvider(for: config) else { return }
         do {
             let models = try await provider.models()
+            heard(config.id)
             modelsByProvider[config.id] = models
             if config.defaultModel == nil, let first = models.first {
                 var updated = config
@@ -171,6 +173,7 @@ extension AppModel {
                 updateProvider(updated)
             }
         } catch {
+            note(error, from: config.id)
             if Task.isCancelled {
                 log.log(.info, "listing models for \(config.name) was called off")
                 return

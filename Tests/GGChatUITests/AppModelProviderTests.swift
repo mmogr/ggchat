@@ -29,6 +29,15 @@ private final class RefusingStore: Store {
         try inner.deleteProvider(id: id)
     }
 
+    func loadLastHeard() throws -> [UUID: Date] {
+        try inner.loadLastHeard()
+    }
+
+    func save(lastHeard: Date, forProvider id: UUID) throws {
+        if refusesSaves { throw Refused() }
+        try inner.save(lastHeard: lastHeard, forProvider: id)
+    }
+
     func loadConversations() throws -> [Conversation] {
         try inner.loadConversations()
     }
