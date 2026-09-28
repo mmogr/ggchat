@@ -20,6 +20,16 @@ public final class LiveReply {
         self.conversationID = conversationID
         self.continuingMessageID = continuingMessageID
     }
+
+    /// "Reading 8,200 of 11,000 tokens", in `locale`'s digits, while the
+    /// prompt is read: nil before the first progress frame, and once any text
+    /// or reasoning has arrived.
+    public func readingLine(in locale: Locale) -> String? {
+        guard content.isEmpty, reasoning.isEmpty, let progress else { return nil }
+        let processed = progress.processed.formatted(.number.locale(locale))
+        let total = progress.total.formatted(.number.locale(locale))
+        return "Reading \(processed) of \(total) tokens"
+    }
 }
 
 extension AppModel {
@@ -105,7 +115,8 @@ extension AppModel {
         streamErrors[conversation.id] = nil
         let live = LiveReply(conversationID: conversation.id, continuingMessageID: continuing)
         liveReply = live
-        let request = ChatRequest(model: modelID, messages: conversation.requestMessages)
+        let request = ChatRequest(
+            model: modelID, messages: conversation.requestMessages, returnProgress: asksForProgress(config))
         let task = Task { [weak self] in
             var finished = false
             for await event in provider.stream(request) {

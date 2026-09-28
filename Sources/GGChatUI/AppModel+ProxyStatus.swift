@@ -8,6 +8,23 @@ extension AppModel {
         proxyStatusAvailability[providerID] ?? false
     }
 
+    /// Whether a chat request to this provider asks for progress while the
+    /// prompt is read. Only gglib is asked: a pipe, or a server that answered
+    /// the status probe. A server not known to be gglib is never sent it.
+    func asksForProgress(_ config: ProviderConfig) -> Bool {
+        config.isPipe || proxyStatusAvailable(for: config.id)
+    }
+
+    /// Forgets the probe's answer when an edit moves a provider to another
+    /// address or machine, as `setPipeStatus` does when a pipe comes up. The
+    /// answer was about the old one, and a server that is not gglib must not
+    /// be asked for progress. The generation drops a probe still in flight.
+    func forgetProxyStatus(ifMovedFrom previous: ProviderConfig, to config: ProviderConfig) {
+        guard previous.kind != config.kind else { return }
+        proxyStatusAvailability[config.id] = nil
+        probeGeneration[config.id] = (probeGeneration[config.id] ?? 0) + 1
+    }
+
     /// Asks once per provider, and again each time its pipe comes up. A 404,
     /// a transport failure or a non-server provider all mean "no pane";
     /// nothing is reported to the user.
@@ -19,6 +36,10 @@ extension AppModel {
     public func probeProxyStatus(for config: ProviderConfig) async {
         if proxyStatusAvailability[config.id] != nil { return }
         if config.isPipe, pipeSessions[config.id] == nil { return }
+        // A caller can hold a config it read before an await. If an edit has
+        // moved the provider since, the old address is not asked, because its
+        // answer would be kept for the new one.
+        guard providers.first(where: { $0.id == config.id })?.kind == config.kind else { return }
         guard let provider = makeProvider(for: config) as? OpenAICompatibleProvider else {
             proxyStatusAvailability[config.id] = false
             return

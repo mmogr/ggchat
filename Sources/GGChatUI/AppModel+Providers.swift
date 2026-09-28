@@ -47,7 +47,9 @@ extension AppModel {
 
     public func updateProvider(_ config: ProviderConfig) {
         guard let index = providers.firstIndex(where: { $0.id == config.id }) else { return }
+        let previous = providers[index]
         providers[index] = config
+        forgetProxyStatus(ifMovedFrom: previous, to: config)
         do {
             try store.save(provider: config)
         } catch {
@@ -91,7 +93,9 @@ extension AppModel {
             log.log(.error, "could not update \(config.name): \(error.localizedDescription)")
             throw error
         }
+        let previous = providers[index]
         providers[index] = config
+        forgetProxyStatus(ifMovedFrom: previous, to: config)
     }
 
     /// Forgets a provider: the durable record first, then its credentials.

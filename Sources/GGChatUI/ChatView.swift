@@ -88,6 +88,7 @@ struct ChatView: View {
 /// Observes only the live reply, so each token redraws this row alone.
 struct LiveReplyRow: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.locale) private var locale
     let live: LiveReply
 
     var body: some View {
@@ -96,7 +97,13 @@ struct LiveReplyRow: View {
             if !live.reasoning.isEmpty {
                 ReasoningRow(text: live.reasoning, isThinking: live.content.isEmpty)
             }
-            if live.content.isEmpty, live.reasoning.isEmpty {
+            if let reading = live.readingLine(in: locale) {
+                // Plain text, which VoiceOver reads as it is shown.
+                Text(reading)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            } else if live.content.isEmpty, live.reasoning.isEmpty {
                 ProgressView()
                     .controlSize(.small)
                     .accessibilityLabel("Waiting for the first token")
