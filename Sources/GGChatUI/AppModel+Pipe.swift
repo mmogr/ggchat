@@ -80,6 +80,7 @@ extension AppModel {
             // pill at all, and the pill is the only way back: a dial that
             // failed is exactly when one is wanted.
             setPipeStatus(.closed, for: config.id)
+            notAnswering(config.id)
             if quietly {
                 log.log(.info, "\(config.name) did not answer: \(error.localizedDescription)")
             } else {
