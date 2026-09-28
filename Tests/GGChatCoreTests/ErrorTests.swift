@@ -139,7 +139,8 @@ final class ErrorTests: XCTestCase {
         let wedged = ProviderError.server(status: 502, code: "bad_gateway", message: "bad gateway")
         XCTAssertEqual(wedged.hint, WhereToLook.servingSide.hint)
         XCTAssertNil(ProviderError.server(status: 418, code: "something_new", message: "?").hint)
-        for code in ProviderError.Code.allCases where code != .invalidAPIKey {
+        // `tunnel_unavailable`'s sentence is read in `QuietMachineTests`.
+        for code in ProviderError.Code.allCases where ![.invalidAPIKey, .tunnelUnavailable].contains(code) {
             XCTAssertNil(code.hint, "\(code.rawValue) has a sentence of its own that no test reads")
         }
     }

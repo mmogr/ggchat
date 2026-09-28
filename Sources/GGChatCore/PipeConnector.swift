@@ -151,8 +151,10 @@ public enum PipeConnectError: Error, Sendable, Equatable, LocalizedError {
     /// A case of its own rather than one more `dialFailed`, because the
     /// person has somewhere to go: the code may be wrong, expired or already
     /// spent, and the next attempt starts on the other machine. The payload
-    /// is the sentence whoever refused it wrote, and the line naming what to
-    /// run there is added here.
+    /// is the sentence whoever refused it wrote, and the lines naming what to
+    /// run there are added here. A machine that pins device keys gives this
+    /// same answer to a device it still lists, so the second line says how
+    /// to take this device off that list.
     case pairingRefused(message: String)
     /// The far machine answered the code `404`, which is how a desktop too
     /// old to pair this way answers it.
@@ -180,6 +182,8 @@ public enum PipeConnectError: Error, Sendable, Equatable, LocalizedError {
         case .dialFailed(let message, _): message
         case .pairingRefused(let message):
             message + " Run `gglib remote invite` there again."
+                + " If this device is still listed on the other machine, remove it there first with"
+                + " `gglib remote forget`, then pair again."
         case .desktopTooOldToPair(let message):
             message
                 + " The code has been spent."

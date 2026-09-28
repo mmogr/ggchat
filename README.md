@@ -276,6 +276,29 @@ Each claim names the test that keeps it true.
   did.
   <!-- test: PipeCloseReasonTests.testAHangUpThisAppAskedForIsNotWorthASentence -->
   <!-- test: AppModelCloseReasonTests.testAHangUpTheAppPerformedExplainsNothingAndSaysNothing -->
+- Each pipe keeps when its machine was last heard, through a relaunch, and
+  Settings says it; once the machine has failed to answer, and never while a
+  pipe reconnects, a line under the pill names it with that time. The line
+  under a `tunnel_unavailable` refusal names the other machine as well as this
+  device, and a refused pairing says to run `gglib remote forget` there first
+  if this device is still listed.
+  <!-- test: AppModelLastHeardTests.testAPipeThatConnectsIsHeardThen -->
+  <!-- test: AppModelLastHeardTests.testAPipeThatGoesQuietKeepsItsTime -->
+  <!-- test: AppModelLastHeardTests.testARefusalWrittenOnThisSideIsNotHearing -->
+  <!-- test: AppModelLastHeardTests.testAFinishedReplyIsHeard -->
+  <!-- test: AppModelLastHeardTests.testAModelListAndAStatusAnswerAreHeard -->
+  <!-- test: AppModelLastHeardTests.testRemovingTheProviderForgetsWhenItWasHeard -->
+  <!-- test: AppModelLastHeardTests.testTheLineSaysTheTimeAndTheDateWhenItWasNotToday -->
+  <!-- test: LastHeardStoreTests.testTheTimeSurvivesARelaunchOfTheStore -->
+  <!-- test: LastHeardStoreTests.testAStoreWrittenBeforeTheColumnOpensWithItEmpty -->
+  <!-- test: SilenceCaptionTests.testTheCaptionStaysAwayWhileAPipeReconnects -->
+  <!-- test: SilenceCaptionTests.testTheCaptionShowsWhenAConnectedPipeGoesQuietUntilItConnects -->
+  <!-- test: SilenceCaptionTests.testTheCaptionShowsWhenThePipeClosesOrTheDialFails -->
+  <!-- test: SilenceCaptionTests.testAServerAddedByAddressIsNeitherHeardNorMarked -->
+  <!-- test: SilenceCaptionTests.testTheCaptionShowsWhenARequestFindsNoTunnel -->
+  <!-- test: QuietMachineTests.testTheTunnelHintNamesTheOtherMachineAsWellAsThisDevice -->
+  <!-- test: QuietMachineTests.testARefusedPairingSaysToForgetAStillListedDeviceFirst -->
+  <!-- test: QuietMachineTests.testAQuietMockGoesBackToLookingAndDoesNotClose -->
 - Settings shows what each live pipe says about itself: its path, the loopback
   port it bound, and what its endpoint spent on relays.
   <!-- test: ModelpipeSessionTests.testTheReadingsCrossTheSeamInTheAppsOwnVocabulary -->

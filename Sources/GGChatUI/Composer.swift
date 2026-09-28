@@ -8,6 +8,8 @@ struct Composer: View {
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.locale) private var locale
+    @Environment(\.calendar) private var calendar
     @Namespace private var glass
     @State private var draft = ""
     @State private var pickingModel = false
@@ -25,6 +27,14 @@ struct Composer: View {
         GlassEffectContainer(spacing: 12) {
             VStack(alignment: .leading, spacing: 10) {
                 pills
+                // A plain line, not a fourth glass element, and what VoiceOver
+                // reads is what is shown.
+                if let caption = model.silenceCaption(for: conversation, locale: locale, calendar: calendar) {
+                    Text(caption)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 12)
+                }
                 composer
             }
         }

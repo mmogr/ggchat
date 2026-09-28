@@ -46,7 +46,15 @@ extension AppModel {
         }
         let generation = (probeGeneration[config.id] ?? 0) + 1
         probeGeneration[config.id] = generation
-        let snapshot: ProxyStatus?? = try? await provider.proxyStatus()
+        // Any answer, a 404 included, is the machine heard.
+        let snapshot: ProxyStatus??
+        do {
+            snapshot = try await provider.proxyStatus()
+            heard(config.id)
+        } catch {
+            snapshot = nil
+            note(error, from: config.id)
+        }
         // Kept only if nothing moved this probe on while it waited. A pipe
         // coming up moves it on, and so does a newer probe. A cancelled
         // caller is checked as well, but cancellation can arrive after the

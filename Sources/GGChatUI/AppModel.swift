@@ -26,6 +26,11 @@ public final class AppModel {
     /// describe a different close from the one on screen.
     var pipeCloseReasons: [UUID: PipeCloseReason] = [:]
     var pipeSessions: [UUID: any PipeSession] = [:]
+    /// When each pipe's machine was last heard, and the pipes whose machine
+    /// has failed to answer since they last connected; see
+    /// `AppModel+LastHeard`.
+    var lastHeardAt: [UUID: Date] = [:]
+    var unanswered: Set<UUID> = []
     var statusTasks: [UUID: Task<Void, Never>] = [:]
     var connecting: Set<UUID> = []
     /// Which attempt the latest dial for each provider is. It goes up when a
@@ -117,6 +122,7 @@ public final class AppModel {
     public func load() {
         do {
             providers = try store.loadProviders()
+            lastHeardAt = try store.loadLastHeard()
             conversations = try store.loadConversations().sorted { $0.updatedAt > $1.updatedAt }
             // Reopening the app returns you to the conversation you left.
             if selectedConversationID == nil {

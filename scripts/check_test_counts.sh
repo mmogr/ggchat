@@ -86,8 +86,14 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # conversation store is kept, how an earlier build's store moves in, what the
 # app does when it cannot keep one, and the words of its notice. The README
 # claim names each of them, so both floors move past all twenty.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 292
+#
+# 2026-09-29: 292 -> 309 and 208 -> 225 for when a machine was last heard.
+# Seventeen new tests pin what counts as hearing it, that the time is kept in
+# the store, when the line under the pill names a machine that has stopped
+# answering, and the two sentences that no longer blame only this device.
+# They are the whole of that guard, and the README claim names each of them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 309
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 208
+floor "README test markers" "${markers:-0}" 225
 
 exit $status

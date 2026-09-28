@@ -71,6 +71,8 @@ extension AppModel {
         let previous = pipeStatuses[providerID]
         pipeStatuses[providerID] = status
         pipeCloseReasons[providerID] = status == .closed ? reason : nil
+        // Only a close the session reported comes with a reason.
+        notePipeStatus(providerID, from: previous, to: status, closedOnItsOwn: status == .closed && reason != nil)
         if status == .closed, previous != .closed {
             let midReply = cutShort || streamingProviderID == providerID
             diagnostics.recordClosed(whileStreaming: midReply)
