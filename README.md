@@ -340,6 +340,32 @@ Each claim names the test that keeps it true.
   key.
   <!-- test: SwiftDataStoreTests.testOneProviderAmongManyIsUpdatedAndDeletedByItsOwnKey -->
   <!-- test: SwiftDataStoreTests.testOneConversationAmongManyIsUpdatedAndDeletedByItsOwnKey -->
+- Conversations, their messages and providers are kept in `ggchat-store` under
+  Application Support, a directory readable by this user alone and marked out of
+  the backup, and a store an earlier build left where SwiftData put it moves in
+  with every conversation, the main file last, never replacing a file already
+  there. When the store cannot be kept there, the app runs from memory with a
+  notice saying so, and does not open the old place.
+  <!-- test: StoreDirectoryTests.testTheStoreOpensInsideADirectoryNoBackupCarries -->
+  <!-- test: StoreDirectoryTests.testADirectoryMadeWithoutTheMarkIsMarkedWhenTheStoreOpens -->
+  <!-- test: StoreDirectoryTests.testTheStoresDirectoryAndFileNamesDoNotMove -->
+  <!-- test: StoreDirectoryTests.testTheAppsOwnStoreIsInsideTheDirectoryUnderApplicationSupport -->
+  <!-- test: StoreDirectoryTests.testSwiftDataNamesTheOldPlaceWithoutCreatingIt -->
+  <!-- test: StoreMoveTests.testAStoreFromAnEarlierBuildMovesInWithEveryConversation -->
+  <!-- test: StoreMoveTests.testAStoreLeftAsItsMainFileAloneMovesInWithEveryConversation -->
+  <!-- test: StoreMoveTests.testAMoveCutShortFinishesOnTheNextLaunch -->
+  <!-- test: StoreMoveTests.testAMoveStopsRatherThanReplaceAFileAlreadyInTheDirectory -->
+  <!-- test: StoreMoveTests.testAStoreAlreadyInTheDirectoryIsNeverReplacedByAnOlderOne -->
+  <!-- test: StoreDirectoryTests.testWithNowhereToKeepTheStoreNothingIsKeptAndTheNoticeSaysSo -->
+  <!-- test: StoreFallbackTests.testADirectoryThatCannotBeMarkedIsNotUsed -->
+  <!-- test: StoreFallbackTests.testAStoreThatWillNotOpenKeepsItsBytesAndNothingIsKept -->
+  <!-- test: StoreFallbackTests.testAStoreThatWillNotOpenBesideAnOlderOneReportsBoth -->
+  <!-- test: StoreFallbackTests.testWithNoApplicationSupportNothingIsKeptAndTheNoticeSaysSo -->
+  <!-- test: StoreFallbackTests.testAFileAtTheOldPlaceThatCannotBeMarkedIsLoggedWithoutAPath -->
+  <!-- test: StoreDirectoryTests.testANormalOpenHasNothingToSay -->
+  <!-- test: StoreNoticeTests.testTheRedLineComesFirstAndEachLineReadsAsWritten -->
+  <!-- test: StoreNoticeTests.testClosingHidesTheOlderStoresLineAndNeverTheRedOne -->
+  <!-- test: StoreResetTests.testTheResetClearsTheStoreFromBothPlaces -->
 - Sending streams the reply, with reasoning kept separately, into the
   conversation; a dropped stream keeps the partial reply on screen and
   Continue extends that same message rather than starting a new one.
