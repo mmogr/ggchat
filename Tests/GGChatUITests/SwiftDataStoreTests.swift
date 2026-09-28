@@ -7,7 +7,7 @@ import XCTest
 final class SwiftDataStoreTests: XCTestCase {
     @MainActor
     private func makeStore() -> SwiftDataStore {
-        SwiftDataStore(container: SwiftDataStore.makeContainer(inMemory: true, log: NoopLogSink()))
+        SwiftDataStore(container: SwiftDataStore.inMemoryContainer())
     }
 
     @MainActor

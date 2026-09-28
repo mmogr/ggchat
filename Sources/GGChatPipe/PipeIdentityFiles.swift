@@ -29,7 +29,7 @@ import Foundation
 /// comment; `BindingTests` pins the literal from both ends.
 ///
 /// What stays on this side is the part Rust cannot do portably: making the
-/// directory `0o700` at the moment it is created, and marking it out of the
+/// directory `0o700` straight after it is created, and marking it out of the
 /// backup. modelpipe creates no directory — a directory that is named but
 /// absent surfaces as `MpError.Identity`.
 ///
@@ -80,21 +80,29 @@ struct PipeIdentityFiles: Sendable {
     /// Make the directory, private and out of the backup, and say whether
     /// there is now one to write into.
     ///
-    /// The mode rides on the creation rather than being set afterwards, so
-    /// there is no moment at which the directory exists and is readable: this
-    /// only ever creates the directory the app's own container already
-    /// protects, and a chmod of one somebody else made is not this type's
+    /// The mode is handed to `createDirectory`, which sets it straight after
+    /// making the directory and before it returns (seen on macOS: `mkdirat`
+    /// with `0777`, then `chmod` with `0700`), so no key is written into a
+    /// directory this made before it is private. This only ever creates the
+    /// directory inside the app's own container, which already protects it
+    /// [unverified], and a chmod of one somebody else made is not this type's
     /// business. `createDirectory` applies attributes to what it creates, so
     /// a directory that is already there keeps whatever it had.
     ///
     /// Out of the backup because a restored phone is a different device and
     /// should look like one. A restore that carried these files would give
     /// two phones one name on the far machine, which is the one thing an
-    /// endpoint key may not do; the Keychain items go the other way on
-    /// purpose, so the restored phone still holds the keys that admit it and
-    /// simply introduces itself afresh. A directory this app cannot mark is
-    /// therefore one it will not keep a key in — the dial goes out with no
-    /// identity instead, which is what every build before this one did.
+    /// endpoint key may not do. A directory this app cannot mark is therefore
+    /// one it will not keep a key in — the dial goes out with no identity
+    /// instead, which is what every build before this one did.
+    ///
+    /// The Keychain items were left to go the other way, so that a restored
+    /// phone would still hold the keys that admit it and simply introduce
+    /// itself afresh. Since the conversation store moved into `ggchat-store`,
+    /// which is marked out of the backup too, a phone restored from a backup
+    /// made after that has no provider rows for those items to belong to, and
+    /// each machine is added to it again [unverified: what a restore brings
+    /// back is Apple's behaviour, seen in no run of this repo].
     ///
     /// Of the two ways out of here, only the first is covered by a test. A
     /// directory that cannot be made is pinned by

@@ -9,7 +9,7 @@ public struct GGChatScene: Scene {
     private let container: ModelContainer
 
     public init() {
-        let store = SwiftDataStore(container: SwiftDataStore.makeContainer())
+        let store = SwiftDataStore(container: SwiftDataStore.open().container)
         container = store.container
         _model = State(initialValue: AppModel(store: store, secrets: KeychainSecrets()))
     }

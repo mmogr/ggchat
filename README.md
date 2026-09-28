@@ -188,12 +188,12 @@ Each claim names the test that keeps it true.
 - This device keeps one endpoint key per machine it pairs with, so the
   fingerprint the other machine recorded as this device paired still names
   this device after a relaunch, rather than a peer that stopped existing when
-  the app was quit. This app makes one directory under Application Support
-  that no backup carries and no other user can read, and modelpipe names and
-  writes the keys inside it; two machines are two keys, because a relay
-  allows one live connection per endpoint and a phone talking to two desktops
-  needs two. The key admits nothing — what admits this device is the token
-  beside it in the Keychain — and
+  the app was quit. This app gives the keys a directory of their own under
+  Application Support, readable by this user alone and marked out of the
+  backup, and modelpipe names and writes them inside it; two machines are two
+  keys, because a relay allows one live connection per endpoint and a phone
+  talking to two desktops needs two. The key admits nothing — what admits this
+  device is the token beside it in the Keychain — and
   [ADR 0004](docs/adr/0004-the-connect-identity-is-a-file.md) is why it is a
   file all the same. Naming each key file used to be this app's job and is
   now the binding's, so the two have to land on the same name or every
