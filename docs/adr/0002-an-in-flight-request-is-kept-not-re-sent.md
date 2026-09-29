@@ -4,7 +4,9 @@
 - **Date:** 2026-09-06 (amended 2026-09-07 — the decision stands; what its
   counters count is not "a reply was interrupted", see "Kill criteria";
   amended 2026-09-13 — a request refused before anything arrived has no
-  partial to keep, so the question gets a Retry, see "Decision")
+  partial to keep, so the question gets a Retry, see "Decision"; amended
+  2026-09-29 — the background detaches from a run, it does not cancel it,
+  see "Decision")
 - **Supersedes:** nothing
 - **Superseded by:** nothing
 
@@ -44,7 +46,8 @@ Option 2. `Message.isPartial` is set when a stream ends with an error or is
 stopped by the user, the transcript shows the text with a Continue button,
 and nothing is sent until the user presses it. gglib's error sentences are
 shown verbatim beneath the partial text, with the `WhereToLook` hint as a
-second line.
+second line. (A reply to gglib is not ended by a background or a dropped
+connection since 2026-09-29; see the amendment of that date below.)
 
 > **Amended 2026-09-13 — when nothing arrived, the question gets a Retry.**
 > A request refused before its first token leaves no partial for Continue
@@ -66,7 +69,28 @@ second line.
 > whether an unanswered question is worth asking again. If that ever needs
 > a reading, it is a counter of its own beside K, not an addition to it. A
 > stop or a background before the first token is still not a failure: the
-> question keeps its Retry, and no sentence.
+> question keeps its Retry, and no sentence. (A background before the first
+> token of a run leaves the run's placeholder instead, since 2026-09-29.)
+
+> **Amended 2026-09-29 — the background detaches from a run; it does not
+> cancel it.** A reply to gglib, a pipe or a server that answered the status
+> probe, is now a run the hub owns: `PUT runs/{id}` with an id minted on the
+> phone. Going to the background, or a connection dropping while the app is in
+> front, stops reading and leaves the run going. What has arrived is written
+> with the run's id and the number of the last event read, an empty reply
+> included, and coming back, a launch or the pipe coming up reads on after that
+> number, so no event is applied twice or skipped. Only Stop, or deleting the
+> conversation or its provider, cancels the run. While the hub is still writing
+> it the reply offers neither Continue nor Retry, either of which would start a
+> second reply beside it, and says it is still being written on that machine.
+> It ends as the run did: whole, with the run's failure, or stopped. When the
+> hub no longer has the run the partial stays with Continue and a sentence
+> saying so, which is option 2 again. A hub with no runs route is sent the
+> request as before, and is not asked again while the app runs.
+>
+> This is still not option 1: nothing is sent twice, and the text on screen
+> only grows. N still counts the close a background makes mid-reply. K cannot
+> follow it, because no Continue is offered on a reply still being written.
 
 ## Kill criteria
 
@@ -123,7 +147,9 @@ second line.
   > and on nothing else, so a process suspended while streaming lost the
   > partial text outright. It acts on `.background` now.
   > `AppModel.didEnterBackground()` (since 2026-09-16 the hang-up pass of
-  > `scene(_:)`) cancels the reply and awaits it before it
+  > `scene(_:)`; since 2026-09-29 it stops reading a run rather than
+  > cancelling it, and the transcript offers no Continue until the run ends,
+  > see "Decision") cancels the reply and awaits it before it
   > hangs anything up, so `finish(_:finished:)` writes the partial into the
   > conversation with `isPartial` set and the transcript offers Continue; the
   > hang-up then leaves `.closed` behind rather than nothing, which puts it
@@ -132,7 +158,8 @@ second line.
   > the one it sees best: partial, Continue button, and — when the reply was
   > going over a pipe — a close in both N and M.
   >
-  > Only once some of the reply has arrived, though. `finish(_:finished:)`
+  > Only once some of the reply has arrived, though (a run keeps an empty
+  > placeholder, since 2026-09-29). `finish(_:finished:)`
   > appends nothing for an empty one, and Continue needs a message to sit
   > under, so a background before the first token leaves neither. `cutShort`
   > is read from `streamingProviderID`, which is set as soon as the reply is

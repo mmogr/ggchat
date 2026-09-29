@@ -41,7 +41,9 @@ immediately after foregrounding.~~
 > argument for a delay or a retry; the failure it should have described is an
 > argument for noticing the session is dead and redialling. The app does that
 > now — going to the background hangs up every pipe, and coming back dials
-> again the ones it had, the two passes taking turns since 2026-09-16 — so
+> again the ones it had, the two passes taking turns since 2026-09-16, and
+> since 2026-09-29 a reply gglib went on writing is read on once its pipe is
+> up rather than cancelled on the way out (ADR 0002) — so
 > the work this paragraph called separate is done,
 > and done without the reading. What is still uncosted is the ffi telling a
 > reclaimed listener from a slow one, which is what the reading was for.

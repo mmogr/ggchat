@@ -23,8 +23,9 @@ and on Stop, the background or the provider's removal, which leave Retry and
 no failure, or on the conversation's deletion. There is no time limit. A dial
 the wait started goes on after Stop, so the pipe is up for the next send.
 
-Nothing is stored or counted. The wait lives in memory, as the reply in
-flight does, and the time it shows is the last-heard time the pipe already
+Nothing is stored or counted. The wait lives in memory, as a reply in
+flight does until it is a run the hub owns (ADR 0002, amended 2026-09-29,
+keeps a run's id with its message), and the time it shows is the last-heard time the pipe already
 keeps. A close while a send waits is not a close mid-reply under ADR 0002.
 
 ## What would undo it

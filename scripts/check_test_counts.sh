@@ -110,8 +110,11 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # the fallback asked once, the background walking away where Stop cancels, no
 # Continue or Retry while the hub writes, reading on after every cut to the
 # same text, a drop in front read on, and each way a run can end.
+#
+# 2026-09-29: 235 -> 257. The README claim for runs names all twenty-two of
+# their tests.
 floor "package test cases" "$(test_cases "$ROOT/Tests")" 350
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 235
+floor "README test markers" "${markers:-0}" 257
 
 exit $status
