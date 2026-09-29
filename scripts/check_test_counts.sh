@@ -102,7 +102,10 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # fallback, frames numbered by seq, a stream cut at every byte read on from its
 # cursor, not_found, cancel, and no run id in a log line; the floor also moves
 # past the run wire replays that came before them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 335
+#
+# 2026-09-29: 335 -> 337. Two tests pin that a message keeps its run's id and
+# cursor, and that a store opens across that change in both directions.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 337
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
 floor "README test markers" "${markers:-0}" 235
 
