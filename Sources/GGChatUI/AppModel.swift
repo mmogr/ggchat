@@ -8,7 +8,11 @@ import Observation
 public final class AppModel {
     public internal(set) var providers: [ProviderConfig] = []
     public private(set) var conversations: [Conversation] = []
-    public var selectedConversationID: UUID?
+    /// The conversation open. Opening one clears its unread mark; see
+    /// `AppModel+ListMarks`.
+    public var selectedConversationID: UUID? {
+        didSet { markRead(selectedConversationID) }
+    }
     /// The last failure worth telling the user about, as its own sentence.
     public var lastError: String?
     /// The reply being streamed, if any.

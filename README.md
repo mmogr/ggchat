@@ -445,6 +445,20 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelRunReadOnTests.testAPutWhoseAnswerWasLostIsSentAgainUnderItsID -->
   <!-- test: AppModelRunReadOnTests.testAReturnReadsOnAtAnAddressWithNoPipe -->
   <!-- test: AppModelRunReadOnTests.testNoLogLineNamesARunItsTextOrAnAddress -->
+- The conversation list says, beside a title, "Writing" while a reply is still
+  being written, in front or by the hub, and "New" when one finished, failed
+  or was given up while another conversation was open, until that one is
+  opened. A reply that ends in the conversation on screen is never new.
+  Opening one moves nothing in the list. The mark is kept with the
+  conversation in its store, and a store opens across that change both ways;
+  nothing about it leaves the phone.
+  <!-- test: AppModelListMarkTests.testAReplyStillBeingWrittenIsWritingInTheList -->
+  <!-- test: AppModelListMarkTests.testAReplyThatEndsWhileAnotherIsOpenIsUnreadUntilOpened -->
+  <!-- test: AppModelListMarkTests.testAReplyThatEndsWhileItsConversationIsOpenIsNeverUnread -->
+  <!-- test: AppModelListMarkTests.testTheMarksLeaveTheOrderAsItWas -->
+  <!-- test: AppModelListMarkTests.testEachMarkHasAWordAndALabel -->
+  <!-- test: UnreadStoreTests.testTheUnreadMarkIsKeptWithItsConversation -->
+  <!-- test: UnreadStoreTests.testAStoreOpensAcrossTheUnreadChangeInBothDirections -->
 - A conversation can carry a system prompt. It goes ahead of every request
   the conversation makes, Continue and Retry included, and an edit reaches the
   next one. It is never a row in the transcript and never stored as a

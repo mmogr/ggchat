@@ -126,8 +126,14 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 #
 # 2026-09-29: 359 -> 361. Two tests pin that a conversation's unread mark is
 # kept in the store and that a store opens across that change both ways.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 361
+#
+# 2026-09-29: 361 -> 366 and 266 -> 273. Five tests pin the list's marks: a
+# reply still being written, one unread until opened, one that ends on screen
+# never unread, an order the marks leave alone, and a word and label for each.
+# They and the two store tests are the whole of that guard, and the README
+# claim names all seven.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 366
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 266
+floor "README test markers" "${markers:-0}" 273
 
 exit $status
