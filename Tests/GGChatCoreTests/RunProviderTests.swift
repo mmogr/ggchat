@@ -176,6 +176,17 @@ final class RunProviderTests: XCTestCase {
         guard case .dropped(.transport?)? = unreachable.last else { return XCTFail("\(unreachable)") }
     }
 
+    /// A last report the hub sent but this build cannot read is a refusal,
+    /// not a drop: reading again would get the same report.
+    func testAReportThatCannotBeReadIsARefusal() async throws {
+        var unreadable = try script("run-odd")
+        unreadable.ending = #"{"id":"run-odd","status":42}"#
+        RunHub.serve(unreadable, at: "odd.runs.test")
+        let events = await read(RunHub.provider(at: "odd.runs.test"), "run-odd", after: 0)
+        guard case .refused(.decoding)? = events.last else { return XCTFail("\(String(describing: events.last))") }
+        XCTAssertEqual(events.dropLast().count, try recordedFrames().count, "the frames before it were not read")
+    }
+
     /// Cancel posts to the run's own route and reads its report.
     func testCancelPostsToTheRunAndReadsItsReport() async throws {
         var cancelled = try script("run-stop", status: "cancelled")

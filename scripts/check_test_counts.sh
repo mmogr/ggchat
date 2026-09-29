@@ -132,8 +132,11 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # never unread, an order the marks leave alone, and a word and label for each.
 # They and the two store tests are the whole of that guard, and the README
 # claim names all seven.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 366
+#
+# 2026-09-29: 366 -> 367 and 273 -> 274. One test pins that a run's report
+# that cannot be read is a refusal and not a drop.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 367
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 273
+floor "README test markers" "${markers:-0}" 274
 
 exit $status

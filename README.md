@@ -420,6 +420,7 @@ Each claim names the test that keeps it true.
   <!-- test: RunProviderTests.testAStreamCutAtEveryByteReadsOnFromItsCursorToTheSameReply -->
   <!-- test: RunProviderTests.testAnEventAtOrBelowTheCursorIsNotAppliedAgain -->
   <!-- test: RunProviderTests.testNotFoundARefusalAndADropAreToldApart -->
+  <!-- test: RunProviderTests.testAReportThatCannotBeReadIsARefusal -->
   <!-- test: RunProviderTests.testCancelPostsToTheRunAndReadsItsReport -->
   <!-- test: RunProviderTests.testARunsIDNeverReachesALogLine -->
   <!-- test: RunStoreTests.testARunsIDAndCursorAreKeptWithItsMessage -->
