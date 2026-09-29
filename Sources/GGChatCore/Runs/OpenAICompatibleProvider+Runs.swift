@@ -91,14 +91,17 @@ extension OpenAICompatibleProvider: RunProvider {
     }
 
     /// How a read that failed with `error` ends: a 404 is a run the hub does
-    /// not have, any other 4xx or an answer that is not the hub's is a
-    /// refusal, and the rest, a 5xx or no answer at all, is a drop.
+    /// not have, any other 4xx, or a report the hub sent that cannot be read,
+    /// is a refusal, and the rest is a drop: a 5xx, no answer at all, or a
+    /// 2xx that is not an event stream. The hub never sends that last one; a
+    /// captive portal or a relay's page in front of it does, and the run is
+    /// still there once the hub can be reached.
     static func end(of error: ProviderError) -> RunEvent {
         switch error {
         case .server(404, _, _): .notFound
         case .server(let status, _, _) where (400..<500).contains(status): .refused(error)
-        case .decoding, .invalidResponse: .refused(error)
-        case .server, .stream, .transport: .dropped(error)
+        case .decoding: .refused(error)
+        case .server, .stream, .transport, .invalidResponse: .dropped(error)
         }
     }
 

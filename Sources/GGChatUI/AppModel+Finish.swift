@@ -54,6 +54,7 @@ extension AppModel {
             // the sentence under, it goes on the question.
             putOnTheQuestion(failure, in: &conversation)
         }
+        if !keepsRun { markUnreadUnlessRead(&conversation, stoppedHere: live.stoppedHere) }
         conversation.updatedAt = stamp
         diagnostics.recordStreamEnd(with: error, at: stamp)
         if let providerID = conversation.providerID {

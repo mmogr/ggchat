@@ -74,6 +74,7 @@ extension AppModel {
     /// the background only walks away from it; the reading task tells the
     /// two apart by `LiveReply.detaching`, which only the background sets.
     public func stop() {
+        liveReply?.stoppedHere = true
         streamTask?.cancel()
     }
 

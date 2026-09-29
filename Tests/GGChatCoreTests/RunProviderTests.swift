@@ -147,10 +147,10 @@ final class RunProviderTests: XCTestCase {
         XCTAssertEqual(first, 21)
     }
 
-    /// `not_found` is a run the hub no longer has. Any other 4xx, or an
-    /// answer that is not an event stream, is a refusal that asking again
-    /// would repeat. A 5xx, no answer, or an end with no report is a drop to
-    /// read again from.
+    /// `not_found` is a run the hub no longer has. Any other 4xx is a refusal
+    /// that asking again would repeat. A 5xx, a 2xx that is not an event
+    /// stream (a captive portal's page, say), no answer, or an end with no
+    /// report is a drop to read again from.
     func testNotFoundARefusalAndADropAreToldApart() async throws {
         let codes = [404: "not_found", 401: "invalid_api_key", 403: "not_yours", 502: "tunnel_unavailable"]
         func refusal(_ status: Int) -> ProviderError {
@@ -158,7 +158,7 @@ final class RunProviderTests: XCTestCase {
         }
         let answers: [(status: Int, want: RunEvent)] = [
             (404, .notFound), (401, .refused(refusal(401))), (403, .refused(refusal(403))),
-            (200, .refused(.invalidResponse("the answer was text/html, not an event stream"))),
+            (200, .dropped(.invalidResponse("the answer was text/html, not an event stream"))),
             (502, .dropped(refusal(502))),
         ]
         for (index, answer) in answers.enumerated() {
@@ -174,6 +174,17 @@ final class RunProviderTests: XCTestCase {
         }
         let unreachable = await read(RunHub.provider(at: "nobody.runs.test"), "run-x", after: 0)
         guard case .dropped(.transport?)? = unreachable.last else { return XCTFail("\(unreachable)") }
+    }
+
+    /// A last report the hub sent but this build cannot read is a refusal,
+    /// not a drop: reading again would get the same report.
+    func testAReportThatCannotBeReadIsARefusal() async throws {
+        var unreadable = try script("run-odd")
+        unreadable.ending = #"{"id":"run-odd","status":42}"#
+        RunHub.serve(unreadable, at: "odd.runs.test")
+        let events = await read(RunHub.provider(at: "odd.runs.test"), "run-odd", after: 0)
+        guard case .refused(.decoding)? = events.last else { return XCTFail("\(String(describing: events.last))") }
+        XCTAssertEqual(events.dropLast().count, try recordedFrames().count, "the frames before it were not read")
     }
 
     /// Cancel posts to the run's own route and reads its report.

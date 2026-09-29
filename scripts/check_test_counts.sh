@@ -120,8 +120,31 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # its id, that a return reads on with no pipe, and that no log line names a run.
 #
 # 2026-09-29: 257 -> 265. The runs claim names the eight tests of its way out.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 358
+#
+# 2026-09-29: 358 -> 359 and 265 -> 266. One test pins that a loop-guard trip
+# is read under the key gglib sends now and the one an older hub sent.
+#
+# 2026-09-29: 359 -> 361. Two tests pin that a conversation's unread mark is
+# kept in the store and that a store opens across that change both ways.
+#
+# 2026-09-29: 361 -> 366 and 266 -> 273. Five tests pin the list's marks: a
+# reply still being written, one unread until opened, one that ends on screen
+# never unread, an order the marks leave alone, and a word and label for each.
+# They and the two store tests are the whole of that guard, and the README
+# claim names all seven.
+#
+# 2026-09-29: 366 -> 367 and 273 -> 274. One test pins that a run's report
+# that cannot be read is a refusal and not a drop.
+#
+# 2026-09-29: 367 -> 371 and 274 -> 278. Four tests pin that selecting is not
+# reading: a launch keeps every mark, a reply read on at launch in the
+# restored conversation is unread, one that ends with no chat shown is
+# unread, and one the person stopped never is.
+#
+# 2026-09-29: 371 -> 372 and 278 -> 279. One test pins that a chat opened
+# after going Back is read whatever iOS 27 tells the view after its appear.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 372
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 265
+floor "README test markers" "${markers:-0}" 279
 
 exit $status

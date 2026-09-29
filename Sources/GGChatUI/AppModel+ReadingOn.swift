@@ -121,7 +121,7 @@ extension AppModel {
             let message = conversation.messages.first(where: { $0.id == messageID }), let id = message.runID
         else { return }
         if let config = provider(for: conversation), let hub = reachableHub(for: config) { cancelRun(id, on: hub) }
-        letGo(message, in: conversation)
+        letGo(message, in: conversation, stoppedHere: true)
     }
 
     /// Gives up, here, the runs still writing replies through a provider that
@@ -145,11 +145,11 @@ extension AppModel {
     }
 
     /// Ends a reply nobody is reading as a stopped one, without its run.
-    private func letGo(_ message: Message, in conversation: Conversation) {
+    private func letGo(_ message: Message, in conversation: Conversation, stoppedHere: Bool = false) {
         readOnAttempts[message.id] = nil
-        finish(
-            LiveReply(conversationID: conversation.id, continuingMessageID: message.id), finished: false,
-            cancelled: true)
+        let live = LiveReply(conversationID: conversation.id, continuingMessageID: message.id)
+        live.stoppedHere = stoppedHere
+        finish(live, finished: false, cancelled: true)
     }
 
     /// "The reply is still being written on home.", under a reply a hub is

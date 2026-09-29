@@ -113,6 +113,10 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
     public var systemPrompt: String?
     public var createdAt: Date
     public var updatedAt: Date
+    /// Whether a reply ended here, finished, failed or given up, while
+    /// another conversation was the one open, and this one has not been
+    /// opened since. Kept on this device only.
+    public var hasUnreadReply: Bool
 
     /// The id the system turn carries in `requestMessages`. Fixed rather than
     /// a fresh `UUID()`, so two requests built from the same conversation are
@@ -127,7 +131,8 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
         messages: [Message] = [],
         systemPrompt: String? = nil,
         createdAt: Date,
-        updatedAt: Date
+        updatedAt: Date,
+        hasUnreadReply: Bool = false
     ) {
         self.id = id
         self.title = title
@@ -137,6 +142,7 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
         self.systemPrompt = systemPrompt
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.hasUnreadReply = hasUnreadReply
     }
 
     /// Whether there is a system prompt to send. Blank counts as none, so a

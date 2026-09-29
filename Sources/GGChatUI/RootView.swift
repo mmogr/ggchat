@@ -168,35 +168,6 @@ struct EmptyDetailView: View {
     }
 }
 
-struct ConversationRow: View {
-    @Environment(AppModel.self) private var model
-    let conversation: Conversation
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .lineLimit(1)
-            Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    private var title: String {
-        if !conversation.title.isEmpty { return conversation.title }
-        let derived = conversation.derivedTitle
-        return derived.isEmpty ? "New conversation" : derived
-    }
-
-    private var subtitle: String {
-        let provider = model.provider(for: conversation)?.name ?? "No provider"
-        if let modelName = conversation.model { return "\(provider) · \(modelName)" }
-        return provider
-    }
-}
-
 #Preview {
     RootView()
         .environment(AppModel.preview)

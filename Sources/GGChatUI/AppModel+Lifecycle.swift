@@ -45,6 +45,7 @@ extension AppModel {
             return pass
         case .foreground:
             isAway = false
+            readTheChatOnScreen()
             resumeInFlight?.cancel()
             // Counted at the change rather than after the wait: this is ADR
             // 0001's denominator, a resume, whether or not a dial follows.

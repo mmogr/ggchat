@@ -319,7 +319,10 @@ Each claim names the test that keeps it true.
   <!-- test: PairedDescriptionTests.testPairedPrintsItsDeviceAndNeverItsKey -->
   <!-- test: RedactedDescriptionTests.testAProviderPrintsItsAddressAndNeverItsKey -->
 - gglib's proxy status endpoint decodes when it answers and is `nil` on 404.
+  A loop-guard trip is read under the key gglib sends, and under the one an
+  older hub sent.
   <!-- test: OpenAICompatibleProviderTests.testProxyStatusIsNilOn404AndDecodesOn200 -->
+  <!-- test: ProxyStatusHelperTests.testTheLoopGuardIsReadUnderTheKeyGGLibSendsAndTheOldOne -->
 - A pipe with no session is not asked for its status pane, so the probe as a
   conversation opens raises no alert and keeps no answer. The pane is asked
   for again each time a pipe a conversation has been opened on comes up, and a
@@ -406,15 +409,18 @@ Each claim names the test that keeps it true.
   reply says so and offers Stop, never Continue or Retry; Stop frees the
   conversation whether or not the hub can be reached. It ends as the run did;
   one the hub no longer has, or refuses to send, keeps its partial with
-  Continue and a sentence saying why. Stop, a deletion or removing the
-  provider cancels a run. A hub without runs is sent the chat request as
-  before, asked once, with nothing shown. Nothing but the run's id leaves the
-  phone, and no log line carries it, the reply or an address.
+  Continue and a sentence saying why. A page that is not an event stream, as a
+  captive portal answers with, is a drop to read on after, not a refusal.
+  Stop, a deletion or removing the provider cancels a run. A hub without runs
+  is sent the chat request as before, asked once, with nothing shown. Nothing
+  but the run's id leaves the phone, and no log line carries it, the reply or
+  an address.
   <!-- test: RunProviderTests.testAPutStartsARunAndAHubWithoutTheRouteIsUnsupported -->
   <!-- test: RunProviderTests.testEventsAreFramesNumberedFromOneThenTheRunsReport -->
   <!-- test: RunProviderTests.testAStreamCutAtEveryByteReadsOnFromItsCursorToTheSameReply -->
   <!-- test: RunProviderTests.testAnEventAtOrBelowTheCursorIsNotAppliedAgain -->
   <!-- test: RunProviderTests.testNotFoundARefusalAndADropAreToldApart -->
+  <!-- test: RunProviderTests.testAReportThatCannotBeReadIsARefusal -->
   <!-- test: RunProviderTests.testCancelPostsToTheRunAndReadsItsReport -->
   <!-- test: RunProviderTests.testARunsIDNeverReachesALogLine -->
   <!-- test: RunStoreTests.testARunsIDAndCursorAreKeptWithItsMessage -->
@@ -440,6 +446,27 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelRunReadOnTests.testAPutWhoseAnswerWasLostIsSentAgainUnderItsID -->
   <!-- test: AppModelRunReadOnTests.testAReturnReadsOnAtAnAddressWithNoPipe -->
   <!-- test: AppModelRunReadOnTests.testNoLogLineNamesARunItsTextOrAnAddress -->
+- The conversation list says, beside a title, "Writing" while a reply is still
+  being written, in front or by the hub, and "New" when one finished, failed
+  or was given up while its chat was not on screen with the app in front,
+  until that chat is shown. Selecting is not reading: a launch keeps every
+  mark, the one it restores included. A reply that ends with its chat on
+  screen is never new, nor is one the person stopped; going Back to the list
+  is leaving it. Showing one moves nothing in the list. The mark is kept with
+  the conversation in its store, and a store opens across that change both
+  ways; nothing about it leaves the phone.
+  <!-- test: AppModelListMarkTests.testAReplyStillBeingWrittenIsWritingInTheList -->
+  <!-- test: AppModelListMarkTests.testAReplyThatEndsWhileAnotherIsOpenIsUnreadUntilOpened -->
+  <!-- test: AppModelListMarkTests.testAReplyThatEndsWhileItsChatIsOnScreenIsNeverUnread -->
+  <!-- test: AppModelListMarkLaunchTests.testALaunchKeepsEveryMarkUntilItsChatIsShownInFront -->
+  <!-- test: AppModelListMarkLaunchTests.testAReplyReadOnAtLaunchInTheRestoredConversationIsUnread -->
+  <!-- test: AppModelListMarkLaunchTests.testAReplyThatEndsWithNoChatShownIsUnread -->
+  <!-- test: AppModelListMarkLaunchTests.testAChatOpenedAfterGoingBackIsReadWhateverFollowsItsAppear -->
+  <!-- test: AppModelListMarkLaunchTests.testAReplyThePersonStoppedIsNeverUnread -->
+  <!-- test: AppModelListMarkTests.testTheMarksLeaveTheOrderAsItWas -->
+  <!-- test: AppModelListMarkTests.testEachMarkHasAWordAndALabel -->
+  <!-- test: UnreadStoreTests.testTheUnreadMarkIsKeptWithItsConversation -->
+  <!-- test: UnreadStoreTests.testAStoreOpensAcrossTheUnreadChangeInBothDirections -->
 - A conversation can carry a system prompt. It goes ahead of every request
   the conversation makes, Continue and Retry included, and an edit reaches the
   next one. It is never a row in the transcript and never stored as a
