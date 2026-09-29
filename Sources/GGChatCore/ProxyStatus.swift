@@ -26,6 +26,8 @@ public struct ProxyStatus: Decodable, Sendable, Equatable {
         public var modelName: String?
         public var recordedAtSeconds: Int?
         public var messagesTruncated: Int?
+        /// Whether the loop guard acted on this request, or nil when the
+        /// hub did not say.
         public var loopGuardTripped: Bool?
         public var toolRepaired: Bool?
 
@@ -33,8 +35,26 @@ public struct ProxyStatus: Decodable, Sendable, Equatable {
             case modelName = "model_name"
             case recordedAtSeconds = "recorded_at_secs"
             case messagesTruncated = "messages_truncated"
+            case loopGuardTrip = "loop_guard_trip"
             case loopGuardTripped = "loop_guard_tripped"
             case toolRepaired = "tool_repaired"
+        }
+
+        /// gglib sends `loop_guard_trip`, the detector that acted (`"loop"`,
+        /// `"stagnation"`) or `null` for none. An older hub sent the Bool
+        /// `loop_guard_tripped`, which is still read when the newer key is
+        /// absent. A detector this build does not know still counts as a trip.
+        public init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            modelName = try container.decodeIfPresent(String.self, forKey: .modelName)
+            recordedAtSeconds = try container.decodeIfPresent(Int.self, forKey: .recordedAtSeconds)
+            messagesTruncated = try container.decodeIfPresent(Int.self, forKey: .messagesTruncated)
+            toolRepaired = try container.decodeIfPresent(Bool.self, forKey: .toolRepaired)
+            if container.contains(.loopGuardTrip) {
+                loopGuardTripped = try !container.decodeNil(forKey: .loopGuardTrip)
+            } else {
+                loopGuardTripped = try container.decodeIfPresent(Bool.self, forKey: .loopGuardTripped)
+            }
         }
     }
 

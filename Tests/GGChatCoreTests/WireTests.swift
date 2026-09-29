@@ -142,4 +142,24 @@ final class ProxyStatusHelperTests: XCTestCase {
         XCTAssertEqual(status.recentRequests[0].flags, ["loop guard", "2 truncated"])
         XCTAssertEqual(status.recentRequests[1].flags, [])
     }
+
+    /// gglib names the detector that tripped in `loop_guard_trip`, `null` for
+    /// none; a hub from before that sent the Bool `loop_guard_tripped`, and
+    /// both are read. The fixtures are the two shapes as each hub sends them.
+    func testTheLoopGuardIsReadUnderTheKeyGGLibSendsAndTheOldOne() throws {
+        let decode = { (json: String) in try JSONDecoder().decode(ProxyStatus.self, from: Data(json.utf8)) }
+        let requests = try decode(
+            #"{"recent_requests":[{"loop_guard_trip":"loop"},{"loop_guard_trip":"stagnation"},"#
+                + #"{"loop_guard_trip":"a_detector_from_later"},{"loop_guard_trip":null},"#
+                + #"{"loop_guard_tripped":true},{"loop_guard_tripped":false},{}]}"#
+        ).recentRequests
+        XCTAssertEqual(requests.map(\.loopGuardTripped), [true, true, true, false, true, false, nil])
+
+        let now = try JSONDecoder().decode(ProxyStatus.self, from: try Fixtures.data("gglib-proxy-status.json"))
+        let flagged = now.recentRequests.map { $0.flags.contains("loop guard") }
+        XCTAssertEqual(flagged, [false, false, false, false, false, true])
+        let before = try JSONDecoder().decode(
+            ProxyStatus.self, from: try Fixtures.data("gglib-proxy-status-loop-guard-tripped.json"))
+        XCTAssertEqual(before.recentRequests.map(\.loopGuardTripped), Array(repeating: false, count: 6))
+    }
 }

@@ -319,7 +319,10 @@ Each claim names the test that keeps it true.
   <!-- test: PairedDescriptionTests.testPairedPrintsItsDeviceAndNeverItsKey -->
   <!-- test: RedactedDescriptionTests.testAProviderPrintsItsAddressAndNeverItsKey -->
 - gglib's proxy status endpoint decodes when it answers and is `nil` on 404.
+  A loop-guard trip is read under the key gglib sends, and under the one an
+  older hub sent.
   <!-- test: OpenAICompatibleProviderTests.testProxyStatusIsNilOn404AndDecodesOn200 -->
+  <!-- test: ProxyStatusHelperTests.testTheLoopGuardIsReadUnderTheKeyGGLibSendsAndTheOldOne -->
 - A pipe with no session is not asked for its status pane, so the probe as a
   conversation opens raises no alert and keeps no answer. The pane is asked
   for again each time a pipe a conversation has been opened on comes up, and a
