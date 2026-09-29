@@ -72,15 +72,12 @@ struct ChatView: View {
         .sheet(isPresented: $editingPrompt) {
             SystemPromptView(conversation: conversation)
         }
-        // What clears the list's unread mark. Appear and disappear, not a
-        // `.task`; and the view is kept when the selection moves, so a move
-        // is told as the one chat leaving and the other arriving.
+        // What clears the list's unread mark. Appear, not a `.task`, and no
+        // disappear, which iOS 27 sends at once while the chat stays; see
+        // `AppModel+ListMarks`. The view is kept when the selection moves, so
+        // a move is told as the other chat arriving.
         .onAppear { model.chatAppeared(conversation.id) }
-        .onDisappear { model.chatDisappeared(conversation.id) }
-        .onChange(of: conversation.id) { previous, shown in
-            model.chatDisappeared(previous)
-            model.chatAppeared(shown)
-        }
+        .onChange(of: conversation.id) { _, shown in model.chatAppeared(shown) }
     }
 
     /// Filled while a prompt is set, since the transcript never shows it.

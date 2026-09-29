@@ -451,16 +451,17 @@ Each claim names the test that keeps it true.
   or was given up while its chat was not on screen with the app in front,
   until that chat is shown. Selecting is not reading: a launch keeps every
   mark, the one it restores included. A reply that ends with its chat on
-  screen is never new, nor is one the person stopped. Showing one moves
-  nothing in the list. The mark is kept with the conversation in its store,
-  and a store opens across that change both ways; nothing about it leaves
-  the phone.
+  screen is never new, nor is one the person stopped; going Back to the list
+  is leaving it. Showing one moves nothing in the list. The mark is kept with
+  the conversation in its store, and a store opens across that change both
+  ways; nothing about it leaves the phone.
   <!-- test: AppModelListMarkTests.testAReplyStillBeingWrittenIsWritingInTheList -->
   <!-- test: AppModelListMarkTests.testAReplyThatEndsWhileAnotherIsOpenIsUnreadUntilOpened -->
   <!-- test: AppModelListMarkTests.testAReplyThatEndsWhileItsChatIsOnScreenIsNeverUnread -->
   <!-- test: AppModelListMarkLaunchTests.testALaunchKeepsEveryMarkUntilItsChatIsShownInFront -->
   <!-- test: AppModelListMarkLaunchTests.testAReplyReadOnAtLaunchInTheRestoredConversationIsUnread -->
   <!-- test: AppModelListMarkLaunchTests.testAReplyThatEndsWithNoChatShownIsUnread -->
+  <!-- test: AppModelListMarkLaunchTests.testAChatOpenedAfterGoingBackIsReadWhateverFollowsItsAppear -->
   <!-- test: AppModelListMarkLaunchTests.testAReplyThePersonStoppedIsNeverUnread -->
   <!-- test: AppModelListMarkTests.testTheMarksLeaveTheOrderAsItWas -->
   <!-- test: AppModelListMarkTests.testEachMarkHasAWordAndALabel -->

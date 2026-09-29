@@ -140,8 +140,11 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # reading: a launch keeps every mark, a reply read on at launch in the
 # restored conversation is unread, one that ends with no chat shown is
 # unread, and one the person stopped never is.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 371
+#
+# 2026-09-29: 371 -> 372 and 278 -> 279. One test pins that a chat opened
+# after going Back is read whatever iOS 27 tells the view after its appear.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 372
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 278
+floor "README test markers" "${markers:-0}" 279
 
 exit $status

@@ -44,8 +44,12 @@ public enum ConversationMark: Equatable, Sendable {
 //
 // Selecting a conversation is not reading it. A launch restores the last
 // selection, and a phone can open on the list with it; only the chat view
-// says a conversation is on screen, from its appear and disappear, never from
-// a `.task`, which a collapsed split view on iOS 27 cancels at birth.
+// says a conversation is shown, from its appear and from a move to another
+// conversation. Not from a `.task`, which a collapsed split view on iOS 27
+// cancels at birth, and not from its disappear, which the same split view
+// sends within a millisecond of the appear while the chat stays on screen
+// (see `AppModel+Opening`). Leaving a chat is read from the selection
+// instead: going Back to the list on a phone clears it.
 extension AppModel {
     /// The mark a conversation's row shows, or nil for none. Writing wins over
     /// unread: a conversation with a reply in flight is not waiting to be read.
@@ -56,28 +60,24 @@ extension AppModel {
         return conversation.hasUnreadReply ? .unread : nil
     }
 
-    /// The chat view of `id` is on screen: if the app is in front, what it
+    /// The chat view of `id` has been shown: if the app is in front, what it
     /// shows has been read.
     public func chatAppeared(_ id: UUID) {
-        chatOnScreen = id
+        chatShown = id
         readTheChatOnScreen()
     }
 
-    /// The chat view of `id` has left the screen.
-    public func chatDisappeared(_ id: UUID) {
-        if chatOnScreen == id { chatOnScreen = nil }
-    }
-
     /// Whether the person can see this conversation's replies now: its chat
-    /// is on screen, it is still the one selected, and the app is in front.
+    /// was the last shown, it is still the one selected, and the app is in
+    /// front.
     func isBeingRead(_ id: UUID) -> Bool {
-        chatOnScreen == id && selectedConversationID == id && !isAway
+        chatShown == id && selectedConversationID == id && !isAway
     }
 
     /// Clears the mark of the conversation on screen, when it is being read:
     /// as its chat appears, and as the app comes back to the front.
     func readTheChatOnScreen() {
-        guard let id = chatOnScreen, isBeingRead(id) else { return }
+        guard let id = chatShown, isBeingRead(id) else { return }
         markRead(id)
     }
 

@@ -104,14 +104,14 @@ final class AppModelListMarkLaunchTests: XCTestCase {
         XCTAssertTrue(try stored(store, kept.id).hasUnreadReply)
     }
 
-    /// A phone back on the list has nothing selected and no chat on screen.
-    /// A reply that ends then is unread.
+    /// Going Back to the list on a phone clears the selection, and the chat
+    /// shown before it is no longer being read: a reply that ends then is
+    /// unread.
     @MainActor
     func testAReplyThatEndsWithNoChatShownIsUnread() async throws {
         let hub = hub()
         let (model, _) = try await Runs.makeModel(behind: hub)
         let (asked, task) = try await sendAndHold(model, hub)
-        model.chatDisappeared(asked)
         model.selectedConversationID = nil
         await model.scene(.background).value
         await task.value
@@ -122,6 +122,38 @@ final class AppModelListMarkLaunchTests: XCTestCase {
         }
         XCTAssertEqual(try conversation(model, asked).messages.last?.content, Runs.text)
         XCTAssertEqual(model.mark(for: try conversation(model, asked)), .unread)
+    }
+
+    /// On iOS 27 a phone that opens a chat after going Back, or starts one
+    /// from the list's toolbar, tells the chat it disappeared a millisecond
+    /// after it appeared, while it stays on screen. The model is told only
+    /// the appear, so a reply that then ends in front of the person is read.
+    @MainActor
+    func testAChatOpenedAfterGoingBackIsReadWhateverFollowsItsAppear() async throws {
+        let hub = hub()
+        let (model, _) = try await Runs.makeModel(behind: hub)
+        let first = try XCTUnwrap(model.selectedConversationID)
+        model.chatAppeared(first)
+        model.selectedConversationID = nil
+        let started = model.newConversation()
+        let (asked, task) = try await sendAndHold(model, hub)
+        XCTAssertEqual(asked, started.id)
+        await model.scene(.background).value
+        await task.value
+        hub.with { $0.holdAt = nil }
+        await model.scene(.foreground).value
+        try await Runs.until("the reply to end") {
+            model.liveReply == nil && (try? self.conversation(model, asked).messages.last?.isBeingWritten) == false
+        }
+        XCTAssertEqual(try conversation(model, asked).messages.last?.content, Runs.text)
+        XCTAssertNil(model.mark(for: try conversation(model, asked)), "a reply watched after going Back was marked")
+
+        model.selectedConversationID = nil
+        model.selectedConversationID = first
+        model.chatAppeared(first)
+        try await XCTUnwrap(model.send("again")).value
+        XCTAssertEqual(try conversation(model, first).messages.last?.content, Runs.text)
+        XCTAssertNil(model.mark(for: try conversation(model, first)), "a reply watched after reopening was marked")
     }
 
     /// A reply the person stopped is never unread, even when another
