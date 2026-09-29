@@ -73,7 +73,7 @@ extension OpenAICompatibleProvider {
     }
 
     /// What one event of a chat stream means for the reply.
-    private func read(_ event: SSEEvent, into reply: inout ReplyState) -> EventOutcome {
+    func read(_ event: SSEEvent, into reply: inout ReplyState) -> EventOutcome {
         // An event whose data is empty is a keepalive. It is not logged, and
         // it is not a skipped chunk.
         if event.data.isEmpty { return .skip }
@@ -129,8 +129,13 @@ extension OpenAICompatibleProvider {
 
     /// Opens the connection on `session`, maps a non-2xx reply to
     /// `ProviderError.server`, and hands back parsed SSE items as they arrive.
+    ///
+    /// An event the stream ends in the middle of is passed on only when
+    /// `flushingAtEnd`. A run's reader passes `false`: an event cut off by a
+    /// dropped connection can hold half its data under a whole `id`, and the
+    /// cursor would move past the half it never read.
     func eventStream(
-        _ request: URLRequest, over session: URLSession
+        _ request: URLRequest, over session: URLSession, flushingAtEnd: Bool = true
     ) async throws -> AsyncThrowingStream<SSEItem, any Error> {
         log.log(.debug, "\(request.httpMethod ?? "GET") \(Redaction.describe(request.url!))")
         let bytes: URLSession.AsyncBytes
@@ -162,8 +167,10 @@ extension OpenAICompatibleProvider {
                             line.removeAll(keepingCapacity: true)
                         }
                     }
-                    for item in parser.feed(line) { continuation.yield(item) }
-                    for item in parser.finish() { continuation.yield(item) }
+                    if flushingAtEnd {
+                        for item in parser.feed(line) { continuation.yield(item) }
+                        for item in parser.finish() { continuation.yield(item) }
+                    }
                     continuation.finish()
                 } catch {
                     continuation.finish(throwing: error)
@@ -175,7 +182,7 @@ extension OpenAICompatibleProvider {
 }
 
 /// What one event of a chat stream means for the reply.
-private enum EventOutcome {
+enum EventOutcome {
     /// Pass these on, and read on.
     case yield([ChatEvent])
     /// Nothing to pass on; read on.
@@ -185,7 +192,7 @@ private enum EventOutcome {
 }
 
 /// What a reply has read so far, for the event that ends it.
-private struct ReplyState {
+struct ReplyState {
     var finishReason: String?
     var usage: Usage?
     /// Whether any text or reasoning has been passed on.

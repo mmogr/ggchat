@@ -97,7 +97,12 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # through a pipe that is not connected waits for it and how the wait ends, and
 # that removing a provider puts down the reply through it first. They are the
 # whole of that guard, and the README claim names each of them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 319
+#
+# 2026-09-29: 319 -> 335. Seven tests pin the runs client: the PUT and its
+# fallback, frames numbered by seq, a stream cut at every byte read on from its
+# cursor, not_found, cancel, and no run id in a log line; the floor also moves
+# past the run wire replays that came before them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 335
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
 floor "README test markers" "${markers:-0}" 235
 
