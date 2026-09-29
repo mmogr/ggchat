@@ -45,18 +45,22 @@ public final class ConversationRecord {
     public var systemPrompt: String?
     public var createdAt: Date
     public var updatedAt: Date
+    /// Whether the conversation has a reply nobody has opened it to see, or
+    /// nil, which reads as no. Optional, for `systemPrompt`'s reason.
+    public var hasUnreadReply: Bool?
     @Relationship(deleteRule: .cascade, inverse: \MessageRecord.conversation)
     public var messages: [MessageRecord] = []
 
     public init(
         id: UUID, title: String, providerID: UUID?, model: String?, createdAt: Date, updatedAt: Date,
-        systemPrompt: String? = nil
+        systemPrompt: String? = nil, hasUnreadReply: Bool? = nil
     ) {
         self.uuid = id
         self.title = title
         self.providerID = providerID
         self.model = model
         self.systemPrompt = systemPrompt
+        self.hasUnreadReply = hasUnreadReply
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }

@@ -97,7 +97,8 @@ public final class SwiftDataStore: Store {
                         failure: Self.failure(from: message.failureData), createdAt: message.createdAt,
                         runID: message.runID, runCursor: message.runCursor.flatMap(UInt32.init(exactly:)))
                 },
-                systemPrompt: record.systemPrompt, createdAt: record.createdAt, updatedAt: record.updatedAt)
+                systemPrompt: record.systemPrompt, createdAt: record.createdAt, updatedAt: record.updatedAt,
+                hasUnreadReply: record.hasUnreadReply ?? false)
         }
     }
 
@@ -109,12 +110,13 @@ public final class SwiftDataStore: Store {
             record.providerID = conversation.providerID
             record.model = conversation.model
             record.systemPrompt = conversation.systemPrompt
+            record.hasUnreadReply = conversation.hasUnreadReply
             record.updatedAt = conversation.updatedAt
         } else {
             record = ConversationRecord(
                 id: conversation.id, title: conversation.title, providerID: conversation.providerID,
                 model: conversation.model, createdAt: conversation.createdAt, updatedAt: conversation.updatedAt,
-                systemPrompt: conversation.systemPrompt)
+                systemPrompt: conversation.systemPrompt, hasUnreadReply: conversation.hasUnreadReply)
             context.insert(record)
         }
         var existing = Dictionary(record.messages.map { ($0.uuid, $0) }, uniquingKeysWith: { first, _ in first })

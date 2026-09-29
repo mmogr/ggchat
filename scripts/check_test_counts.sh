@@ -123,7 +123,10 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 #
 # 2026-09-29: 358 -> 359 and 265 -> 266. One test pins that a loop-guard trip
 # is read under the key gglib sends now and the one an older hub sent.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 359
+#
+# 2026-09-29: 359 -> 361. Two tests pin that a conversation's unread mark is
+# kept in the store and that a store opens across that change both ways.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 361
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
 floor "README test markers" "${markers:-0}" 266
 
