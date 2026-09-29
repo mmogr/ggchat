@@ -99,11 +99,13 @@ struct Composer: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 24))
     }
 
-    /// False while any reply is in flight, even in another conversation: the
-    /// model would refuse the send, and the draft would be cleared for nothing.
+    /// False while any reply is in flight, even in another conversation, and
+    /// while a hub is still writing this one's last reply: the model would
+    /// refuse the send, and the draft would be cleared for nothing.
     private var canSend: Bool {
         !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && provider != nil
             && (conversation.model ?? provider?.defaultModel) != nil && !model.isStreaming
+            && !conversation.messages.contains(where: \.isBeingWritten)
     }
 
     private func sendIfPossible() {

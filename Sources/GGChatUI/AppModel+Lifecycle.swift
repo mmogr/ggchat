@@ -53,6 +53,8 @@ extension AppModel {
             let pass = Task {
                 await pending?.value
                 await resumeEveryPipe()
+                guard !Task.isCancelled else { return }
+                resumeRuns()
             }
             resumeInFlight = pass
             return pass
@@ -93,7 +95,9 @@ extension AppModel {
     /// The reply is cancelled and waited for first, so its partial text
     /// reaches the conversation while there is still a runtime to write it:
     /// a process killed for memory while streaming otherwise leaves the
-    /// user's question with no answer under it and no error either.
+    /// user's question with no answer under it and no error either. A run is
+    /// not cancelled: the reading stops, the hub goes on writing, and what
+    /// arrived is kept with the run's id so the return can read on.
     ///
     /// Which provider that reply belonged to has to be read before it is put
     /// down. `finish(_:finished:cancelled:)` clears `liveReply`, so by the time
@@ -104,6 +108,9 @@ extension AppModel {
     func hangUpEveryPipe() async {
         let cutShort = streamingProviderID
         if let inFlight = streamTask {
+            // A run is walked away from, not stopped: the hub goes on
+            // writing it, and coming back reads on. See `AppModel+Runs`.
+            liveReply?.detaching = true
             inFlight.cancel()
             await inFlight.value
         }

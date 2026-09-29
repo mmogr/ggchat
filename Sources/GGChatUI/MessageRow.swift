@@ -5,7 +5,8 @@ import SwiftUI
 /// content as markdown blocks. The last one, once nothing is streaming after
 /// it, says how its turn ended: under a partial reply, with Continue, and
 /// under a question with no reply, with Retry and the reason when something
-/// gave one.
+/// gave one. A reply a hub is still writing away from this device offers
+/// neither, and says where it is being written.
 struct MessageRow: View {
     @Environment(AppModel.self) private var model
     let message: Message
@@ -15,6 +16,8 @@ struct MessageRow: View {
     /// What the provider behind this conversation adds about the failure,
     /// when it has something to add.
     let advice: String?
+    /// Where the reply is still being written, while a hub writes it.
+    let writingLine: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -24,7 +27,11 @@ struct MessageRow: View {
             }
             MarkdownBlocksView(blocks: MarkdownBlocks.parse(message.content))
             if showsEnding {
-                if message.isPartial {
+                if let writingLine {
+                    Text(writingLine)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if message.isPartial {
                     partialFooter
                 } else if message.role == .user {
                     unansweredFooter

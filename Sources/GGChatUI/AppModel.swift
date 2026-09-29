@@ -46,6 +46,9 @@ public final class AppModel {
     /// dial that lands in between hangs itself up.
     var isAway = false
     var proxyStatusAvailability: [UUID: Bool] = [:]
+    /// The gglib hubs that answered a run's `PUT` as a server without runs,
+    /// for as long as the app runs; see `AppModel+Runs`.
+    var providersWithoutRuns: Set<UUID> = []
     /// Moved on by every new probe and by every pipe that comes up, so an
     /// answer from before either is discarded rather than kept.
     var probeGeneration: [UUID: Int] = [:]
@@ -134,6 +137,7 @@ public final class AppModel {
             report(error)
         }
         startWatchingTheNetwork()
+        resumeRuns()
     }
 
     // MARK: - Conversations
@@ -152,8 +156,10 @@ public final class AppModel {
 
     public func deleteConversation(_ id: UUID) {
         // Its reply in flight is put down as Stop puts it down. A waiting one
-        // would otherwise wait on, with no Stop left on screen to end it.
+        // would otherwise wait on, with no Stop left on screen to end it. A
+        // run the hub is writing for it away from here is stopped too.
         if liveReply?.conversationID == id { stop() }
+        if let conversation = conversations.first(where: { $0.id == id }) { stopDetachedRuns(in: conversation) }
         conversations.removeAll { $0.id == id }
         if selectedConversationID == id { selectedConversationID = nil }
         do {

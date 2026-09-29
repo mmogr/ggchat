@@ -90,6 +90,8 @@ extension AppModel {
             if followed.contains(providerID) {
                 Task { await catchUp(providerID, quietly: true) }
             }
+            // A reply its hub went on writing is read on from here.
+            readOnDetachedRuns()
         }
         wakeWaitingSend(for: providerID)
     }
