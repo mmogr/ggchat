@@ -16,8 +16,12 @@ extension AppModel {
         _ live: LiveReply, finished: Bool, cancelled: Bool, refusal: Failure? = nil, keepsRun: Bool = false
     ) {
         defer {
-            liveReply = nil
-            streamTask = nil
+            // Only the reply in flight is cleared: a run given up while it is
+            // not being read is finished through here too, beside another.
+            if liveReply === live {
+                liveReply = nil
+                streamTask = nil
+            }
         }
         guard var conversation = conversations.first(where: { $0.id == live.conversationID }) else { return }
         let stamp = now()
@@ -30,7 +34,9 @@ extension AppModel {
         // gglib's notice of that failure, written as text before the error
         // itself. The error is drawn, so the notice is not kept as a reply.
         let content = error != nil && Self.isAProxyNotice(live.content) ? "" : live.content
-        let run = keepsRun ? live.runID.map { (id: $0, cursor: live.cursor) } : nil
+        // A run whose start was never answered keeps no cursor, which is what
+        // tells the next reach to send its `PUT` again.
+        let run = keepsRun ? live.runID.map { (id: $0, cursor: live.started ? live.cursor : nil) } : nil
         if let continuingID = live.continuingMessageID,
             let index = conversation.messages.firstIndex(where: { $0.id == continuingID })
         {
@@ -115,5 +121,5 @@ private struct Ending {
     var reasoning: String
     var finished: Bool
     var failure: Failure?
-    var run: (id: String, cursor: UInt32)?
+    var run: (id: String, cursor: UInt32?)?
 }

@@ -125,6 +125,9 @@ extension AppModel {
             return
         }
         forgetLastHeard(id)
+        // Replies its hub is still writing away from here are given up, and
+        // the one being read is put down as Stop puts it down.
+        giveUpRuns(through: removed)
         let reply = replyProviderID == id ? streamTask : nil
         reply?.cancel()
         Task {

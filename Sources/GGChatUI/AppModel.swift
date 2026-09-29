@@ -49,6 +49,9 @@ public final class AppModel {
     /// The gglib hubs that answered a run's `PUT` as a server without runs,
     /// for as long as the app runs; see `AppModel+Runs`.
     var providersWithoutRuns: Set<UUID> = []
+    /// How many times each reply still being written has been read on in a
+    /// row without an event arriving; see `AppModel+ReadingOn`.
+    var readOnAttempts: [UUID: Int] = [:]
     /// Moved on by every new probe and by every pipe that comes up, so an
     /// answer from before either is discarded rather than kept.
     var probeGeneration: [UUID: Int] = [:]
@@ -79,6 +82,8 @@ public final class AppModel {
     let networkWatcher: any NetworkPathWatching
     var networkTask: Task<Void, Never>?
     let now: () -> Date
+    /// What spaces out reading on from a hub that did not answer.
+    let sleeper: any Sleeper
 
     /// Where the in-process mock provider answers in DEBUG builds, the same
     /// address after every launch so a saved mock provider keeps working.
@@ -98,7 +103,8 @@ public final class AppModel {
         pairingReader: any PairingReader = PipeConnectorFactory.makePairingReader(),
         networkWatcher: any NetworkPathWatching = NWPathNetworkWatcher(),
         diagnostics: Diagnostics = Diagnostics(),
-        now: @escaping () -> Date = { Date() }
+        now: @escaping () -> Date = { Date() },
+        sleeper: any Sleeper = ContinuousClockSleeper()
     ) {
         self.store = store
         self.secrets = secrets
@@ -109,6 +115,7 @@ public final class AppModel {
         self.networkWatcher = networkWatcher
         self.diagnostics = diagnostics
         self.now = now
+        self.sleeper = sleeper
         #if DEBUG
             registry.register(
                 MockProvider(sleeper: ContinuousClockSleeper(), tokenDelay: .milliseconds(25)), at: Self.mockBaseURL)

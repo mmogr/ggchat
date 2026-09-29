@@ -10,44 +10,6 @@ final class AppModelRunTests: XCTestCase {
     static let text = "It reads the file and finds the longest line."
     static let reasoning = "Keep it short."
 
-    /// A model with a pipe to `hub`, dialled, and a conversation open on it.
-    @MainActor
-    static func makeModel(
-        behind hub: any Provider, store: any Store = InMemoryStore()
-    ) async throws -> (
-        AppModel, ProviderConfig
-    ) {
-        let registry = LoopbackProviderRegistry()
-        let defaults = UserDefaults(suiteName: "AppModelRunTests.\(UUID().uuidString)")!
-        let model = AppModel(
-            store: store, secrets: InMemorySecrets(), log: NoopLogSink(), registry: registry,
-            pipeConnector: MockPipeConnector(sleeper: ImmediateSleeper(), provider: hub, registry: registry),
-            diagnostics: Diagnostics(defaults: defaults), now: { Date(timeIntervalSince1970: 1_700_000_000) })
-        let config = ProviderConfig(
-            name: "home", kind: .pipe(ticketDigest: Ticket.digest(ticket)), defaultModel: "mock-27b")
-        try model.addProvider(config, credentials: [.ticket: ticket, .token: "secret-token"])
-        await model.connectPipe(for: config)
-        try await until { model.pipeStatus(for: config.id) == .direct }
-        model.newConversation()
-        return (model, config)
-    }
-
-    /// Yields until `condition` holds, and fails the test when it never does.
-    @MainActor
-    static func until(
-        _ what: String = "the condition", file: StaticString = #filePath, line: UInt = #line,
-        _ condition: () -> Bool
-    ) async throws {
-        for _ in 0..<5_000 where !condition() { await Task.yield() }
-        if !condition() { XCTFail("\(what) never held", file: file, line: line) }
-    }
-
-    /// The last message of the open conversation.
-    @MainActor
-    static func last(_ model: AppModel) throws -> Message {
-        try XCTUnwrap(model.selectedConversation?.messages.last)
-    }
-
     private func hub() -> FakeRunHub {
         FakeRunHub(frames: FakeRunHub.frames(ofText: Self.text, reasoning: Self.reasoning))
     }

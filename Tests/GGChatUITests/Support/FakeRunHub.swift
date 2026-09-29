@@ -26,6 +26,13 @@ final class FakeRunHub: RunProvider {
         var ignoresAfter = false
         /// Answers every read `not_found`.
         var forgotten = false
+        /// Answers every read with this alone: a refusal, or a drop.
+        var readAnswer: RunEvent?
+        /// How many `PUT`s start the run and then lose their answer on the
+        /// way back, as a transport error.
+        var putsLost = 0
+        /// Answers every cancel with a transport error.
+        var cancelFails = false
         var starts: [(id: String, request: ChatRequest)] = []
         var reads: [(id: String, after: UInt32)] = []
         var cancels: [String] = []
@@ -62,10 +69,12 @@ final class FakeRunHub: RunProvider {
     }
 
     func startRun(id: String, _ request: ChatRequest) async throws(ProviderError) -> RunStart {
-        let start = with { state in
+        let (start, lost) = with { state in
             state.starts.append((id, request))
-            return state.start
+            state.putsLost -= 1
+            return (state.start, state.putsLost >= 0)
         }
+        if lost { throw .transport("the answer was lost") }
         switch start {
         case .runs: return .started(info(id, .queued, lastSeq: 0))
         case .unsupported: return .unsupported
@@ -77,6 +86,7 @@ final class FakeRunHub: RunProvider {
         let (events, holds) = with { state -> ([RunEvent], Bool) in
             state.reads.append((id, after))
             if state.forgotten { return ([.notFound], false) }
+            if let answer = state.readAnswer { return ([answer], false) }
             let limit = state.dropAt ?? state.holdAt ?? UInt32(state.frames.count)
             var events: [RunEvent] = []
             for (index, frame) in state.frames.enumerated() {
@@ -99,7 +109,11 @@ final class FakeRunHub: RunProvider {
     }
 
     func cancelRun(id: String) async throws(ProviderError) -> RunInfo {
-        with { $0.cancels.append(id) }
+        let fails = with { state in
+            state.cancels.append(id)
+            return state.cancelFails
+        }
+        if fails { throw .transport("the hub could not be reached") }
         return info(id, .cancelled, lastSeq: 0)
     }
 

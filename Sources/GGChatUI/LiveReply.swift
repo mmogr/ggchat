@@ -24,6 +24,9 @@ public final class LiveReply {
     public internal(set) var runID: String?
     /// The last of the run's events this reply holds, stored text included.
     var cursor: UInt32 = 0
+    /// Whether the hub has answered the run's `PUT`. Until it has, the run may
+    /// not exist, and the next reach sends the `PUT` again under the same id.
+    var started = false
     /// Whether putting this reply down walks away from its run rather than
     /// stopping it: set on the way to the background, never by Stop.
     var detaching = false
