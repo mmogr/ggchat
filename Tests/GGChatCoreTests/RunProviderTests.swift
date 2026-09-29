@@ -147,10 +147,10 @@ final class RunProviderTests: XCTestCase {
         XCTAssertEqual(first, 21)
     }
 
-    /// `not_found` is a run the hub no longer has. Any other 4xx, or an
-    /// answer that is not an event stream, is a refusal that asking again
-    /// would repeat. A 5xx, no answer, or an end with no report is a drop to
-    /// read again from.
+    /// `not_found` is a run the hub no longer has. Any other 4xx is a refusal
+    /// that asking again would repeat. A 5xx, a 2xx that is not an event
+    /// stream (a captive portal's page, say), no answer, or an end with no
+    /// report is a drop to read again from.
     func testNotFoundARefusalAndADropAreToldApart() async throws {
         let codes = [404: "not_found", 401: "invalid_api_key", 403: "not_yours", 502: "tunnel_unavailable"]
         func refusal(_ status: Int) -> ProviderError {
@@ -158,7 +158,7 @@ final class RunProviderTests: XCTestCase {
         }
         let answers: [(status: Int, want: RunEvent)] = [
             (404, .notFound), (401, .refused(refusal(401))), (403, .refused(refusal(403))),
-            (200, .refused(.invalidResponse("the answer was text/html, not an event stream"))),
+            (200, .dropped(.invalidResponse("the answer was text/html, not an event stream"))),
             (502, .dropped(refusal(502))),
         ]
         for (index, answer) in answers.enumerated() {

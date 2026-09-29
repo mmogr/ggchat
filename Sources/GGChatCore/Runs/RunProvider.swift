@@ -22,11 +22,12 @@ public enum RunEvent: Sendable, Equatable {
     /// restarted and lost it.
     case notFound
     /// The hub, or whatever answered in its place, will not send the run: a
-    /// 4xx other than `not_found`, or an answer that is not an event stream.
-    /// Asking again would get the same answer.
+    /// 4xx other than `not_found`, or a report that cannot be read. Asking
+    /// again would get the same answer.
     case refused(ProviderError)
     /// The stream stopped before the run ended: the hub could not be reached,
-    /// answered 5xx, or the connection dropped. The run may well go on; read
+    /// answered 5xx, something else answered with a page that is not an event
+    /// stream, or the connection dropped. The run may well go on; read
     /// again from the cursor once the hub can be reached.
     case dropped(ProviderError?)
 }

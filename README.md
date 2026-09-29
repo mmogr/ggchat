@@ -409,10 +409,12 @@ Each claim names the test that keeps it true.
   reply says so and offers Stop, never Continue or Retry; Stop frees the
   conversation whether or not the hub can be reached. It ends as the run did;
   one the hub no longer has, or refuses to send, keeps its partial with
-  Continue and a sentence saying why. Stop, a deletion or removing the
-  provider cancels a run. A hub without runs is sent the chat request as
-  before, asked once, with nothing shown. Nothing but the run's id leaves the
-  phone, and no log line carries it, the reply or an address.
+  Continue and a sentence saying why. A page that is not an event stream, as a
+  captive portal answers with, is a drop to read on after, not a refusal.
+  Stop, a deletion or removing the provider cancels a run. A hub without runs
+  is sent the chat request as before, asked once, with nothing shown. Nothing
+  but the run's id leaves the phone, and no log line carries it, the reply or
+  an address.
   <!-- test: RunProviderTests.testAPutStartsARunAndAHubWithoutTheRouteIsUnsupported -->
   <!-- test: RunProviderTests.testEventsAreFramesNumberedFromOneThenTheRunsReport -->
   <!-- test: RunProviderTests.testAStreamCutAtEveryByteReadsOnFromItsCursorToTheSameReply -->
