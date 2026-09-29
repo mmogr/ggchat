@@ -21,6 +21,8 @@ final class RunHub: URLProtocol, @unchecked Sendable {
         var ignoresAfter = false
         /// The status and body every events request is refused with.
         var refusal: (status: Int, body: String)?
+        /// The `Content-Type` an events body is sent with.
+        var eventsType = "text/event-stream"
     }
 
     private static let scripts = Mutex<[String: Script]>([:])
@@ -93,14 +95,14 @@ final class RunHub: URLProtocol, @unchecked Sendable {
                 script.cutAt = nil
                 Self.scripts.withLock { $0[host] = script }
             }
-            respond(200, body)
+            respond(200, body, type: script.eventsType)
         }
     }
 
-    private func respond(_ status: Int, _ body: Data) {
+    private func respond(_ status: Int, _ body: Data, type: String = "text/event-stream") {
         guard let url = request.url else { return }
         let response = HTTPURLResponse(
-            url: url, statusCode: status, httpVersion: "HTTP/1.1", headerFields: ["Content-Type": "text/event-stream"])!
+            url: url, statusCode: status, httpVersion: "HTTP/1.1", headerFields: ["Content-Type": type])!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: body)
         client?.urlProtocolDidFinishLoading(self)

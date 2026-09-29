@@ -58,7 +58,9 @@ extension OpenAICompatibleProvider: RunProvider {
         var cursor = after
         var reply = ReplyState()
         do {
-            for try await item in try await eventStream(request, over: streamingSession, flushingAtEnd: false) {
+            let items = try await eventStream(
+                request, over: streamingSession, flushingAtEnd: false, requiringEventStream: true)
+            for try await item in items {
                 guard case .event(let event) = item else { continue }
                 if event.event == "run" {
                     return .ended(try decode(RunInfo.self, from: Data(event.data.utf8)))
@@ -71,8 +73,7 @@ extension OpenAICompatibleProvider: RunProvider {
         } catch is CancellationError {
             return nil
         } catch let error as ProviderError {
-            if case .server(404, _, _) = error { return .notFound }
-            return .dropped(error)
+            return Self.end(of: error)
         } catch {
             return Task.isCancelled ? nil : .dropped(.transport(error.localizedDescription))
         }
@@ -86,6 +87,18 @@ extension OpenAICompatibleProvider: RunProvider {
         case .yield(let events): events
         case .skip: []
         case .end(let events, let failure): events + [.error(failure)]
+        }
+    }
+
+    /// How a read that failed with `error` ends: a 404 is a run the hub does
+    /// not have, any other 4xx or an answer that is not the hub's is a
+    /// refusal, and the rest, a 5xx or no answer at all, is a drop.
+    static func end(of error: ProviderError) -> RunEvent {
+        switch error {
+        case .server(404, _, _): .notFound
+        case .server(let status, _, _) where (400..<500).contains(status): .refused(error)
+        case .decoding, .invalidResponse: .refused(error)
+        case .server, .stream, .transport: .dropped(error)
         }
     }
 

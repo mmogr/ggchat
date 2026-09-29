@@ -147,21 +147,31 @@ final class RunProviderTests: XCTestCase {
         XCTAssertEqual(first, 21)
     }
 
-    /// `not_found` is a run the hub no longer has. Any other refusal, or an
-    /// end with no report, is a drop to read again from.
-    func testAnUnknownRunIsNotFoundAndAnyOtherEndIsADrop() async throws {
-        var gone = try script("run-gone")
-        gone.refusal = (404, #"{"error":{"code":"not_found","message":"no such run"}}"#)
-        RunHub.serve(gone, at: "gone.runs.test")
-        let lost = await read(RunHub.provider(at: "gone.runs.test"), "run-gone", after: 0)
-        XCTAssertEqual(lost, [.notFound])
-
-        var broken = try script("run-broken")
-        broken.refusal = (502, #"{"error":{"code":"tunnel_unavailable","message":"no tunnel"}}"#)
-        RunHub.serve(broken, at: "broken.runs.test")
-        let refused = await read(RunHub.provider(at: "broken.runs.test"), "run-broken", after: 0)
-        XCTAssertEqual(refused, [.dropped(.server(status: 502, code: "tunnel_unavailable", message: "no tunnel"))])
-
+    /// `not_found` is a run the hub no longer has. Any other 4xx, or an
+    /// answer that is not an event stream, is a refusal that asking again
+    /// would repeat. A 5xx, no answer, or an end with no report is a drop to
+    /// read again from.
+    func testNotFoundARefusalAndADropAreToldApart() async throws {
+        let codes = [404: "not_found", 401: "invalid_api_key", 403: "not_yours", 502: "tunnel_unavailable"]
+        func refusal(_ status: Int) -> ProviderError {
+            .server(status: status, code: codes[status], message: "refused")
+        }
+        let answers: [(status: Int, want: RunEvent)] = [
+            (404, .notFound), (401, .refused(refusal(401))), (403, .refused(refusal(403))),
+            (200, .refused(.invalidResponse("the answer was text/html, not an event stream"))),
+            (502, .dropped(refusal(502))),
+        ]
+        for (index, answer) in answers.enumerated() {
+            var script = try script("run-\(index)")
+            if let code = codes[answer.status] {
+                script.refusal = (answer.status, #"{"error":{"code":"\#(code)","message":"refused"}}"#)
+            } else {
+                script.eventsType = "text/html"
+            }
+            RunHub.serve(script, at: "told-\(index).runs.test")
+            let read = await read(RunHub.provider(at: "told-\(index).runs.test"), "run-\(index)", after: 0)
+            XCTAssertEqual(read.last, answer.want, "an answer of \(answer.status)")
+        }
         let unreachable = await read(RunHub.provider(at: "nobody.runs.test"), "run-x", after: 0)
         guard case .dropped(.transport?)? = unreachable.last else { return XCTFail("\(unreachable)") }
     }

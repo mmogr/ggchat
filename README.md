@@ -410,7 +410,7 @@ Each claim names the test that keeps it true.
   <!-- test: RunProviderTests.testEventsAreFramesNumberedFromOneThenTheRunsReport -->
   <!-- test: RunProviderTests.testAStreamCutAtEveryByteReadsOnFromItsCursorToTheSameReply -->
   <!-- test: RunProviderTests.testAnEventAtOrBelowTheCursorIsNotAppliedAgain -->
-  <!-- test: RunProviderTests.testAnUnknownRunIsNotFoundAndAnyOtherEndIsADrop -->
+  <!-- test: RunProviderTests.testNotFoundARefusalAndADropAreToldApart -->
   <!-- test: RunProviderTests.testCancelPostsToTheRunAndReadsItsReport -->
   <!-- test: RunProviderTests.testARunsIDNeverReachesALogLine -->
   <!-- test: RunStoreTests.testARunsIDAndCursorAreKeptWithItsMessage -->

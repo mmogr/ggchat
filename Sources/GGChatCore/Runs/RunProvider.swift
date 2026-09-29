@@ -10,7 +10,7 @@ public enum RunStart: Sendable, Equatable {
 /// What reading a run's events yields.
 ///
 /// Every stream that is not cancelled ends with exactly one of `.ended`,
-/// `.notFound` and `.dropped`, after any number of `.frame`s.
+/// `.notFound`, `.refused` and `.dropped`, after any number of `.frame`s.
 public enum RunEvent: Sendable, Equatable {
     /// One event of the run, numbered `seq`, and what it means for the reply.
     /// A frame is applied whole, and the cursor moves to its `seq` with it, so
@@ -21,7 +21,12 @@ public enum RunEvent: Sendable, Equatable {
     /// The hub does not have this run: it never did, it has dropped it, or it
     /// restarted and lost it.
     case notFound
-    /// The stream stopped before the run ended. The run may well go on; read
+    /// The hub, or whatever answered in its place, will not send the run: a
+    /// 4xx other than `not_found`, or an answer that is not an event stream.
+    /// Asking again would get the same answer.
+    case refused(ProviderError)
+    /// The stream stopped before the run ended: the hub could not be reached,
+    /// answered 5xx, or the connection dropped. The run may well go on; read
     /// again from the cursor once the hub can be reached.
     case dropped(ProviderError?)
 }
