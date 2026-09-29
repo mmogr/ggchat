@@ -94,7 +94,8 @@ public final class SwiftDataStore: Store {
                     Message(
                         id: message.uuid, role: Role(rawValue: message.role) ?? .user, content: message.content,
                         reasoning: message.reasoning, isPartial: message.isPartial,
-                        failure: Self.failure(from: message.failureData), createdAt: message.createdAt)
+                        failure: Self.failure(from: message.failureData), createdAt: message.createdAt,
+                        runID: message.runID, runCursor: message.runCursor.flatMap(UInt32.init(exactly:)))
                 },
                 systemPrompt: record.systemPrompt, createdAt: record.createdAt, updatedAt: record.updatedAt)
         }
@@ -124,12 +125,15 @@ public final class SwiftDataStore: Store {
                 row.reasoning = message.reasoning
                 row.isPartial = message.isPartial
                 row.failureData = failureData
+                row.runID = message.runID
+                row.runCursor = message.runCursor.map(Int.init)
                 row.order = order
             } else {
                 let row = MessageRecord(
                     id: message.id, role: message.role.rawValue, content: message.content,
                     reasoning: message.reasoning, isPartial: message.isPartial, createdAt: message.createdAt,
-                    order: order, failureData: failureData)
+                    order: order, failureData: failureData, runID: message.runID,
+                    runCursor: message.runCursor.map(Int.init))
                 row.conversation = record
                 context.insert(row)
             }

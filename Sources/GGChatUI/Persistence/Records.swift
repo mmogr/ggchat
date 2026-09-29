@@ -73,13 +73,17 @@ public final class MessageRecord {
     /// so SwiftData's lightweight migration adds it to a store written before
     /// it existed, with every row reading nil.
     public var failureData: Data?
+    /// The run a hub is still writing this reply in, and the last of its
+    /// events the row holds, or nil. Optional, for `failureData`'s reason.
+    public var runID: String?
+    public var runCursor: Int?
     public var createdAt: Date
     public var order: Int
     public var conversation: ConversationRecord?
 
     public init(
         id: UUID, role: String, content: String, reasoning: String?, isPartial: Bool, createdAt: Date, order: Int,
-        failureData: Data? = nil
+        failureData: Data? = nil, runID: String? = nil, runCursor: Int? = nil
     ) {
         self.uuid = id
         self.role = role
@@ -87,6 +91,8 @@ public final class MessageRecord {
         self.reasoning = reasoning
         self.isPartial = isPartial
         self.failureData = failureData
+        self.runID = runID
+        self.runCursor = runCursor
         self.createdAt = createdAt
         self.order = order
     }

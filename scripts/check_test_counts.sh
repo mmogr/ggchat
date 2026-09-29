@@ -97,8 +97,31 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # through a pipe that is not connected waits for it and how the wait ends, and
 # that removing a provider puts down the reply through it first. They are the
 # whole of that guard, and the README claim names each of them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 319
+#
+# 2026-09-29: 319 -> 335. Seven tests pin the runs client: the PUT and its
+# fallback, frames numbered by seq, a stream cut at every byte read on from its
+# cursor, not_found, cancel, and no run id in a log line; the floor also moves
+# past the run wire replays that came before them.
+#
+# 2026-09-29: 335 -> 337. Two tests pin that a message keeps its run's id and
+# cursor, and that a store opens across that change in both directions.
+#
+# 2026-09-29: 337 -> 350. Thirteen tests pin that a reply to gglib is a run:
+# the fallback asked once, the background walking away where Stop cancels, no
+# Continue or Retry while the hub writes, reading on after every cut to the
+# same text, a drop in front read on, and each way a run can end.
+#
+# 2026-09-29: 235 -> 257. The README claim for runs names all twenty-two of
+# their tests.
+#
+# 2026-09-29: 350 -> 358. Eight tests pin that a reply still being written
+# always has a way out (a refusal, Stop, removing the provider), that reading
+# on after a drop is paced and bounded, that a lost start is sent again under
+# its id, that a return reads on with no pipe, and that no log line names a run.
+#
+# 2026-09-29: 257 -> 265. The runs claim names the eight tests of its way out.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 358
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 235
+floor "README test markers" "${markers:-0}" 265
 
 exit $status

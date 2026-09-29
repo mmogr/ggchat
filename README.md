@@ -56,7 +56,8 @@ follows the session, reads "Reconnect" when the pipe closes, and stays
 pressable in every state but a dial in flight, because a connected status
 can be stale. Going
 to the background hangs up every pipe and puts down the reply in flight,
-and coming back dials again. A provider's row opens its settings, so a
+except a reply to gglib, which the hub goes on writing and the app reads on
+from where it stopped, and coming back dials again. A provider's row opens its settings, so a
 machine that has stopped admitting this device, or whose endpoint identity
 was deleted, is re-paired in place and keeps its conversations. Settings
 shows the readings the ADRs name, each with its denominator. In DEBUG
@@ -394,6 +395,51 @@ Each claim names the test that keeps it true.
   Continue extends that same message rather than starting a new one.
   <!-- test: AppModelStreamingTests.testSendStreamsAReplyIntoTheConversation -->
   <!-- test: AppModelStreamingTests.testADroppedStreamKeepsThePartialAndContinueCarriesOn -->
+- A reply to gglib is a run the hub owns, under an id minted on the phone, so
+  locking the phone mid-reply loses none of it. Going to the background, or a
+  connection dropping, stops reading and keeps what arrived with the run's id
+  and the number of the last event read; coming back, a launch or the pipe
+  coming up reads on after that number, nothing twice and nothing skipped,
+  whichever byte the stream was cut at. A reading that got nothing is tried
+  again after a pause, three times at most, and a start whose answer was lost
+  is sent again under the same id. While the hub is still writing it, the
+  reply says so and offers Stop, never Continue or Retry; Stop frees the
+  conversation whether or not the hub can be reached. It ends as the run did;
+  one the hub no longer has, or refuses to send, keeps its partial with
+  Continue and a sentence saying why. Stop, a deletion or removing the
+  provider cancels a run. A hub without runs is sent the chat request as
+  before, asked once, with nothing shown. Nothing but the run's id leaves the
+  phone, and no log line carries it, the reply or an address.
+  <!-- test: RunProviderTests.testAPutStartsARunAndAHubWithoutTheRouteIsUnsupported -->
+  <!-- test: RunProviderTests.testEventsAreFramesNumberedFromOneThenTheRunsReport -->
+  <!-- test: RunProviderTests.testAStreamCutAtEveryByteReadsOnFromItsCursorToTheSameReply -->
+  <!-- test: RunProviderTests.testAnEventAtOrBelowTheCursorIsNotAppliedAgain -->
+  <!-- test: RunProviderTests.testNotFoundARefusalAndADropAreToldApart -->
+  <!-- test: RunProviderTests.testCancelPostsToTheRunAndReadsItsReport -->
+  <!-- test: RunProviderTests.testARunsIDNeverReachesALogLine -->
+  <!-- test: RunStoreTests.testARunsIDAndCursorAreKeptWithItsMessage -->
+  <!-- test: RunStoreTests.testAStoreOpensAcrossTheChangeInBothDirections -->
+  <!-- test: AppModelRunTests.testASendToGGLibIsARunAndAnythingElseGoesTheOldWay -->
+  <!-- test: AppModelRunTests.testAHubWithoutRunsIsAskedOnceAndTheReplyGoesTheOldWay -->
+  <!-- test: AppModelRunTests.testARefusedRunIsAFailureOnTheQuestion -->
+  <!-- test: AppModelRunTests.testStopCancelsTheRunAndTheBackgroundDoesNot -->
+  <!-- test: AppModelRunTests.testAReplyStillBeingWrittenOffersNeitherContinueNorRetry -->
+  <!-- test: AppModelRunTests.testDeletingAConversationCancelsTheRunStillWritingItsReply -->
+  <!-- test: AppModelRunCatchUpTests.testTheBackgroundKeepsTheRunAndComingBackReadsOnFromItsCursor -->
+  <!-- test: AppModelRunCatchUpTests.testABackgroundWhileReadingOnKeepsTheRunAgain -->
+  <!-- test: AppModelRunCatchUpTests.testAReplyReadOnEndsAsTheRunDid -->
+  <!-- test: AppModelRunCatchUpTests.testAnEmptyReplyTheHubNoLongerHasLeavesTheQuestionWithRetry -->
+  <!-- test: AppModelRunCatchUpTests.testADropInFrontReadsOnInsteadOfFailing -->
+  <!-- test: AppModelRunCatchUpTests.testALaunchReadsOnAReplyTheLastOneWalkedAwayFrom -->
+  <!-- test: AppModelRunCatchUpTests.testEveryCutOfTheReplyReadsOnToTheSameText -->
+  <!-- test: AppModelRunWayOutTests.testARefusalOfTheEventsGivesTheRunUpWithASentence -->
+  <!-- test: AppModelRunWayOutTests.testAnUnreachableHubIsWaitedForAndStopAlwaysGetsOut -->
+  <!-- test: AppModelRunWayOutTests.testRemovingTheProviderGivesUpItsRuns -->
+  <!-- test: AppModelRunReadOnTests.testADropBeforeTheFirstEventIsReadOnAfterAPause -->
+  <!-- test: AppModelRunReadOnTests.testAHubThatNeverAnswersIsNotAskedAgainAndAgain -->
+  <!-- test: AppModelRunReadOnTests.testAPutWhoseAnswerWasLostIsSentAgainUnderItsID -->
+  <!-- test: AppModelRunReadOnTests.testAReturnReadsOnAtAnAddressWithNoPipe -->
+  <!-- test: AppModelRunReadOnTests.testNoLogLineNamesARunItsTextOrAnAddress -->
 - A conversation can carry a system prompt. It goes ahead of every request
   the conversation makes, Continue and Retry included, and an edit reaches the
   next one. It is never a row in the transcript and never stored as a
@@ -413,7 +459,8 @@ Each claim names the test that keeps it true.
   no second copy of it. The sentence is kept with the message that ended the
   turn, the question or the partial reply, so it is still there after a
   relaunch. A question left with no reply by a stop, or by going to the
-  background, is not a failure: it keeps a Retry and no sentence.
+  background from a reply that is not a run, is not a failure: it keeps a
+  Retry and no sentence.
   <!-- test: AppModelRefusalTests.testARefusalBeforeTheFirstTokenIsKeptOnTheQuestion -->
   <!-- test: AppModelRefusalTests.testRetryAsksAgainAndClearsTheRefusal -->
   <!-- test: AppModelRefusalTests.testAStopBeforeTheFirstTokenWritesNoFailureEvenIfAnErrorRaced -->
@@ -504,7 +551,8 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelFailedDialTests.testAFailedDialLeavesAPillToPressAndAResumeThatDialsAgain -->
   <!-- test: AppModelFailedDialTests.testARefusalThatArrivesAfterItsDialWasCalledOffSaysNothing -->
 - Going to the background hangs up every pipe and writes the reply that was
-  in flight into the conversation as a partial rather than losing it; coming
+  in flight into the conversation as a partial rather than losing it (a reply
+  to gglib goes on being written there, and is read on); coming
   back dials again, and only the pipes the app already had. The two take
   turns: a hang-up calls off a resume that is still dialling, a resume waits
   for a hang-up that is still closing, and a dial that lands while the app
@@ -544,8 +592,9 @@ Each claim names the test that keeps it true.
 - A close counts as mid-reply when it is what ended the reply — whether the
   far machine went away or the app put the reply down on its way to the
   background. Either leaves a partial with a Continue button under it, so
-  long as any of the reply had arrived; a background before the first token
-  counts the close and leaves nothing to continue. ADR 0002 struck the
+  long as any of the reply had arrived and it is not a run still being
+  written; a background before the first token counts the close and leaves
+  nothing to continue. ADR 0002 struck the
   threshold that fraction was meant to answer, and the counters outlived it.
   <!-- test: AppModelPipeTests.testAPipeThatGoesAwayMidReplyIsCountedAsAMidReplyClose -->
   <!-- test: AppModelLifecycleTests.testABackgroundThatCutsAReplyShortCountsAMidReplyClose -->

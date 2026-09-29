@@ -10,6 +10,9 @@ public enum Role: String, Codable, Sendable, Equatable, Hashable {
 /// `isPartial` means the reply stopped before the model finished, by the user
 /// or by the connection; the UI offers Continue. `failure` is what ended the
 /// turn early when something said so, kept on the message that ended it.
+/// `runID` names the run on the hub still writing this reply, and
+/// `runCursor` the last of its events this message holds; both are nil once
+/// the reply is no longer being written there.
 public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
     public var id: UUID
     public var role: Role
@@ -18,6 +21,8 @@ public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
     public var isPartial: Bool
     public var failure: Failure?
     public var createdAt: Date
+    public var runID: String?
+    public var runCursor: UInt32?
 
     public init(
         id: UUID = UUID(),
@@ -26,7 +31,9 @@ public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
         reasoning: String? = nil,
         isPartial: Bool = false,
         failure: Failure? = nil,
-        createdAt: Date
+        createdAt: Date,
+        runID: String? = nil,
+        runCursor: UInt32? = nil
     ) {
         self.id = id
         self.role = role
@@ -35,6 +42,13 @@ public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
         self.isPartial = isPartial
         self.failure = failure
         self.createdAt = createdAt
+        self.runID = runID
+        self.runCursor = runCursor
+    }
+
+    /// Whether a hub is still writing this reply, away from this device.
+    public var isBeingWritten: Bool {
+        runID != nil
     }
 }
 

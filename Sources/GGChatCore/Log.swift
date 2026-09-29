@@ -56,14 +56,19 @@ public final class CapturingLogSink: LogSink, Sendable {
 #endif
 
 /// What a URL looks like in a log line: scheme, host, port and path only.
-/// No query, no user info, and headers are never logged at all.
+/// No query, no user info, and headers are never logged at all. A run's id,
+/// the segment after `runs`, reads `<run>`.
 public enum Redaction {
     public static func describe(_ url: URL) -> String {
         var parts = ""
         if let scheme = url.scheme { parts += scheme + "://" }
         if let host = url.host() { parts += host }
         if let port = url.port { parts += ":\(port)" }
-        parts += url.path()
+        var segments = url.path().split(separator: "/", omittingEmptySubsequences: false).map(String.init)
+        for index in segments.indices.dropFirst() where segments[index - 1] == "runs" {
+            segments[index] = "<run>"
+        }
+        parts += segments.joined(separator: "/")
         return parts
     }
 }

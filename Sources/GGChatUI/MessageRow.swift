@@ -5,7 +5,8 @@ import SwiftUI
 /// content as markdown blocks. The last one, once nothing is streaming after
 /// it, says how its turn ended: under a partial reply, with Continue, and
 /// under a question with no reply, with Retry and the reason when something
-/// gave one.
+/// gave one. A reply a hub is still writing away from this device offers
+/// neither, says where it is being written, and offers Stop.
 struct MessageRow: View {
     @Environment(AppModel.self) private var model
     let message: Message
@@ -15,6 +16,8 @@ struct MessageRow: View {
     /// What the provider behind this conversation adds about the failure,
     /// when it has something to add.
     let advice: String?
+    /// Where the reply is still being written, while a hub writes it.
+    let writingLine: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -24,7 +27,9 @@ struct MessageRow: View {
             }
             MarkdownBlocksView(blocks: MarkdownBlocks.parse(message.content))
             if showsEnding {
-                if message.isPartial {
+                if let writingLine {
+                    writingFooter(writingLine)
+                } else if message.isPartial {
                     partialFooter
                 } else if message.role == .user {
                     unansweredFooter
@@ -32,6 +37,21 @@ struct MessageRow: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Under a reply a hub is still writing: where, and Stop, which is always
+    /// a way out even when the hub cannot be reached.
+    private func writingFooter(_ line: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(line)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Button("Stop", systemImage: "stop.circle") {
+                model.stopWriting(message.id)
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding(.top, 2)
     }
 
     private var partialFooter: some View {

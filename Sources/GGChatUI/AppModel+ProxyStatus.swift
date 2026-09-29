@@ -22,6 +22,7 @@ extension AppModel {
     func forgetProxyStatus(ifMovedFrom previous: ProviderConfig, to config: ProviderConfig) {
         guard previous.kind != config.kind else { return }
         proxyStatusAvailability[config.id] = nil
+        providersWithoutRuns.remove(config.id)
         probeGeneration[config.id] = (probeGeneration[config.id] ?? 0) + 1
     }
 

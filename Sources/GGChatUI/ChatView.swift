@@ -21,7 +21,8 @@ struct ChatView: View {
                         message: message,
                         showsEnding: message.id == conversation.messages.last?.id
                             && !model.isStreaming(conversation.id),
-                        advice: message.failure.flatMap { model.advice(for: $0, in: conversation) }
+                        advice: message.failure.flatMap { model.advice(for: $0, in: conversation) },
+                        writingLine: model.writingLine(for: message, in: conversation)
                     )
                 }
                 if let live = model.liveReply, live.conversationID == conversation.id {

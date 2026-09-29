@@ -1,39 +1,5 @@
 import Foundation
 import GGChatCore
-import Observation
-
-/// The reply being streamed right now. Only the last row observes it, so a
-/// token touches one view and the transcript above it never re-lays out.
-@Observable
-public final class LiveReply {
-    public let conversationID: UUID
-    /// Set when Continue is streaming into an existing partial message.
-    public let continuingMessageID: UUID?
-    public var content = ""
-    public var reasoning = ""
-    /// The latest word on how much of the prompt has been read. It lives here
-    /// only: `finish` never reads it, so it is never stored.
-    public var progress: PromptProgress?
-    public var error: ProviderError?
-    /// The pipe provider this reply is waiting for, until it connects; nil
-    /// while it streams. See `AppModel+Waiting`.
-    public internal(set) var waitingFor: UUID?
-
-    init(conversationID: UUID, continuingMessageID: UUID?) {
-        self.conversationID = conversationID
-        self.continuingMessageID = continuingMessageID
-    }
-
-    /// "Reading 8,200 of 11,000 tokens", in `locale`'s digits, while the
-    /// prompt is read: nil before the first progress frame, and once any text
-    /// or reasoning has arrived.
-    public func readingLine(in locale: Locale) -> String? {
-        guard content.isEmpty, reasoning.isEmpty, let progress else { return nil }
-        let processed = progress.processed.formatted(.number.locale(locale))
-        let total = progress.total.formatted(.number.locale(locale))
-        return "Reading \(processed) of \(total) tokens"
-    }
-}
 
 extension AppModel {
     public var isStreaming: Bool {
@@ -56,7 +22,9 @@ extension AppModel {
     @discardableResult
     public func send(_ text: String) -> Task<Void, Never>? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, var conversation = selectedConversation, !isStreaming else { return nil }
+        guard !trimmed.isEmpty, var conversation = selectedConversation, !isStreaming,
+            !conversation.messages.contains(where: \.isBeingWritten)
+        else { return nil }
         let stamp = now()
         conversation.messages.append(Message(role: .user, content: trimmed, createdAt: stamp))
         conversation.updatedAt = stamp
@@ -69,7 +37,7 @@ extension AppModel {
     @discardableResult
     public func continueReply() -> Task<Void, Never>? {
         guard let conversation = selectedConversation, !isStreaming,
-            let last = conversation.messages.last, last.role == .assistant, last.isPartial
+            let last = conversation.messages.last, last.role == .assistant, last.isPartial, !last.isBeingWritten
         else { return nil }
         diagnostics.recordContinue()
         return stream(conversation, continuing: last.id)
@@ -102,6 +70,9 @@ extension AppModel {
         return task
     }
 
+    /// Puts the reply in flight down. A run is cancelled on its hub, where
+    /// the background only walks away from it; the reading task tells the
+    /// two apart by `LiveReply.detaching`, which only the background sets.
     public func stop() {
         streamTask?.cancel()
     }
@@ -129,21 +100,37 @@ extension AppModel {
             var connected = ready
             if connected == nil { connected = await self?.providerOnceConnected(config, for: live) }
             guard let provider = connected else { return }
-            var finished = false
-            for await event in provider.stream(request) {
-                switch event {
-                case .delta(let text): live.content += text
-                case .reasoning(let text): live.reasoning += text
-                case .progress(let progress): live.progress = progress
-                case .finished: finished = true
-                case .error(let error): live.error = error
-                }
+            if let hub = self?.runHub(provider, for: config) {
+                await self?.startRun(request, on: hub, for: config, live: live)
+            } else {
+                await self?.streamChat(request, on: provider, live: live)
             }
-            let cancelled = Task.isCancelled
-            self?.finish(live, finished: finished && !cancelled, cancelled: cancelled)
         }
         streamTask = task
         return task
+    }
+
+    /// Streams the reply from `chat/completions`, the way every reply went
+    /// before runs, and every reply to a hub without them still goes.
+    func streamChat(_ request: ChatRequest, on provider: any Provider, live: LiveReply) async {
+        var finished = false
+        for await event in provider.stream(request) {
+            if case .finished = event { finished = true } else { apply(event, to: live) }
+        }
+        let cancelled = Task.isCancelled
+        finish(live, finished: finished && !cancelled, cancelled: cancelled)
+    }
+
+    /// Adds one event to the reply in flight. The end of a reply is not one of
+    /// them: the chat route and a run each say it in their own way.
+    func apply(_ event: ChatEvent, to live: LiveReply) {
+        switch event {
+        case .delta(let text): live.content += text
+        case .reasoning(let text): live.reasoning += text
+        case .progress(let progress): live.progress = progress
+        case .error(let error): live.error = error
+        case .finished: break
+        }
     }
 
     /// The provider to stream through once the pipe is connected, or nil when
@@ -160,79 +147,6 @@ extension AppModel {
             finish(live, finished: false, cancelled: true)
         }
         return nil
-    }
-
-    /// Writes what arrived into the conversation. `refusal` is a refused
-    /// dial's failure, for a reply that never left the wait for its pipe: it
-    /// is kept where a provider's error would be, and is not counted as one.
-    private func finish(_ live: LiveReply, finished: Bool, cancelled: Bool, refusal: Failure? = nil) {
-        defer {
-            liveReply = nil
-            streamTask = nil
-        }
-        guard var conversation = conversations.first(where: { $0.id == live.conversationID }) else { return }
-        let stamp = now()
-        // A stop or a background is not a failure, however the provider put
-        // it: a cancelled request can surface as a transport error, and
-        // whether that arrives before the stream ends is a race. Nor is it a
-        // transport error after a resume, for the diagnostics below.
-        let error = cancelled ? nil : live.error
-        let failure = refusal ?? error.map(Failure.init)
-        // gglib's notice of that failure, written as text before the error
-        // itself. The error is drawn, so the notice is not kept as a reply.
-        let content = error != nil && Self.isAProxyNotice(live.content) ? "" : live.content
-        if let continuingID = live.continuingMessageID,
-            let index = conversation.messages.firstIndex(where: { $0.id == continuingID })
-        {
-            conversation.messages[index].content += content
-            if !live.reasoning.isEmpty {
-                conversation.messages[index].reasoning = (conversation.messages[index].reasoning ?? "") + live.reasoning
-            }
-            conversation.messages[index].isPartial = !finished
-            conversation.messages[index].failure = failure
-        } else if !content.isEmpty || !live.reasoning.isEmpty || finished {
-            conversation.messages.append(
-                Message(
-                    role: .assistant, content: content,
-                    reasoning: live.reasoning.isEmpty ? nil : live.reasoning,
-                    isPartial: !finished, failure: failure, createdAt: stamp))
-        } else if let failure, let last = conversation.messages.indices.last,
-            conversation.messages[last].role == .user
-        {
-            // Nothing arrived and something said why. With no reply to put
-            // the sentence under, it goes on the question.
-            conversation.messages[last].failure = failure
-        }
-        conversation.updatedAt = stamp
-        diagnostics.recordStreamEnd(with: error, at: stamp)
-        if let providerID = conversation.providerID {
-            if finished { heard(providerID) } else if let error { note(error, from: providerID) }
-        }
-        if let error {
-            streamErrors[conversation.id] = error
-            log.log(.error, "stream ended with \(error.code ?? "no code"): \(error.whereToLook)")
-        }
-        update(conversation)
-    }
-
-    /// Whether a reply is nothing but gglib's own notice of a failure, which
-    /// it writes as ordinary text before the error itself, for clients that
-    /// cannot draw an error inside a stream (`gglib-proxy/src/forward.rs`,
-    /// `visible_content_frame`). This app draws the error, so when a stream
-    /// ended with one the notice is dropped. Kept, it would be the reply, and
-    /// Continue would send it back to the model as the start of one.
-    ///
-    /// The marker is `[proxy] `, space included, within the first three
-    /// characters: the notice starts with an emoji, which is one `Character`
-    /// however many bytes it takes. The space matters. gglib's
-    /// reasoning-only notice reads `[proxy: reasoning-only response]` and is
-    /// followed by real output from the model, which must never be dropped.
-    /// Every notice this matches is written before generation starts, so no
-    /// text from the model can come before one.
-    static func isAProxyNotice(_ content: String) -> Bool {
-        let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let marker = trimmed.range(of: "[proxy] ") else { return false }
-        return trimmed.distance(from: trimmed.startIndex, to: marker.lowerBound) <= 3
     }
 
     /// What to do about a failure, from the provider behind this
