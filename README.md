@@ -400,12 +400,16 @@ Each claim names the test that keeps it true.
   connection dropping, stops reading and keeps what arrived with the run's id
   and the number of the last event read; coming back, a launch or the pipe
   coming up reads on after that number, nothing twice and nothing skipped,
-  whichever byte the stream was cut at. While the hub is still writing it,
-  the reply says so and offers neither Continue nor Retry. It ends as the run
-  did; one the hub no longer has keeps its partial with Continue. Only Stop,
-  or a deletion, cancels a run. A hub without runs is sent the chat request
-  as before, asked once, with nothing shown. Nothing but the run's id leaves
-  the phone, and no log line carries it.
+  whichever byte the stream was cut at. A reading that got nothing is tried
+  again after a pause, three times at most, and a start whose answer was lost
+  is sent again under the same id. While the hub is still writing it, the
+  reply says so and offers Stop, never Continue or Retry; Stop frees the
+  conversation whether or not the hub can be reached. It ends as the run did;
+  one the hub no longer has, or refuses to send, keeps its partial with
+  Continue and a sentence saying why. Stop, a deletion or removing the
+  provider cancels a run. A hub without runs is sent the chat request as
+  before, asked once, with nothing shown. Nothing but the run's id leaves the
+  phone, and no log line carries it, the reply or an address.
   <!-- test: RunProviderTests.testAPutStartsARunAndAHubWithoutTheRouteIsUnsupported -->
   <!-- test: RunProviderTests.testEventsAreFramesNumberedFromOneThenTheRunsReport -->
   <!-- test: RunProviderTests.testAStreamCutAtEveryByteReadsOnFromItsCursorToTheSameReply -->
@@ -428,6 +432,14 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelRunCatchUpTests.testADropInFrontReadsOnInsteadOfFailing -->
   <!-- test: AppModelRunCatchUpTests.testALaunchReadsOnAReplyTheLastOneWalkedAwayFrom -->
   <!-- test: AppModelRunCatchUpTests.testEveryCutOfTheReplyReadsOnToTheSameText -->
+  <!-- test: AppModelRunWayOutTests.testARefusalOfTheEventsGivesTheRunUpWithASentence -->
+  <!-- test: AppModelRunWayOutTests.testAnUnreachableHubIsWaitedForAndStopAlwaysGetsOut -->
+  <!-- test: AppModelRunWayOutTests.testRemovingTheProviderGivesUpItsRuns -->
+  <!-- test: AppModelRunReadOnTests.testADropBeforeTheFirstEventIsReadOnAfterAPause -->
+  <!-- test: AppModelRunReadOnTests.testAHubThatNeverAnswersIsNotAskedAgainAndAgain -->
+  <!-- test: AppModelRunReadOnTests.testAPutWhoseAnswerWasLostIsSentAgainUnderItsID -->
+  <!-- test: AppModelRunReadOnTests.testAReturnReadsOnAtAnAddressWithNoPipe -->
+  <!-- test: AppModelRunReadOnTests.testNoLogLineNamesARunItsTextOrAnAddress -->
 - A conversation can carry a system prompt. It goes ahead of every request
   the conversation makes, Continue and Retry included, and an edit reaches the
   next one. It is never a row in the transcript and never stored as a

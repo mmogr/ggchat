@@ -79,13 +79,17 @@ connection since 2026-09-29; see the amendment of that date below.)
 > front, stops reading and leaves the run going. What has arrived is written
 > with the run's id and the number of the last event read, an empty reply
 > included, and coming back, a launch or the pipe coming up reads on after that
-> number, so no event is applied twice or skipped. Only Stop, or deleting the
-> conversation or its provider, cancels the run. While the hub is still writing
-> it the reply offers neither Continue nor Retry, either of which would start a
-> second reply beside it, and says it is still being written on that machine.
-> It ends as the run did: whole, with the run's failure, or stopped. When the
-> hub no longer has the run the partial stays with Continue and a sentence
-> saying so, which is option 2 again. A hub with no runs route is sent the
+> number, so no event is applied twice or skipped. A reading that got nothing
+> is tried again after a pause, a few times, and a start whose answer was lost
+> is sent again under the same id, which starts nothing twice. Only Stop, or
+> deleting the conversation or its provider, cancels the run. While the hub is
+> still writing it the reply offers neither Continue nor Retry, either of which
+> would start a second reply beside it, and says it is still being written on
+> that machine, with Stop: Stop always frees the conversation, cancelling the
+> run when the hub can be reached. It ends as the run did: whole, with the
+> run's failure, or stopped. When the hub no longer has the run, or refuses to
+> send it (any 4xx, or an answer that is not the hub's), the partial stays
+> with Continue and a sentence saying why, which is option 2 again. A hub with no runs route is sent the
 > request as before, and is not asked again while the app runs.
 >
 > This is still not option 1: nothing is sent twice, and the text on screen

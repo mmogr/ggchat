@@ -118,8 +118,10 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # always has a way out (a refusal, Stop, removing the provider), that reading
 # on after a drop is paced and bounded, that a lost start is sent again under
 # its id, that a return reads on with no pipe, and that no log line names a run.
+#
+# 2026-09-29: 257 -> 265. The runs claim names the eight tests of its way out.
 floor "package test cases" "$(test_cases "$ROOT/Tests")" 358
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 257
+floor "README test markers" "${markers:-0}" 265
 
 exit $status
