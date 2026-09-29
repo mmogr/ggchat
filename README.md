@@ -448,14 +448,20 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelRunReadOnTests.testNoLogLineNamesARunItsTextOrAnAddress -->
 - The conversation list says, beside a title, "Writing" while a reply is still
   being written, in front or by the hub, and "New" when one finished, failed
-  or was given up while another conversation was open, until that one is
-  opened. A reply that ends in the conversation on screen is never new.
-  Opening one moves nothing in the list. The mark is kept with the
-  conversation in its store, and a store opens across that change both ways;
-  nothing about it leaves the phone.
+  or was given up while its chat was not on screen with the app in front,
+  until that chat is shown. Selecting is not reading: a launch keeps every
+  mark, the one it restores included. A reply that ends with its chat on
+  screen is never new, nor is one the person stopped. Showing one moves
+  nothing in the list. The mark is kept with the conversation in its store,
+  and a store opens across that change both ways; nothing about it leaves
+  the phone.
   <!-- test: AppModelListMarkTests.testAReplyStillBeingWrittenIsWritingInTheList -->
   <!-- test: AppModelListMarkTests.testAReplyThatEndsWhileAnotherIsOpenIsUnreadUntilOpened -->
-  <!-- test: AppModelListMarkTests.testAReplyThatEndsWhileItsConversationIsOpenIsNeverUnread -->
+  <!-- test: AppModelListMarkTests.testAReplyThatEndsWhileItsChatIsOnScreenIsNeverUnread -->
+  <!-- test: AppModelListMarkLaunchTests.testALaunchKeepsEveryMarkUntilItsChatIsShownInFront -->
+  <!-- test: AppModelListMarkLaunchTests.testAReplyReadOnAtLaunchInTheRestoredConversationIsUnread -->
+  <!-- test: AppModelListMarkLaunchTests.testAReplyThatEndsWithNoChatShownIsUnread -->
+  <!-- test: AppModelListMarkLaunchTests.testAReplyThePersonStoppedIsNeverUnread -->
   <!-- test: AppModelListMarkTests.testTheMarksLeaveTheOrderAsItWas -->
   <!-- test: AppModelListMarkTests.testEachMarkHasAWordAndALabel -->
   <!-- test: UnreadStoreTests.testTheUnreadMarkIsKeptWithItsConversation -->

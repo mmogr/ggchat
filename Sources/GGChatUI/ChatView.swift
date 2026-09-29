@@ -72,6 +72,15 @@ struct ChatView: View {
         .sheet(isPresented: $editingPrompt) {
             SystemPromptView(conversation: conversation)
         }
+        // What clears the list's unread mark. Appear and disappear, not a
+        // `.task`; and the view is kept when the selection moves, so a move
+        // is told as the one chat leaving and the other arriving.
+        .onAppear { model.chatAppeared(conversation.id) }
+        .onDisappear { model.chatDisappeared(conversation.id) }
+        .onChange(of: conversation.id) { previous, shown in
+            model.chatDisappeared(previous)
+            model.chatAppeared(shown)
+        }
     }
 
     /// Filled while a prompt is set, since the transcript never shows it.

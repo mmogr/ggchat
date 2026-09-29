@@ -65,6 +65,7 @@ final class AppModelListMarkTests: XCTestCase {
             let (model, _) = try await Runs.makeModel(behind: hub, store: store)
             let (asked, task) = try await sendAndHold(model, hub)
             let other = model.newConversation()
+            model.chatAppeared(other.id)
             await model.scene(.background).value
             await task.value
             XCTAssertFalse(try XCTUnwrap(store.loadConversations().first { $0.id == asked.id }).hasUnreadReply)
@@ -80,19 +81,22 @@ final class AppModelListMarkTests: XCTestCase {
             XCTAssertTrue(kept.hasUnreadReply, "the mark of a reply that \(ending) was not kept")
 
             model.selectedConversationID = asked.id
-            XCTAssertNil(try mark(model, asked.id), "opening a reply that \(ending) did not clear it")
+            XCTAssertEqual(try mark(model, asked.id), .unread, "selecting is not reading")
+            model.chatAppeared(asked.id)
+            XCTAssertNil(try mark(model, asked.id), "showing a reply that \(ending) did not clear it")
             XCTAssertFalse(try XCTUnwrap(store.loadConversations().first { $0.id == asked.id }).hasUnreadReply)
         }
     }
 
-    /// A reply that finishes while its conversation is open is never unread:
+    /// A reply that finishes while its chat is on screen is never unread:
     /// neither one read in front, nor one read on after coming back.
     @MainActor
-    func testAReplyThatEndsWhileItsConversationIsOpenIsNeverUnread() async throws {
+    func testAReplyThatEndsWhileItsChatIsOnScreenIsNeverUnread() async throws {
         let hub = hub()
         let store = InMemoryStore()
         let (model, _) = try await Runs.makeModel(behind: hub, store: store)
         let asked = try XCTUnwrap(model.selectedConversation)
+        model.chatAppeared(asked.id)
         try await XCTUnwrap(model.send("one")).value
         XCTAssertEqual(try Runs.last(model).content, Runs.text)
         XCTAssertNil(try mark(model, asked.id))
@@ -107,7 +111,7 @@ final class AppModelListMarkTests: XCTestCase {
         XCTAssertEqual(try store.loadConversations().map(\.hasUnreadReply), [false])
     }
 
-    /// The marks leave the list's order as it was: opening a conversation to
+    /// The marks leave the list's order as it was: showing a conversation to
     /// clear one changes neither its place nor when it was last changed, so a
     /// relaunch lists the conversations as before.
     @MainActor
@@ -127,6 +131,7 @@ final class AppModelListMarkTests: XCTestCase {
         XCTAssertEqual(model.conversations.map { model.mark(for: $0) }, [nil, .unread, .unread])
         let before = model.conversations.map(\.updatedAt)
         model.selectedConversationID = model.conversations[2].id
+        model.chatAppeared(model.conversations[2].id)
         XCTAssertEqual(model.conversations.map { model.mark(for: $0) }, [nil, .unread, nil])
         XCTAssertEqual(model.conversations.map(\.title), ["newest", "middle", "oldest"])
         XCTAssertEqual(model.conversations.map(\.updatedAt), before)

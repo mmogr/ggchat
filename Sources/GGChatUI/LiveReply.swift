@@ -30,6 +30,8 @@ public final class LiveReply {
     /// Whether putting this reply down walks away from its run rather than
     /// stopping it: set on the way to the background, never by Stop.
     var detaching = false
+    /// Whether the person stopped this reply, which is then never unread.
+    var stoppedHere = false
 
     init(conversationID: UUID, continuingMessageID: UUID?) {
         self.conversationID = conversationID

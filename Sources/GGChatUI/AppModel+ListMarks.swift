@@ -41,6 +41,11 @@ public enum ConversationMark: Equatable, Sendable {
 // unread mark is kept with the conversation in the store, so it outlives the
 // app being closed; nothing else about it leaves this device, and no log line
 // mentions it.
+//
+// Selecting a conversation is not reading it. A launch restores the last
+// selection, and a phone can open on the list with it; only the chat view
+// says a conversation is on screen, from its appear and disappear, never from
+// a `.task`, which a collapsed split view on iOS 27 cancels at birth.
 extension AppModel {
     /// The mark a conversation's row shows, or nil for none. Writing wins over
     /// unread: a conversation with a reply in flight is not waiting to be read.
@@ -51,18 +56,43 @@ extension AppModel {
         return conversation.hasUnreadReply ? .unread : nil
     }
 
+    /// The chat view of `id` is on screen: if the app is in front, what it
+    /// shows has been read.
+    public func chatAppeared(_ id: UUID) {
+        chatOnScreen = id
+        readTheChatOnScreen()
+    }
+
+    /// The chat view of `id` has left the screen.
+    public func chatDisappeared(_ id: UUID) {
+        if chatOnScreen == id { chatOnScreen = nil }
+    }
+
+    /// Whether the person can see this conversation's replies now: its chat
+    /// is on screen, it is still the one selected, and the app is in front.
+    func isBeingRead(_ id: UUID) -> Bool {
+        chatOnScreen == id && selectedConversationID == id && !isAway
+    }
+
+    /// Clears the mark of the conversation on screen, when it is being read:
+    /// as its chat appears, and as the app comes back to the front.
+    func readTheChatOnScreen() {
+        guard let id = chatOnScreen, isBeingRead(id) else { return }
+        markRead(id)
+    }
+
     /// Marks a conversation whose reply has just ended as unread, unless it
-    /// is the one open. A reply walking away from its run has not ended, and
-    /// its caller does not come here.
-    func markUnreadUnlessOpen(_ conversation: inout Conversation) {
-        guard conversation.id != selectedConversationID else { return }
+    /// is being read or the person stopped the reply. A reply walking away
+    /// from its run has not ended, and its caller does not come here.
+    func markUnreadUnlessRead(_ conversation: inout Conversation, stoppedHere: Bool) {
+        guard !stoppedHere, !isBeingRead(conversation.id) else { return }
         conversation.hasUnreadReply = true
     }
 
-    /// Opening a conversation clears its mark. Its place in the list, and the
-    /// time it was last changed, stay as they were.
-    func markRead(_ id: UUID?) {
-        guard let id, var conversation = conversations.first(where: { $0.id == id }), conversation.hasUnreadReply
+    /// Clears a conversation's mark. Its place in the list, and the time it
+    /// was last changed, stay as they were.
+    func markRead(_ id: UUID) {
+        guard var conversation = conversations.first(where: { $0.id == id }), conversation.hasUnreadReply
         else { return }
         conversation.hasUnreadReply = false
         update(conversation)

@@ -135,8 +135,13 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 #
 # 2026-09-29: 366 -> 367 and 273 -> 274. One test pins that a run's report
 # that cannot be read is a refusal and not a drop.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 367
+#
+# 2026-09-29: 367 -> 371 and 274 -> 278. Four tests pin that selecting is not
+# reading: a launch keeps every mark, a reply read on at launch in the
+# restored conversation is unread, one that ends with no chat shown is
+# unread, and one the person stopped never is.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 371
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 274
+floor "README test markers" "${markers:-0}" 278
 
 exit $status
