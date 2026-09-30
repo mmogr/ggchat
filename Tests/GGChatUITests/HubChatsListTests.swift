@@ -105,6 +105,22 @@ final class HubChatsListTests: XCTestCase {
         XCTAssertEqual(model.hubChats[config.id], nil)
     }
 
+    /// A launch dials each paired Mac and lists its chats, with no
+    /// conversation on it opened.
+    func testALaunchListsEachPairedMacsChats() async throws {
+        let hub = FakeChatsHub()
+        let registry = LoopbackProviderRegistry()
+        let model = AppModel(
+            store: InMemoryStore(), secrets: InMemorySecrets(), log: NoopLogSink(), registry: registry,
+            pipeConnector: MockPipeConnector(sleeper: ImmediateSleeper(), provider: hub, registry: registry),
+            diagnostics: Diagnostics(defaults: UserDefaults(suiteName: "HubChatsListTests.\(UUID().uuidString)")!))
+        let config = ProviderConfig(name: "home", kind: .pipe(ticketDigest: "abc"))
+        try model.addProvider(config, credentials: [.ticket: "pipe-ticket", .token: "secret-token"])
+        model.load()
+        try await until("the list") { model.hubChats[config.id] == FakeChatsHub.summaries }
+        XCTAssertNil(model.lastError)
+    }
+
     /// The launch dials every paired Mac quietly: one this device has no
     /// ticket for raises no alert, as any other quiet dial that fails.
     func testAQuietDialWithNothingToDialWithRaisesNoAlert() async throws {

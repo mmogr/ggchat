@@ -162,8 +162,12 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # through a relaunch, gone with the provider; that opening one then says the
 # Mac is unreachable, also after a dial that fails; and that a store opens
 # across the two new columns both ways.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 396
+#
+# 2026-09-30: 396 -> 397 and 279 -> 304. One test pins that a launch lists
+# each paired Mac's chats; the claim for a paired Mac's chats names all
+# twenty-five of their tests.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 397
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 279
+floor "README test markers" "${markers:-0}" 304
 
 exit $status
