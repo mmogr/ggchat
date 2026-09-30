@@ -520,9 +520,12 @@ Each claim names the test that keeps it true.
   reply as an agent run and saves both rows; its text, reasoning and a line for
   each tool it calls are read from the run into memory, and once the run ends
   the rows the Mac saved are read in its place. Nothing of it is written to the
-  store (ADR 0007). Stop cancels the run. A chat with no model says to pick one
-  on the Mac, and a chat the Mac is already writing to says so, here too while
-  this phone holds that reply. Leaving the chat and the background walk away
+  store (ADR 0007). Stop cancels the run, and nothing reads on beside it until
+  the Mac answers. A chat with no model says to pick one on the Mac, a chat the
+  Mac is already writing to says so, here too while this phone holds that
+  reply, and a gglib that takes the turn as a chat run is one without turns;
+  a refused send puts its text back. A turn whose answer was lost is kept and
+  put again under its id, and a list says whether it arrived. Leaving the chat and the background walk away
   and cancel nothing; opening it again, coming back and the pipe coming up
   read on from the last event, none applied twice, paced as this phone's own
   replies are. Only the run's id and its chat are kept, on the provider's row:
@@ -541,6 +544,11 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatContinueTests.testEachRefusalIsSaidInTheViewAndKeepsNothing -->
   <!-- test: HubChatContinueTests.testASecondSendWhileTheMacWritesIsRefusedHere -->
   <!-- test: HubChatContinueTests.testAFailedRunSaysSoAndTheRowsAreReadAgain -->
+  <!-- test: HubChatContinueTests.testAMacThatStartsAChatRunForATurnIsOneWithoutTurns -->
+  <!-- test: HubChatLostTurnTests.testALostTurnIsKeptAndPutAgainUnderItsIDThenReadFromItsStart -->
+  <!-- test: HubChatLostTurnTests.testALostTurnTheListDoesNotNameIsForgotten -->
+  <!-- test: HubChatLostTurnTests.testALostTurnTheListNamesIsKeptAsStarted -->
+  <!-- test: HubChatLostTurnTests.testNothingReadsOnBesideAStopWhoseCancelIsNotAnsweredYet -->
   <!-- test: HubChatReadOnTests.testLeavingTheChatWalksAwayAndOpeningItAgainReadsOnFromTheCursor -->
   <!-- test: HubChatReadOnTests.testTheBackgroundWalksAwayAndComingBackReadsOn -->
   <!-- test: HubChatReadOnTests.testAReadingThatGetsNothingReadsOnAfterEachPauseThenWaits -->

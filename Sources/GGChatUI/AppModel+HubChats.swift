@@ -44,6 +44,8 @@ public struct OpenHubChat: Equatable, Sendable {
     public internal(set) var state: State
     /// Why the last send went nowhere, or how the last reply ended badly.
     public internal(set) var notice: String?
+    /// The text of a send that went nowhere, for the composer to put back.
+    public internal(set) var unsent: String?
 }
 
 // "On home" in the list: each paired Mac's chats, read live through its pipe.

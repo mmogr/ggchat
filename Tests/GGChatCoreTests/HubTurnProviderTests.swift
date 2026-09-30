@@ -7,7 +7,7 @@ import XCTest
 /// with what body, what each refusal means, and how the agent run's events
 /// are read. The events are `gglib-agent-run-events.jsonl`, one
 /// `AgentEvent` per line as gglib serialises it
-/// (`gglib-core/src/domain/agent/events.rs` at gglib efcacd58, the shapes
+/// (`gglib-core/src/domain/agent/events.rs` at gglib a6f36850, the shapes
 /// its `events_tests.rs` pins), framed as `runs/sse.rs` frames them.
 final class HubTurnProviderTests: XCTestCase {
     private let turn = HubTurn(conversationID: 12, content: "And how do I fix it?")

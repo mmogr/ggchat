@@ -200,8 +200,13 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 #
 # 2026-09-30: 311 -> 332. The claim for carrying a Mac's chat on names all
 # 21 of its tests.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 425
+#
+# 2026-09-30: 425 -> 430 and 332 -> 337. Five tests pin a lost turn kept and
+# put again under its id, a list forgetting one that never arrived and keeping
+# one that did, a gglib that takes a turn as a chat run, and nothing read on
+# beside a Stop whose cancel is not answered yet; the claim names all five.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 430
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 332
+floor "README test markers" "${markers:-0}" 337
 
 exit $status

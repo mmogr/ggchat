@@ -18,6 +18,12 @@ final class FakeChatsHub: HubChatsProvider {
         var turnFailure: HubTurnFailure?
         /// How many turns start and then lose their answer on the way back.
         var turnsLost = 0
+        /// The kind of run a turn starts: a gglib that does not know turns
+        /// starts a chat run.
+        var turnKind = RunKind.agent
+        /// Holds every cancel until it is set false again, and counts them.
+        var holdsCancels = false
+        var cancelsAsked = 0
     }
 
     let state: Mutex<State>
@@ -95,15 +101,14 @@ final class FakeChatsHub: HubChatsProvider {
     }
 
     func startTurn(runID: String, turn: HubTurn) async throws(HubTurnFailure) -> RunStart {
-        let (failure, lost) = with { state in
+        let (failure, lost, kind) = with { state in
             state.turns.append((runID, turn))
             state.turnsLost -= 1
-            return (state.turnFailure, state.turnsLost >= 0)
+            return (state.turnFailure, state.turnsLost >= 0, state.turnKind)
         }
         if let failure { throw failure }
         if lost { throw .lost(.transport("the answer was lost")) }
-        return .started(
-            RunInfo(id: runID, kind: .agent, status: .queued, createdAtMs: 1_790_000_000_000, lastSeq: 0))
+        return .started(RunInfo(id: runID, kind: kind, status: .queued, createdAtMs: 1_790_000_000_000, lastSeq: 0))
     }
 
     func turnEvents(runID: String, after: UInt32) -> AsyncStream<RunEvent> {
@@ -111,6 +116,8 @@ final class FakeChatsHub: HubChatsProvider {
     }
 
     func cancelTurn(runID: String) async throws(ProviderError) -> RunInfo {
-        try await runs.cancelRun(id: runID)
+        with { $0.cancelsAsked += 1 }
+        while with({ $0.holdsCancels }) { await Task.yield() }
+        return try await runs.cancelRun(id: runID)
     }
 }

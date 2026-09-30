@@ -54,6 +54,8 @@ struct HubComposer: View {
     @Environment(AppModel.self) private var model
     @State private var draft = ""
     let notice: String?
+    /// The text of a send that went nowhere, put back into the field.
+    let unsent: String?
 
     private var canSend: Bool {
         !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !model.openHubChatIsWriting
@@ -91,6 +93,10 @@ struct HubComposer: View {
         .padding()
         .frame(maxWidth: 760)
         .frame(maxWidth: .infinity)
+        .onChange(of: unsent, initial: true) { _, text in
+            guard text != nil, let back = model.takeUnsentHubText(), draft.isEmpty else { return }
+            draft = back
+        }
     }
 
     private func sendIfPossible() {

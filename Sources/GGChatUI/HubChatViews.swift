@@ -91,7 +91,7 @@ struct HubChatView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            HubComposer(notice: chat.notice)
+            HubComposer(notice: chat.notice, unsent: chat.unsent)
         }
         .navigationTitle(chat.title.isEmpty ? "New conversation" : chat.title)
         #if os(iOS)

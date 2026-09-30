@@ -79,18 +79,26 @@ extension AppModel {
     }
 
     /// The replies to a Mac's chats that nobody is reading, as a list of
-    /// them is asked for.
+    /// them is asked for, those whose turn was lost on the way included.
     func unreadHubReplies(_ providerID: UUID) -> [HubLiveReply] {
-        hubReplies.filter { $0.providerID == providerID && $0.started && !$0.ended && $0.reading == nil }
+        hubReplies.filter { $0.providerID == providerID && !$0.ended && $0.reading == nil }
     }
 
     /// A list the Mac sent after these replies were walked away from: one
-    /// whose chat no longer names its run as live has ended, and is
-    /// forgotten, its rows read when its chat is open.
+    /// whose chat no longer names its run as live has ended, or its lost turn
+    /// never arrived, and is forgotten, its rows read when its chat is open.
+    /// A lost turn the list names as live did arrive, and is kept as started.
     func settleHubReplies(_ replies: [HubLiveReply], by list: HubChatList) {
         for reply in replies where reply.reading == nil && !reply.ended {
             let live = list.chats.first { $0.id == reply.chatID }?.liveRun
-            if live != reply.runID { endHubReply(reply) }
+            guard live == reply.runID else {
+                endHubReply(reply)
+                continue
+            }
+            if !reply.started {
+                reply.started = true
+                keepHubRuns(reply.providerID)
+            }
         }
     }
 }

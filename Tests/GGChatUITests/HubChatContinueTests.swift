@@ -108,6 +108,8 @@ final class HubChatContinueTests: XCTestCase {
             await model.sendToHubChat(question)?.value
             XCTAssertEqual(model.openedHubChat?.notice, line, "\(failure)")
             XCTAssertEqual(model.hubReplies.count, 0, "\(failure)")
+            XCTAssertEqual(model.takeUnsentHubText(), question, "the text was not given back: \(failure)")
+            XCTAssertNil(model.openedHubChat?.unsent)
         }
         XCTAssertEqual(hub.runs.with(\.reads).count, 0)
         XCTAssertEqual(hub.with(\.turns).count, cases.count)
@@ -123,6 +125,7 @@ final class HubChatContinueTests: XCTestCase {
         try await until("the first frame") { model.openHubReply?.tools.isEmpty == false }
         XCTAssertNil(model.sendToHubChat("And again?"))
         XCTAssertEqual(model.openedHubChat?.notice, "A reply is already being written on home.")
+        XCTAssertEqual(model.openedHubChat?.unsent, "And again?", "the text was not given back")
         XCTAssertEqual(hub.with(\.turns).count, 1)
         hub.runs.release()
     }
@@ -140,5 +143,23 @@ final class HubChatContinueTests: XCTestCase {
         try await until("the rows") { model.hubReplies.isEmpty }
         XCTAssertEqual(model.openedHubChat?.notice, "The reply stopped on home: the model stopped answering")
         XCTAssertEqual(hub.with(\.opens), [12, 12])
+    }
+
+    /// A gglib that does not know turns takes one as a chat run, which would
+    /// fail on its way to the model: the run is stopped, the Mac is said to
+    /// be one without turns, and the text is given back.
+    func testAMacThatStartsAChatRunForATurnIsOneWithoutTurns() async throws {
+        let store = InMemoryStore()
+        let hub = FakeChatsHub()
+        hub.with { $0.turnKind = .chat }
+        let (model, config) = try await Self.opened(hub, store: store)
+        await model.sendToHubChat(question)?.value
+        XCTAssertEqual(model.openedHubChat?.notice, "home cannot carry its chats on from this phone yet.")
+        XCTAssertEqual(model.openedHubChat?.unsent, question)
+        XCTAssertEqual(model.hubReplies.count, 0)
+        let runID = try XCTUnwrap(hub.with(\.turns).first?.runID)
+        try await until("the cancel") { hub.runs.with(\.cancels) == [runID] }
+        XCTAssertEqual(hub.runs.with(\.reads).count, 0)
+        XCTAssertEqual(try store.loadHubRuns(forProvider: config.id), [])
     }
 }
