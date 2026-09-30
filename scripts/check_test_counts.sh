@@ -146,7 +146,12 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 #
 # 2026-09-30: 372 -> 376. Four tests replay the hub's chat bodies gglib
 # records, a missing optional and an unknown key included.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 376
+#
+# 2026-09-30: 376 -> 383. Seven tests pin the hub chats client: where it asks
+# and with what key, and that device_not_named, a 404, another 4xx, a body it
+# cannot read, a page that is not JSON, a 5xx and no answer each mean what
+# they should.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 383
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
 floor "README test markers" "${markers:-0}" 279
 
