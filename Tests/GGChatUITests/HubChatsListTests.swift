@@ -96,9 +96,7 @@ final class HubChatsListTests: XCTestCase {
         let hub = FakeChatsHub()
         hub.with { $0.list = .failure(.notShared) }
         let (model, config) = try await AppModelRunTests.makeModel(behind: hub)
-        try await until("the refusal") {
-            model.hubLine(for: config.id, locale: Self.locale, calendar: Self.calendar) != nil
-        }
+        try await until("the refusal") { model.hubListOutcome[config.id] == .notShared }
         XCTAssertEqual(
             model.hubLine(for: config.id, locale: Self.locale, calendar: Self.calendar),
             "home does not share its chats with this phone.")

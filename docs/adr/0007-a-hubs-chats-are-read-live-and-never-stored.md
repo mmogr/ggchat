@@ -33,7 +33,8 @@ is ever written to the phone.
 
 The launch now dials every paired Mac, quietly, so the list is live when it
 is first seen; before, a pipe was dialled only when a conversation on it was
-opened.
+opened. Coming back to the foreground dials each of them again once, as
+`resumeEveryPipe` dials every pipe it had: one attempt, with no retry loop.
 
 ## What would undo it
 

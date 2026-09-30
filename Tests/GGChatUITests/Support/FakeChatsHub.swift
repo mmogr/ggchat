@@ -9,6 +9,10 @@ final class FakeChatsHub: HubChatsProvider {
         var chats: [Int64: HubChatOpen] = [:]
         var lists = 0
         var opens: [Int64] = []
+        /// Holds every open until it is set false again.
+        var holdsOpens = false
+        /// Answers every open with this, when set.
+        var openFailure: HubChatsFailure?
     }
 
     let state: Mutex<State>
@@ -59,10 +63,10 @@ final class FakeChatsHub: HubChatsProvider {
     }
 
     func openChat(id: Int64) async throws(HubChatsFailure) -> HubChatOpen {
-        let chat = with { state in
-            state.opens.append(id)
-            return state.chats[id]
-        }
+        with { $0.opens.append(id) }
+        while with({ $0.holdsOpens }) { await Task.yield() }
+        let (chat, failure) = with { ($0.chats[id], $0.openFailure) }
+        if let failure { throw failure }
         guard let chat else { throw .notFound }
         return chat
     }

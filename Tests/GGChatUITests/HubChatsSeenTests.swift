@@ -109,14 +109,18 @@ final class HubChatsSeenTests: XCTestCase {
 
         let reopened = SwiftDataStore.open(at: scratch.location, log: NoopLogSink())
         let registry = LoopbackProviderRegistry()
-        // No credentials: the launch's quiet dial goes nowhere, so the Mac
-        // stays out of reach.
+        // A blank token: the mock refuses the launch's quiet dial, so the Mac
+        // stays out of reach while this device is still paired with it.
+        let secrets = InMemorySecrets()
+        try secrets.setSecret("pipe-ticket", .ticket, for: providerID)
+        try secrets.setSecret(" ", .token, for: providerID)
         let model = AppModel(
-            store: SwiftDataStore(container: reopened.container), secrets: InMemorySecrets(), log: NoopLogSink(),
+            store: SwiftDataStore(container: reopened.container), secrets: secrets, log: NoopLogSink(),
             registry: registry, pipeConnector: MockPipeConnector(sleeper: ImmediateSleeper(), registry: registry),
             diagnostics: Diagnostics(defaults: UserDefaults(suiteName: "HubChatsSeenTests.\(UUID().uuidString)")!),
             now: { self.seenAt.addingTimeInterval(60) })
         model.load()
+        try await AppModelRunTests.until("the dial") { model.pipeStatus(for: providerID) == .closed }
         XCTAssertEqual(
             model.hubChats[providerID], [HubChatSummary(id: 9, title: "New Chat", updatedAt: "2026-09-29 18:02:41")])
         XCTAssertEqual(line(model, providerID), "last seen 22:13")

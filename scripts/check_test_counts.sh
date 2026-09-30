@@ -169,8 +169,14 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 #
 # 2026-09-30: 397 -> 398 and 304 -> 305. One test pins that a hub row whose
 # metadata cannot be read keeps its row and loses only the metadata.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 398
+#
+# 2026-09-30: 398 -> 404 and 305 -> 311. Six tests pin what a Mac's section
+# does when a list fails (it keeps what it saw and says when), that a pull
+# lists through a pipe already up, that an older gglib has no section, that a
+# lost ticket says to pair again, that the background stops a refresh, and
+# that a chat on screen keeps its rows while it is read again.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 404
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 305
+floor "README test markers" "${markers:-0}" 311
 
 exit $status

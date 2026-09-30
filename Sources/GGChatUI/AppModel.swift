@@ -66,13 +66,13 @@ public final class AppModel {
     var opening: [UUID: Task<Void, Never>] = [:]
     /// The send waiting for its pipe, if one is; see `AppModel+Waiting`.
     var pipeWait: PipeWait?
-    /// Each paired Mac's chats as this phone last saw them and when, the
-    /// Macs that do not share theirs, the lists being read, and the one chat
-    /// open with its read. Only the titles and the time are stored
+    /// Each paired Mac's chats as this phone last saw them and when, how its
+    /// last list went, the lists being read, and the one chat open with its
+    /// read. Only the titles and the time are stored
     /// (`AppModel+HubChats`).
     public internal(set) var hubChats: [UUID: [HubChatSummary]] = [:]
     var hubSeenAt: [UUID: Date] = [:]
-    var hubNotShared: Set<UUID> = []
+    var hubListOutcome: [UUID: HubListOutcome] = [:]
     var hubListing: Set<UUID> = []
     public internal(set) var openedHubChat: OpenHubChat?
     var hubReading: Task<Void, Never>?

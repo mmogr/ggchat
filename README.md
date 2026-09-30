@@ -474,10 +474,14 @@ Each claim names the test that keeps it true.
   no conversation and no message row comes from the Mac into the store
   (ADR 0007). A Mac that reads its chats only to a device through its tunnel
   says so, a server added by address has no section, and the launch's quiet
-  dial raises no alert. While the Mac cannot be reached its section shows the
-  titles its list last showed with "last seen 22:13", kept on the provider's
-  row through a relaunch and gone with it, and opening one says the Mac is
-  unreachable. The wire shapes replay the bodies gglib records, and a row
+  dial raises no alert. While the Mac cannot be reached, or its last list
+  failed, its section shows the titles its list last showed with "last seen
+  22:13", kept on the provider's row through a relaunch and gone with it, and
+  opening one says the Mac is unreachable; a failed list keeps them as they
+  were. A pull lists again, and the background stops it dialling. A gglib too
+  old to share its chats has no section until a list works, and a Mac this
+  device has lost its ticket for says to pair again. A chat on screen keeps
+  its rows while it is read again. The wire shapes replay the bodies gglib records, and a row
   whose metadata cannot be read still opens without it.
   <!-- test: HubChatsWireTests.testTheListReadsEveryChatNewestFirst -->
   <!-- test: HubChatsWireTests.testAnOpenedChatReadsItsConversationAndRows -->
@@ -505,6 +509,12 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatsSeenTests.testTheTitlesAreKeptAfterEveryListAndSurviveARelaunch -->
   <!-- test: HubChatsSeenTests.testRemovingTheProviderForgetsItsTitles -->
   <!-- test: HubChatsSeenTests.testAStoreOpensAcrossTheTitlesChangeInBothDirections -->
+  <!-- test: HubChatsOutcomeTests.testAFailedListKeepsWhatWasSeenAndSaysWhen -->
+  <!-- test: HubChatsOutcomeTests.testAPullListsAgainThroughAPipeThatIsUp -->
+  <!-- test: HubChatsOutcomeTests.testAnOlderGglibHasNoSectionUntilItLists -->
+  <!-- test: HubChatsOutcomeTests.testAMacWithNothingToDialWithSaysToPairAgain -->
+  <!-- test: HubChatsOutcomeTests.testTheBackgroundStopsARefreshFromDialling -->
+  <!-- test: HubChatsOutcomeTests.testAChatOnScreenKeepsItsRowsWhileItIsReadAgain -->
 - A conversation can carry a system prompt. It goes ahead of every request
   the conversation makes, Continue and Retry included, and an edit reaches the
   next one. It is never a row in the transcript and never stored as a

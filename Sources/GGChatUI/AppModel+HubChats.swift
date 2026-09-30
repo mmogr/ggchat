@@ -8,6 +8,19 @@ public enum SidebarSelection: Hashable, Sendable {
     case hub(providerID: UUID, chatID: Int64)
 }
 
+/// How a paired Mac's last list went, for as long as the app runs.
+enum HubListOutcome: Equatable {
+    /// It listed: its section shows its chats live while its pipe is up.
+    case listed
+    /// It reads its chats only to a device through its tunnel.
+    case notShared
+    /// Its gglib has no chats route (404): the section is hidden until a
+    /// list works.
+    case tooOld
+    /// It could not be read: the section shows what it last saw, and when.
+    case failed
+}
+
 /// A paired Mac's chat, open: its rows read live into memory, dropped when
 /// it is no longer selected, and never written to the store.
 public struct OpenHubChat: Equatable, Sendable {
@@ -17,6 +30,12 @@ public struct OpenHubChat: Equatable, Sendable {
         case read([Message])
         /// Why there are no rows: the Mac is unreachable, or said no.
         case unavailable(String)
+
+        /// Whether rows are on screen.
+        var showsRows: Bool {
+            if case .read = self { return true }
+            return false
+        }
     }
 
     public let providerID: UUID
@@ -54,16 +73,20 @@ extension AppModel {
         }
     }
 
-    /// The providers with a section of their own: the paired Macs.
+    /// The providers with a section of their own: the paired Macs, but for
+    /// one whose gglib is too old to have chats.
     public var hubProviders: [ProviderConfig] {
-        providers.filter(\.isPipe)
+        providers.filter { $0.isPipe && hubListOutcome[$0.id] != .tooOld }
     }
 
     /// Lists every paired Mac's chats: through a pipe that is up at once, and
     /// through one that is not once a quiet dial brings it up. At launch, and
-    /// on a pull of the list.
+    /// on a pull of the list. A Mac with no section is asked too, since its
+    /// gglib may have been updated. The way to the background stops it
+    /// between Macs, as it stops `resumeEveryPipe`.
     public func refreshHubChats() async {
-        for config in hubProviders {
+        for config in providers where config.isPipe {
+            guard !Task.isCancelled, !isAway else { return }
             if pipeSessions[config.id] == nil {
                 await connectPipe(for: config, quietly: true)
             }
@@ -92,11 +115,16 @@ extension AppModel {
             let list = try await hub.listChats()
             guard providers.contains(where: { $0.id == providerID }) else { return }
             hubChats[providerID] = list.chats
-            hubNotShared.remove(providerID)
+            hubListOutcome[providerID] = .listed
             keepSeen(list.chats, from: config)
-        } catch .notShared {
-            hubNotShared.insert(providerID)
         } catch {
+            // What was seen stays, in memory and in the store.
+            guard providers.contains(where: { $0.id == providerID }) else { return }
+            switch error {
+            case .notShared: hubListOutcome[providerID] = .notShared
+            case .notFound: hubListOutcome[providerID] = .tooOld
+            case .refused, .dropped: hubListOutcome[providerID] = .failed
+            }
             log.log(.info, "\(config.name) did not list its chats: \(Self.kind(of: error))")
         }
     }
@@ -122,8 +150,9 @@ extension AppModel {
         readHubChat()
     }
 
-    /// Reads the open chat's rows, or says its Mac is unreachable. A dial
-    /// in flight is waited for: its pipe coming up reads again.
+    /// Reads the open chat's rows, or says why it cannot. A dial in flight is
+    /// waited for: its pipe coming up reads again. Rows already on screen
+    /// stay there until the new ones land.
     func readHubChat() {
         guard let open = openedHubChat, let config = providers.first(where: { $0.id == open.providerID }) else {
             return
@@ -131,11 +160,12 @@ extension AppModel {
         hubReading?.cancel()
         hubReading = nil
         guard let hub = reachableHubChats(for: config) else {
-            let unreachable = OpenHubChat.State.unavailable("\(config.name) is unreachable.")
-            openedHubChat?.state = connecting.contains(config.id) ? .reading : unreachable
+            if open.state.showsRows { return }
+            let why = hubIsUnpaired(config.id) ? unpairedLine(config) : "\(config.name) is unreachable."
+            openedHubChat?.state = connecting.contains(config.id) ? .reading : .unavailable(why)
             return
         }
-        openedHubChat?.state = .reading
+        if !open.state.showsRows { openedHubChat?.state = .reading }
         hubReading = Task { [weak self] in
             let answer: Result<HubChatOpen, HubChatsFailure>
             do throws(HubChatsFailure) {
@@ -162,6 +192,8 @@ extension AppModel {
             openedHubChat?.state = .unavailable("\(config.name) no longer has this chat.")
         case .failure(let failure):
             log.log(.info, "\(config.name) did not send a chat: \(Self.kind(of: failure))")
+            // A read again under rows already shown keeps them.
+            if openedHubChat?.state.showsRows == true { return }
             openedHubChat?.state = .unavailable("\(config.name) did not send this chat. Try again in a moment.")
         }
     }
@@ -187,7 +219,7 @@ extension AppModel {
     func forgetHubChats(_ providerID: UUID) {
         hubChats[providerID] = nil
         hubSeenAt[providerID] = nil
-        hubNotShared.remove(providerID)
+        hubListOutcome[providerID] = nil
         if openedHubChat?.providerID == providerID { dropHubChat() }
     }
 
