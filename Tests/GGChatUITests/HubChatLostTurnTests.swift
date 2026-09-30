@@ -51,15 +51,41 @@ final class HubChatLostTurnTests: XCTestCase {
         XCTAssertEqual(reply.content, "Pin the version.")
     }
 
-    /// A list that does not name a lost turn's run says it never arrived, or
-    /// has ended: the reply is forgotten and the chat stops saying Writing.
-    func testALostTurnTheListDoesNotNameIsForgotten() async throws {
+    /// A list that does not name a lost turn's run says nothing: the Mac
+    /// names a run only once it has reserved it, which may wait for a model
+    /// to load. The reply is kept, still Writing, and nothing is read.
+    func testALostTurnTheListDoesNotNameIsKept() async throws {
         let hub = FakeChatsHub([quiet])
         let (model, config) = try await lost(hub, store: InMemoryStore(), sleeper: ReadOnSleeper(immediate: false))
-        XCTAssertEqual(model.mark(for: quiet, on: config.id), .writing)
+        let reply = try XCTUnwrap(model.openHubReply)
         await model.listHubChats(config.id)
-        XCTAssertNil(model.mark(for: quiet, on: config.id))
-        try await until("the rows in its place") { model.hubReplies.isEmpty }
+        XCTAssertTrue(model.hubReplies.contains { $0 === reply }, "a list forgot a turn that may be on its way")
+        XCTAssertFalse(reply.ended)
+        XCTAssertFalse(reply.started)
+        XCTAssertEqual(model.mark(for: quiet, on: config.id), .writing)
+        XCTAssertEqual(hub.with(\.opens), [12])
+        XCTAssertEqual(hub.runs.with(\.reads).count, 0)
+    }
+
+    /// A lost turn put again is answered with its run, already ended: the
+    /// reply is read to its end and the Mac's rows are read in its place.
+    func testALostTurnPutAgainAfterItsRunEndedIsReadThenItsRows() async throws {
+        let store = InMemoryStore()
+        let hub = FakeChatsHub()
+        let (model, config) = try await lost(hub, store: store, sleeper: ReadOnSleeper(immediate: false))
+        let reply = try XCTUnwrap(model.openHubReply)
+        hub.with { state in
+            state.turnStatus = .completed
+            state.chats[12] = FakeChatsHub.saved(question, "Pin the version.")
+        }
+        await model.scene(.foreground).value
+        try await until("the rows") { model.hubReplies.isEmpty }
+        XCTAssertEqual(hub.with { $0.turns.map(\.runID) }, [reply.runID, reply.runID])
+        XCTAssertEqual(hub.runs.with { $0.reads.map(\.after) }, [0])
+        XCTAssertEqual(reply.content, "Pin the version.")
+        XCTAssertEqual(HubChatContinueTests.shown(model).suffix(2), [question, "Pin the version."])
+        XCTAssertNil(model.openedHubChat?.notice)
+        XCTAssertEqual(try store.loadHubRuns(forProvider: config.id), [])
     }
 
     /// A list that names a lost turn's run as live says it arrived: it is

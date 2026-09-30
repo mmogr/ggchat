@@ -205,8 +205,13 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # put again under its id, a list forgetting one that never arrived and keeping
 # one that did, a gglib that takes a turn as a chat run, and nothing read on
 # beside a Stop whose cancel is not answered yet; the claim names all five.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 430
+#
+# 2026-09-30: 430 -> 433 and 337 -> 340. A list no longer ends a lost turn it
+# does not name, since the Mac names a run only once reserved; three tests pin
+# a lost turn put again after its run ended, the text given back by a send to
+# a Mac out of reach, and an accepted send clearing it.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 433
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 337
+floor "README test markers" "${markers:-0}" 340
 
 exit $status

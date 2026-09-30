@@ -84,20 +84,21 @@ extension AppModel {
         hubReplies.filter { $0.providerID == providerID && !$0.ended && $0.reading == nil }
     }
 
-    /// A list the Mac sent after these replies were walked away from: one
-    /// whose chat no longer names its run as live has ended, or its lost turn
-    /// never arrived, and is forgotten, its rows read when its chat is open.
-    /// A lost turn the list names as live did arrive, and is kept as started.
+    /// A list the Mac sent after these replies were walked away from: a
+    /// started one whose chat no longer names its run as live has ended, and
+    /// is forgotten, its rows read when its chat is open. A lost turn the list
+    /// names as live did arrive, and is kept as started. One it does not name
+    /// is kept as it is: the Mac names a run only once it has reserved it,
+    /// which may wait for a model to load, so only the next `PUT` under its
+    /// id can say.
     func settleHubReplies(_ replies: [HubLiveReply], by list: HubChatList) {
         for reply in replies where reply.reading == nil && !reply.ended {
             let live = list.chats.first { $0.id == reply.chatID }?.liveRun
-            guard live == reply.runID else {
-                endHubReply(reply)
-                continue
-            }
-            if !reply.started {
+            if live == reply.runID, !reply.started {
                 reply.started = true
                 keepHubRuns(reply.providerID)
+            } else if live != reply.runID, reply.started {
+                endHubReply(reply)
             }
         }
     }

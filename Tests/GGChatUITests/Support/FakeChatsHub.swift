@@ -21,6 +21,8 @@ final class FakeChatsHub: HubChatsProvider {
         /// The kind of run a turn starts: a gglib that does not know turns
         /// starts a chat run.
         var turnKind = RunKind.agent
+        /// How the run a turn starts stands when the answer comes back.
+        var turnStatus = RunStatus.queued
         /// Holds every cancel until it is set false again, and counts them.
         var holdsCancels = false
         var cancelsAsked = 0
@@ -101,14 +103,16 @@ final class FakeChatsHub: HubChatsProvider {
     }
 
     func startTurn(runID: String, turn: HubTurn) async throws(HubTurnFailure) -> RunStart {
-        let (failure, lost, kind) = with { state in
+        let (failure, lost, info) = with { state in
             state.turns.append((runID, turn))
             state.turnsLost -= 1
-            return (state.turnFailure, state.turnsLost >= 0, state.turnKind)
+            let info = RunInfo(
+                id: runID, kind: state.turnKind, status: state.turnStatus, createdAtMs: 1_790_000_000_000, lastSeq: 0)
+            return (state.turnFailure, state.turnsLost >= 0, info)
         }
         if let failure { throw failure }
         if lost { throw .lost(.transport("the answer was lost")) }
-        return .started(RunInfo(id: runID, kind: kind, status: .queued, createdAtMs: 1_790_000_000_000, lastSeq: 0))
+        return .started(info)
     }
 
     func turnEvents(runID: String, after: UInt32) -> AsyncStream<RunEvent> {

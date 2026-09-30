@@ -162,4 +162,29 @@ final class HubChatContinueTests: XCTestCase {
         XCTAssertEqual(hub.runs.with(\.reads).count, 0)
         XCTAssertEqual(try store.loadHubRuns(forProvider: config.id), [])
     }
+
+    /// A send to a Mac out of reach goes nowhere: the view says so, and the
+    /// text comes back.
+    func testASendToAMacOutOfReachGivesTheTextBack() async throws {
+        let hub = FakeChatsHub()
+        let (model, config) = try await Self.opened(hub)
+        await model.disconnectPipe(for: config.id, leaving: .closed)
+        XCTAssertNil(model.sendToHubChat(question))
+        XCTAssertEqual(model.openedHubChat?.notice, "home is unreachable.")
+        XCTAssertEqual(model.openedHubChat?.unsent, question)
+        XCTAssertEqual(hub.with(\.turns).count, 0)
+    }
+
+    /// Text a refusal gave back is not given back again once a send goes.
+    func testAnAcceptedSendClearsTheTextGivenBack() async throws {
+        let hub = FakeChatsHub()
+        let (model, _) = try await Self.opened(hub)
+        hub.with { $0.turnFailure = .noModel }
+        await model.sendToHubChat(question)?.value
+        XCTAssertEqual(model.openedHubChat?.unsent, question)
+        hub.with { $0.turnFailure = nil }
+        model.sendToHubChat(question)
+        XCTAssertNil(model.openedHubChat?.unsent)
+        XCTAssertNil(model.openedHubChat?.notice)
+    }
 }

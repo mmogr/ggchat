@@ -524,8 +524,11 @@ Each claim names the test that keeps it true.
   the Mac answers. A chat with no model says to pick one on the Mac, a chat the
   Mac is already writing to says so, here too while this phone holds that
   reply, and a gglib that takes the turn as a chat run is one without turns;
-  a refused send puts its text back. A turn whose answer was lost is kept and
-  put again under its id, and a list says whether it arrived. Leaving the chat and the background walk away
+  a refused send, or one to a Mac out of reach, puts its text back. A turn
+  whose answer was lost is kept, still Writing, and put again under its id,
+  whose answer settles it; a list that names its run marks it started, and one
+  that does not changes nothing, since the Mac names a run only once it has
+  reserved it. Leaving the chat and the background walk away
   and cancel nothing; opening it again, coming back and the pipe coming up
   read on from the last event, none applied twice, paced as this phone's own
   replies are. Only the run's id and its chat are kept, on the provider's row:
@@ -546,7 +549,10 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatContinueTests.testAFailedRunSaysSoAndTheRowsAreReadAgain -->
   <!-- test: HubChatContinueTests.testAMacThatStartsAChatRunForATurnIsOneWithoutTurns -->
   <!-- test: HubChatLostTurnTests.testALostTurnIsKeptAndPutAgainUnderItsIDThenReadFromItsStart -->
-  <!-- test: HubChatLostTurnTests.testALostTurnTheListDoesNotNameIsForgotten -->
+  <!-- test: HubChatLostTurnTests.testALostTurnTheListDoesNotNameIsKept -->
+  <!-- test: HubChatLostTurnTests.testALostTurnPutAgainAfterItsRunEndedIsReadThenItsRows -->
+  <!-- test: HubChatContinueTests.testASendToAMacOutOfReachGivesTheTextBack -->
+  <!-- test: HubChatContinueTests.testAnAcceptedSendClearsTheTextGivenBack -->
   <!-- test: HubChatLostTurnTests.testALostTurnTheListNamesIsKeptAsStarted -->
   <!-- test: HubChatLostTurnTests.testNothingReadsOnBesideAStopWhoseCancelIsNotAnsweredYet -->
   <!-- test: HubChatReadOnTests.testLeavingTheChatWalksAwayAndOpeningItAgainReadsOnFromTheCursor -->
