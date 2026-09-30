@@ -194,7 +194,10 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # paced; a run the Mac no longer has, or a removed provider, is forgotten; a
 # launch reads a kept run from its start, and a list that no longer names it
 # forgets it; and a store opens across the new column both ways.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 424
+#
+# 2026-09-30: 424 -> 425. One test pins that a Mac's chat says Writing while
+# this phone holds a reply the Mac is writing to it, out of reach included.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 425
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
 floor "README test markers" "${markers:-0}" 311
 

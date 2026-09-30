@@ -121,4 +121,25 @@ final class HubChatReadOnTests: XCTestCase {
         for _ in 0..<50 { await Task.yield() }
         XCTAssertEqual(hub.runs.with(\.cancels), [])
     }
+
+    /// A Mac's chat says Writing while this phone holds a reply the Mac is
+    /// writing to it, though the Mac's list does not say so and the Mac is
+    /// out of reach, and nothing once it has ended. Never New.
+    func testAMacChatSaysWritingWhileThePhoneHoldsItsReply() async throws {
+        let quiet = HubChatSummary(id: 12, title: "Why the build broke", updatedAt: "2026-09-30 09:13:07")
+        let hub = FakeChatsHub([quiet])
+        let run = try await writing(hub)
+        let (model, config) = (run.model, run.config)
+        XCTAssertEqual(model.mark(for: quiet, on: config.id), .writing)
+        model.selection = nil
+        try await until("the walk away") { run.reply.reading == nil }
+        await model.disconnectPipe(for: config.id, leaving: .closed)
+        XCTAssertEqual(model.mark(for: quiet, on: config.id), .writing, "a reply held here lost its mark")
+
+        hub.runs.with { $0.holdAt = nil }
+        await model.connectPipe(for: config)
+        model.selection = .hub(providerID: config.id, chatID: 12)
+        try await until("the end") { model.hubReplies.isEmpty }
+        XCTAssertNil(model.mark(for: quiet, on: config.id))
+    }
 }
