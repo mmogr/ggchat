@@ -151,7 +151,12 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # and with what key, and that device_not_named, a 404, another 4xx, a body it
 # cannot read, a page that is not JSON, a 5xx and no answer each mean what
 # they should.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 383
+#
+# 2026-09-30: 383 -> 390. Seven tests pin a paired Mac's chats in the list:
+# listed when its pipe comes up and on a pull, only for a pipe, opened read
+# only with nothing written to the store, dropped by Back, a Mac that does
+# not share its chats saying so, and the launch's quiet dial raising no alert.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 390
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
 floor "README test markers" "${markers:-0}" 279
 

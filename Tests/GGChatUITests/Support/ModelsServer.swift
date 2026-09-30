@@ -62,6 +62,8 @@ final class ModelsServer: URLProtocol, @unchecked Sendable {
 
     override func startLoading() {
         guard let url = request.url, let host = url.host() else { return }
+        // A gglib from before the hub's chats, which lists none.
+        if url.path().hasSuffix("/chats") { return respond(404, body: "") }
         if url.path().hasSuffix("/proxy/status") {
             Self.statusAsked.withLock { $0[host, default: 0] += 1 }
             respond(200, body: "{}")

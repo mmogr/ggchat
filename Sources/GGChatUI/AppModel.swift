@@ -66,6 +66,14 @@ public final class AppModel {
     var opening: [UUID: Task<Void, Never>] = [:]
     /// The send waiting for its pipe, if one is; see `AppModel+Waiting`.
     var pipeWait: PipeWait?
+    /// Each paired Mac's chats as this phone last saw them, the Macs that do
+    /// not share theirs, the lists being read, and the one chat open with
+    /// its read; in memory only (`AppModel+HubChats`).
+    public internal(set) var hubChats: [UUID: [HubChatSummary]] = [:]
+    var hubNotShared: Set<UUID> = []
+    var hubListing: Set<UUID> = []
+    public internal(set) var openedHubChat: OpenHubChat?
+    var hubReading: Task<Void, Never>?
     /// Changes once each time a pipe first reaches a connected state; the
     /// one haptic in the app fires on it.
     public internal(set) var connectedPulse = 0
@@ -150,6 +158,7 @@ public final class AppModel {
         }
         startWatchingTheNetwork()
         resumeRuns()
+        Task { await refreshHubChats() }
     }
 
     // MARK: - Conversations
@@ -161,7 +170,7 @@ public final class AppModel {
         let conversation = Conversation(
             providerID: provider?.id, model: provider?.defaultModel, createdAt: stamp, updatedAt: stamp)
         conversations.insert(conversation, at: 0)
-        selectedConversationID = conversation.id
+        selection = .local(conversation.id)
         persist(conversation)
         return conversation
     }

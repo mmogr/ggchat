@@ -47,6 +47,8 @@ private final class StatusServer: URLProtocol, @unchecked Sendable {
 
     override func startLoading() {
         guard let url = request.url, let host = url.host() else { return }
+        // A gglib from before the hub's chats, which lists none.
+        if url.path().hasSuffix("/chats") { return answer(404) }
         Self.asked.withLock { $0[host, default: 0] += 1 }
         let status = Self.answers.withLock { answers -> Int? in
             guard var queue = answers[host], !queue.isEmpty else { return nil }

@@ -57,7 +57,11 @@ extension AppModel {
             let token = try? secrets.secret(.token, for: config.id)
         else {
             let sentence = "The ticket or token for \(config.name) is missing from the Keychain."
-            if !handToWaitingSend(sentence, for: config.id) { lastError = sentence }
+            if handToWaitingSend(sentence, for: config.id) || quietly {
+                log.log(.info, "\(config.name) was not dialled: this device has nothing to dial it with")
+            } else {
+                lastError = sentence
+            }
             return
         }
         let generation = nextDialGeneration(for: config.id)

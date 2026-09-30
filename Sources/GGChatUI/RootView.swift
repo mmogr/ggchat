@@ -38,6 +38,8 @@ public struct RootView: View {
             } detail: {
                 if let conversation = model.selectedConversation {
                     ChatView(conversation: conversation)
+                } else if let chat = model.openedHubChat {
+                    HubChatView(chat: chat)
                 } else {
                     EmptyDetailView(addingProvider: $addingProvider)
                 }
@@ -86,19 +88,33 @@ struct ConversationSidebar: View {
 
     var body: some View {
         @Bindable var model = model
-        List(selection: $model.selectedConversationID) {
-            ForEach(model.conversations) { conversation in
-                ConversationRow(conversation: conversation)
-                    .tag(conversation.id)
-            }
-            .onDelete { offsets in
-                for index in offsets {
-                    model.deleteConversation(model.conversations[index].id)
+        List(selection: $model.selection) {
+            Section {
+                ForEach(model.conversations) { conversation in
+                    ConversationRow(conversation: conversation)
+                        .tag(SidebarSelection.local(conversation.id))
                 }
+                .onDelete { offsets in
+                    for index in offsets {
+                        model.deleteConversation(model.conversations[index].id)
+                    }
+                }
+                if model.conversations.isEmpty, !model.hubProviders.isEmpty {
+                    Text("No conversations on this phone yet.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                // Named only when a paired Mac's section follows it.
+                if !model.hubProviders.isEmpty { Text("On this phone") }
+            }
+            ForEach(model.hubProviders) { config in
+                HubChatsSection(config: config)
             }
         }
+        .refreshable { await model.refreshHubChats() }
         .overlay {
-            if model.conversations.isEmpty {
+            if model.conversations.isEmpty, model.hubProviders.isEmpty {
                 // The way in on a phone, where the detail pane and its call
                 // to action are a screen away.
                 VStack(spacing: 12) {
