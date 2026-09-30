@@ -166,8 +166,11 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # 2026-09-30: 396 -> 397 and 279 -> 304. One test pins that a launch lists
 # each paired Mac's chats; the claim for a paired Mac's chats names all
 # twenty-five of their tests.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 397
+#
+# 2026-09-30: 397 -> 398 and 304 -> 305. One test pins that a hub row whose
+# metadata cannot be read keeps its row and loses only the metadata.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 398
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 304
+floor "README test markers" "${markers:-0}" 305
 
 exit $status

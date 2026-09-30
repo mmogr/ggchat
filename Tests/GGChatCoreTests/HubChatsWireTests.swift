@@ -59,6 +59,24 @@ final class HubChatsWireTests: XCTestCase {
         XCTAssertEqual(open.messages, [HubMessage(id: 2, conversationID: 1, role: "tool", content: "", createdAt: "c")])
     }
 
+    /// Metadata that is not an object, or whose device or model is not a
+    /// string, costs its row the metadata and nothing else.
+    func testMetadataThatCannotBeReadIsDroppedAndTheRowKept() throws {
+        let json = """
+            {"conversation": {"id": 1, "title": "t", "created_at": "a", "updated_at": "b"},
+             "messages": [
+               {"id": 2, "conversation_id": 1, "role": "user", "content": "q", "created_at": "c", "metadata": 3},
+               {"id": 3, "conversation_id": 1, "role": "assistant", "content": "r", "created_at": "d",
+                "metadata": {"device": 7}},
+               {"id": 4, "conversation_id": 1, "role": "assistant", "content": "s", "created_at": "e",
+                "metadata": {"modelName": ["m"], "device": "phone-7c2e"}}
+             ]}
+            """
+        let open = try JSONDecoder().decode(HubChatOpen.self, from: Data(json.utf8))
+        XCTAssertEqual(open.messages.map(\.content), ["q", "r", "s"])
+        XCTAssertEqual(open.messages.map(\.metadata), [nil, nil, nil])
+    }
+
     /// A key this build does not know, at any level, is passed over.
     func testUnknownKeysArePassedOver() throws {
         let json = """

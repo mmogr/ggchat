@@ -477,11 +477,13 @@ Each claim names the test that keeps it true.
   dial raises no alert. While the Mac cannot be reached its section shows the
   titles its list last showed with "last seen 22:13", kept on the provider's
   row through a relaunch and gone with it, and opening one says the Mac is
-  unreachable. The wire shapes replay the bodies gglib records.
+  unreachable. The wire shapes replay the bodies gglib records, and a row
+  whose metadata cannot be read still opens without it.
   <!-- test: HubChatsWireTests.testTheListReadsEveryChatNewestFirst -->
   <!-- test: HubChatsWireTests.testAnOpenedChatReadsItsConversationAndRows -->
   <!-- test: HubChatsWireTests.testNullAndMissingOptionalsDecodeAsNil -->
   <!-- test: HubChatsWireTests.testUnknownKeysArePassedOver -->
+  <!-- test: HubChatsWireTests.testMetadataThatCannotBeReadIsDroppedAndTheRowKept -->
   <!-- test: HubChatsProviderTests.testTheListIsReadFromChatsWithTheKey -->
   <!-- test: HubChatsProviderTests.testAChatIsOpenedByItsIDWithTheKey -->
   <!-- test: HubChatsProviderTests.testDeviceNotNamedIsAHubThatDoesNotShareItsChats -->

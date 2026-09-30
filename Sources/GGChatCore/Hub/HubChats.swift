@@ -130,6 +130,18 @@ public struct HubMessage: Codable, Sendable, Equatable, Identifiable {
         case createdAt = "created_at"
         case metadata
     }
+
+    /// Metadata is whatever the hub saved beside the row, so metadata this
+    /// build cannot read costs the row its metadata, not the whole chat.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int64.self, forKey: .id)
+        conversationID = try container.decode(Int64.self, forKey: .conversationID)
+        role = try container.decode(String.self, forKey: .role)
+        content = try container.decode(String.self, forKey: .content)
+        createdAt = try container.decode(String.self, forKey: .createdAt)
+        metadata = try? container.decodeIfPresent(HubMessageMetadata.self, forKey: .metadata)
+    }
 }
 
 /// One chat opened: the conversation and its rows, oldest first.
