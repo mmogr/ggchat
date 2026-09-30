@@ -143,7 +143,10 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 #
 # 2026-09-29: 371 -> 372 and 278 -> 279. One test pins that a chat opened
 # after going Back is read whatever iOS 27 tells the view after its appear.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 372
+#
+# 2026-09-30: 372 -> 376. Four tests replay the hub's chat bodies gglib
+# records, a missing optional and an unknown key included.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 376
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
 floor "README test markers" "${markers:-0}" 279
 
