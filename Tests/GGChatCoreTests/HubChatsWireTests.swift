@@ -4,12 +4,13 @@ import XCTest
 
 /// Replays the chat bodies gglib records (`contracts/chats/recorded.json`
 /// there, copied here as `gglib-chats-recorded.json` from gglib 8ca14391)
-/// against the Swift hub chat types. The file's `turn` is for continuing a
-/// chat, which this build does not do yet.
+/// against the Swift hub chat types, and its `turn` against the body this
+/// build sends to carry a chat on.
 final class HubChatsWireTests: XCTestCase {
     private struct Recorded: Decodable {
         let list: HubChatList
         let open: HubChatOpen
+        let turn: HubTurn
     }
 
     private func recorded() throws -> Recorded {
@@ -44,6 +45,18 @@ final class HubChatsWireTests: XCTestCase {
                     createdAt: "2026-09-30 09:13:07",
                     metadata: HubMessageMetadata(device: "phone-7c2e", modelName: "qwen3-8b")),
             ])
+    }
+
+    /// The turn reads as recorded, and is sent as exactly the recorded body:
+    /// the hub refuses a turn with any key but these two.
+    func testATurnIsTheRecordedBodyWithOnlyItsTwoKeys() throws {
+        let turn = HubTurn(conversationID: 12, content: "And how do I fix it?")
+        XCTAssertEqual(try recorded().turn, turn)
+        let sent = try JSONSerialization.jsonObject(with: try JSONEncoder().encode(turn)) as? [String: Any]
+        let object = try JSONSerialization.jsonObject(with: try Fixtures.data("gglib-chats-recorded.json"))
+        let want = try XCTUnwrap((object as? [String: Any])?["turn"] as? [String: Any])
+        XCTAssertEqual(sent?.keys.sorted(), ["content", "conversation_id"])
+        XCTAssertEqual(sent.map { $0 as NSDictionary }, want as NSDictionary)
     }
 
     /// gglib writes a conversation's model and prompt as `null` when it has

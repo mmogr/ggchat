@@ -175,7 +175,13 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # lists through a pipe already up, that an older gglib has no section, that a
 # lost ticket says to pair again, that the background stops a refresh, and
 # that a chat on screen keeps its rows while it is read again.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 404
+#
+# 2026-09-30: 404 -> 411. Seven tests pin a turn on a Mac's chat: its body is
+# the recorded one with only its two keys, put as an agent run with the key;
+# no_model, conflict and conversation_not_found each have their own refusal,
+# and every other answer means what it should; the run's events are read as
+# text, reasoning and tool lines; and Stop is the run's cancel.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 411
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
 floor "README test markers" "${markers:-0}" 311
 

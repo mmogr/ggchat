@@ -61,9 +61,11 @@ final class RunHub: URLProtocol, @unchecked Sendable {
     }
 
     /// A run's last report, as gglib writes it.
-    static func report(_ id: String, _ status: String, lastSeq: Int, error: String? = nil) -> String {
+    static func report(
+        _ id: String, _ status: String, lastSeq: Int, error: String? = nil, kind: String = "chat"
+    ) -> String {
         let failure = error.map { #","error":{"code":"\#($0)","message":"it broke"}"# } ?? ""
-        return #"{"id":"\#(id)","kind":"chat","status":"\#(status)","created_at_ms":1790000000000,"#
+        return #"{"id":"\#(id)","kind":"\#(kind)","status":"\#(status)","created_at_ms":1790000000000,"#
             + #""last_seq":\#(lastSeq)\#(failure)}"#
     }
 

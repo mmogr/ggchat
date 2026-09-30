@@ -224,7 +224,7 @@ final class RunProviderTests: XCTestCase {
 
 extension URLRequest {
     /// A body that reaches a protocol as a stream, read whole.
-    fileprivate var bodyStreamData: Data? {
+    var bodyStreamData: Data? {
         guard let stream = httpBodyStream else { return nil }
         stream.open()
         defer { stream.close() }

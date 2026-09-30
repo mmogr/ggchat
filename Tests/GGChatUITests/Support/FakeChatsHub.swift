@@ -13,13 +13,26 @@ final class FakeChatsHub: HubChatsProvider {
         var holdsOpens = false
         /// Answers every open with this, when set.
         var openFailure: HubChatsFailure?
+        /// Every turn started, and what the next ones are answered with.
+        var turns: [(runID: String, turn: HubTurn)] = []
+        var turnFailure: HubTurnFailure?
+        /// How many turns start and then lose their answer on the way back.
+        var turnsLost = 0
     }
 
     let state: Mutex<State>
+    /// The runs the turns start, with every read and cancel they get: one
+    /// reply, recorded as frames numbered from 1.
+    let runs: FakeRunHub
 
-    init(_ chats: [HubChatSummary] = FakeChatsHub.summaries) {
+    init(_ chats: [HubChatSummary] = FakeChatsHub.summaries, reply: [[ChatEvent]] = FakeChatsHub.reply) {
         state = Mutex(State(list: .success(HubChatList(chats: chats)), chats: [12: Self.opened]))
+        runs = FakeRunHub(frames: reply)
     }
+
+    /// The reply every turn's run writes: a tool call, reasoning, then text.
+    static let reply: [[ChatEvent]] =
+        [[.tool("Read File: Cargo.lock")]] + FakeRunHub.frames(ofText: "Pin the version.", reasoning: "It moved.")
 
     /// The two chats gglib's recorded list holds.
     static let summaries = [
@@ -69,5 +82,25 @@ final class FakeChatsHub: HubChatsProvider {
         if let failure { throw failure }
         guard let chat else { throw .notFound }
         return chat
+    }
+
+    func startTurn(runID: String, turn: HubTurn) async throws(HubTurnFailure) -> RunStart {
+        let (failure, lost) = with { state in
+            state.turns.append((runID, turn))
+            state.turnsLost -= 1
+            return (state.turnFailure, state.turnsLost >= 0)
+        }
+        if let failure { throw failure }
+        if lost { throw .lost(.transport("the answer was lost")) }
+        return .started(
+            RunInfo(id: runID, kind: .agent, status: .queued, createdAtMs: 1_790_000_000_000, lastSeq: 0))
+    }
+
+    func turnEvents(runID: String, after: UInt32) -> AsyncStream<RunEvent> {
+        runs.runEvents(id: runID, after: after)
+    }
+
+    func cancelTurn(runID: String) async throws(ProviderError) -> RunInfo {
+        try await runs.cancelRun(id: runID)
     }
 }
