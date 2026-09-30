@@ -181,7 +181,13 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # no_model, conflict and conversation_not_found each have their own refusal,
 # and every other answer means what it should; the run's events are read as
 # text, reasoning and tool lines; and Stop is the run's cancel.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 411
+#
+# 2026-09-30: 411 -> 416. Five tests pin carrying a Mac's chat on: a send puts
+# only the new text and the reply is read from the run, then replaced by the
+# Mac's rows with nothing written to the store; Stop cancels and reads the rows
+# once the run ends; each refusal is said in its own words; a second send while
+# the Mac writes is refused here; and a failed run says so.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 416
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
 floor "README test markers" "${markers:-0}" 311
 

@@ -42,6 +42,8 @@ public struct OpenHubChat: Equatable, Sendable {
     public let chatID: Int64
     public let title: String
     public internal(set) var state: State
+    /// Why the last send went nowhere, or how the last reply ended badly.
+    public internal(set) var notice: String?
 }
 
 // "On home" in the list: each paired Mac's chats, read live through its pipe.
@@ -186,6 +188,7 @@ extension AppModel {
         switch answer {
         case .success(let chat):
             openedHubChat?.state = .read(Self.rows(of: chat, at: now()))
+            dropEndedHubReplies(open.chatID, on: open.providerID)
         case .failure(.notShared):
             openedHubChat?.state = .unavailable("\(config.name) does not share its chats with this phone.")
         case .failure(.notFound):
@@ -210,6 +213,7 @@ extension AppModel {
 
     /// Drops the open chat and the read under way, keeping nothing.
     func dropHubChat() {
+        if let open = openedHubChat { detachHubReply(open.chatID, on: open.providerID) }
         hubReading?.cancel()
         hubReading = nil
         openedHubChat = nil
@@ -221,6 +225,7 @@ extension AppModel {
         hubSeenAt[providerID] = nil
         hubListOutcome[providerID] = nil
         if openedHubChat?.providerID == providerID { dropHubChat() }
+        forgetHubReplies(providerID)
     }
 
     /// The provider as a hub whose chats can be read now: a paired Mac whose

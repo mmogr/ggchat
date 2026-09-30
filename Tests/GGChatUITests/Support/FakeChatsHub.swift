@@ -56,6 +56,16 @@ final class FakeChatsHub: HubChatsProvider {
             HubMessage(id: 43, conversationID: 12, role: "assistant", content: "A dependency moved.", createdAt: "e"),
         ])
 
+    /// Chat 12 as the Mac saves it once a turn's reply is written.
+    static func saved(_ question: String, _ answer: String) -> HubChatOpen {
+        HubChatOpen(
+            conversation: opened.conversation,
+            messages: opened.messages + [
+                HubMessage(id: 44, conversationID: 12, role: "user", content: question, createdAt: "f"),
+                HubMessage(id: 45, conversationID: 12, role: "assistant", content: answer, createdAt: "g"),
+            ])
+    }
+
     func with<T>(_ body: (inout State) -> T) -> T {
         state.withLock { body(&$0) }
     }

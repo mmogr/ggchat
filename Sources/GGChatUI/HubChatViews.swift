@@ -52,9 +52,10 @@ struct HubChatRow: View {
     }
 }
 
-/// A Mac's chat, read live and read only. Nothing here is kept: going Back
-/// drops it, and opening it again reads it again.
+/// A Mac's chat, read live and carried on from here. Nothing here is kept:
+/// going Back drops it, and opening it again reads it again.
 struct HubChatView: View {
+    @Environment(AppModel.self) private var model
     let chat: OpenHubChat
 
     var body: some View {
@@ -64,6 +65,9 @@ struct HubChatView: View {
                     ForEach(rows) { message in
                         MessageRow(message: message, showsEnding: false, advice: nil, writingLine: nil)
                     }
+                }
+                if let reply = model.openHubReply {
+                    HubLiveReplyRows(reply: reply, rows: chat.state)
                 }
             }
             .padding(.horizontal)
@@ -80,17 +84,14 @@ struct HubChatView: View {
                     .accessibilityLabel("Reading the chat")
             case .unavailable(let why):
                 ContentUnavailableView(why, systemImage: "desktopcomputer")
-            case .read(let rows) where rows.isEmpty:
+            case .read(let rows) where rows.isEmpty && model.openHubReply == nil:
                 ContentUnavailableView("Nothing said yet", systemImage: "text.bubble")
             case .read:
                 EmptyView()
             }
         }
         .safeAreaInset(edge: .bottom) {
-            Text("Continue from this phone comes in the next update.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .padding(8)
+            HubComposer(notice: chat.notice)
         }
         .navigationTitle(chat.title.isEmpty ? "New conversation" : chat.title)
         #if os(iOS)
