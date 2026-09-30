@@ -62,6 +62,7 @@ extension AppModel {
     /// Reads the titles each paired Mac's list last showed. One that will not
     /// read costs its section's titles, not the launch.
     func loadSeenHubChats() {
+        loadHeldHubRuns()
         for config in providers where config.isPipe {
             do {
                 guard let seen = try store.loadHubChats(forProvider: config.id) else { continue }

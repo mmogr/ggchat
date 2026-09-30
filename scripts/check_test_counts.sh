@@ -187,7 +187,14 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # Mac's rows with nothing written to the store; Stop cancels and reads the rows
 # once the run ends; each refusal is said in its own words; a second send while
 # the Mac writes is refused here; and a failed run says so.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 416
+#
+# 2026-09-30: 416 -> 424. Eight tests pin walking away from a Mac's reply:
+# leaving the chat and the background cancel nothing, and a return reads on
+# from the cursor with nothing applied twice; a reading that gets nothing is
+# paced; a run the Mac no longer has, or a removed provider, is forgotten; a
+# launch reads a kept run from its start, and a list that no longer names it
+# forgets it; and a store opens across the new column both ways.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 424
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
 floor "README test markers" "${markers:-0}" 311
 

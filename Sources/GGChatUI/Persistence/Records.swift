@@ -25,6 +25,10 @@ public final class ProviderRecord {
     /// reasons.
     public var hubChatsData: Data?
     public var hubSeenAt: Date?
+    /// The runs in which a paired Mac is writing replies this device sent
+    /// for, as JSON of `[HeldHubRun]`, or nil: a run's id and its chat's,
+    /// never a reply's text. Optional, for `lastHeard`'s reasons.
+    public var hubLiveRunsData: Data?
 
     public init(
         id: UUID, name: String, kindData: Data, defaultModel: String?, createdAt: Date, lastHeard: Date? = nil

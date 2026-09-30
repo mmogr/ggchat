@@ -103,6 +103,7 @@ extension AppModel {
         if let open = openedHubChat, open.providerID == providerID, open.state != .reading || hubReading == nil {
             readHubChat()
         }
+        readOnHubReply()
     }
 
     /// Lists one Mac's chats, when its pipe is up, and keeps the list in
@@ -113,10 +114,12 @@ extension AppModel {
         else { return }
         hubListing.insert(providerID)
         defer { hubListing.remove(providerID) }
+        let unread = unreadHubReplies(providerID)
         do {
             let list = try await hub.listChats()
             guard providers.contains(where: { $0.id == providerID }) else { return }
             hubChats[providerID] = list.chats
+            settleHubReplies(unread, by: list)
             hubListOutcome[providerID] = .listed
             keepSeen(list.chats, from: config)
         } catch {
@@ -142,6 +145,7 @@ extension AppModel {
         let title = hubChats[providerID]?.first { $0.id == chatID }?.title ?? ""
         openedHubChat = OpenHubChat(providerID: providerID, chatID: chatID, title: title, state: .reading)
         readHubChat()
+        readOnHubReply()
     }
 
     /// A dial ended: the open chat that waited for it, and was not read

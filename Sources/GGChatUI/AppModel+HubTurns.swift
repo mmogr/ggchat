@@ -53,10 +53,19 @@ extension AppModel {
     }
 
     /// Stop, under the chat open's reply: the run is cancelled on the Mac,
-    /// and the Mac's rows are read once it has ended.
+    /// and the Mac's rows are read once it has ended. A reply nobody is
+    /// reading is cancelled at once, and one whose Mac cannot be reached is
+    /// given up here, so Stop is always a way out.
     public func stopHubReply() {
-        guard let reply = openHubReply, !reply.ended, let reading = reply.reading else { return }
-        reading.cancel()
+        guard let reply = openHubReply, !reply.ended else { return }
+        if let reading = reply.reading { return reading.cancel() }
+        guard let config = providers.first(where: { $0.id == reply.providerID }),
+            let hub = reachableHubChats(for: config)
+        else { return endHubReply(reply) }
+        reply.reading = Task { [weak self] in
+            guard let self else { return }
+            await putDown(reply, on: hub, config)
+        }
     }
 
     /// Sends the turn's `PUT` and reads the reply. A refusal says why and
@@ -69,9 +78,13 @@ extension AppModel {
                 runID: reply.runID, turn: HubTurn(conversationID: reply.chatID, content: question))
         } catch {
             guard !Task.isCancelled else { return await putDown(reply, on: hub, config) }
+            // Lost on the way, and it may have arrived: the id is kept, and
+            // the next read puts it again.
+            if case .lost = error { return walkAway(reply, readAny: false) }
             return refuse(reply, Self.refusalLine(error, config), config)
         }
         reply.started = true
+        keepHubRuns(reply.providerID)
         guard !Task.isCancelled else { return await putDown(reply, on: hub, config) }
         switch start {
         case .started:
@@ -85,6 +98,7 @@ extension AppModel {
     /// whole and never twice, then ends the reply as the run ended.
     func readTurn(_ reply: HubLiveReply, on hub: any HubChatsProvider, _ config: ProviderConfig) async {
         var end: RunEvent?
+        var readAny = false
         for await event in hub.turnEvents(runID: reply.runID, after: reply.cursor) {
             guard case .frame(let seq, let events) = event else {
                 end = event
@@ -93,6 +107,7 @@ extension AppModel {
             guard seq > reply.cursor else { continue }
             for chat in events { reply.apply(chat) }
             reply.cursor = seq
+            readAny = true
         }
         switch end {
         case .ended(let info)? where info.status.isTerminal:
@@ -105,18 +120,19 @@ extension AppModel {
             endHubReply(reply, notice: "\(config.name) would not send the rest of this reply.")
         default:
             guard !Task.isCancelled else { return await putDown(reply, on: hub, config) }
-            reply.reading = nil
+            walkAway(reply, readAny: readAny)
         }
     }
 
     /// The reading was put down. Leaving the chat, or the background, walks
     /// away from the run and keeps the reply. Stop cancels the run on the Mac
     /// and reads on to its end, so the rows read then hold what it saved.
-    private func putDown(_ reply: HubLiveReply, on hub: any HubChatsProvider, _ config: ProviderConfig) async {
+    func putDown(_ reply: HubLiveReply, on hub: any HubChatsProvider, _ config: ProviderConfig) async {
         reply.reading = nil
         if reply.detaching {
+            // Its chat may have been opened again while it stopped.
             reply.detaching = false
-            return
+            return readOnHubReply()
         }
         let cancelled = await Task { [log] () -> Bool in
             do throws(ProviderError) {
@@ -139,6 +155,8 @@ extension AppModel {
     func endHubReply(_ reply: HubLiveReply, notice: String? = nil) {
         reply.reading = nil
         reply.ended = true
+        readOnAttempts[reply.key] = nil
+        keepHubRuns(reply.providerID)
         guard openedHubChat?.providerID == reply.providerID, openedHubChat?.chatID == reply.chatID else {
             return hubReplies.removeAll { $0 === reply }
         }

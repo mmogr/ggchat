@@ -20,6 +20,8 @@ public final class HubLiveReply {
     public internal(set) var reasoning = ""
     /// A line for each tool the reply called.
     public internal(set) var tools: [String] = []
+    /// Names the reply's pauses between read-ons; see `readOnAfterAPause`.
+    let key = UUID()
     /// The last of the run's events this reply holds.
     var cursor: UInt32 = 0
     /// Whether the Mac has answered the turn's `PUT`. Until it has, the run

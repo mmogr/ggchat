@@ -19,9 +19,9 @@ final class HubChatContinueTests: XCTestCase {
 
     /// A model behind `hub` with chat 12 open and its rows read.
     static func opened(
-        _ hub: FakeChatsHub, store: any Store = InMemoryStore()
+        _ hub: FakeChatsHub, store: any Store = InMemoryStore(), sleeper: any Sleeper = ReadOnSleeper(immediate: false)
     ) async throws -> (AppModel, ProviderConfig) {
-        let (model, config) = try await AppModelRunTests.makeModel(behind: hub, store: store)
+        let (model, config) = try await AppModelRunTests.makeModel(behind: hub, store: store, sleeper: sleeper)
         try await AppModelRunTests.until("the list") { model.hubChats[config.id] != nil && model.hubListing.isEmpty }
         model.selection = .hub(providerID: config.id, chatID: 12)
         try await AppModelRunTests.until("the rows") { model.openedHubChat?.state.showsRows == true }
@@ -35,7 +35,7 @@ final class HubChatContinueTests: XCTestCase {
         ]
     }
 
-    private func shown(_ model: AppModel) -> [String] {
+    static func shown(_ model: AppModel) -> [String] {
         guard case .read(let rows)? = model.openedHubChat?.state else { return [] }
         return rows.map(\.content)
     }
@@ -64,7 +64,7 @@ final class HubChatContinueTests: XCTestCase {
         hub.with { $0.chats[12] = FakeChatsHub.saved(question, "Pin the version.") }
         hub.runs.release()
         try await until("the Mac's rows") { model.hubReplies.isEmpty }
-        XCTAssertEqual(shown(model).suffix(2), [question, "Pin the version."])
+        XCTAssertEqual(Self.shown(model).suffix(2), [question, "Pin the version."])
         XCTAssertEqual(hub.with(\.opens), [12, 12])
         XCTAssertFalse(model.openHubChatIsWriting)
         XCTAssertNil(model.openedHubChat?.notice)
