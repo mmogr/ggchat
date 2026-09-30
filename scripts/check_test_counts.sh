@@ -197,8 +197,11 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 #
 # 2026-09-30: 424 -> 425. One test pins that a Mac's chat says Writing while
 # this phone holds a reply the Mac is writing to it, out of reach included.
+#
+# 2026-09-30: 311 -> 332. The claim for carrying a Mac's chat on names all
+# 21 of its tests.
 floor "package test cases" "$(test_cases "$ROOT/Tests")" 425
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 311
+floor "README test markers" "${markers:-0}" 332
 
 exit $status
