@@ -4,6 +4,13 @@ import Foundation
     import FoundationNetworking
 #endif
 
+/// How the data of a run's numbered events is written: as the chat route's
+/// chunks, or as gglib's agent events.
+enum RunFrames: Sendable {
+    case chat
+    case agent
+}
+
 // gglib's runs routes, beside the chat route they replace for a hub that has
 // them. Same base URL, same key.
 extension OpenAICompatibleProvider: RunProvider {
@@ -25,9 +32,14 @@ extension OpenAICompatibleProvider: RunProvider {
 
     /// `GET runs/{id}/events?after=N`, read until `event: run` or the end.
     public func runEvents(id: String, after: UInt32) -> AsyncStream<RunEvent> {
+        events(ofRun: id, after: after, as: .chat)
+    }
+
+    /// A run's events, each read as `frames` says its data is written.
+    func events(ofRun id: String, after: UInt32, as frames: RunFrames) -> AsyncStream<RunEvent> {
         AsyncStream { continuation in
             let task = Task {
-                if let end = await self.readRun(id, after: after, into: continuation) {
+                if let end = await self.readRun(id, after: after, as: frames, into: continuation) {
                     continuation.yield(end)
                 }
                 continuation.finish()
@@ -51,7 +63,7 @@ extension OpenAICompatibleProvider: RunProvider {
     /// hub that sends one twice, or from further back than it was asked, has
     /// no event applied twice.
     private func readRun(
-        _ id: String, after: UInt32, into continuation: AsyncStream<RunEvent>.Continuation
+        _ id: String, after: UInt32, as frames: RunFrames, into continuation: AsyncStream<RunEvent>.Continuation
     ) async -> RunEvent? {
         var request = makeRequest(path: "runs/\(id)/events", method: "GET", body: nil)
         request.url = request.url?.appending(queryItems: [URLQueryItem(name: "after", value: String(after))])
@@ -67,7 +79,8 @@ extension OpenAICompatibleProvider: RunProvider {
                 }
                 guard let seq = event.id.flatMap(UInt32.init), seq > cursor else { continue }
                 cursor = seq
-                continuation.yield(.frame(seq: seq, events: frame(event, into: &reply)))
+                let events = frames == .chat ? frame(event, into: &reply) : Self.agentEvents(event)
+                continuation.yield(.frame(seq: seq, events: events))
             }
             return .dropped(nil)
         } catch is CancellationError {

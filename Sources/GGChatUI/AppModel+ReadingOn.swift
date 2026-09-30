@@ -21,12 +21,20 @@ extension AppModel {
             readOnAttempts[kept] = nil
             return readOnDetachedRuns(preferring: kept)
         }
-        let attempt = readOnAttempts[kept] ?? 0
+        readOnAfterAPause(kept) { $0.readOnDetachedRuns(preferring: kept) }
+    }
+
+    /// Reads on after the next pause in a row for `key`, or never once the
+    /// pauses are spent, so a hub that cannot be reached is not asked again
+    /// and again. Shared by this device's replies and a Mac's chat's.
+    func readOnAfterAPause(_ key: UUID, _ readOn: @escaping (AppModel) -> Void) {
+        let attempt = readOnAttempts[key] ?? 0
         guard attempt < Self.readOnDelays.count else { return }
-        readOnAttempts[kept] = attempt + 1
+        readOnAttempts[key] = attempt + 1
         Task { [weak self, sleeper] in
             try? await sleeper.sleep(for: Self.readOnDelays[attempt])
-            self?.readOnDetachedRuns(preferring: kept)
+            guard let self else { return }
+            readOn(self)
         }
     }
 
@@ -40,6 +48,7 @@ extension AppModel {
             Task { await connectPipe(for: config, quietly: true) }
         }
         readOnDetachedRuns()
+        readOnHubReply()
     }
 
     /// Reads on from one reply still being written whose hub can be reached

@@ -115,6 +115,8 @@ extension AppModel {
             inFlight.cancel()
             await inFlight.value
         }
+        // So is a reply a Mac is writing to its chat.
+        await detachHubReplies()
         for config in providers where config.isPipe && pipeStatuses[config.id] != nil {
             await disconnectPipe(for: config.id, leaving: .closed, cutShort: config.id == cutShort)
         }

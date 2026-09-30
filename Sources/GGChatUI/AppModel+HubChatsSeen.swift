@@ -33,10 +33,12 @@ extension AppModel {
         "\(config.name) is not paired with this phone any more. Pair again from the Mac."
     }
 
-    /// A Mac's chat is marked Writing while its section is live and the Mac
-    /// holds a reply to it not yet saved. It is never New: this phone keeps
-    /// nothing of the chat to compare with.
+    /// A Mac's chat is marked Writing while this phone holds a reply the Mac
+    /// is writing to it, reachable or not, and while its section is live and
+    /// the Mac says it holds a reply not yet saved. It is never New: this
+    /// phone keeps nothing of the chat to compare with.
     public func mark(for chat: HubChatSummary, on providerID: UUID) -> ConversationMark? {
+        if hubReply(for: chat.id, on: providerID)?.ended == false { return .writing }
         guard hubIsLive(providerID), chat.liveRun != nil else { return nil }
         return .writing
     }
@@ -62,6 +64,7 @@ extension AppModel {
     /// Reads the titles each paired Mac's list last showed. One that will not
     /// read costs its section's titles, not the launch.
     func loadSeenHubChats() {
+        loadHeldHubRuns()
         for config in providers where config.isPipe {
             do {
                 guard let seen = try store.loadHubChats(forProvider: config.id) else { continue }

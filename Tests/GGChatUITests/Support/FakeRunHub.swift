@@ -37,6 +37,8 @@ final class FakeRunHub: RunProvider {
         var reads: [(id: String, after: UInt32)] = []
         var cancels: [String] = []
         var chats: [ChatRequest] = []
+        /// The reads holding their streams open, to end with `release()`.
+        var held: [(id: String, continuation: AsyncStream<RunEvent>.Continuation)] = []
     }
 
     let state: Mutex<State>
@@ -98,13 +100,37 @@ final class FakeRunHub: RunProvider {
                 state.dropAt = nil
                 return (events + [.dropped(.transport("the connection dropped"))], false)
             }
-            if state.holdAt != nil { return (events, true) }
+            // A cancelled run ends, as the hub ends one it has cancelled.
+            if state.holdAt != nil, !state.cancels.contains(id) { return (events, true) }
             let status = state.cancels.contains(id) ? .cancelled : state.ending
             return (events + [.ended(info(id, status, lastSeq: limit, error: state.error))], false)
         }
         return AsyncStream { continuation in
             for event in events { continuation.yield(event) }
-            if !holds { continuation.finish() }
+            if holds {
+                with { $0.held.append((id, continuation)) }
+            } else {
+                continuation.finish()
+            }
+        }
+    }
+
+    /// Ends every held read with the rest of its frames and the run's end,
+    /// and holds no more.
+    func release() {
+        let (held, frames, status, from) = with { state in
+            defer {
+                state.held = []
+                state.holdAt = nil
+            }
+            return (state.held, state.frames, state.ending, state.holdAt ?? 0)
+        }
+        for (id, continuation) in held {
+            for (index, frame) in frames.enumerated() where UInt32(index + 1) > from {
+                continuation.yield(.frame(seq: UInt32(index + 1), events: frame))
+            }
+            continuation.yield(.ended(info(id, status, lastSeq: UInt32(frames.count))))
+            continuation.finish()
         }
     }
 

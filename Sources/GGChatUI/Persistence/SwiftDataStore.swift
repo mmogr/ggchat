@@ -93,6 +93,19 @@ public final class SwiftDataStore: Store {
         try context.save()
     }
 
+    /// Runs that no longer decode read as none: the Mac still writes them,
+    /// and its list says so.
+    public func loadHubRuns(forProvider id: UUID) throws -> [HeldHubRun] {
+        guard let data = try fetchProvider(id)?.hubLiveRunsData else { return [] }
+        return (try? JSONDecoder().decode([HeldHubRun].self, from: data)) ?? []
+    }
+
+    public func save(hubRuns: [HeldHubRun], forProvider id: UUID) throws {
+        guard let record = try fetchProvider(id) else { return }
+        record.hubLiveRunsData = hubRuns.isEmpty ? nil : try JSONEncoder().encode(hubRuns)
+        try context.save()
+    }
+
     private func fetchProvider(_ id: UUID) throws -> ProviderRecord? {
         var descriptor = FetchDescriptor<ProviderRecord>(predicate: #Predicate { $0.uuid == id })
         descriptor.fetchLimit = 1

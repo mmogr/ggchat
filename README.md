@@ -470,7 +470,7 @@ Each claim names the test that keeps it true.
 - Each paired Mac has a section of its own in the list, "On home", with the
   chats gglib keeps there, listed at launch, when its pipe comes up and on a
   pull, and marked "Writing" while the Mac is writing a reply to one. Opening
-  one reads its questions and replies live, read only, and Back drops them:
+  one reads its questions and replies live, and Back drops them:
   no conversation and no message row comes from the Mac into the store
   (ADR 0007). A Mac that reads its chats only to a device through its tunnel
   says so, a server added by address has no section, and the launch's quiet
@@ -515,6 +515,55 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatsOutcomeTests.testAMacWithNothingToDialWithSaysToPairAgain -->
   <!-- test: HubChatsOutcomeTests.testTheBackgroundStopsARefreshFromDialling -->
   <!-- test: HubChatsOutcomeTests.testAChatOnScreenKeepsItsRowsWhileItIsReadAgain -->
+- A paired Mac's chat is carried on from this phone. A send puts the new text
+  alone, as `{conversation_id, content}` and nothing else, and the Mac runs the
+  reply as an agent run and saves both rows; its text, reasoning and a line for
+  each tool it calls are read from the run into memory, and once the run ends
+  the rows the Mac saved are read in its place. Nothing of it is written to the
+  store (ADR 0007). Stop cancels the run, and nothing reads on beside it until
+  the Mac answers. A chat with no model says to pick one on the Mac, a chat the
+  Mac is already writing to says so, here too while this phone holds that
+  reply, and a gglib that takes the turn as a chat run is one without turns;
+  a refused send, or one to a Mac out of reach, puts its text back. A turn
+  whose answer was lost is kept, still Writing, and put again under its id,
+  whose answer settles it; a list that names its run marks it started, and one
+  that does not changes nothing, since the Mac names a run only once it has
+  reserved it. Leaving the chat and the background walk away
+  and cancel nothing; opening it again, coming back and the pipe coming up
+  read on from the last event, none applied twice, paced as this phone's own
+  replies are. Only the run's id and its chat are kept, on the provider's row:
+  a launch reads the run from its start, and a run the Mac no longer has, a
+  list that no longer names it, or removing the provider forgets it. The chat
+  says "Writing" in the list while this phone holds its reply.
+  <!-- test: HubChatsWireTests.testATurnIsTheRecordedBodyWithOnlyItsTwoKeys -->
+  <!-- test: HubTurnProviderTests.testATurnIsPutAsAnAgentRunWithOnlyItsTwoKeys -->
+  <!-- test: HubTurnProviderTests.testNoModelAndAReplyInProgressAreTheirOwnRefusals -->
+  <!-- test: HubTurnProviderTests.testEveryOtherAnswerMeansWhatItShould -->
+  <!-- test: HubTurnProviderTests.testAnAgentRunsEventsAreItsTextReasoningAndToolLines -->
+  <!-- test: HubTurnProviderTests.testAnErrorIsPassedOnAndAnEventThatCannotBeReadIsPassedOver -->
+  <!-- test: HubTurnProviderTests.testCancellingATurnCancelsItsRun -->
+  <!-- test: HubChatContinueTests.testASendPutsOnlyTheNewTextAndTheReplyIsReadThenReplacedByTheMacsRows -->
+  <!-- test: HubChatContinueTests.testStopCancelsTheRunAndTheRowsAreReadOnceItEnds -->
+  <!-- test: HubChatContinueTests.testEachRefusalIsSaidInTheViewAndKeepsNothing -->
+  <!-- test: HubChatContinueTests.testASecondSendWhileTheMacWritesIsRefusedHere -->
+  <!-- test: HubChatContinueTests.testAFailedRunSaysSoAndTheRowsAreReadAgain -->
+  <!-- test: HubChatContinueTests.testAMacThatStartsAChatRunForATurnIsOneWithoutTurns -->
+  <!-- test: HubChatLostTurnTests.testALostTurnIsKeptAndPutAgainUnderItsIDThenReadFromItsStart -->
+  <!-- test: HubChatLostTurnTests.testALostTurnTheListDoesNotNameIsKept -->
+  <!-- test: HubChatLostTurnTests.testALostTurnPutAgainAfterItsRunEndedIsReadThenItsRows -->
+  <!-- test: HubChatContinueTests.testASendToAMacOutOfReachGivesTheTextBack -->
+  <!-- test: HubChatContinueTests.testAnAcceptedSendClearsTheTextGivenBack -->
+  <!-- test: HubChatLostTurnTests.testALostTurnTheListNamesIsKeptAsStarted -->
+  <!-- test: HubChatLostTurnTests.testNothingReadsOnBesideAStopWhoseCancelIsNotAnsweredYet -->
+  <!-- test: HubChatReadOnTests.testLeavingTheChatWalksAwayAndOpeningItAgainReadsOnFromTheCursor -->
+  <!-- test: HubChatReadOnTests.testTheBackgroundWalksAwayAndComingBackReadsOn -->
+  <!-- test: HubChatReadOnTests.testAReadingThatGetsNothingReadsOnAfterEachPauseThenWaits -->
+  <!-- test: HubChatReadOnTests.testARunTheMacNoLongerHasReadsTheRowsAndIsForgotten -->
+  <!-- test: HubChatReadOnTests.testRemovingTheProviderForgetsItsRepliesAndCancelsNothing -->
+  <!-- test: HubChatReadOnTests.testAMacChatSaysWritingWhileThePhoneHoldsItsReply -->
+  <!-- test: HubChatHeldRunsTests.testALaunchReadsTheRunItKeptFromItsStartWhenItsChatOpens -->
+  <!-- test: HubChatHeldRunsTests.testAListThatNoLongerNamesTheRunForgetsIt -->
+  <!-- test: HubChatHeldRunsTests.testAStoreOpensAcrossTheHeldRunsChangeInBothDirections -->
 - A conversation can carry a system prompt. It goes ahead of every request
   the conversation makes, Continue and Retry included, and an edit reaches the
   next one. It is never a row in the transcript and never stored as a
@@ -908,7 +957,8 @@ against the mock.
   not a turn in the transcript.
 - [ADR 0007](docs/adr/0007-a-hubs-chats-are-read-live-and-never-stored.md): a
   paired Mac's chats are read live and never stored; only the titles its list
-  last showed, and when, are kept.
+  last showed, and when, are kept. Amended: a Mac's chat is carried on from
+  here and the Mac writes the reply; only the run's id and chat are kept.
 
 ## Releases
 

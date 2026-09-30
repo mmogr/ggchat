@@ -20,6 +20,12 @@ public protocol Store {
     /// ones before. A provider with no row keeps nothing, and deleting the
     /// row forgets them.
     func save(hubChats: [SeenHubChat], seenAt: Date, forProvider id: UUID) throws
+    /// The runs in which a paired Mac is writing replies this device sent
+    /// for, so a relaunch can read them on. Never a reply's text.
+    func loadHubRuns(forProvider id: UUID) throws -> [HeldHubRun]
+    /// Keeps them beside the provider's row, over the ones before. A provider
+    /// with no row keeps nothing, and deleting the row forgets them.
+    func save(hubRuns: [HeldHubRun], forProvider id: UUID) throws
     func loadConversations() throws -> [Conversation]
     func save(conversation: Conversation) throws
     func deleteConversation(id: UUID) throws
@@ -36,6 +42,18 @@ public struct SeenHubChat: Codable, Sendable, Equatable {
         self.id = id
         self.title = title
         self.updatedAt = updatedAt
+    }
+}
+
+/// A run in which a paired Mac is writing a reply to one of its chats that
+/// this device sent the turn for: which run, and which chat.
+public struct HeldHubRun: Codable, Sendable, Equatable {
+    public let runID: String
+    public let chatID: Int64
+
+    public init(runID: String, chatID: Int64) {
+        self.runID = runID
+        self.chatID = chatID
     }
 }
 
@@ -56,6 +74,7 @@ public final class InMemoryStore: Store {
     private var providerOrder: [UUID] = []
     private var lastHeard: [UUID: Date] = [:]
     private var hubChats: [UUID: SeenHubChats] = [:]
+    private var hubRuns: [UUID: [HeldHubRun]] = [:]
     private var conversations: [UUID: Conversation] = [:]
 
     public init() {}
@@ -74,6 +93,7 @@ public final class InMemoryStore: Store {
         providerOrder.removeAll { $0 == id }
         lastHeard[id] = nil
         hubChats[id] = nil
+        hubRuns[id] = nil
     }
 
     public func loadLastHeard() throws -> [UUID: Date] {
@@ -92,6 +112,15 @@ public final class InMemoryStore: Store {
     public func save(hubChats: [SeenHubChat], seenAt: Date, forProvider id: UUID) throws {
         guard providers[id] != nil else { return }
         self.hubChats[id] = SeenHubChats(chats: hubChats, seenAt: seenAt)
+    }
+
+    public func loadHubRuns(forProvider id: UUID) throws -> [HeldHubRun] {
+        hubRuns[id] ?? []
+    }
+
+    public func save(hubRuns: [HeldHubRun], forProvider id: UUID) throws {
+        guard providers[id] != nil else { return }
+        self.hubRuns[id] = hubRuns
     }
 
     public func loadConversations() throws -> [Conversation] {

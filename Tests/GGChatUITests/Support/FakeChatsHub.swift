@@ -13,13 +13,34 @@ final class FakeChatsHub: HubChatsProvider {
         var holdsOpens = false
         /// Answers every open with this, when set.
         var openFailure: HubChatsFailure?
+        /// Every turn started, and what the next ones are answered with.
+        var turns: [(runID: String, turn: HubTurn)] = []
+        var turnFailure: HubTurnFailure?
+        /// How many turns start and then lose their answer on the way back.
+        var turnsLost = 0
+        /// The kind of run a turn starts: a gglib that does not know turns
+        /// starts a chat run.
+        var turnKind = RunKind.agent
+        /// How the run a turn starts stands when the answer comes back.
+        var turnStatus = RunStatus.queued
+        /// Holds every cancel until it is set false again, and counts them.
+        var holdsCancels = false
+        var cancelsAsked = 0
     }
 
     let state: Mutex<State>
+    /// The runs the turns start, with every read and cancel they get: one
+    /// reply, recorded as frames numbered from 1.
+    let runs: FakeRunHub
 
-    init(_ chats: [HubChatSummary] = FakeChatsHub.summaries) {
+    init(_ chats: [HubChatSummary] = FakeChatsHub.summaries, reply: [[ChatEvent]] = FakeChatsHub.reply) {
         state = Mutex(State(list: .success(HubChatList(chats: chats)), chats: [12: Self.opened]))
+        runs = FakeRunHub(frames: reply)
     }
+
+    /// The reply every turn's run writes: a tool call, reasoning, then text.
+    static let reply: [[ChatEvent]] =
+        [[.tool("Read File: Cargo.lock")]] + FakeRunHub.frames(ofText: "Pin the version.", reasoning: "It moved.")
 
     /// The two chats gglib's recorded list holds.
     static let summaries = [
@@ -42,6 +63,16 @@ final class FakeChatsHub: HubChatsProvider {
             HubMessage(id: 42, conversationID: 12, role: "tool", content: "exit 1", createdAt: "d"),
             HubMessage(id: 43, conversationID: 12, role: "assistant", content: "A dependency moved.", createdAt: "e"),
         ])
+
+    /// Chat 12 as the Mac saves it once a turn's reply is written.
+    static func saved(_ question: String, _ answer: String) -> HubChatOpen {
+        HubChatOpen(
+            conversation: opened.conversation,
+            messages: opened.messages + [
+                HubMessage(id: 44, conversationID: 12, role: "user", content: question, createdAt: "f"),
+                HubMessage(id: 45, conversationID: 12, role: "assistant", content: answer, createdAt: "g"),
+            ])
+    }
 
     func with<T>(_ body: (inout State) -> T) -> T {
         state.withLock { body(&$0) }
@@ -69,5 +100,28 @@ final class FakeChatsHub: HubChatsProvider {
         if let failure { throw failure }
         guard let chat else { throw .notFound }
         return chat
+    }
+
+    func startTurn(runID: String, turn: HubTurn) async throws(HubTurnFailure) -> RunStart {
+        let (failure, lost, info) = with { state in
+            state.turns.append((runID, turn))
+            state.turnsLost -= 1
+            let info = RunInfo(
+                id: runID, kind: state.turnKind, status: state.turnStatus, createdAtMs: 1_790_000_000_000, lastSeq: 0)
+            return (state.turnFailure, state.turnsLost >= 0, info)
+        }
+        if let failure { throw failure }
+        if lost { throw .lost(.transport("the answer was lost")) }
+        return .started(info)
+    }
+
+    func turnEvents(runID: String, after: UInt32) -> AsyncStream<RunEvent> {
+        runs.runEvents(id: runID, after: after)
+    }
+
+    func cancelTurn(runID: String) async throws(ProviderError) -> RunInfo {
+        with { $0.cancelsAsked += 1 }
+        while with({ $0.holdsCancels }) { await Task.yield() }
+        return try await runs.cancelRun(id: runID)
     }
 }

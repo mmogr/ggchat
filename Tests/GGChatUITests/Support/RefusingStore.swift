@@ -47,6 +47,15 @@ final class RefusingStore: Store {
         try inner.save(hubChats: hubChats, seenAt: seenAt, forProvider: id)
     }
 
+    func loadHubRuns(forProvider id: UUID) throws -> [HeldHubRun] {
+        try inner.loadHubRuns(forProvider: id)
+    }
+
+    func save(hubRuns: [HeldHubRun], forProvider id: UUID) throws {
+        if refusesSaves { throw Refused() }
+        try inner.save(hubRuns: hubRuns, forProvider: id)
+    }
+
     func loadConversations() throws -> [Conversation] {
         try inner.loadConversations()
     }

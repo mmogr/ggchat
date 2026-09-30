@@ -130,7 +130,7 @@ extension AppModel {
         case .reasoning(let text): live.reasoning += text
         case .progress(let progress): live.progress = progress
         case .error(let error): live.error = error
-        case .finished: break
+        case .tool, .finished: break
         }
     }
 

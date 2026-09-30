@@ -175,8 +175,43 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # lists through a pipe already up, that an older gglib has no section, that a
 # lost ticket says to pair again, that the background stops a refresh, and
 # that a chat on screen keeps its rows while it is read again.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 404
+#
+# 2026-09-30: 404 -> 411. Seven tests pin a turn on a Mac's chat: its body is
+# the recorded one with only its two keys, put as an agent run with the key;
+# no_model, conflict and conversation_not_found each have their own refusal,
+# and every other answer means what it should; the run's events are read as
+# text, reasoning and tool lines; and Stop is the run's cancel.
+#
+# 2026-09-30: 411 -> 416. Five tests pin carrying a Mac's chat on: a send puts
+# only the new text and the reply is read from the run, then replaced by the
+# Mac's rows with nothing written to the store; Stop cancels and reads the rows
+# once the run ends; each refusal is said in its own words; a second send while
+# the Mac writes is refused here; and a failed run says so.
+#
+# 2026-09-30: 416 -> 424. Eight tests pin walking away from a Mac's reply:
+# leaving the chat and the background cancel nothing, and a return reads on
+# from the cursor with nothing applied twice; a reading that gets nothing is
+# paced; a run the Mac no longer has, or a removed provider, is forgotten; a
+# launch reads a kept run from its start, and a list that no longer names it
+# forgets it; and a store opens across the new column both ways.
+#
+# 2026-09-30: 424 -> 425. One test pins that a Mac's chat says Writing while
+# this phone holds a reply the Mac is writing to it, out of reach included.
+#
+# 2026-09-30: 311 -> 332. The claim for carrying a Mac's chat on names all
+# 21 of its tests.
+#
+# 2026-09-30: 425 -> 430 and 332 -> 337. Five tests pin a lost turn kept and
+# put again under its id, a list forgetting one that never arrived and keeping
+# one that did, a gglib that takes a turn as a chat run, and nothing read on
+# beside a Stop whose cancel is not answered yet; the claim names all five.
+#
+# 2026-09-30: 430 -> 433 and 337 -> 340. A list no longer ends a lost turn it
+# does not name, since the Mac names a run only once reserved; three tests pin
+# a lost turn put again after its run ended, the text given back by a send to
+# a Mac out of reach, and an accepted send clearing it.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 433
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 311
+floor "README test markers" "${markers:-0}" 340
 
 exit $status
