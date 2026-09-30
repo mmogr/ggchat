@@ -77,6 +77,22 @@ public final class SwiftDataStore: Store {
         try context.save()
     }
 
+    /// Titles that no longer decode read as none: they are only a hint of
+    /// what the Mac holds, and the next list writes them again.
+    public func loadHubChats(forProvider id: UUID) throws -> SeenHubChats? {
+        guard let record = try fetchProvider(id), let data = record.hubChatsData, let seenAt = record.hubSeenAt
+        else { return nil }
+        let chats = (try? JSONDecoder().decode([SeenHubChat].self, from: data)) ?? []
+        return SeenHubChats(chats: chats, seenAt: seenAt)
+    }
+
+    public func save(hubChats: [SeenHubChat], seenAt: Date, forProvider id: UUID) throws {
+        guard let record = try fetchProvider(id) else { return }
+        record.hubChatsData = try JSONEncoder().encode(hubChats)
+        record.hubSeenAt = seenAt
+        try context.save()
+    }
+
     private func fetchProvider(_ id: UUID) throws -> ProviderRecord? {
         var descriptor = FetchDescriptor<ProviderRecord>(predicate: #Predicate { $0.uuid == id })
         descriptor.fetchLimit = 1

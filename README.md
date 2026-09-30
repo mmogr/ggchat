@@ -467,6 +467,54 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelListMarkTests.testEachMarkHasAWordAndALabel -->
   <!-- test: UnreadStoreTests.testTheUnreadMarkIsKeptWithItsConversation -->
   <!-- test: UnreadStoreTests.testAStoreOpensAcrossTheUnreadChangeInBothDirections -->
+- Each paired Mac has a section of its own in the list, "On home", with the
+  chats gglib keeps there, listed at launch, when its pipe comes up and on a
+  pull, and marked "Writing" while the Mac is writing a reply to one. Opening
+  one reads its questions and replies live, read only, and Back drops them:
+  no conversation and no message row comes from the Mac into the store
+  (ADR 0007). A Mac that reads its chats only to a device through its tunnel
+  says so, a server added by address has no section, and the launch's quiet
+  dial raises no alert. While the Mac cannot be reached, or its last list
+  failed, its section shows the titles its list last showed with "last seen
+  22:13", kept on the provider's row through a relaunch and gone with it, and
+  opening one says the Mac is unreachable; a failed list keeps them as they
+  were. A pull lists again, and the background stops it dialling. A gglib too
+  old to share its chats has no section until a list works, and a Mac this
+  device has lost its ticket for says to pair again. A chat on screen keeps
+  its rows while it is read again. The wire shapes replay the bodies gglib records, and a row
+  whose metadata cannot be read still opens without it.
+  <!-- test: HubChatsWireTests.testTheListReadsEveryChatNewestFirst -->
+  <!-- test: HubChatsWireTests.testAnOpenedChatReadsItsConversationAndRows -->
+  <!-- test: HubChatsWireTests.testNullAndMissingOptionalsDecodeAsNil -->
+  <!-- test: HubChatsWireTests.testUnknownKeysArePassedOver -->
+  <!-- test: HubChatsWireTests.testMetadataThatCannotBeReadIsDroppedAndTheRowKept -->
+  <!-- test: HubChatsProviderTests.testTheListIsReadFromChatsWithTheKey -->
+  <!-- test: HubChatsProviderTests.testAChatIsOpenedByItsIDWithTheKey -->
+  <!-- test: HubChatsProviderTests.testDeviceNotNamedIsAHubThatDoesNotShareItsChats -->
+  <!-- test: HubChatsProviderTests.testAnother403IsARefusal -->
+  <!-- test: HubChatsProviderTests.testA404IsNotFound -->
+  <!-- test: HubChatsProviderTests.testAPageThatIsNotJSONA5xxAndNoAnswerAreDrops -->
+  <!-- test: HubChatsProviderTests.testJSONThatCannotBeReadIsARefusal -->
+  <!-- test: HubChatsListTests.testTheMacsChatsAreListedWhenItsPipeComesUp -->
+  <!-- test: HubChatsListTests.testOnlyAPairedMacHasASection -->
+  <!-- test: HubChatsListTests.testOpeningAChatReadsItsRowsAndKeepsNothing -->
+  <!-- test: HubChatsListTests.testTheTwoKindsOfSelectionDropEachOther -->
+  <!-- test: HubChatsListTests.testAMacThatDoesNotShareItsChatsSaysSo -->
+  <!-- test: HubChatsListTests.testALaunchListsEachPairedMacsChats -->
+  <!-- test: HubChatsListTests.testAQuietDialWithNothingToDialWithRaisesNoAlert -->
+  <!-- test: HubChatsListTests.testAPullDialsAPipeThatIsDownAndListsAgain -->
+  <!-- test: HubChatsSeenTests.testAnUnreachableMacShowsTheTitlesItLastSawAndWhen -->
+  <!-- test: HubChatsSeenTests.testOpeningOneWhileTheMacIsUnreachableSaysSo -->
+  <!-- test: HubChatsSeenTests.testAChatOpenedDuringADialThatFailsSaysTheMacIsUnreachable -->
+  <!-- test: HubChatsSeenTests.testTheTitlesAreKeptAfterEveryListAndSurviveARelaunch -->
+  <!-- test: HubChatsSeenTests.testRemovingTheProviderForgetsItsTitles -->
+  <!-- test: HubChatsSeenTests.testAStoreOpensAcrossTheTitlesChangeInBothDirections -->
+  <!-- test: HubChatsOutcomeTests.testAFailedListKeepsWhatWasSeenAndSaysWhen -->
+  <!-- test: HubChatsOutcomeTests.testAPullListsAgainThroughAPipeThatIsUp -->
+  <!-- test: HubChatsOutcomeTests.testAnOlderGglibHasNoSectionUntilItLists -->
+  <!-- test: HubChatsOutcomeTests.testAMacWithNothingToDialWithSaysToPairAgain -->
+  <!-- test: HubChatsOutcomeTests.testTheBackgroundStopsARefreshFromDialling -->
+  <!-- test: HubChatsOutcomeTests.testAChatOnScreenKeepsItsRowsWhileItIsReadAgain -->
 - A conversation can carry a system prompt. It goes ahead of every request
   the conversation makes, Continue and Retry included, and an edit reaches the
   next one. It is never a row in the transcript and never stored as a
@@ -858,6 +906,9 @@ against the mock.
 - [ADR 0005](docs/adr/0005-a-system-prompt-is-a-conversation-setting.md): a
   system prompt is a setting of the conversation, sent ahead of every request,
   not a turn in the transcript.
+- [ADR 0007](docs/adr/0007-a-hubs-chats-are-read-live-and-never-stored.md): a
+  paired Mac's chats are read live and never stored; only the titles its list
+  last showed, and when, are kept.
 
 ## Releases
 

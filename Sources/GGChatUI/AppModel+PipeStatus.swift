@@ -94,6 +94,7 @@ extension AppModel {
             // pauses between tries started afresh.
             readOnAttempts = [:]
             readOnDetachedRuns()
+            hubPipeCameUp(providerID)
         }
         wakeWaitingSend(for: providerID)
     }

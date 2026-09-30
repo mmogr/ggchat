@@ -45,13 +45,19 @@ extension AppModel {
     /// in front when it is not the day `now` falls on in `calendar`.
     static func lastHeardLine(_ date: Date?, now: Date, locale: Locale, calendar: Calendar) -> String {
         guard let date else { return "not heard from yet" }
+        return "last heard \(shortStamp(date, now: now, locale: locale, calendar: calendar))"
+    }
+
+    /// "08:12", or the date and the time when `date` is not the day `now`
+    /// falls on in `calendar`.
+    static func shortStamp(_ date: Date, now: Date, locale: Locale, calendar: Calendar) -> String {
         let formatter = DateFormatter()
         formatter.locale = locale
         formatter.calendar = calendar
         formatter.timeZone = calendar.timeZone
         formatter.dateStyle = calendar.isDate(date, inSameDayAs: now) ? .none : .short
         formatter.timeStyle = .short
-        return "last heard \(formatter.string(from: date))"
+        return formatter.string(from: date)
     }
 
     /// Something the machine wrote arrived, or its pipe changed between

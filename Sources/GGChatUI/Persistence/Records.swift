@@ -2,7 +2,8 @@ import Foundation
 import SwiftData
 
 /// SwiftData rows. They mirror the Core value types field for field, but for
-/// `ProviderRecord.lastHeard`, and never leave this directory;
+/// `ProviderRecord`'s last-heard time and a paired Mac's titles last seen, and
+/// never leave this directory;
 /// `SwiftDataStore` converts both ways. The key is `uuid`, not `id`: a
 /// property named `id` shadows PersistentModel's own and a predicate on it
 /// traps at fetch time.
@@ -18,6 +19,12 @@ public final class ProviderRecord {
     /// from a copy read earlier cannot put an older time back. Optional, so a
     /// store written before it existed opens with every row reading nil.
     public var lastHeard: Date?
+    /// The titles a paired Mac's list last showed, as JSON of `[SeenHubChat]`,
+    /// and when it was read; nil until a list is. Never a chat's text (ADR
+    /// 0007). Kept off `ProviderConfig` and optional, for `lastHeard`'s
+    /// reasons.
+    public var hubChatsData: Data?
+    public var hubSeenAt: Date?
 
     public init(
         id: UUID, name: String, kindData: Data, defaultModel: String?, createdAt: Date, lastHeard: Date? = nil

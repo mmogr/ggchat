@@ -143,8 +143,40 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 #
 # 2026-09-29: 371 -> 372 and 278 -> 279. One test pins that a chat opened
 # after going Back is read whatever iOS 27 tells the view after its appear.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 372
+#
+# 2026-09-30: 372 -> 376. Four tests replay the hub's chat bodies gglib
+# records, a missing optional and an unknown key included.
+#
+# 2026-09-30: 376 -> 383. Seven tests pin the hub chats client: where it asks
+# and with what key, and that device_not_named, a 404, another 4xx, a body it
+# cannot read, a page that is not JSON, a 5xx and no answer each mean what
+# they should.
+#
+# 2026-09-30: 383 -> 390. Seven tests pin a paired Mac's chats in the list:
+# listed when its pipe comes up and on a pull, only for a pipe, opened read
+# only with nothing written to the store, dropped by Back, a Mac that does
+# not share its chats saying so, and the launch's quiet dial raising no alert.
+#
+# 2026-09-30: 390 -> 396. Six tests pin what an unreachable Mac's section
+# shows: the titles its list last saw and when, kept after every list and
+# through a relaunch, gone with the provider; that opening one then says the
+# Mac is unreachable, also after a dial that fails; and that a store opens
+# across the two new columns both ways.
+#
+# 2026-09-30: 396 -> 397 and 279 -> 304. One test pins that a launch lists
+# each paired Mac's chats; the claim for a paired Mac's chats names all
+# twenty-five of their tests.
+#
+# 2026-09-30: 397 -> 398 and 304 -> 305. One test pins that a hub row whose
+# metadata cannot be read keeps its row and loses only the metadata.
+#
+# 2026-09-30: 398 -> 404 and 305 -> 311. Six tests pin what a Mac's section
+# does when a list fails (it keeps what it saw and says when), that a pull
+# lists through a pipe already up, that an older gglib has no section, that a
+# lost ticket says to pair again, that the background stops a refresh, and
+# that a chat on screen keeps its rows while it is read again.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 404
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 279
+floor "README test markers" "${markers:-0}" 311
 
 exit $status

@@ -163,11 +163,12 @@ final class RemainingScreensUITests: XCTestCase {
         force.tap()
         app.buttons["Done"].firstMatch.tap()
 
-        // Back into the conversation to see what its pill now says.
+        // Back into the conversation to see what its pill now says. Its row,
+        // not the first cell: with a paired Mac the list names its sections,
+        // and "On this phone" is a cell of its own above the row.
         let reconnect = app.buttons["Connection Reconnect"].firstMatch
-        XCTAssertTrue(
-            tap(app.cells.firstMatch, untilExists: reconnect),
-            "a closed pipe offers no way back")
+        let row = app.cells.containing(NSPredicate(format: "label BEGINSWITH 'New conversation, '")).firstMatch
+        XCTAssertTrue(tap(row, untilExists: reconnect), "a closed pipe offers no way back")
         attach(name: "pipe-closed")
         XCTAssertTrue(reconnect.isEnabled, "the reconnect pill is not tappable")
         XCTAssertTrue(tap(reconnect, untilExists: connected), "reconnect did not bring the pipe back")

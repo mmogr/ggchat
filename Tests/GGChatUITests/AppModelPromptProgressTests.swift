@@ -51,6 +51,8 @@ private final class ProgressServer: URLProtocol, @unchecked Sendable {
 
     override func startLoading() {
         guard let url = request.url, let host = url.host() else { return }
+        // A gglib from before the hub's chats, which lists none.
+        if url.path().hasSuffix("/chats") { return respond(404, body: "") }
         if url.path().hasSuffix("/proxy/status") {
             let isHeld = Self.held.withLock { held -> Bool in
                 guard let waiting = held[host] else { return false }
