@@ -9,6 +9,13 @@ import XCTest
 /// opened read only, and never written to this phone's store.
 @MainActor
 final class HubChatsListTests: XCTestCase {
+    static let locale = Locale(identifier: "en_GB")
+    static let calendar: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        return calendar
+    }()
+
     private func until(_ what: String, _ condition: () -> Bool) async throws {
         try await AppModelRunTests.until(what, condition)
     }
@@ -18,9 +25,9 @@ final class HubChatsListTests: XCTestCase {
         let (model, config) = try await AppModelRunTests.makeModel(behind: hub)
         try await until("the list") { model.hubChats[config.id] == FakeChatsHub.summaries }
         XCTAssertEqual(model.hubProviders.map(\.id), [config.id])
-        XCTAssertNil(model.hubLine(for: config.id))
-        XCTAssertEqual(model.mark(for: FakeChatsHub.summaries[0]), .writing, "a chat with a live run")
-        XCTAssertNil(model.mark(for: FakeChatsHub.summaries[1]))
+        XCTAssertNil(model.hubLine(for: config.id, locale: Self.locale, calendar: Self.calendar))
+        XCTAssertEqual(model.mark(for: FakeChatsHub.summaries[0], on: config.id), .writing, "a chat with a live run")
+        XCTAssertNil(model.mark(for: FakeChatsHub.summaries[1], on: config.id))
     }
 
     /// A server added by address has no section, and its chats are never
@@ -89,8 +96,12 @@ final class HubChatsListTests: XCTestCase {
         let hub = FakeChatsHub()
         hub.with { $0.list = .failure(.notShared) }
         let (model, config) = try await AppModelRunTests.makeModel(behind: hub)
-        try await until("the refusal") { model.hubLine(for: config.id) != nil }
-        XCTAssertEqual(model.hubLine(for: config.id), "home does not share its chats with this phone.")
+        try await until("the refusal") {
+            model.hubLine(for: config.id, locale: Self.locale, calendar: Self.calendar) != nil
+        }
+        XCTAssertEqual(
+            model.hubLine(for: config.id, locale: Self.locale, calendar: Self.calendar),
+            "home does not share its chats with this phone.")
         XCTAssertEqual(model.hubChats[config.id], nil)
     }
 

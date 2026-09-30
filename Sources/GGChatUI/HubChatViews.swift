@@ -4,15 +4,17 @@ import SwiftUI
 /// "On home": a paired Mac's chats, in the list below this phone's own.
 struct HubChatsSection: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.locale) private var locale
+    @Environment(\.calendar) private var calendar
     let config: ProviderConfig
 
     var body: some View {
         Section("On \(config.name)") {
             ForEach(model.hubChats[config.id] ?? []) { chat in
-                HubChatRow(chat: chat)
+                HubChatRow(chat: chat, providerID: config.id)
                     .tag(SidebarSelection.hub(providerID: config.id, chatID: chat.id))
             }
-            if let line = model.hubLine(for: config.id) {
+            if let line = model.hubLine(for: config.id, locale: locale, calendar: calendar) {
                 Text(line)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -26,9 +28,10 @@ struct HubChatsSection: View {
 struct HubChatRow: View {
     @Environment(AppModel.self) private var model
     let chat: HubChatSummary
+    let providerID: UUID
 
     var body: some View {
-        let mark = model.mark(for: chat)
+        let mark = model.mark(for: chat, on: providerID)
         VStack(alignment: .leading, spacing: 2) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(chat.title.isEmpty ? "New conversation" : chat.title)

@@ -71,6 +71,7 @@ extension AppModel {
             // not clear the flag its successor is relying on.
             if dialGeneration[config.id] == generation { connecting.remove(config.id) }
             wakeWaitingSend(for: config.id)
+            settleHubChat(config.id)
         }
         setPipeStatus(.idle, for: config.id)
         do {

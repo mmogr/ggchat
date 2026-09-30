@@ -26,8 +26,9 @@ public struct OpenHubChat: Equatable, Sendable {
 }
 
 // "On home" in the list: each paired Mac's chats, read live through its pipe.
-// Nothing a Mac sends of its chats goes into the store: the list lives in
-// memory, and an opened chat's rows live only while it is selected. A server
+// No text of a Mac's chats goes into the store: the list lives in memory,
+// but for the titles `AppModel+HubChatsSeen` keeps, and an opened chat's
+// rows live only while it is selected. A server
 // added by address has no section, because gglib reads its chats only to a
 // device through its tunnel.
 extension AppModel {
@@ -56,20 +57,6 @@ extension AppModel {
     /// The providers with a section of their own: the paired Macs.
     public var hubProviders: [ProviderConfig] {
         providers.filter(\.isPipe)
-    }
-
-    /// A Mac's chat is marked Writing while the Mac holds a reply to it not
-    /// yet saved. It is never New: this phone keeps nothing to compare with.
-    public func mark(for chat: HubChatSummary) -> ConversationMark? {
-        chat.liveRun == nil ? nil : .writing
-    }
-
-    /// The line under a Mac's section, when there is something to say.
-    public func hubLine(for providerID: UUID) -> String? {
-        guard let config = providers.first(where: { $0.id == providerID }) else { return nil }
-        if hubNotShared.contains(providerID) { return "\(config.name) does not share its chats with this phone." }
-        if hubChats[providerID]?.isEmpty == true { return "No chats on \(config.name) yet." }
-        return nil
     }
 
     /// Lists every paired Mac's chats: through a pipe that is up at once, and
@@ -106,6 +93,7 @@ extension AppModel {
             guard providers.contains(where: { $0.id == providerID }) else { return }
             hubChats[providerID] = list.chats
             hubNotShared.remove(providerID)
+            keepSeen(list.chats, from: config)
         } catch .notShared {
             hubNotShared.insert(providerID)
         } catch {
@@ -123,6 +111,14 @@ extension AppModel {
         selectedConversationID = nil
         let title = hubChats[providerID]?.first { $0.id == chatID }?.title ?? ""
         openedHubChat = OpenHubChat(providerID: providerID, chatID: chatID, title: title, state: .reading)
+        readHubChat()
+    }
+
+    /// A dial ended: the open chat that waited for it, and was not read
+    /// because its pipe never came up, says its Mac is unreachable.
+    func settleHubChat(_ providerID: UUID) {
+        guard let open = openedHubChat, open.providerID == providerID, open.state == .reading, hubReading == nil
+        else { return }
         readHubChat()
     }
 
@@ -190,6 +186,7 @@ extension AppModel {
     /// Forgets a removed provider's chats.
     func forgetHubChats(_ providerID: UUID) {
         hubChats[providerID] = nil
+        hubSeenAt[providerID] = nil
         hubNotShared.remove(providerID)
         if openedHubChat?.providerID == providerID { dropHubChat() }
     }
@@ -197,9 +194,7 @@ extension AppModel {
     /// The provider as a hub whose chats can be read now: a paired Mac whose
     /// pipe is up.
     func reachableHubChats(for config: ProviderConfig) -> (any HubChatsProvider)? {
-        guard config.isPipe, pipeSessions[config.id] != nil, pipeStatuses[config.id]?.isConnected == true else {
-            return nil
-        }
+        guard config.isPipe, hubIsReachable(config.id) else { return nil }
         return makeProvider(for: config) as? any HubChatsProvider
     }
 

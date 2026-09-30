@@ -156,7 +156,13 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # listed when its pipe comes up and on a pull, only for a pipe, opened read
 # only with nothing written to the store, dropped by Back, a Mac that does
 # not share its chats saying so, and the launch's quiet dial raising no alert.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 390
+#
+# 2026-09-30: 390 -> 396. Six tests pin what an unreachable Mac's section
+# shows: the titles its list last saw and when, kept after every list and
+# through a relaunch, gone with the provider; that opening one then says the
+# Mac is unreachable, also after a dial that fails; and that a store opens
+# across the two new columns both ways.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 396
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
 floor "README test markers" "${markers:-0}" 279
 
