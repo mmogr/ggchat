@@ -8,6 +8,7 @@
 #   3. Only GGChatPipe imports modelpipe, and nothing imports iroh or a Rust
 #      module directly. The binding is one target's business: everything above
 #      the seam speaks `PipeConnector` and knows nothing about the transport.
+#      No Rust source or Cargo manifest sits in Sources, App, Tests or scripts.
 #   4. The app target holds one Swift file, `ggchatApp.swift`. Everything
 #      else lives in the package.
 #   5. Core tests do not import SwiftUI either.
@@ -44,8 +45,18 @@ if stray=$(printf '%s' "$imports" | grep -v '^$' \
     | grep -viE '^[^:]*/(Sources/GGChatPipe|Tests/GGChatPipeTests)/[^:]*:[0-9]+:\s*import Modelpipe\s*$'); then
     fail "only GGChatPipe may import Modelpipe, and nothing may import iroh:"$'\n'"$stray"
 fi
-if [ -d "$ROOT/Sources" ] && find "$ROOT/Sources" "$ROOT/App" \( -name '*.rs' -o -name 'Cargo.toml' \) 2>/dev/null | grep -q .; then
-    fail "no Rust in this repo"
+# Rust anywhere this repo keeps code, tests or tooling. Only the directories
+# that exist are handed to find, and what it prints is captured rather than
+# piped into `grep -q`: under pipefail a missing directory made find exit
+# non-zero, so the pipeline failed -- and the check passed -- even when grep
+# had matched.
+rust_dirs=()
+for dir in Sources App Tests scripts; do
+    if [ -d "$ROOT/$dir" ]; then rust_dirs+=("$ROOT/$dir"); fi
+done
+if [ ${#rust_dirs[@]} -gt 0 ]; then
+    rust=$(find "${rust_dirs[@]}" \( -name '*.rs' -o -name 'Cargo.toml' \) 2>/dev/null || true)
+    [ -z "$rust" ] || fail "no Rust in this repo:"$'\n'"$rust"
 fi
 
 if [ -d "$ROOT/App/ggchat" ]; then
