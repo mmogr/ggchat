@@ -175,7 +175,8 @@ final class ScreenGalleryUITests: XCTestCase {
     }
 
     /// The providers list with something in it, and settings with its one
-    /// reading. The counters for the criteria both ADRs struck are gone.
+    /// reading. The counters for the criteria both ADRs struck are gone, and
+    /// a simulator build, with no profile, has no day it stops opening.
     @MainActor
     func testTheProvidersListAndTheTicketCountInSettings() {
         launch()
@@ -198,6 +199,8 @@ final class ScreenGalleryUITests: XCTestCase {
         for struck in ["Transport errors after resume", "Pipe closed mid-reply", "Continue pressed", "Diagnostics"] {
             XCTAssertFalse(app.staticTexts[struck].exists, "settings still shows \(struck)")
         }
+        let expiry = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'This build stops opening'"))
+        XCTAssertFalse(expiry.firstMatch.exists, "a simulator build has no profile, so no day it stops opening")
         attach(name: "settings")
     }
 

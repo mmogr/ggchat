@@ -303,6 +303,19 @@ Each claim names the test that keeps it true.
 - Settings shows what each live pipe says about itself: its path, the loopback
   port it bound, and what its endpoint spent on relays.
   <!-- test: ModelpipeSessionTests.testTheReadingsCrossTheSeamInTheAppsOwnVocabulary -->
+- Settings says the day this build stops opening, read from the provisioning
+  profile signed into it: a free team's build stops with its profile, seven
+  days after the profile was issued, and a later build can carry the same
+  one. A build with no profile, from the simulator, the App Store or
+  TestFlight, has no such line.
+  <!-- test: ProvisioningProfileTests.testTheDateIsReadFromTheListInsideTheEnvelope -->
+  <!-- test: ProvisioningProfileTests.testABlobWithNoListHasNoDate -->
+  <!-- test: ProvisioningProfileTests.testAListWithoutAnExpirationDateHasNoDate -->
+  <!-- test: ProvisioningProfileTests.testABundleWithNoProfileHasNoDate -->
+  <!-- test: ProvisioningProfileTests.testABundlesProfileIsReadUnderItsName -->
+  <!-- test: SettingsBuildExpiryTests.testTheLineSaysTheDayThisBuildStopsOpeningWhereThePersonIs -->
+  <!-- test: SettingsBuildExpiryTests.testABuildWithNoDateHasNoLine -->
+  <!-- test: ScreenGalleryUITests.testTheProvidersListAndTheTicketCountInSettings -->
 - The mock is DEBUG-only. A build without one refuses a perfectly good
   ticket with a sentence about the build, instead of mocking a pipe that
   is not there.

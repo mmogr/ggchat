@@ -1,19 +1,32 @@
 import GGChatCore
 import SwiftUI
 
-/// About, with how many distinct tickets this device has connected to, and
-/// then each pipe and what it says about itself.
+/// About, with when this build stops opening and how many distinct tickets
+/// this device has connected to, and then each pipe and what it says about
+/// itself.
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.locale) private var locale
+    @Environment(\.calendar) private var calendar
     #if os(iOS)
         @Environment(\.dismiss) private var dismiss
     #endif
+    /// When this build stops opening; nil, and no row, for a build with no
+    /// profile in it.
+    private let buildExpiry: Date?
+
+    init(buildExpiry: Date? = SettingsView.installedBuildExpiry) {
+        self.buildExpiry = buildExpiry
+    }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("About") {
                     LabeledContent("Version", value: Self.version)
+                    if let line = Self.expiryLine(buildExpiry, locale: locale, calendar: calendar) {
+                        Text(line)
+                    }
                     LabeledContent("Distinct tickets connected", value: "\(model.diagnostics.ticketDigests.count)")
                     Link("Source", destination: URL(string: "https://github.com/mmogr/ggchat")!)
                 }
@@ -90,6 +103,23 @@ struct SettingsView: View {
         let build = info?["CFBundleVersion"] as? String ?? "0"
         return "\(short) (\(build))"
     }
+
+    /// Read once, from the profile in this app's bundle: it does not change
+    /// while the app runs.
+    static let installedBuildExpiry = ProvisioningProfile.expirationDate(of: .main)
+
+    /// "This build stops opening on 6 Oct 2026": the day in the locale's
+    /// medium style, as it falls in `calendar`'s time zone. Nil with no date.
+    static func expiryLine(_ expiry: Date?, locale: Locale, calendar: Calendar) -> String? {
+        guard let expiry else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = locale
+        formatter.calendar = calendar
+        formatter.timeZone = calendar.timeZone
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return "This build stops opening on \(formatter.string(from: expiry))"
+    }
 }
 
 /// Every pipe, with when its machine was last heard, and what each live one
@@ -157,5 +187,10 @@ private struct ConnectionsSection: View {
 
 #Preview {
     SettingsView()
+        .environment(AppModel.preview)
+}
+
+#Preview("A build that stops opening") {
+    SettingsView(buildExpiry: .now.addingTimeInterval(5 * 86_400))
         .environment(AppModel.preview)
 }
