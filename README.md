@@ -469,8 +469,10 @@ Each claim names the test that keeps it true.
   <!-- test: UnreadStoreTests.testAStoreOpensAcrossTheUnreadChangeInBothDirections -->
 - Each paired Mac has a section of its own in the list, "On home", with the
   chats gglib keeps there, listed at launch, when its pipe comes up and on a
-  pull, and marked "Writing" while the Mac is writing a reply to one. Opening
-  one reads its questions and replies live, and Back drops them:
+  pull, and marked "Writing" while the Mac is writing a reply to one. The
+  phone's own chats are then headed "On this phone", with a line under them
+  saying they are kept only on this phone and the Mac does not keep them.
+  Opening one reads its questions and replies live, and Back drops them:
   no conversation and no message row comes from the Mac into the store
   (ADR 0007). A Mac that reads its chats only to a device through its tunnel
   says so, a server added by address has no section, and the launch's quiet
@@ -521,9 +523,10 @@ Each claim names the test that keeps it true.
   each tool it calls are read from the run into memory, and once the run ends
   the rows the Mac saved are read in its place. Nothing of it is written to the
   store (ADR 0007). Stop cancels the run, and nothing reads on beside it until
-  the Mac answers. A chat with no model says to pick one on the Mac, a chat the
-  Mac is already writing to says so, here too while this phone holds that
-  reply, and a gglib that takes the turn as a chat run is one without turns;
+  the Mac answers. A chat with no model, while nothing is running on the Mac,
+  says to start a model there, a chat the Mac is already writing to says so,
+  here too while this phone holds that reply, and a gglib that takes the turn
+  as a chat run is one without turns;
   a refused send, or one to a Mac out of reach, puts its text back. A turn
   whose answer was lost is kept, still Writing, and put again under its id,
   whose answer settles it; a list that names its run marks it started, and one

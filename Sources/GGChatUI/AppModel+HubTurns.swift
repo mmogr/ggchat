@@ -236,7 +236,7 @@ extension AppModel {
     /// What the view says when the Mac did not start a turn.
     static func refusalLine(_ failure: HubTurnFailure, _ config: ProviderConfig) -> String {
         switch failure {
-        case .noModel: "This chat has no model; pick one on \(config.name)."
+        case .noModel: "This chat has no model and nothing is running on \(config.name). Start a model there."
         case .replyInProgress: busyLine(config)
         case .chatGone: "\(config.name) no longer has this chat."
         case .refused(let error), .lost(let error):

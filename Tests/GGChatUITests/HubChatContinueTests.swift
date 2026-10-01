@@ -98,7 +98,7 @@ final class HubChatContinueTests: XCTestCase {
         let (model, _) = try await Self.opened(hub)
         let busy = ProviderError.server(status: 429, code: "agent_busy", message: "all agent loop slots are in use")
         let cases: [(HubTurnFailure, String)] = [
-            (.noModel, "This chat has no model; pick one on home."),
+            (.noModel, "This chat has no model and nothing is running on home. Start a model there."),
             (.replyInProgress, "A reply is already being written on home."),
             (.chatGone, "home no longer has this chat."),
             (.refused(busy), "home did not take this message. all agent loop slots are in use"),
