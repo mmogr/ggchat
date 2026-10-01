@@ -15,6 +15,7 @@ final class FakePipe: MpPipeProtocol, @unchecked Sendable {
         var shutdowns = 0
         var networkChanges = 0
         var reason: MpCloseReason?
+        var waiting: Bool
     }
 
     private let state: Mutex<State>
@@ -31,20 +32,29 @@ final class FakePipe: MpPipeProtocol, @unchecked Sendable {
     ///     When they run out the sequence ends, which is what a close looks
     ///     like to the caller.
     ///   - baseUrl: what the pipe claims to have bound.
+    ///   - waitsToStart: holds the walk before its first step until
+    ///     ``start()``. The session starts reading the walk as it is made,
+    ///     and a walk that never suspends can be spent and closed before the
+    ///     test's next line subscribes, which is then told `closed` and
+    ///     nothing else. A test that reads the whole walk subscribes first.
     init(
         walk: [MpPipeStatus] = [],
         from initial: MpPipeStatus = .idle,
         baseUrl: String = "http://127.0.0.1:51234/v1",
         reason: MpCloseReason? = nil,
-        stayOpen: Bool = false
+        stayOpen: Bool = false,
+        waitsToStart: Bool = false
     ) {
-        self.state = Mutex(State(pending: walk, current: initial, reason: reason))
+        self.state = Mutex(State(pending: walk, current: initial, reason: reason, waiting: waitsToStart))
         self.url = baseUrl
         self.stayOpen = stayOpen
     }
 
     var shutdownCount: Int { state.withLock { $0.shutdowns } }
     var networkChangeCount: Int { state.withLock { $0.networkChanges } }
+
+    /// Lets a walk made with `waitsToStart` take its first step.
+    func start() { state.withLock { $0.waiting = false } }
 
     func baseUrl() -> String { url }
     func closeReason() -> MpCloseReason? { state.withLock { $0.reason } }
@@ -88,10 +98,14 @@ final class FakePipe: MpPipeProtocol, @unchecked Sendable {
 
     /// Hands out the next transition, or `nil` once there are none left.
     ///
-    /// Returns without suspending on purpose. What needs to be controlled in
-    /// these tests is the grace, and that is the injected `Sleeper`'s job; a
-    /// gate here as well would only make the tests harder to read.
+    /// Returns without suspending, once started. The grace is the injected
+    /// `Sleeper`'s job; the one wait here is ``start()``, which only decides
+    /// when the walk begins.
     func statusChangedSince(snapshot: MpPipeStatus) async -> MpPipeStatus? {
+        while state.withLock({ $0.waiting }) {
+            if Task.isCancelled { return nil }
+            await Task.yield()
+        }
         let next: MpPipeStatus? = state.withLock { state in
             guard !state.pending.isEmpty else { return nil }
             let value = state.pending.removeFirst()

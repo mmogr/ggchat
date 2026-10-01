@@ -23,12 +23,16 @@ private func collect(_ session: any PipeSession, upTo stop: Int) async -> [PipeS
 
 final class ModelpipeSessionTests: XCTestCase {
 
+    /// Held open, so the pipe is still `direct` when the test subscribes. A
+    /// pipe with nothing left to walk closes as soon as the session reads it,
+    /// and a subscriber that came after that was told `closed`.
     func testTheCurrentValueComesFirstEvenToALateSubscriber() async throws {
         let session = try ModelpipeSession(
-            pipe: FakePipe(from: .direct), sleeper: ImmediateSleeper(),
+            pipe: FakePipe(from: .direct, stayOpen: true), sleeper: ImmediateSleeper(),
             grace: .milliseconds(1))
         let first = await collect(session, upTo: 1)
         XCTAssertEqual(first, [.direct], "a subscriber was told nothing until something changed")
+        await session.shutdown()
     }
 
     /// A pipe that dies on its own ends the binding's sequence without ever
@@ -36,12 +40,13 @@ final class ModelpipeSessionTests: XCTestCase {
     /// merely finishes, so without this the pill keeps reading "Direct" over
     /// a listener that is gone.
     func testAPipeThatDiesOnItsOwnStillSaysClosed() async throws {
-        let session = try ModelpipeSession(
-            pipe: FakePipe(walk: [.direct], from: .idle, reason: .listenerFailed),
-            sleeper: ImmediateSleeper(), grace: .milliseconds(1))
+        let pipe = FakePipe(walk: [.direct], from: .idle, reason: .listenerFailed, waitsToStart: true)
+        let session = try ModelpipeSession(pipe: pipe, sleeper: ImmediateSleeper(), grace: .milliseconds(1))
 
+        let stream = session.status
+        pipe.start()
         var seen: [PipeStatus] = []
-        for await status in session.status { seen.append(status) }
+        for await status in stream { seen.append(status) }
 
         XCTAssertEqual(seen.last, .closed, "the stream ended without a close: \(seen)")
         XCTAssertTrue(seen.contains(.direct))
@@ -50,14 +55,19 @@ final class ModelpipeSessionTests: XCTestCase {
     /// The walk a hole punch actually produces is idle, then relayed for a
     /// second, then direct. Showing "Relayed" for that second reads as a
     /// warning about a connection still being made, so it is held back.
+    ///
+    /// Subscribed before the walk starts. Otherwise the session could walk
+    /// it and close before the subscription, and the test was told `closed`
+    /// alone, which shows no relayed and proves nothing.
     func testRelayedDoesNotFlashWhenDirectIsAMomentBehindIt() async throws {
         let gate = GatedSleeper()
-        let session = try ModelpipeSession(
-            pipe: FakePipe(walk: [.relayed, .direct], from: .idle), sleeper: gate,
-            grace: .seconds(1))
+        let pipe = FakePipe(walk: [.relayed, .direct], from: .idle, waitsToStart: true)
+        let session = try ModelpipeSession(pipe: pipe, sleeper: gate, grace: .seconds(1))
 
+        let stream = session.status
+        pipe.start()
         var seen: [PipeStatus] = []
-        for await status in session.status { seen.append(status) }
+        for await status in stream { seen.append(status) }
 
         XCTAssertFalse(
             seen.contains(.relayed),
