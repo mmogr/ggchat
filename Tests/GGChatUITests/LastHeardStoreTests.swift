@@ -95,19 +95,28 @@ final class LastHeardStoreTests: XCTestCase {
 
     private struct SQLiteRefused: Error, CustomStringConvertible {
         let step: String
-        var description: String { "SQLite refused at \(step)" }
+        let code: Int32
+        var description: String { "SQLite answered \(code) at \(step)" }
     }
 
     /// The names of the columns SQLite holds for the provider rows.
+    ///
+    /// Waits for the file's lock rather than failing on it. A container that
+    /// wrote the store can still hold it locked a moment after it is let go,
+    /// and a connection with no busy handler is answered SQLITE_BUSY at once.
+    /// Run with the whole suite in parallel, this read was refused so at its
+    /// prepare, the store's `-wal` and `-shm` still beside it, in about one
+    /// run in ten.
     private func providerColumns(in url: URL) throws -> [String] {
         var database: OpaquePointer?
         defer { sqlite3_close(database) }
-        guard sqlite3_open_v2(url.path(percentEncoded: false), &database, SQLITE_OPEN_READONLY, nil) == SQLITE_OK
-        else { throw SQLiteRefused(step: "open") }
+        let opened = sqlite3_open_v2(url.path(percentEncoded: false), &database, SQLITE_OPEN_READONLY, nil)
+        guard opened == SQLITE_OK else { throw SQLiteRefused(step: "open", code: opened) }
+        sqlite3_busy_timeout(database, 10_000)
         var statement: OpaquePointer?
         defer { sqlite3_finalize(statement) }
-        guard sqlite3_prepare_v2(database, "PRAGMA table_info(ZPROVIDERRECORD)", -1, &statement, nil) == SQLITE_OK
-        else { throw SQLiteRefused(step: "prepare") }
+        let prepared = sqlite3_prepare_v2(database, "PRAGMA table_info(ZPROVIDERRECORD)", -1, &statement, nil)
+        guard prepared == SQLITE_OK else { throw SQLiteRefused(step: "prepare", code: prepared) }
         var columns: [String] = []
         while sqlite3_step(statement) == SQLITE_ROW {
             columns.append(String(cString: sqlite3_column_text(statement, 1)))
