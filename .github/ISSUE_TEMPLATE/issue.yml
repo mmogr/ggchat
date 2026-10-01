@@ -50,4 +50,4 @@ body:
     id: reading
     attributes:
       label: Reading
-      description: A log line, a counter from Settings > Diagnostics, a screenshot. Never a credential.
+      description: A log line, a reading from Settings, a screenshot. Never a credential.

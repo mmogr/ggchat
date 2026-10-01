@@ -88,32 +88,21 @@ final class AppModelFailedDialTests: XCTestCase {
 
         XCTAssertEqual(connector.dials, 2, "the resume did not retry the failed dial")
         XCTAssertEqual(model.pipeStatus(for: config.id), .closed, "and the pill did not survive the resume either")
-        XCTAssertEqual(
-            model.diagnostics.closedTransitions, 2,
-            "each refusal put Closed back on the screen, so each is one close")
-        XCTAssertEqual(model.diagnostics.closedWhileStreaming, 0, "a dial that was refused has no session to stream on")
     }
 
-    /// A close is counted once, however many times the app writes it down.
-    ///
     /// The two closes the app writes itself meet here: a dial that was
     /// refused leaves `.closed` behind, and the background that follows hangs
     /// up a provider that has nothing to hang up and leaves `.closed` again.
-    /// Counting on the write rather than on the observation is what puts them
-    /// both in reach of the counter, and `previous != .closed` is the whole of
-    /// what keeps them from being two.
+    /// The pill stays, because it is still the way back.
     @MainActor
-    func testABackgroundAfterARefusedDialAddsNoSecondClose() async throws {
+    func testABackgroundAfterARefusedDialKeepsThePillToPress() async throws {
         let (model, config) = try makeModel(dialling: RefusingConnector())
         await model.connectPipe(for: config)
-        XCTAssertEqual(model.diagnostics.closedTransitions, 1)
+        XCTAssertEqual(model.pipeStatus(for: config.id), .closed)
 
         await model.scene(.background).value
 
         XCTAssertEqual(model.pipeStatus(for: config.id), .closed, "the pill that is the way back was taken away")
-        XCTAssertEqual(
-            model.diagnostics.closedTransitions, 1,
-            "one machine that never answered was counted as two closes")
     }
 
     /// The failing half of the interlock. A refusal that arrives after its

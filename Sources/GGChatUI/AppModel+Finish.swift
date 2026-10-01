@@ -7,7 +7,7 @@ extension AppModel {
     /// Writes what arrived into the conversation. `refusal` is a failure this
     /// app worked out rather than one a provider reported — a refused dial's
     /// sentence, or a run the hub no longer has — kept where a provider's
-    /// error would be, and not counted as one.
+    /// error would be.
     ///
     /// `keepsRun` is a reply walking away from its run: whatever has arrived,
     /// nothing at all included, is written with the run's id and cursor, so
@@ -27,8 +27,7 @@ extension AppModel {
         let stamp = now()
         // A stop or a background is not a failure, however the provider put
         // it: a cancelled request can surface as a transport error, and
-        // whether that arrives before the stream ends is a race. Nor is it a
-        // transport error after a resume, for the diagnostics below.
+        // whether that arrives before the stream ends is a race.
         let error = cancelled ? nil : live.error
         let failure = refusal ?? error.map(Failure.init)
         // gglib's notice of that failure, written as text before the error
@@ -56,7 +55,6 @@ extension AppModel {
         }
         if !keepsRun { markUnreadUnlessRead(&conversation, stoppedHere: live.stoppedHere) }
         conversation.updatedAt = stamp
-        diagnostics.recordStreamEnd(with: error, at: stamp)
         if let providerID = conversation.providerID {
             if finished { heard(providerID) } else if let error { note(error, from: providerID) }
         }

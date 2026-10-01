@@ -190,16 +190,11 @@ extension AppModel {
     ///     right for a provider being deleted or dialled again. Going to the
     ///     background leaves `.closed`, for ``connectPipe(for:quietly:)``'s reason:
     ///     the pill is the way back, and that is the state it is most wanted
-    ///     from. Leaving it here rather than writing it afterwards is what
-    ///     puts the close through `setPipeStatus(_:for:cutShort:)` and so
-    ///     what counts it. That is the whole of the reason: writing it
-    ///     afterwards, as the caller used to, showed the user nothing wrong.
-    ///     The clear to `nil` came after the `await` below, and this module
-    ///     is compiled with `.defaultIsolation(MainActor.self)`, so nothing
-    ///     could run between that write and the caller's.
-    ///   - cutShort: whether this hang-up is what ended a reply in flight.
-    ///     Only the hang-up pass, ``scene(_:)``, can say so, because it puts the
-    ///     reply down before it hangs up — see there.
+    ///     from.
+    ///   - cutShort: whether this hang-up is what ended a reply in flight, so
+    ///     the log line calls the close mid-reply. Only the hang-up pass,
+    ///     ``scene(_:)``, can say so, because it puts the reply down before it
+    ///     hangs up — see there.
     ///
     /// Calling off the dial is what the generation is for. This can only ever
     /// see a session that has already been installed, so before the stamp a

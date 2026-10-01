@@ -67,7 +67,6 @@ final class AppModelRefusalTests: XCTestCase {
         XCTAssertEqual(messages[1].content, "yes, here")
         XCTAssertFalse(messages[1].isPartial)
         XCTAssertNil(model.streamError(for: try XCTUnwrap(model.selectedConversationID)))
-        XCTAssertEqual(model.diagnostics.continuePresses, 0, "Retry is not counted with Continue")
     }
 
     @MainActor

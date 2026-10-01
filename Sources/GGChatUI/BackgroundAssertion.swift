@@ -12,11 +12,9 @@
 /// first await.
 ///
 /// If iOS suspends the app part-way through, the `.closed` that
-/// `disconnectPipe` writes never lands. The pill comes back reading whatever
-/// it last said, and ADR 0002's denominator loses the close that is by far
-/// its commonest case — a phone going to the background is how nearly every
-/// pipe in this app ends. The reading would then be taken over a denominator
-/// missing the thing it exists to measure.
+/// `disconnectPipe` writes never lands, and the pill comes back reading
+/// whatever it last said. That is the commonest close there is: a phone going
+/// to the background is how nearly every pipe in this app ends.
 ///
 /// So this asks for the usual grace, and gives it back the moment the work is
 /// done. Nothing here retries or defends against expiry: if the system takes

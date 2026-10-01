@@ -47,9 +47,6 @@ extension AppModel {
             isAway = false
             readTheChatOnScreen()
             resumeInFlight?.cancel()
-            // Counted at the change rather than after the wait: this is ADR
-            // 0001's denominator, a resume, whether or not a dial follows.
-            diagnostics.recordResume(at: now())
             let pending = hangUpInFlight
             let pass = Task {
                 await pending?.value
@@ -62,8 +59,7 @@ extension AppModel {
         }
     }
 
-    /// ADR 0001's reading, and the way back in: the app came to the
-    /// foreground.
+    /// The way back in: the app came to the foreground.
     ///
     /// Every pipe this app has dialled before and is not holding now is
     /// dialled again here. Nothing survives a background — see
@@ -103,9 +99,8 @@ extension AppModel {
     /// Which provider that reply belonged to has to be read before it is put
     /// down. `finish(_:finished:cancelled:)` clears `liveReply`, so by the time
     /// the pipes are hung up below nothing is left to say that the close about
-    /// to be shown is the one that ended a reply — and ADR 0002 counts that
-    /// close as mid-reply, because the partial written a line earlier is
-    /// exactly what Continue is offered on.
+    /// to be shown is the one that ended a reply, and the log line calls that
+    /// close mid-reply.
     func hangUpEveryPipe() async {
         let cutShort = streamingProviderID
         if let inFlight = streamTask {

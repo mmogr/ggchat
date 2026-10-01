@@ -2,7 +2,9 @@
 
 - **Status:** Accepted
 - **Date:** 2026-09-06 (amended 2026-09-07 — the risk is the wrong shape and
-  the reading cannot see it; see the notes in "Context" and "Kill criteria")
+  the reading cannot see it; see the notes in "Context" and "Kill criteria";
+  amended 2026-10-01 — the reading is no longer shown or counted, see "Kill
+  criteria")
 - **Supersedes:** nothing
 - **Superseded by:** nothing
 
@@ -131,3 +133,9 @@ and `MockPipeConnector` implements them the way `ModelpipeConnector` will.
   > **Amended 2026-09-07.** Worth keeping, and worth reading narrowly: with
   > the numerator as it stands a zero is close to guaranteed, so it says
   > almost nothing about the decision.
+
+> **Amended 2026-10-01 — the reading is no longer shown or counted.** Both
+> counters, and the "Transport errors after resume" row in Settings, were
+> removed in issue 89: with the reading and the threshold struck, a number
+> with no criterion behind it was noise. The notes above describe the code as
+> it was.

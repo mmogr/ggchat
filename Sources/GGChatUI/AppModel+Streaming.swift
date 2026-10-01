@@ -39,7 +39,6 @@ extension AppModel {
         guard let conversation = selectedConversation, !isStreaming,
             let last = conversation.messages.last, last.role == .assistant, last.isPartial, !last.isBeingWritten
         else { return nil }
-        diagnostics.recordContinue()
         return stream(conversation, continuing: last.id)
     }
 
@@ -50,10 +49,7 @@ extension AppModel {
     /// again, and no second copy of it is added.
     ///
     /// Nothing is sent until the user presses it, which is ADR 0002's rule,
-    /// and there is no reply here for that rule to protect. It is not counted
-    /// with Continue, whose counter asks whether a half-reply is worth
-    /// resuming; this asks whether an unanswered question is worth asking
-    /// again.
+    /// and there is no reply here for that rule to protect.
     ///
     /// A refusal on the question is cleared only once the request is on its
     /// way, or waiting for its pipe, so a conversation whose provider has
