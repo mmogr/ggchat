@@ -251,6 +251,16 @@ Each claim names the test that keeps it true.
 - A dial whose task is called off complains to nobody: nobody is waiting
   for its answer.
   <!-- test: AppModelQuietDialTests.testADialThatIsCalledOffSaysNothing -->
+- When the Keychain will not read a pipe's ticket or token for a dial, as
+  before the device's first unlock, the dial says the Keychain's own
+  reason, on the question waiting for the pipe or in the alert. Only a
+  credential that is not there is called missing: a missing one is a reason
+  to pair again, and a refused read is not.
+  <!-- test: AppModelKeychainReadTests.testAReadTheKeychainRefusesIsSaidAsThatRefusal -->
+  <!-- test: AppModelKeychainReadTests.testASendWaitingOnThePipeShowsTheRefusalOnItsQuestion -->
+  <!-- test: AppModelKeychainReadTests.testAQuietDialLogsTheRefusalAndRaisesNoAlert -->
+  <!-- test: AppModelPipeTests.testConnectWithoutSecretsRefusesWithASentence -->
+  <!-- test: KeychainSecretsTests.testAReadThatFailsForAnyOtherReasonThrows -->
 - A pipe that dies quietly is forgotten, so the next resume dials it again
   instead of finding a dead session installed and refusing.
   <!-- test: AppModelQuietDialTests.testASessionThatEndedIsForgottenSoAResumeCanDialAgain -->

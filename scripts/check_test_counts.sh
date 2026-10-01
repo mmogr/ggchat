@@ -232,8 +232,14 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # file found under its name, and Settings' line, said where the person is and
 # absent with no date. They are the whole of that guard; the claim names them
 # and the gallery's Settings test, which finds no such line in the simulator.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 453
+#
+# 2026-10-02: 453 -> 456 and 362 -> 367. Three tests pin that a Keychain
+# that will not read a pipe's ticket or token is said as its own reason, in
+# the alert, on a waiting question and in a quiet dial's log line, and never
+# as missing (issue 85). They are the whole of that guard; the claim names
+# them, the missing case and the read the Keychain refuses.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 456
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 362
+floor "README test markers" "${markers:-0}" 367
 
 exit $status
