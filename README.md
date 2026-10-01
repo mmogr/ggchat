@@ -670,11 +670,12 @@ Each claim names the test that keeps it true.
 - Exactly three custom glass surfaces exist, all in one file inside one
   `GlassEffectContainer`; `scripts/check_glass_sites.sh` counts them, and
   `scripts/check_no_hand_drawn_glass.sh` refuses any material or
-  translucent fill elsewhere, so Reduce Transparency and Increase Contrast
-  are the system's to honour — and the test measures the glass going flat
-  rather than trusting the setting, because the launch arguments that look
-  like it are accepted and change nothing. Symbol effects and the streaming
-  animation switch off under Reduce Motion, and the pills stack at
+  translucent fill elsewhere but one line, the material behind the
+  scanner's caption over the camera, so Reduce Transparency and Increase
+  Contrast are the system's to honour — and the test measures the glass
+  going flat rather than trusting the setting, because the launch arguments
+  that look like it are accepted and change nothing. Symbol effects and the
+  streaming animation switch off under Reduce Motion, and the pills stack at
   accessibility type sizes.
   <!-- test: ReduceTransparencyUITests.testGlassGoesFlatWhenTransparencyIsReduced -->
 - With `GGCHAT_LIVE_BASE_URL` set, the app model adds that server by URL,
