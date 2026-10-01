@@ -883,6 +883,9 @@ Each claim names the test that keeps it true.
   <!-- test: MarkdownTests.testASoftBreakReadsAsASpace -->
   <!-- test: MarkdownTests.testASoftBreakBesideCodeEmphasisAndALinkReadsAsASpace -->
   <!-- test: MarkdownTests.testAHardBreakIsANewline -->
+- Punctuation in the transcript reads as typed: `---` stays three hyphens
+  rather than becoming an em dash, and straight quotes stay straight.
+  <!-- test: MarkdownTests.testPunctuationReadsAsTyped -->
 
 ## Building and testing
 

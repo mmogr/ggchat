@@ -81,6 +81,11 @@ final class MarkdownTests: XCTestCase {
         XCTAssertEqual(characters(ofParagraph: "*one  \ntwo*"), "one\ntwo", "inside emphasis")
     }
 
+    func testPunctuationReadsAsTyped() {
+        let typed = #"wait --- what -- "this" isn't..."#
+        XCTAssertEqual(characters(ofParagraph: typed), typed)
+    }
+
     /// The one paragraph `markdown` parses into, or a failure and nothing.
     private func paragraph(_ markdown: String, line: UInt = #line) -> AttributedString {
         let blocks = MarkdownBlocks.parse(markdown)

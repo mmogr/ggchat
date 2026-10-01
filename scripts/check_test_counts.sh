@@ -273,8 +273,12 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # quote. Each failed against the rendering that dropped a break, and nothing
 # else did, so they are the whole of that guard, and the README claim names
 # all three.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 483
+#
+# 2026-10-02: 483 -> 484 and 395 -> 396. One test pins that punctuation
+# reads as typed, `---` not turned into an em dash. It is the only test that
+# fails when smart punctuation is on, and the README claim names it.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 484
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 395
+floor "README test markers" "${markers:-0}" 396
 
 exit $status

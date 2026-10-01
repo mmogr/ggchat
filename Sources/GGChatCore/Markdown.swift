@@ -46,9 +46,13 @@ public enum MarkdownBlocks {
 
     /// The top-level children of `text` parsed as a document. Every document
     /// parse goes through here, so a bound `ParseMeter` counts them all.
+    ///
+    /// Punctuation reads as typed. Smart punctuation, which swift-markdown
+    /// turns on unless told not to, makes `---` an em dash, `--` an en dash,
+    /// `...` an ellipsis and straight quotes curly.
     static func children(parsing text: String) -> [any Markup] {
         ParseMeter.current?.add(text.utf8.count)
-        return Array(Document(parsing: text).children)
+        return Array(Document(parsing: text, options: .disableSmartOpts).children)
     }
 
     /// The blocks for a document's top-level children.
