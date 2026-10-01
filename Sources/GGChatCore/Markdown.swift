@@ -41,7 +41,14 @@ public enum MarkdownBlocks {
     /// code block to the end of the text, so streaming code never flashes
     /// as prose.
     public static func parse(_ text: String) -> [MarkdownBlock] {
-        blocks(of: Document(parsing: text).children)
+        blocks(of: children(parsing: text))
+    }
+
+    /// The top-level children of `text` parsed as a document. Every document
+    /// parse goes through here, so a bound `ParseMeter` counts them all.
+    static func children(parsing text: String) -> [any Markup] {
+        ParseMeter.current?.add(text.utf8.count)
+        return Array(Document(parsing: text).children)
     }
 
     /// The blocks for a document's top-level children.

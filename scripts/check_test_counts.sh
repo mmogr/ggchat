@@ -257,8 +257,17 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # paragraph line, text that is not a table kept as a paragraph, the table
 # view chosen for it, and what VoiceOver reads. They are the whole of that
 # guard, and the README claim names all nine.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 469
+#
+# 2026-10-02: 469 -> 480 and 381 -> 392. Eleven tests pin that a streaming
+# reply is parsed again only after its settled blocks (issue 82): every
+# prefix of written and random replies against a whole parse, a fence and a
+# table still open, a later definition, text that starts again, which block
+# boundary is clean, which `]:` may be a definition, and the work per token
+# in the core and in both rows. A parse of the whole reply per token passes
+# everything else, so they are the whole of that guard, and the README
+# claim names all eleven.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 480
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 381
+floor "README test markers" "${markers:-0}" 392
 
 exit $status

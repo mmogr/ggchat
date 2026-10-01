@@ -391,6 +391,24 @@ Each claim names the test that keeps it true.
   <!-- test: MarkdownBlockViewTests.testATableBlockIsDrawnAsATableAndNotAsCode -->
   <!-- test: MarkdownBlockViewTests.testACodeBlockIsStillDrawnAsCode -->
   <!-- test: MarkdownBlockViewTests.testVoiceOverReadsATableARowAtATime -->
+- A reply being streamed, to a conversation here or to a Mac's chat, is
+  parsed again only after the blocks no later token can change, so the
+  parsing a token costs stays the size of the last block or two however long
+  the reply grows. Every step gives the blocks a parse of the whole text
+  would, a code fence or a table still open at the end included. Text that
+  may hold a link reference definition, a carriage return or a byte-order
+  mark, each of which reaches across blocks, is parsed whole.
+  <!-- test: LiveMarkdownTests.testEveryPrefixOfASampleReplyParsesAsTheWholeDoes -->
+  <!-- test: LiveMarkdownTests.testEveryPrefixOfRandomMarkdownParsesAsTheWholeDoes -->
+  <!-- test: LiveMarkdownTests.testACodeFenceStillOpenAtTheEndStaysOpen -->
+  <!-- test: LiveMarkdownTests.testATableStillOpenAtTheEndStaysOpen -->
+  <!-- test: LiveMarkdownTests.testADefinitionAfterAParagraphStillMakesItALink -->
+  <!-- test: LiveMarkdownTests.testTextThatDoesNotCarryOnIsParsedAfresh -->
+  <!-- test: LiveMarkdownTests.testABlockOverlappingTheOneBeforeItIsNoBoundary -->
+  <!-- test: LiveMarkdownTests.testOnlyALabelAtTheStartOfALineMayBeADefinition -->
+  <!-- test: LiveMarkdownTests.testSettledBlocksAreNotParsedAgain -->
+  <!-- test: LiveReplyMarkdownTests.testTheChatRowParsesOnlyWhatATokenCanChange -->
+  <!-- test: LiveReplyMarkdownTests.testAMacChatRowParsesOnlyWhatADeltaCanChange -->
 - A `ProviderConfig` holds no credential; a pipe config carries only a
   digest of its ticket.
   <!-- test: ProviderConfigTests.testPipeProviderRoundTripsAndHoldsOnlyADigest -->
