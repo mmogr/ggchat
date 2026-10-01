@@ -1,3 +1,5 @@
+import Foundation
+
 // The wire shapes of the hub's chats: what a paired Mac lists and opens for
 // this device through its tunnel.
 //
@@ -43,6 +45,20 @@ public struct HubChatSummary: Codable, Sendable, Equatable, Hashable, Identifiab
         case model
         case updatedAt = "updated_at"
         case liveRun = "live_run"
+    }
+}
+
+extension HubChatSummary {
+    /// Reads a time as the hub's database writes it with `datetime('now')`:
+    /// "2026-09-30 09:13:07", in UTC, to the second. Anything else is nil.
+    public static func date(fromUpdatedAt text: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        formatter.isLenient = false
+        return formatter.date(from: text)
     }
 }
 

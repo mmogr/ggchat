@@ -94,7 +94,7 @@ struct HubComposer: View {
         .frame(maxWidth: 760)
         .frame(maxWidth: .infinity)
         .onChange(of: unsent, initial: true) { _, text in
-            guard text != nil, let back = model.takeUnsentHubText(), draft.isEmpty else { return }
+            guard text != nil, draft.isEmpty, let back = model.takeUnsentHubText() else { return }
             draft = back
         }
     }

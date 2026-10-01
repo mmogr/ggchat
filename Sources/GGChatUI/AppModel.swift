@@ -79,6 +79,10 @@ public final class AppModel {
     /// The replies the Macs are writing to their chats, carried on from this
     /// phone and held in memory only; see `AppModel+HubTurns`.
     public internal(set) var hubReplies: [HubLiveReply] = []
+    /// Sends a Mac refused while their chat was not on screen: why, and the
+    /// text, given back when the chat is next opened; see
+    /// `AppModel+HubTurnsReadingOn`.
+    var refusedHubSends: [UUID: [Int64: (notice: String, text: String?)]] = [:]
     /// Changes once each time a pipe first reaches a connected state; the
     /// one haptic in the app fires on it.
     public internal(set) var connectedPulse = 0

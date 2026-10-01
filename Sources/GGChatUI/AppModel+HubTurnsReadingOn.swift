@@ -10,21 +10,49 @@ import GGChatCore
 // 0002), a reading that got nothing reads on after a pause, a few times.
 extension AppModel {
     /// Reads on from the chat open's reply, when nobody is reading it, the
-    /// app is in front, and its Mac can be reached. A turn whose `PUT` was
-    /// never answered is put again under its id first.
+    /// app is in front, and its Mac can be reached. Every turn whose `PUT`
+    /// was never answered, open or not, is put again under its id first.
     func readOnHubReply() {
-        guard !isAway, let reply = openHubReply, !reply.ended, reply.reading == nil,
+        giveBackRefused()
+        for reply in hubReplies where !reply.started { putAgain(reply) }
+        guard !isAway, let reply = openHubReply, reply.started, !reply.ended, reply.reading == nil,
             let config = providers.first(where: { $0.id == reply.providerID }),
             let hub = reachableHubChats(for: config)
         else { return }
         reply.reading = Task { [weak self] in
             guard let self else { return }
-            if reply.started {
-                await readTurn(reply, on: hub, config)
-            } else {
-                await putTurn(reply, on: hub, config)
-            }
+            await readTurn(reply, on: hub, config)
         }
+    }
+
+    /// Puts a turn whose `PUT` was never answered again under its id, when
+    /// nobody is reading it, the app is in front, and its Mac can be
+    /// reached, and while this phone still holds it: a refused one is gone.
+    /// The Mac answers a repeated id with the run already there.
+    private func putAgain(_ reply: HubLiveReply) {
+        guard !isAway, !reply.started, !reply.ended, reply.reading == nil, hubReplies.contains(where: { $0 === reply }),
+            let config = providers.first(where: { $0.id == reply.providerID }),
+            let hub = reachableHubChats(for: config)
+        else { return }
+        reply.reading = Task { [weak self] in
+            guard let self else { return }
+            await putTurn(reply, on: hub, config)
+        }
+    }
+
+    /// A send refused while its chat was not on screen: why, and its text,
+    /// are kept in memory for the chat to give back when it is next opened.
+    func keepRefused(_ reply: HubLiveReply, _ why: String) {
+        refusedHubSends[reply.providerID, default: [:]][reply.chatID] = (why, reply.question)
+    }
+
+    /// Gives the chat open what a refusal kept for it while it was not.
+    private func giveBackRefused() {
+        guard let open = openedHubChat,
+            let refused = refusedHubSends[open.providerID]?.removeValue(forKey: open.chatID)
+        else { return }
+        openedHubChat?.notice = refused.notice
+        openedHubChat?.unsent = refused.text
     }
 
     /// The reading stopped before the run ended: the reply is kept, and read
@@ -88,17 +116,20 @@ extension AppModel {
     /// started one whose chat no longer names its run as live has ended, and
     /// is forgotten, its rows read when its chat is open. A lost turn the list
     /// names as live did arrive, and is kept as started. One it does not name
-    /// is kept as it is: the Mac names a run only once it has reserved it,
-    /// which may wait for a model to load, so only the next `PUT` under its
-    /// id can say.
+    /// is kept, and put again under its id: the Mac names a run only once it
+    /// has reserved it, which may wait for a model to load, so only the next
+    /// `PUT` can say, and a list says the Mac answers now.
     func settleHubReplies(_ replies: [HubLiveReply], by list: HubChatList) {
-        for reply in replies where reply.reading == nil && !reply.ended {
+        for reply in replies where reply.reading == nil && !reply.ended && hubReplies.contains(where: { $0 === reply })
+        {
             let live = list.chats.first { $0.id == reply.chatID }?.liveRun
             if live == reply.runID, !reply.started {
                 reply.started = true
                 keepHubRuns(reply.providerID)
             } else if live != reply.runID, reply.started {
                 endHubReply(reply)
+            } else if !reply.started {
+                putAgain(reply)
             }
         }
     }

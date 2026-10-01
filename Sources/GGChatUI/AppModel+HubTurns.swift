@@ -188,7 +188,9 @@ extension AppModel {
     private func refuse(_ reply: HubLiveReply, _ why: String, _ config: ProviderConfig) {
         reply.reading = nil
         hubReplies.removeAll { $0 === reply }
-        guard openedHubChat?.providerID == reply.providerID, openedHubChat?.chatID == reply.chatID else { return }
+        guard openedHubChat?.providerID == reply.providerID, openedHubChat?.chatID == reply.chatID else {
+            return keepRefused(reply, why)
+        }
         openedHubChat?.notice = why
         openedHubChat?.unsent = reply.question
         log.log(.info, "\(config.name) did not start a turn")
@@ -216,6 +218,7 @@ extension AppModel {
             reply.reading?.cancel()
         }
         hubReplies.removeAll { $0.providerID == providerID }
+        refusedHubSends[providerID] = nil
     }
 
     /// The text a send that went nowhere left, for the composer to take
