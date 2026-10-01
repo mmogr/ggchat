@@ -333,6 +333,9 @@ Each claim names the test that keeps it true.
   <!-- test: UnavailablePipeTests.testTheRefusalIsASentenceThatBlamesTheBuildAndNotTheUser -->
 - A bearer token is sent on every request and never reaches a log line.
   <!-- test: OpenAICompatibleProviderTests.testNoCredentialEverReachesALogLine -->
+- No line the app writes as it dials a pipe, loses one or pairs carries a
+  ticket, a token or a pairing code.
+  <!-- test: AppModelPipeLogTests.testNoPipeOrPairingLineCarriesATicketATokenOrACode -->
 - `PairedPipe`, `Paired` and `OpenAICompatibleProvider` print the key they
   hold as `<redacted>`, and a `ReadPairing` prints its ticket as the
   ticket's digest, whether interpolated, reflected or dumped, so a log line
