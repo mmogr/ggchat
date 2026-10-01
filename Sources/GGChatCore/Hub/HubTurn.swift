@@ -26,8 +26,8 @@ public struct HubTurn: Codable, Sendable, Equatable {
 
 /// Why the hub did not start a turn.
 public enum HubTurnFailure: Error, Sendable, Equatable {
-    /// The chat names no model, so the hub cannot tell which to load:
-    /// `422 no_model`. Only the Mac can pick one.
+    /// Neither the chat nor its last reply names a model, nothing is running
+    /// on the Mac and it has no default: `422 no_model`.
     case noModel
     /// A reply to the chat is already being written: `409 conflict`.
     case replyInProgress

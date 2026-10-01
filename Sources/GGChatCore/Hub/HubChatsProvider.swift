@@ -34,7 +34,7 @@ public protocol HubChatsProvider: Provider {
 /// The codes the hub's chats routes answer with.
 public enum HubChatsCode {
     public static let deviceNotNamed = "device_not_named"
-    /// A turn on a chat that names no model.
+    /// A turn with no model named, none running and no default.
     public static let noModel = "no_model"
     /// A turn on a chat the hub does not have.
     public static let conversationNotFound = "conversation_not_found"

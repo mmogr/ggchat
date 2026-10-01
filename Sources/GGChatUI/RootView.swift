@@ -107,6 +107,10 @@ struct ConversationSidebar: View {
             } header: {
                 // Named only when a paired Mac's section follows it.
                 if !model.hubProviders.isEmpty { Text("On this phone") }
+            } footer: {
+                if !model.hubProviders.isEmpty {
+                    Text("These chats are kept only on this phone. The Mac does not keep them.")
+                }
             }
             ForEach(model.hubProviders) { config in
                 HubChatsSection(config: config)
