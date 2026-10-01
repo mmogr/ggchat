@@ -62,8 +62,11 @@ final class GatedConnector: PipeConnector {
     }
 
     func connect(ticket: String, token: String) async throws -> any PipeSession {
-        // Taken before the first suspension, so a dial that has reached
-        // `idle` has already taken its place in the queue.
+        // Taken before the first suspension here, so the dials are let
+        // through in the order they arrive. Not before `connectPipe` sets
+        // `idle`: it then hops to the global executor to call this, so a
+        // dial reading `idle` may not have arrived yet. Wait on
+        // `waitForArrivals` for that.
         let mine = state.withLock { state -> Int in
             state.arrivals += 1
             return state.arrivals

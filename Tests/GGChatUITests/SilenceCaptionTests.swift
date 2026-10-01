@@ -85,7 +85,8 @@ final class SilenceCaptionTests: XCTestCase {
 
         let resume = model.scene(.foreground)
         await waitForStatus(.idle, model, config.id)
-        XCTAssertEqual(held.arrivals, 2, "the resume did not dial again")
+        let dialledAgain = await held.waitForArrivals(2)
+        XCTAssertTrue(dialledAgain, "the resume did not dial again")
         XCTAssertNil(try caption(model), "a reconnect still looking")
         held.open()
         await resume.value
