@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.5.0](https://github.com/mmogr/ggchat/compare/v0.4.0...v0.5.0) (2026-10-01)
+
+
+### What the app now does
+
+* **chat:** a long prompt is waited for, and the reply shows how much of it has been read ([#148](https://github.com/mmogr/ggchat/issues/148)) ([7b2017e](https://github.com/mmogr/ggchat/commit/7b2017e548ff073fc82b051826e25ccf74a8fd71))
+* **hub:** a Mac chat carries on from the phone ([#154](https://github.com/mmogr/ggchat/issues/154)) ([6ac2963](https://github.com/mmogr/ggchat/commit/6ac296304fc9310ad0ac1cb02ff5bc7a21f3e4dc))
+* **hub:** Mac rows show a time, and a lost send goes out again ([#156](https://github.com/mmogr/ggchat/issues/156)) ([040b6dc](https://github.com/mmogr/ggchat/commit/040b6dc4c4f3b9892707fba6ec47aa089ceee19c))
+* **hub:** the list shows the Mac's chats ([#153](https://github.com/mmogr/ggchat/issues/153)) ([38f66f8](https://github.com/mmogr/ggchat/commit/38f66f8fba2f74815a5d6f58565d573825e0b7f5))
+* **runs:** a reply to gglib survives the lock ([#151](https://github.com/mmogr/ggchat/issues/151)) ([8163eeb](https://github.com/mmogr/ggchat/commit/8163eeb32a32d7b3d183693eb942ad98e54253aa))
+* **ui:** a send waits for the pipe it needs ([#150](https://github.com/mmogr/ggchat/issues/150)) ([325a9fb](https://github.com/mmogr/ggchat/commit/325a9fbd25bf7192f21c2ea121ef5797e4062e70))
+* **ui:** a silent machine is named with when it was last heard ([#149](https://github.com/mmogr/ggchat/issues/149)) ([1839dff](https://github.com/mmogr/ggchat/commit/1839dff863999927a833022be1d950f81649dcc8))
+* **ui:** the list says which replies are being written and which are new ([#152](https://github.com/mmogr/ggchat/issues/152)) ([17ed614](https://github.com/mmogr/ggchat/commit/17ed614427e0052bf691a0755b84dd6435c85218))
+
+
+### What the app stopped getting wrong
+
+* **core:** a chunk the app cannot read is skipped, and the reply carries on ([#146](https://github.com/mmogr/ggchat/issues/146)) ([8d46214](https://github.com/mmogr/ggchat/commit/8d46214d3e2276a5bb5e43da9c1d88fc34ea092f))
+* **ui:** conversations are kept in a folder of their own, marked out of the backup ([#147](https://github.com/mmogr/ggchat/issues/147)) ([9c06094](https://github.com/mmogr/ggchat/commit/9c060940dd07b8b0245b8a719f123b9be5927c5a))
+* **ui:** the phone's words match the Mac's ([#155](https://github.com/mmogr/ggchat/issues/155)) ([d264042](https://github.com/mmogr/ggchat/commit/d264042ddde6569359dfb958cd617c32457a3562))
+
+
+### What got faster
+
+* **ui:** saving or deleting a provider or conversation fetches that one row by its key ([#143](https://github.com/mmogr/ggchat/issues/143)) ([3b474d9](https://github.com/mmogr/ggchat/commit/3b474d9a7e23343e5699aa0303c146b2e671d189))
+
+
+### Documentation
+
+* **core:** the error vocabulary says gglib's own route wrote invalid_pairing_code only from v0.16.0 to v0.18.x ([#135](https://github.com/mmogr/ggchat/issues/135)) ([7a7c474](https://github.com/mmogr/ggchat/commit/7a7c4742302d806148843ad2a2d3b025ac38f7f8))
+
 ## [0.4.0](https://github.com/mmogr/ggchat/compare/v0.3.4...v0.4.0) (2026-09-23)
 
 
