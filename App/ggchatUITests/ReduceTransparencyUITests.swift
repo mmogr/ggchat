@@ -14,24 +14,25 @@ import XCTest
 final class ReduceTransparencyUITests: XCTestCase {
     private var app: XCUIApplication!
 
-    /// A band with no glass in it, and the band the composer's glass fills.
-    /// Fractions of the screenshot's own height: `XCUIScreen` has no bounds,
-    /// and both bands have to describe the same picture on any device.
-    private static let controlBand = (top: 0.10, bottom: 0.75)
-    private static let glassBand = (top: 0.83, bottom: 0.94)
-
-    /// The measured drop is about 0.028, and two baseline runs in separate
-    /// `xcodebuild test` invocations agreed to sixteen digits — the noise
-    /// floor is zero. A third of the measured drop is still nowhere near it,
-    /// and leaves room for the system to draw the effect a little differently.
-    private static let leastConvincingDrop = 0.01
+    /// How far the composer's glass, against a glass-free band of the same
+    /// picture, must move when the setting is turned on, in either direction.
+    /// The system's flat surface is darker than the glass on iOS 26.5 and
+    /// lighter on iOS 27.0, so a test that wanted a drop failed on 27.0 for
+    /// a surface that had gone flat (#129).
+    ///
+    /// Measured on an iPhone 17 Pro: -0.043 on iOS 26.5 and +0.0079 on iOS
+    /// 27.0, each the same to sixteen digits in two separate `xcodebuild`
+    /// runs, so the noise floor is zero. With the composer told the setting
+    /// was off, the glass moved 0.000006 at most. A third of the smaller
+    /// change is still nowhere near either.
+    private static let leastConvincingChange = 0.0025
 
     @MainActor
     func testGlassGoesFlatWhenTransparencyIsReduced() throws {
         // Reduce Transparency is device state, not app state. A run that
         // crashed before its restore leaves it on, and the baseline would
         // then be taken in the same mode as the reading it is compared with:
-        // the drop collapses to nothing and this test accuses the app of
+        // the change collapses to nothing and this test accuses the app of
         // ignoring a setting it had honoured all along.
         setReduceTransparency(false)
         defer { setReduceTransparency(false) }
@@ -41,43 +42,61 @@ final class ReduceTransparencyUITests: XCTestCase {
         let flat = try glassAgainstItsBackground(screenshot: "glass-flat")
 
         XCTAssertGreaterThan(
-            transparent - flat, Self.leastConvincingDrop,
-            "the glass did not flatten under Reduce Transparency: \(transparent) to \(flat)")
+            abs(transparent - flat), Self.leastConvincingChange,
+            "the glass did not change under Reduce Transparency: \(transparent) to \(flat)")
     }
 
     /// Walks to a conversation and returns how bright the composer's glass is
     /// next to a glass-free band of the same picture. A ratio rather than a
     /// luminance, because it cancels everything the two readings share — the
     /// wallpaper, the clock in the status bar, the transcript behind.
+    ///
+    /// Both regions come from the screen's own elements rather than from
+    /// fractions of the picture, which described an iPhone's screen and no
+    /// other: the glass is the message field, inside the composer's glass,
+    /// and the band is the empty transcript between the navigation bar and
+    /// the model pill, with a margin from each.
     @MainActor
     private func glassAgainstItsBackground(screenshot: String) throws -> Double {
         app = launchFreshApp()
         addMockProvider()
-        openConversation(in: app)
-        XCTAssertTrue(waitUntilHittable(composer(in: app), timeout: 20), "the composer never appeared")
+        let pill = openConversation(in: app)
+        let field = composer(in: app)
+        XCTAssertTrue(waitUntilHittable(field, timeout: 20), "the composer never appeared")
 
         let shot = app.screenshot()
         attach(shot, name: screenshot)
-        let control = try meanLuminance(of: shot, band: Self.controlBand)
-        let glass = try meanLuminance(of: shot, band: Self.glassBand)
+        let image = try XCTUnwrap(shot.image.cgImage, "the screenshot carried no image")
+        let screen = app.frame
+        let scale = Double(image.width) / screen.width
+        let top = app.navigationBars.firstMatch.frame.maxY + Self.margin
+        let bottom = pill.frame.minY - Self.margin
+        XCTAssertGreaterThan(bottom - top, 100, "no glass-free band between the navigation bar and the pill")
+        let band = CGRect(x: screen.minX, y: top, width: screen.width, height: bottom - top)
+        let control = try meanLuminance(of: image, in: band, scale: scale)
+        let glass = try meanLuminance(of: image, in: field.frame, scale: scale)
         XCTAssertGreaterThan(control, 0, "the control band is pure black, so a ratio would say nothing")
         return glass / control
     }
 
-    /// The mean brightness of one horizontal band of a screenshot.
-    @MainActor
-    private func meanLuminance(of shot: XCUIScreenshot, band: (top: Double, bottom: Double)) throws -> Double {
-        let whole = try XCTUnwrap(shot.image.cgImage, "the screenshot carried no image")
-        let top = Int(Double(whole.height) * band.top)
-        let height = Int(Double(whole.height) * band.bottom) - top
-        let width = whole.width
-        let slice = try XCTUnwrap(
-            whole.cropping(to: CGRect(x: 0, y: top, width: width, height: height)),
-            "the band falls outside the screenshot")
+    /// Points kept between the control band and the bars around it, clear of
+    /// the soft edge the system draws where content meets a bar.
+    private static let margin = 24.0
 
-        var pixels = [UInt8](repeating: 0, count: width * height)
+    /// The mean brightness of a region of a screenshot, given in points.
+    @MainActor
+    private func meanLuminance(of whole: CGImage, in region: CGRect, scale: Double) throws -> Double {
+        let pixels = CGRect(
+            x: region.minX * scale, y: region.minY * scale, width: region.width * scale,
+            height: region.height * scale
+        ).integral
+        let slice = try XCTUnwrap(whole.cropping(to: pixels), "the region falls outside the screenshot")
+        let width = slice.width
+        let height = slice.height
+
+        var grey = [UInt8](repeating: 0, count: width * height)
         var drew = false
-        pixels.withUnsafeMutableBytes { raw in
+        grey.withUnsafeMutableBytes { raw in
             guard
                 let context = CGContext(
                     data: raw.baseAddress, width: width, height: height, bitsPerComponent: 8,
@@ -87,8 +106,8 @@ final class ReduceTransparencyUITests: XCTestCase {
             context.draw(slice, in: CGRect(x: 0, y: 0, width: width, height: height))
             drew = true
         }
-        XCTAssertTrue(drew, "the band could not be drawn into a grayscale buffer")
-        return Double(pixels.reduce(0) { $0 + Int($1) }) / Double(pixels.count)
+        XCTAssertTrue(drew, "the region could not be drawn into a grayscale buffer")
+        return Double(grey.reduce(0) { $0 + Int($1) }) / Double(grey.count)
     }
 
     /// Sets Reduce Transparency the only way there is. Nothing here asserts

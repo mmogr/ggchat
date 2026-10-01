@@ -963,8 +963,8 @@ access and this app keeps every credential there.
 iPhone: the root is a `NavigationSplitView`, so the sidebar and the
 conversation are two columns rather than a stack, and Settings is on
 screen instead of one screen back. It is the leg CI runs, and like CI it
-leaves out the Reduce Transparency reading, whose bands are fractions of
-an iPhone's screen. CI runs the walk on both families.
+leaves out the Reduce Transparency reading, which has been measured on
+iPhones only. CI runs the walk on both families.
 
 `make uitest-dark` and `make uitest-contrast` run the same walk with the
 device set to dark mode and to Increase Contrast. Both are settings on the
