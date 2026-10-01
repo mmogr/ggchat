@@ -33,7 +33,7 @@ app shell: a sidebar of conversations persisted with SwiftData, a
 providers sheet
 that adds a server by address or a pipe by its pairing string,
 and settings. The transcript streams replies as markdown with copyable code
-blocks and collapsed reasoning, with a stop button and, when a reply stops
+blocks, tables drawn as tables, and collapsed reasoning, with a stop button and, when a reply stops
 early, a Continue button, and each conversation can carry a system prompt of
 its own, set from the toolbar and sent ahead of every request without ever
 becoming a row in the transcript; a request refused before anything arrived
@@ -377,6 +377,20 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelOpeningTests.testARefreshWhoseTaskWasCalledOffRaisesNoAlert -->
 - An unterminated code fence, as seen mid-stream, renders as a code block.
   <!-- test: MarkdownTests.testUnterminatedFenceIsStillACodeBlock -->
+- A markdown table is drawn as a table and not as its source: its header,
+  the alignment of each column and its rows, every row a cell per column,
+  and each cell keeping its inline styling. VoiceOver reads it a row at a
+  time, each cell after its column's name. Text that only looks like a table
+  stays a paragraph, with none of its lines dropped.
+  <!-- test: MarkdownTableTests.testATableParsesIntoItsHeaderAlignmentsAndRows -->
+  <!-- test: MarkdownTableTests.testACellKeepsItsInlineMarkdown -->
+  <!-- test: MarkdownTableTests.testEveryRowHasACellPerColumn -->
+  <!-- test: MarkdownTableTests.testACaretCellIsKeptAsWritten -->
+  <!-- test: MarkdownTableTests.testATableUnderAParagraphLineTakesOnlyItsOwnLines -->
+  <!-- test: MarkdownTableTests.testTableTextThatIsNotATableIsKeptAsAParagraph -->
+  <!-- test: MarkdownBlockViewTests.testATableBlockIsDrawnAsATableAndNotAsCode -->
+  <!-- test: MarkdownBlockViewTests.testACodeBlockIsStillDrawnAsCode -->
+  <!-- test: MarkdownBlockViewTests.testVoiceOverReadsATableARowAtATime -->
 - A `ProviderConfig` holds no credential; a pipe config carries only a
   digest of its ticket.
   <!-- test: ProviderConfigTests.testPipeProviderRoundTripsAndHoldsOnlyADigest -->

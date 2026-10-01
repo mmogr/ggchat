@@ -250,8 +250,15 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # change marks only its row, and a failure is encoded again only when it
 # changed. Nothing else notices a save that marks every row, so they are the
 # whole of that guard, and the claim names all three.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 460
+#
+# 2026-10-02: 460 -> 469 and 372 -> 381. Nine tests pin that a markdown
+# table is drawn as one (issue 87): its header, alignments and rows, a cell
+# per column, a cell's inline styling, a caret cell kept, a table under a
+# paragraph line, text that is not a table kept as a paragraph, the table
+# view chosen for it, and what VoiceOver reads. They are the whole of that
+# guard, and the README claim names all nine.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 469
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 372
+floor "README test markers" "${markers:-0}" 381
 
 exit $status
