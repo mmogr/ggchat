@@ -390,6 +390,12 @@ Each claim names the test that keeps it true.
   key.
   <!-- test: SwiftDataStoreTests.testOneProviderAmongManyIsUpdatedAndDeletedByItsOwnKey -->
   <!-- test: SwiftDataStoreTests.testOneConversationAmongManyIsUpdatedAndDeletedByItsOwnKey -->
+- Saving a conversation sets only what changed: a field is set only when
+  it differs, and a failure is encoded only when it is not the one already
+  kept, so a save of an unchanged conversation marks no row.
+  <!-- test: SwiftDataStoreWriteTests.testWritingAnUnchangedConversationChangesNoRow -->
+  <!-- test: SwiftDataStoreWriteTests.testChangingOneThingChangesOnlyItsRow -->
+  <!-- test: SwiftDataStoreWriteTests.testAFailureIsWrittenOnlyWhenItChanged -->
 - Conversations, their messages and providers are kept in `ggchat-store` under
   Application Support, a directory readable by this user alone and marked out of
   the backup, and a store an earlier build left where SwiftData put it moves in

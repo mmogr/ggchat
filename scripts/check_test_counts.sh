@@ -244,8 +244,14 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # before its next dial goes, since there is no next dial: one test pins both
 # dials out before either lands, and one that a hang-up arriving before the
 # dials go out calls every one of them off. The claim names both.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 457
+#
+# 2026-10-02: 457 -> 460 and 369 -> 372. Three tests pin that a save marks
+# only what changed (issue 139): an unchanged conversation marks no row, one
+# change marks only its row, and a failure is encoded again only when it
+# changed. Nothing else notices a save that marks every row, so they are the
+# whole of that guard, and the claim names all three.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 460
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 369
+floor "README test markers" "${markers:-0}" 372
 
 exit $status
