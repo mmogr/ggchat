@@ -37,6 +37,18 @@ final class GatedConnector: PipeConnector {
         state.withLock { $0.arrivals }
     }
 
+    /// Waits, for up to `limit`, until `count` dials have reached the gate,
+    /// and answers whether they did. Polled on a clock rather than counted
+    /// in yields, because a dial reaches the gate on the global executor and
+    /// a loaded machine can keep it waiting for a thread.
+    func waitForArrivals(_ count: Int, within limit: Duration = .seconds(10)) async -> Bool {
+        let deadline = ContinuousClock.now + limit
+        while arrivals < count, ContinuousClock.now < deadline {
+            try? await Task.sleep(for: .milliseconds(1))
+        }
+        return arrivals >= count
+    }
+
     /// Lets every dial through: the ones waiting and the ones still to come.
     func open() {
         state.withLock { $0.released = .max }

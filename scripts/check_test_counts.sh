@@ -238,8 +238,14 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # the alert, on a waiting question and in a quiet dial's log line, and never
 # as missing (issue 85). They are the whole of that guard; the claim names
 # them, the missing case and the read the Keychain refuses.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 456
+#
+# 2026-10-02: 456 -> 457 and 367 -> 369. A return to the foreground dials
+# every pipe at once (issue 85). The test that a hang-up stopped the resume
+# before its next dial goes, since there is no next dial: one test pins both
+# dials out before either lands, and one that a hang-up arriving before the
+# dials go out calls every one of them off. The claim names both.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 457
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 367
+floor "README test markers" "${markers:-0}" 369
 
 exit $status

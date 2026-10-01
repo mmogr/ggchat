@@ -66,14 +66,28 @@ extension AppModel {
     /// ``hangUpEveryPipe()`` — and ``open(_:)`` is not asked a second time
     /// for a conversation that was already on screen, so without this the app
     /// comes back to a pipe that is gone and never notices.
+    ///
+    /// The pipes are dialled together, not in turn: with two machines paired
+    /// and the first asleep, the second used to wait for the first's dial to
+    /// give up before it was tried at all (#85).
     func resumeEveryPipe() async {
-        for config in providers
-        where config.isPipe && pipeSessions[config.id] == nil && pipeStatuses[config.id] != nil {
-            // A hang-up that arrived since this pass began has called it off,
-            // and the next dial must not go out.
-            guard !Task.isCancelled else { return }
-            await connectPipe(for: config, quietly: true)
+        let gone = providers.filter { config in
+            config.isPipe && pipeSessions[config.id] == nil && pipeStatuses[config.id] != nil
         }
+        await withTaskGroup(of: Void.self) { group in
+            for config in gone {
+                group.addTask { await self.resumeDial(config) }
+            }
+        }
+    }
+
+    /// One pipe's dial in the foreground pass. On the main actor, so the
+    /// check and the dial's start happen with nothing in between.
+    private func resumeDial(_ config: ProviderConfig) async {
+        // A hang-up that arrived since this pass began has called it off, and
+        // a dial not yet out must not go out.
+        guard !Task.isCancelled else { return }
+        await connectPipe(for: config, quietly: true)
     }
 
     /// The app is going away: the reply in flight is put down and every pipe

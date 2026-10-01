@@ -36,11 +36,11 @@ final class AppModelScenePhaseTests: XCTestCase {
         gate.sessions.map(\.baseURL).filter { registry.provider(for: $0) != nil }
     }
 
-    /// Two pipes, both up, both hung up, then a resume whose first dial is
-    /// held open while a hang-up arrives. The old code let that resume go on
-    /// to dial the second pipe after the hang-up had passed, leaving a live
-    /// pipe behind. Fails when both the cancellation check in
-    /// `resumeEveryPipe` and the `!isAway` guard in `connectPipe` are gone.
+    /// Two pipes, both up, both hung up, then a resume whose dials are held
+    /// open while a hang-up arrives. Sequential dials once let that resume
+    /// go on to dial the second pipe after the hang-up had passed, leaving a
+    /// live pipe behind. The hang-up now moves on the generation of every
+    /// dial already out, and nothing it calls off is installed.
     @MainActor
     func testABackgroundDuringAResumeLeavesNoPipeBehind() async throws {
         let registry = LoopbackProviderRegistry()
@@ -70,11 +70,11 @@ final class AppModelScenePhaseTests: XCTestCase {
         XCTAssertEqual(stillBound(gate, registry), [], "a pipe outlived the background")
     }
 
-    /// The same shape, asserting on what went out rather than what was left:
-    /// the second pipe was never dialled at all. Fails when only the
-    /// cancellation check in `resumeEveryPipe` is gone.
+    /// The pipes are dialled together on the way back: both dials are out
+    /// before either lands, so a machine that is asleep no longer keeps the
+    /// other waiting for its dial to give up (#85).
     @MainActor
-    func testABackgroundStopsAResumeBeforeItsNextDial() async throws {
+    func testAResumeDialsEveryPipeAtOnce() async throws {
         let registry = LoopbackProviderRegistry()
         let gate = GatedConnector(registry: registry)
         let model = makeModel(registry: registry, connector: gate)
@@ -86,14 +86,46 @@ final class AppModelScenePhaseTests: XCTestCase {
         await model.scene(.background).value
 
         let resume = model.scene(.foreground)
-        await waitForStatus(.idle, model, first.id)
-        await model.scene(.background).value
+        let bothOut = await gate.waitForArrivals(4)
+
+        XCTAssertTrue(bothOut, "the second pipe was not dialled while the first's dial was still out")
+        XCTAssertEqual(gate.sessions.count, 2, "a resume dial landed before the gate let it")
+        XCTAssertEqual(model.pipeStatus(for: first.id), .idle)
+        XCTAssertEqual(model.pipeStatus(for: second.id), .idle)
         gate.open()
         await resume.value
+        await waitForStatus(.direct, model, first.id)
+        await waitForStatus(.direct, model, second.id)
+        XCTAssertNotNil(model.pipeSession(for: first.id))
+        XCTAssertNotNil(model.pipeSession(for: second.id))
+    }
 
-        XCTAssertEqual(
-            gate.arrivals, 3,
-            "the gate should have seen the two opening dials and the resume's first; the resume dialled on")
+    /// A hang-up that lands before the resume's dials go out calls every one
+    /// of them off: nothing is dialled after it. Fails when the cancellation
+    /// check in `resumeDial` is gone.
+    @MainActor
+    func testABackgroundBeforeTheResumeDialsCallsThemAllOff() async throws {
+        let registry = LoopbackProviderRegistry()
+        let gate = GatedConnector(registry: registry)
+        let model = makeModel(registry: registry, connector: gate)
+        let first = try addPipe(to: model, named: "home")
+        let second = try addPipe(to: model, named: "studio")
+        gate.release(2)
+        await model.connectPipe(for: first)
+        await model.connectPipe(for: second)
+        await model.scene(.background).value
+
+        let resume = model.scene(.foreground)
+        let away = model.scene(.background)
+        gate.open()
+        await resume.value
+        await away.value
+
+        XCTAssertEqual(gate.arrivals, 2, "the resume dialled after the hang-up had called it off")
+        XCTAssertNil(model.pipeSession(for: first.id))
+        XCTAssertNil(model.pipeSession(for: second.id))
+        XCTAssertEqual(model.pipeStatus(for: first.id), .closed)
+        XCTAssertEqual(model.pipeStatus(for: second.id), .closed)
     }
 
     /// The third window, which the issue did not name: a dial a view started

@@ -731,11 +731,12 @@ Each claim names the test that keeps it true.
 - Going to the background hangs up every pipe and writes the reply that was
   in flight into the conversation as a partial rather than losing it (a reply
   to gglib goes on being written there, and is read on); coming
-  back dials again, and only the pipes the app already had. The two take
-  turns: a hang-up calls off a resume that is still dialling, a resume waits
-  for a hang-up that is still closing, and a dial that lands while the app
-  is away hangs itself up, so no pipe outlives a suspension and none stays
-  down after a return.
+  back dials again, every pipe at once, and only the pipes the app already
+  had, so a machine that is asleep does not keep another waiting. The two
+  take turns: a hang-up calls off a resume that is still dialling, a resume
+  waits for a hang-up that is still closing, and a dial that lands while the
+  app is away hangs itself up, so no pipe outlives a suspension and none
+  stays down after a return.
   <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundHangsUpEveryPipeAndComingBackDialsAgain -->
   <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundKeepsThePartialReplyInsteadOfLosingIt -->
   <!-- test: AppModelLifecycleTests.testABackgroundThatCutsAReplyOverAPipeShortKeepsThePartial -->
@@ -743,6 +744,8 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelScenePhaseTests.testABackgroundDuringAResumeLeavesNoPipeBehind -->
   <!-- test: AppModelScenePhaseTests.testAReturnDuringAHangUpWaitsForItAndDialsAgain -->
   <!-- test: AppModelScenePhaseTests.testADialThatLandsWhileTheAppIsAwayHangsItselfUp -->
+  <!-- test: AppModelScenePhaseTests.testAResumeDialsEveryPipeAtOnce -->
+  <!-- test: AppModelScenePhaseTests.testABackgroundBeforeTheResumeDialsCallsThemAllOff -->
 - A pairing that cannot be stored hangs up the pipe its code was spent over,
   rather than leaving one nothing in the app is holding. Every other pipe is
   reachable because it is in the session list the background pass and the
