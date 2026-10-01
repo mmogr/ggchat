@@ -1,7 +1,8 @@
 import GGChatCore
 import SwiftUI
 
-/// About, and the readings the ADRs name, each with its denominator.
+/// About, with how many distinct tickets this device has connected to, and
+/// then each pipe and what it says about itself.
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
     #if os(iOS)
@@ -17,23 +18,6 @@ struct SettingsView: View {
                     Link("Source", destination: URL(string: "https://github.com/mmogr/ggchat")!)
                 }
                 ConnectionsSection()
-                Section {
-                    let readings = model.diagnostics
-                    LabeledContent(
-                        "Transport errors after resume",
-                        value: "\(readings.transportErrorsAfterResume) of \(readings.foregroundResumes) resumes")
-                    LabeledContent(
-                        "Pipe closed mid-reply",
-                        value: "\(readings.closedWhileStreaming) of \(readings.closedTransitions) closes")
-                    LabeledContent("Continue pressed", value: "\(readings.continuePresses) times")
-                } header: {
-                    Text("Diagnostics")
-                } footer: {
-                    Text(
-                        "Counted on this device only. Both ADRs struck the criteria "
-                            + "these were meant to answer; the numbers are still real."
-                    )
-                }
                 #if DEBUG
                     // Only the pipes this button can actually close. It works
                     // by downcasting to the mock, so against any other session

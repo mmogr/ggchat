@@ -217,8 +217,16 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # leaving its chat cut it short, and never beside itself, out of reach, on the
 # way away, after Stop, after a refusal, or once started, with a refused one's
 # text given back on opening; the claims name all fifteen.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 448
+#
+# 2026-10-01: 448 -> 446 and 355 -> 354. Settings no longer shows the readings
+# both ADRs struck, and nothing counts them (issue 89). Two tests pinned only
+# that counting -- every background counted as a close, and a pipe going away
+# mid-reply counted as a mid-reply close -- and go with their two markers.
+# The tests that also pinned a pill, a reconnect, a partial or a retry keep
+# those asserts and lose only the counts. The gallery's Settings test, the one
+# check of what Settings shows, gains the marker it never had.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 446
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 355
+floor "README test markers" "${markers:-0}" 354
 
 exit $status

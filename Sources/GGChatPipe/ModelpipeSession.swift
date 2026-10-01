@@ -79,9 +79,8 @@ public final class ModelpipeSession: PipeSession, Sendable {
                 // The sequence ends on *any* close, `listenerFailed` included,
                 // and nothing above this writes a status when a stream merely
                 // finishes. Without this line a pipe that died on its own
-                // would leave the pill reading "Direct" over a dead port,
-                // leave the close uncounted, and leave the provider pointed at
-                // a listener that is gone.
+                // would leave the pill reading "Direct" over a dead port, and
+                // leave the provider pointed at a listener that is gone.
                 self?.cancelDeferred()
                 // Before the send, not after: a subscriber that reads
                 // `closeReason` the moment it is handed `.closed` must not

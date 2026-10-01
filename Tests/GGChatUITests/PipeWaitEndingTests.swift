@@ -5,7 +5,7 @@ import XCTest
 
 /// A send waiting for its pipe ends, short of the pipe connecting or its
 /// dial being refused, in three ways: Stop, the app going to the background,
-/// and the provider's removal. None is a failure, and none is counted.
+/// and the provider's removal. None is a failure.
 final class PipeWaitEndingTests: XCTestCase {
     private let ticket = "pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na"
 
@@ -75,8 +75,7 @@ final class PipeWaitEndingTests: XCTestCase {
         XCTAssertEqual(gate.arrivals, 1, "the stop called the dial off, or Retry dialled again")
     }
 
-    /// The background puts the wait down as it puts a reply down, and the
-    /// close that follows is not one mid-reply: nothing had arrived.
+    /// The background puts the wait down as it puts a reply down.
     @MainActor
     func testABackgroundWhileWaitingLeavesRetryAndNoFailure() async throws {
         let sleeper = HeldSleeper()
@@ -92,8 +91,6 @@ final class PipeWaitEndingTests: XCTestCase {
         await model.scene(.background).value
         await send.value
         try assertLeftWithRetry(model, "a background while waiting")
-        XCTAssertEqual(model.diagnostics.closedTransitions, 1)
-        XCTAssertEqual(model.diagnostics.closedWhileStreaming, 0, "a close while waiting was counted as mid-reply")
     }
 
     /// Removing the provider ends its wait, and the dial the wait started

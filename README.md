@@ -60,7 +60,7 @@ except a reply to gglib, which the hub goes on writing and the app reads on
 from where it stopped, and coming back dials again. A provider's row opens its settings, so a
 machine that has stopped admitting this device, or whose endpoint identity
 was deleted, is re-paired in place and keeps its conversations. Settings
-shows the readings the ADRs name, each with its denominator. In DEBUG
+shows how many distinct tickets this device has connected to. In DEBUG
 builds a mock provider streams canned replies without a server.
 
 **A shipped build now dials for real.** `GGChatPipe` is a target of its own
@@ -682,10 +682,12 @@ Each claim names the test that keeps it true.
   <!-- test: LiveAppModelTests.testAddByURLListModelsStreamAndProbeStatus -->
 - Connecting a pipe provider walks the status to direct, fires the one
   haptic once, records the ticket's digest, and streams through the
-  session's loopback URL with the token as the key; a forced close is
-  counted and reconnecting dials again without counting the ticket twice.
+  session's loopback URL with the token as the key; a forced close shows
+  Closed, reconnecting dials again without counting the ticket twice, and
+  neither a reconnect nor a delete leaves a Closed pill.
   <!-- test: AppModelPipeTests.testConnectWalksToDirectAndStreamsThroughTheSessionURL -->
-  <!-- test: AppModelPipeTests.testForceClosedIsCountedAndReconnectDialsAgain -->
+  <!-- test: AppModelPipeTests.testForceClosedShowsClosedAndReconnectDialsAgain -->
+  <!-- test: AppModelPipeTests.testAReconnectOrADeleteLeavesNoClosedPill -->
 - A dial that lands after its provider was hung up or deleted closes itself
   instead of installing a pipe nothing on screen can reach any more, two
   dials in flight at once leave one connection rather than two, and a
@@ -695,10 +697,12 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelDialTests.testTwoOverlappingDialsLeaveExactlyOneConnection -->
   <!-- test: AppModelDialTests.testAProviderThatIsNoLongerOnTheListIsNotDialled -->
 - A dial that is refused leaves a closed pill to press rather than no pill at
-  all, and the next resume dials it again — one machine that was asleep is not
-  a provider you have to relaunch the app to reach. A dial refused after it
-  was called off says nothing instead.
+  all, a background leaves that pill where it was, and the next resume dials
+  it again — one machine that was asleep is not a provider you have to
+  relaunch the app to reach. A dial refused after it was called off says
+  nothing instead.
   <!-- test: AppModelFailedDialTests.testAFailedDialLeavesAPillToPressAndAResumeThatDialsAgain -->
+  <!-- test: AppModelFailedDialTests.testABackgroundAfterARefusedDialKeepsThePillToPress -->
   <!-- test: AppModelFailedDialTests.testARefusalThatArrivesAfterItsDialWasCalledOffSaysNothing -->
 - Going to the background hangs up every pipe and writes the reply that was
   in flight into the conversation as a partial rather than losing it (a reply
@@ -710,6 +714,7 @@ Each claim names the test that keeps it true.
   down after a return.
   <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundHangsUpEveryPipeAndComingBackDialsAgain -->
   <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundKeepsThePartialReplyInsteadOfLosingIt -->
+  <!-- test: AppModelLifecycleTests.testABackgroundThatCutsAReplyOverAPipeShortKeepsThePartial -->
   <!-- test: AppModelLifecycleTests.testComingBackDoesNotDialAPipeTheAppNeverOpened -->
   <!-- test: AppModelScenePhaseTests.testABackgroundDuringAResumeLeavesNoPipeBehind -->
   <!-- test: AppModelScenePhaseTests.testAReturnDuringAHangUpWaitsForItAndDialsAgain -->
@@ -731,23 +736,6 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelNetworkChangeTests.testAChangeToTheNetworkTellsEveryLivePipe -->
   <!-- test: AppModelNetworkChangeTests.testAPipeThatWasHungUpIsNotTold -->
   <!-- test: AppModelNetworkChangeTests.testLoadingStartsWatchingTheNetworkOnce -->
-- Every close the app shows is a close it counts, whoever wrote it down: ADR
-  0002's denominator moves for a background and for a refused dial, not only
-  for a close a live session reported. A close is counted once — a background
-  after a refused dial adds nothing — and a hang-up that leaves no pill at
-  all, from a delete or a reconnect, is not counted as one.
-  <!-- test: AppModelLifecycleTests.testEveryBackgroundCountsTheCloseItPutsOnTheScreen -->
-  <!-- test: AppModelFailedDialTests.testABackgroundAfterARefusedDialAddsNoSecondClose -->
-  <!-- test: AppModelPipeTests.testAHangUpThatLeavesNoPillIsNotCountedAsAClose -->
-- A close counts as mid-reply when it is what ended the reply — whether the
-  far machine went away or the app put the reply down on its way to the
-  background. Either leaves a partial with a Continue button under it, so
-  long as any of the reply had arrived and it is not a run still being
-  written; a background before the first token counts the close and leaves
-  nothing to continue. ADR 0002 struck the
-  threshold that fraction was meant to answer, and the counters outlived it.
-  <!-- test: AppModelPipeTests.testAPipeThatGoesAwayMidReplyIsCountedAsAMidReplyClose -->
-  <!-- test: AppModelLifecycleTests.testABackgroundThatCutsAReplyShortCountsAMidReplyClose -->
 - A provider's row opens its settings, and its name and credentials are
   edited in place, keeping the id — so a machine that invites this device
   again with `gglib remote invite` keeps its conversations.
@@ -766,11 +754,9 @@ Each claim names the test that keeps it true.
   on the next launch that can never connect.
   <!-- test: AppModelProviderTests.testAProviderWhoseRecordWillNotDeleteKeepsItsCredentials -->
   <!-- test: AppModelProviderTests.testRemovingAProviderTakesItsRecordAndItsCredentialsTogether -->
-- The Diagnostics readings survive a relaunch, and only a transport error
-  within five seconds of a resume increments the "Transport errors after
-  resume" reading; see ADR 0001's amended kill criteria for why that
-  reading is not a health signal.
-  <!-- test: DiagnosticsTests.testReadingsPersistWithTheirDenominators -->
+- The count of distinct tickets connected survives a relaunch, and a ticket
+  connected twice counts once.
+  <!-- test: DiagnosticsTests.testDistinctTicketsSurviveARelaunch -->
 - A first-time user can add a provider, start a conversation, send a
   message and watch the reply stream in, driven through the real app on a
   simulator. The same walk runs against the server `GGCHAT_LIVE_BASE_URL`
@@ -800,10 +786,12 @@ Each claim names the test that keeps it true.
   <!-- test: KeychainSecretsTests.testAnUpdateThatFailsForAnyOtherReasonIsNotRetriedAsAnAdd -->
 - The screens the first-run walk never reaches are visited and photographed
   too: the provider form and what it says about a bad address or ticket, a
-  pipe connecting and its status pill, the providers list, and the
-  diagnostics readings.
+  pipe connecting and its status pill, the providers list, and Settings
+  with its count of distinct tickets and none of the readings the ADRs
+  struck.
   <!-- test: ScreenGalleryUITests.testAPipeConnectsAndTheStatusPillWalks -->
   <!-- test: ScreenGalleryUITests.testTheProviderFormExplainsABadTicket -->
+  <!-- test: ScreenGalleryUITests.testTheProvidersListAndTheTicketCountInSettings -->
 - gglib's server status pane fills in from a real server, and is not
   offered at all by a provider that does not report one.
   <!-- test: RemainingScreensUITests.testTheServerStatusPaneAgainstARealServer -->
@@ -1009,8 +997,9 @@ site.
   test keeps it. `scripts/check_readme_claims.sh` checks that every marker
   above names a test that exists.
 - One writer for the pipe status: `pipeStatuses` is written only by
-  `setPipeStatus(_:for:cutShort:)`, which is where a close is counted, so a
-  close the app shows is a close ADR 0002 hears about.
+  `setPipeStatus(_:for:cutShort:)`, which is also where the last-heard mark,
+  the haptic and a send waiting for the pipe hear of a change, so a close the
+  app shows is one they all hear about.
   `scripts/check_one_status_writer.sh` refuses any other write.
 - No credential in any log line, ever.
 - Time is an argument: nothing in `GGChatCore` reads the clock except

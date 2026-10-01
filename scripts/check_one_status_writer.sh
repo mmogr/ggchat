@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 # One writer for `pipeStatuses` and `pipeCloseReasons`. The pill the user
-# reads, ADR 0002's "of M closes", and the sentence saying why are the same
-# event, and they are one event only because every write goes through
-# `setPipeStatus`, which is where the counting is. A direct
-# `pipeStatuses[id] = .closed` anywhere else shows a close the counter never
-# hears about — the bug this gate exists to keep fixed. A direct
-# `pipeCloseReasons[id] = ...` is the same bug wearing the third hat: a reason
-# written from somewhere the status is not would explain a different close
-# from the one on screen.
+# reads and the sentence saying why are the same event, and they are one event
+# only because every write goes through `setPipeStatus`, which is also where
+# the last-heard mark, the haptic and a send waiting for the pipe hear of a
+# change. A direct `pipeStatuses[id] = .closed` anywhere else shows a close
+# none of those hears about. A direct `pipeCloseReasons[id] = ...` is the
+# same bug wearing the other hat: a reason written from somewhere the status is
+# not would explain a different close from the one on screen.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -39,7 +38,7 @@ strays=$(
 )
 
 if [ -n "$strays" ]; then
-    echo "pipe status: written outside $WRITER(), so the close it shows is not counted or not explained:" >&2
+    echo "pipe status: written outside $WRITER(), so the change it shows goes unheard or unexplained:" >&2
     printf '%s\n' "$strays" >&2
     exit 1
 fi

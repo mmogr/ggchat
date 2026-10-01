@@ -174,9 +174,10 @@ final class ScreenGalleryUITests: XCTestCase {
         attach(name: "pipe-connected")
     }
 
-    /// The providers list with something in it, and settings with its readings.
+    /// The providers list with something in it, and settings with its one
+    /// reading. The counters for the criteria both ADRs struck are gone.
     @MainActor
-    func testTheProvidersListAndTheDiagnosticsReadings() {
+    func testTheProvidersListAndTheTicketCountInSettings() {
         launch()
         openAddProvider()
         app.buttons["Cancel"].firstMatch.tap()
@@ -192,12 +193,12 @@ final class ScreenGalleryUITests: XCTestCase {
         XCTAssertTrue(settings.waitForExistence(timeout: 10), "settings is not reachable")
         settings.tap()
         XCTAssertTrue(
-            app.staticTexts["Diagnostics"].waitForExistence(timeout: 10),
-            "settings shows no diagnostics section")
-        XCTAssertTrue(
-            app.staticTexts["Distinct tickets connected"].exists,
+            app.staticTexts["Distinct tickets connected"].waitForExistence(timeout: 10),
             "the kill criterion's reading is not shown")
-        attach(name: "settings-diagnostics")
+        for struck in ["Transport errors after resume", "Pipe closed mid-reply", "Continue pressed", "Diagnostics"] {
+            XCTAssertFalse(app.staticTexts[struck].exists, "settings still shows \(struck)")
+        }
+        attach(name: "settings")
     }
 
     /// A server that is not there lists no model, so there is nothing to

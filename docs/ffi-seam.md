@@ -128,8 +128,7 @@ Each is what `MockPipeConnector` and `MockPipeSession` do today and what
    may be delivered. The stream ends only after `shutdown()`.
 5. **`closed` is recoverable by dialling again.** The app calls
    `shutdown()` on the old session and `connect` anew; the ffi must not
-   require process restart. A `closed` that arrives while a reply streams is
-   counted, as is a close the app writes itself (ADR 0002).
+   require process restart.
 6. **`shutdown()` is idempotent and ends the status stream.** Calling it
    twice is fine. After it, the base URL must refuse connections rather
    than hang.
@@ -292,22 +291,23 @@ and not with gglib 0.18.
   counts transport errors within five seconds of a resume.~~
 
   > **Amended 2026-09-07 — do not build toward that reading.** ADR 0001's
-  > kill criterion was struck on the same date and the counter behind it is
+  > kill criterion was struck on the same date and the counter behind it was
   > blind to the case it was written for. `Diagnostics.recordStreamEnd`
-  > (`Sources/GGChatUI/Diagnostics.swift:37`) returns unless the error is
-  > `ProviderError.transport`, and by #7 above a far side that is away
-  > answers over a working pipe with modelpipe's HTTP error body, which
+  > (removed 2026-10-01, issue 89; ADR 0001's "Kill criteria" note quotes its
+  > guard) returned unless the error was `ProviderError.transport`, and by
+  > #7 above a far side that is away answers over a working pipe with
+  > modelpipe's HTTP error body, which
   > `OpenAICompatibleProvider.serverError` turns into `ProviderError.server`.
-  > No window width fixes that. A zero on this counter is not evidence the
-  > ffi is behaving under suspension; read ADR 0001's "Kill criteria" note
-  > before treating it as a signal.
+  > No window width fixes that. A zero on that counter was not evidence the
+  > ffi is behaving under suspension, and the app no longer keeps one.
   >
   > What the seam does **not** yet say is what the ffi owes when the system
   > reclaims the listener from a suspended process. ADR 0001's amendment
   > argues such a session is dead rather than slow — the answer is to dial
   > again, not to retry — but nothing in this document obliges the ffi to
-  > make the two distinguishable. The app's own counter cannot stand in: it
-  > moves for a background whether or not the listener was reclaimed.
+  > make the two distinguishable. The app's own counter could not stand in:
+  > it moved for a background whether or not the listener was reclaimed, and
+  > it was removed with the others in issue 89.
   > That is open work, named here so an implementer does not read the
   > struck criterion as the acceptance test.
   >

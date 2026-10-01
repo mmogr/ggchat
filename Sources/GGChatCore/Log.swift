@@ -22,7 +22,7 @@ public struct NoopLogSink: LogSink {
     public func log(_ level: LogLevel, _ message: String) {}
 }
 
-/// Keeps every line in memory. Used by tests and by the in-app diagnostics.
+/// Keeps every line in memory, for tests.
 public final class CapturingLogSink: LogSink, Sendable {
     private let storage = Mutex<[String]>([])
 

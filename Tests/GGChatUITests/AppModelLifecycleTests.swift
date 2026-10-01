@@ -56,49 +56,13 @@ final class AppModelLifecycleTests: XCTestCase {
 
         XCTAssertNotNil(model.pipeSession(for: config.id), "coming back left the pipe down with no way in")
         XCTAssertEqual(model.pipeStatus(for: config.id), .direct)
-        XCTAssertEqual(model.diagnostics.foregroundResumes, 1, "ADR 0001's denominator still counts the resume")
     }
 
-    /// ADR 0002's denominator, on the close that dominates it. Going to the
-    /// background is how a pipe on a phone almost always ends, and it is the
-    /// one close the app performs itself rather than watching arrive — so
-    /// while the counting lived in the status observer, the pill read Closed
-    /// and "of M closes" stayed where it was.
-    ///
-    /// Each background is its own close: a resume that dials again and a
-    /// second background are two, not one.
+    /// A reply over a pipe, not a run, put down on the way out: it is written
+    /// as a partial with Continue under it, and hanging the pipe up after it
+    /// leaves that partial alone.
     @MainActor
-    func testEveryBackgroundCountsTheCloseItPutsOnTheScreen() async throws {
-        let model = makeModel(registry: LoopbackProviderRegistry())
-        let config = try addPipe(to: model)
-        await model.connectPipe(for: config)
-        await waitForStatus(.direct, model, config.id)
-
-        await model.scene(.background).value
-
-        XCTAssertEqual(model.pipeStatus(for: config.id), .closed)
-        XCTAssertEqual(
-            model.diagnostics.closedTransitions, 1,
-            "the pill was shown as Closed and ADR 0002's denominator never heard about it")
-        XCTAssertEqual(model.diagnostics.closedWhileStreaming, 0, "nothing was streaming")
-
-        await model.scene(.foreground).value
-        await waitForStatus(.direct, model, config.id)
-        await model.scene(.background).value
-
-        XCTAssertEqual(model.diagnostics.closedTransitions, 2, "the second background was folded into the first")
-    }
-
-    /// ADR 0002's numerator, on the same close. The reply is put down on the
-    /// way out and written as a partial, which is exactly the state the
-    /// Continue button is offered from — so this close is mid-reply, and
-    /// counting it as anything else measures Continue presses against a
-    /// population that excludes the presses' commonest cause.
-    ///
-    /// It is only knowable before the reply is put down: `liveReply` is nil
-    /// by the time the pipe is hung up.
-    @MainActor
-    func testABackgroundThatCutsAReplyShortCountsAMidReplyClose() async throws {
+    func testABackgroundThatCutsAReplyOverAPipeShortKeepsThePartial() async throws {
         let model = makeModel(registry: LoopbackProviderRegistry(), behind: HangingProvider())
         let config = try addPipe(to: model)
         await model.connectPipe(for: config)
@@ -111,13 +75,10 @@ final class AppModelLifecycleTests: XCTestCase {
 
         await model.scene(.background).value
 
-        XCTAssertTrue(
-            try XCTUnwrap(model.selectedConversation?.messages.last).isPartial,
-            "Continue is offered on this reply, so the close that ended it is mid-reply by definition")
-        XCTAssertEqual(model.diagnostics.closedTransitions, 1)
-        XCTAssertEqual(
-            model.diagnostics.closedWhileStreaming, 1,
-            "the close that ended the reply was counted as though no reply was running")
+        let last = try XCTUnwrap(model.selectedConversation?.messages.last)
+        XCTAssertEqual(last.content, "half ", "the half that had arrived was thrown away")
+        XCTAssertTrue(last.isPartial, "the reply was written as if it were whole, so no Continue is offered")
+        XCTAssertEqual(model.pipeStatus(for: config.id), .closed)
     }
 
     /// A resume dials the pipes this app had, and only those. A provider
@@ -131,7 +92,6 @@ final class AppModelLifecycleTests: XCTestCase {
 
         XCTAssertNil(model.pipeSession(for: config.id), "a pipe the user never opened was dialled on a resume")
         XCTAssertNil(model.pipeStatus(for: config.id))
-        XCTAssertEqual(model.diagnostics.foregroundResumes, 1)
     }
 
     /// ADR 0002's worst case: a process killed while a reply is streaming

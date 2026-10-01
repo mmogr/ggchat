@@ -6,10 +6,10 @@ import GGChatCore
 /// Split from `AppModel+Pipe` when pairing stopped hanging up the pipe it
 /// redeemed a code over: the dial half of that file grew an install shared
 /// with pairing, and this half — what a status means once a session is
-/// installed, and the counting that goes with it — reads on its own. Nothing
-/// here is `private`: `private` in Swift is per-file even between two
-/// extensions of one type, and the install's status task calls both
-/// ``announce(_:for:)`` and ``forgetSessionIfCurrent(_:generation:)``.
+/// installed — reads on its own. Nothing here is `private`: `private` in
+/// Swift is per-file even between two extensions of one type, and the
+/// install's status task calls both ``announce(_:for:)`` and
+/// ``forgetSessionIfCurrent(_:generation:)``.
 extension AppModel {
     /// Says why a pipe went away — once, and only when the app did not ask it
     /// to.
@@ -43,18 +43,11 @@ extension AppModel {
         pipeSessions[providerID] = nil
     }
 
-    /// The one place `pipeStatuses` is written, and so the one place a close
-    /// is counted. Being shown as closed and being counted as a close are the
-    /// same event; they used to be two.
+    /// The one place `pipeStatuses` is written. The reason, the last-heard
+    /// mark, the log line, the haptic and a send waiting for the pipe all hang
+    /// off this write, so none of them can miss a change the pill shows.
     ///
-    /// ADR 0002's denominator was kept where a status was *observed*, which
-    /// is only what a live session sends. The two closes that come from this
-    /// side set the pill and told the counter nothing: a dial that was
-    /// refused, and the hang-up on the way to the background. The second is
-    /// the phone's commonest close by a distance, so the reading was shown
-    /// over a denominator that omitted the case it exists to measure.
-    ///
-    /// `previous != .closed` is what stops one close being counted twice: a
+    /// `previous != .closed` is what stops one close being logged twice: a
     /// refused dial leaves `.closed` behind, and the background that follows
     /// it hangs up a provider with nothing left to hang up.
     ///
@@ -75,7 +68,6 @@ extension AppModel {
         notePipeStatus(providerID, from: previous, to: status, closedOnItsOwn: status == .closed && reason != nil)
         if status == .closed, previous != .closed {
             let midReply = cutShort || streamingProviderID == providerID
-            diagnostics.recordClosed(whileStreaming: midReply)
             log.log(.info, "pipe closed\(midReply ? " mid-reply" : "")\(reason.map { ": \($0)" } ?? "")")
         }
         if status?.isConnected == true, previous?.isConnected != true {
@@ -109,7 +101,7 @@ extension AppModel {
 
     /// The provider the reply in flight is streaming through, if there is one.
     /// A reply still waiting for its pipe is not streaming, so a close then is
-    /// not a close mid-reply: nothing had arrived.
+    /// not logged as one mid-reply: nothing had arrived.
     ///
     /// Not `private`: the hang-up pass reads it, and it lives in
     /// `AppModel+Lifecycle` — a different file, which is what `private` means

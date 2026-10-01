@@ -6,7 +6,8 @@
   amended 2026-09-13 — a request refused before anything arrived has no
   partial to keep, so the question gets a Retry, see "Decision"; amended
   2026-09-29 — the background detaches from a run, it does not cancel it,
-  see "Decision")
+  see "Decision"; amended 2026-10-01 — the readings are no longer shown or
+  counted, see "Kill criteria")
 - **Supersedes:** nothing
 - **Superseded by:** nothing
 
@@ -192,3 +193,9 @@ connection since 2026-09-29; see the amendment of that date below.)
 
 - If Continue produces a reply that visibly restarts rather than continues
   on the models in use, record the model id alongside the press.
+
+> **Amended 2026-10-01 — the readings are no longer shown or counted.** N, M
+> and K, and the "Pipe closed mid-reply" and "Continue pressed" rows in
+> Settings, were removed in issue 89: with the reading and the threshold
+> struck, a number with no criterion behind it was noise. The notes above
+> describe the code as it was.

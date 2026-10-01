@@ -26,9 +26,8 @@ public final class AppModel {
     ///
     /// Written only by `setPipeStatus`, and `scripts/check_one_status_writer.sh`
     /// holds it to that. Being shown as closed and having a reason for it are
-    /// one event, in the same way that being shown as closed and being counted
-    /// as a close already are — a reason written from anywhere else could
-    /// describe a different close from the one on screen.
+    /// one event: a reason written from anywhere else could describe a
+    /// different close from the one on screen.
     var pipeCloseReasons: [UUID: PipeCloseReason] = [:]
     var pipeSessions: [UUID: any PipeSession] = [:]
     /// When each pipe's machine was last heard, and the pipes whose machine
