@@ -1,5 +1,10 @@
 import Darwin
 import Foundation
+import XCTest
+
+#if os(iOS)
+    import UIKit
+#endif
 
 /// Which server the live walks drive, and what they authenticate with.
 ///
@@ -19,9 +24,10 @@ struct LiveServer {
     /// The `/v1` root typed into the provider form's address field.
     let baseURL: String
 
-    /// Typed into the API key field when it is not empty. Before this the
-    /// walks typed nothing, so they could only ever pass against a server
-    /// that enforces no key.
+    /// Pasted into the API key field when it is not empty, by
+    /// ``XCTestCase/pasteAPIKey(_:in:)``. Before this the walks entered
+    /// nothing, so they could only ever pass against a server that enforces
+    /// no key.
     let apiKey: String
 
     /// Where gglib listens by default. The simulator shares the host's
@@ -87,11 +93,10 @@ struct LiveServer {
 
 /// The key stays out of what the value prints: interpolated, reflected or
 /// dumped, a `LiveServer` shows its address as it was given and
-/// `<redacted>` in the key's place, or `none` for a walk that types no key,
-/// as the app's own `OpenAICompatibleProvider` does for its key. The walks
-/// still type the key itself with `typeText`, which this does not reach: in
-/// #120's run, XCUITest titled that step with the key's first 18
-/// characters.
+/// `<redacted>` in the key's place, or `none` for a walk that enters no key,
+/// as the app's own `OpenAICompatibleProvider` does for its key. What
+/// XCUITest records of the key itself is ``XCTestCase/pasteAPIKey(_:in:)``'s
+/// business.
 extension LiveServer: CustomStringConvertible, CustomReflectable {
     var description: String { "LiveServer(baseURL: \(baseURL), apiKey: \(printedKey))" }
 
@@ -100,4 +105,41 @@ extension LiveServer: CustomStringConvertible, CustomReflectable {
     }
 
     private var printedKey: String { apiKey.isEmpty ? "none" : "<redacted>" }
+}
+
+extension XCTestCase {
+    /// Pastes the live server's key into the provider form.
+    ///
+    /// Not typed: XCUITest names a `typeText` step after its text, which put
+    /// a key's first 18 characters in `xcodebuild`'s output and the result
+    /// bundle (#120). A paste is named after the key pressed. The pasteboard
+    /// is emptied after the paste and again at teardown, since the Simulator
+    /// can share it with the Mac's; a Mac's is the person's own, so a walk on
+    /// the Mac still types. iOS may answer the key press with an offer about
+    /// the keyboard it found, which XCUITest declines at the next tap.
+    ///
+    /// `provider-key` is the Server kind's field, bound to the credential
+    /// stored as `.apiKey`. It is not `provider-token`: that is the Pipe
+    /// kind's, it holds a different credential, and the form only ever shows
+    /// one of the two, so a server walk that reached for it would find
+    /// nothing there.
+    ///
+    /// An empty key pastes nothing, which leaves a keyless walk exactly as it
+    /// was -- including not waking the password manager, whose offer arrives
+    /// only once something has been put in a `SecureField`.
+    @MainActor
+    func pasteAPIKey(_ apiKey: String, in app: XCUIApplication) {
+        guard !apiKey.isEmpty else { return }
+        let field = app.secureTextFields["provider-key"].firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "the API key field is not reachable")
+        guard focus(field) else { return }
+        #if os(iOS)
+            addTeardownBlock { @MainActor in UIPasteboard.general.items = [] }
+            UIPasteboard.general.string = apiKey
+            field.typeKey("v", modifierFlags: .command)
+            UIPasteboard.general.items = []
+        #else
+            field.typeText(apiKey)
+        #endif
+    }
 }

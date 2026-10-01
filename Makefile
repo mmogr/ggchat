@@ -164,7 +164,7 @@ test-live:
 # `make uitest SIMULATOR='iPhone 16'`.
 SIMULATOR ?= iPhone 17 Pro
 
-# Where the live walks point, and the key they type. A test runner on a
+# Where the live walks point, and the key they paste. A test runner on a
 # simulator does not inherit this environment: xcodebuild hands it only the
 # variables named TEST_RUNNER_<NAME>, with the prefix stripped, so the bare
 # names are unreadable in the runner without this. Forwarded unconditionally,
@@ -190,8 +190,9 @@ udid = $$(scripts/simulator_udid.sh '$(SIMULATOR)')
 ipad_udid = $$(scripts/simulator_udid.sh '$(IPAD)')
 
 # Drives the app on a booted iPhone simulator. The live half runs against
-# GGCHAT_LIVE_BASE_URL when it is set, typing GGCHAT_LIVE_API_KEY into the
-# form; with neither set it falls back to 127.0.0.1:8080 and runs only when
+# GGCHAT_LIVE_BASE_URL when it is set, pasting GGCHAT_LIVE_API_KEY into the
+# form, since XCUITest writes typed text into its output and the result
+# bundle; with neither set it falls back to 127.0.0.1:8080 and runs only when
 # something is listening there:
 #
 #   GGCHAT_LIVE_BASE_URL=http://127.0.0.1:8080/v1 GGCHAT_LIVE_API_KEY=sk-... make uitest

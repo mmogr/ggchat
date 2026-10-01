@@ -828,10 +828,14 @@ Each claim names the test that keeps it true.
 - A first-time user can add a provider, start a conversation, send a
   message and watch the reply stream in, driven through the real app on a
   simulator. The same walk runs against the server `GGCHAT_LIVE_BASE_URL`
-  names, typing `GGCHAT_LIVE_API_KEY` into the form; with neither set it
+  names, pasting `GGCHAT_LIVE_API_KEY` into the form; with neither set it
   falls back to a server on `127.0.0.1:8080` and skips when none is there.
   <!-- test: FirstRunUITests.testFirstRunWithTheMockProvider -->
   <!-- test: FirstRunUITests.testFirstRunAgainstAServerOnThisMachine -->
+- The live walks paste their key rather than type it, and empty the
+  pasteboard after. XCUITest names a typed step after its text, which put a
+  key's first 18 characters in `xcodebuild`'s output and the result bundle.
+  <!-- test: FirstRunUITests.testTheKeyIsPastedIntoTheFormAndLeftOffThePasteboard -->
 - Which server a live walk drives is resolved from those two variables: one
   named outright is used as given and never probed, so an unreachable one
   fails rather than skipping, and an unset one falls back to the loopback
@@ -991,15 +995,17 @@ GGCHAT_LIVE_BASE_URL=http://127.0.0.1:8080/v1 GGCHAT_LIVE_API_KEY=sk-... make ui
 ```
 
 The same two variables as `make test-live`, so one recipe configures both
-halves of the live suite. The walk types the key into the provider form, so
-a gglib that enforces one is reachable; before this it typed none and could
-only pass against a gglib that enforced none. With neither variable set it
-falls back to probing `127.0.0.1:8080` and skips when nothing answers, which
-is what keeps CI, where no gglib runs, green. `xcodebuild` hands a test
-runner on a simulator only the variables named `TEST_RUNNER_<NAME>`, so the
-Makefile and `scripts/screenshots.sh` forward them under that prefix; setting
-the bare names on an `xcodebuild` invocation of your own will not reach the
-walk.
+halves of the live suite. The walk pastes the key into the provider form, so
+a gglib that enforces one is reachable; before this it entered none and could
+only pass against a gglib that enforced none. It pastes rather than types
+because XCUITest writes typed text into `xcodebuild`'s output and the result
+bundle, and it empties the pasteboard afterwards, since the Simulator can
+share it with the Mac's. With neither variable set it falls back to probing
+`127.0.0.1:8080` and skips when nothing answers, which is what keeps CI,
+where no gglib runs, green. `xcodebuild` hands a test runner on a simulator
+only the variables named `TEST_RUNNER_<NAME>`, so the Makefile and
+`scripts/screenshots.sh` forward them under that prefix; setting the bare
+names on an `xcodebuild` invocation of your own will not reach the walk.
 
 The builds are signed ad-hoc, because an unsigned iOS app has no Keychain
 access and this app keeps every credential there.

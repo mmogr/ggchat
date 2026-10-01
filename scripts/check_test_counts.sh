@@ -282,8 +282,14 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # writes as a pipe is dialled, refused, dropped and paired, and finds no
 # ticket, token or code in any (issue 70). Nothing else reads those lines, so
 # it is the whole of that guard, and the claim names it.
+#
+# 2026-10-02: 23 -> 24 and 397 -> 398. The live walks paste their key, since
+# XCUITest writes typed text into its output and the result bundle (issue
+# 120). One test pastes a key that is not one into the form and finds the
+# field holding it and the pasteboard empty. It is the whole of that guard,
+# and the claim names it.
 floor "package test cases" "$(test_cases "$ROOT/Tests")" 485
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 397
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 24
+floor "README test markers" "${markers:-0}" 398
 
 exit $status

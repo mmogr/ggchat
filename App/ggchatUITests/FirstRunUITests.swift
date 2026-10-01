@@ -1,5 +1,9 @@
 import XCTest
 
+#if os(iOS)
+    import UIKit
+#endif
+
 /// Drives the real app the way a first-time user does: add a provider, start
 /// a conversation, send a message, watch the reply stream in.
 ///
@@ -27,6 +31,27 @@ final class FirstRunUITests: XCTestCase {
         try runFirstRun(live: live)
     }
 
+    /// The live walks paste their key, and this pastes one that is not a key
+    /// into the same form, with nothing submitted: the field takes all of
+    /// it, and the pasteboard is empty again. That it is not in
+    /// `xcodebuild`'s output or the result bundle is read from a run, not
+    /// asserted here (#120).
+    @MainActor
+    func testTheKeyIsPastedIntoTheFormAndLeftOffThePasteboard() {
+        app = launchFreshApp()
+        let addProvider = app.buttons["Add a provider"].firstMatch
+        XCTAssertTrue(addProvider.waitForExistence(timeout: 30), "first run offers no way to add a provider")
+        addProvider.tap()
+        let key = "sk-pasted-not-typed-7c3e91a4"
+        pasteAPIKey(key, in: app)
+        let field = app.secureTextFields["provider-key"].firstMatch
+        XCTAssertEqual((field.value as? String)?.count, key.count, "the field did not take the whole key")
+        #if os(iOS)
+            XCTAssertFalse(UIPasteboard.general.hasStrings, "the key was left on the pasteboard")
+        #endif
+        app.buttons["Cancel"].firstMatch.tap()
+    }
+
     /// Launches a fresh app and walks it. `XCUIApplication` is main-actor
     /// bound, so the whole walk is, and there is no `setUp` override to
     /// disagree about isolation.
@@ -50,7 +75,7 @@ final class FirstRunUITests: XCTestCase {
             let address = app.textFields["provider-address"].firstMatch
             XCTAssertTrue(address.waitForExistence(timeout: 10), "the address field is not reachable")
             enter(live.baseURL, into: address)
-            typeAPIKey(live.apiKey, in: app)
+            pasteAPIKey(live.apiKey, in: app)
             XCTAssertTrue(app.buttons["Add"].firstMatch.isEnabled, "a valid address left the Add button disabled")
             submitProviderForm(in: app)
         } else {
@@ -64,7 +89,7 @@ final class FirstRunUITests: XCTestCase {
         }
 
         // 3. Start a conversation. The tap is retried through whatever the
-        // system put on top: having typed a key into a `SecureField`, iOS
+        // system put on top: having had a key put into a `SecureField`, iOS
         // offers to save it once the sheet closes, and that offer swallows
         // the tap underneath it.
         //
