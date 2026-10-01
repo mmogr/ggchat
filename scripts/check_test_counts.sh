@@ -225,8 +225,15 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # The tests that also pinned a pill, a reconnect, a partial or a retry keep
 # those asserts and lose only the counts. The gallery's Settings test, the one
 # check of what Settings shows, gains the marker it never had.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 446
+#
+# 2026-10-02: 446 -> 453 and 354 -> 362. Seven tests pin the day this build
+# stops opening: read from the list inside a profile's envelope, none for a
+# blob with no list, a list with no date or a bundle with no profile, the
+# file found under its name, and Settings' line, said where the person is and
+# absent with no date. They are the whole of that guard; the claim names them
+# and the gallery's Settings test, which finds no such line in the simulator.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 453
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 354
+floor "README test markers" "${markers:-0}" 362
 
 exit $status

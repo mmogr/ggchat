@@ -303,6 +303,19 @@ Each claim names the test that keeps it true.
 - Settings shows what each live pipe says about itself: its path, the loopback
   port it bound, and what its endpoint spent on relays.
   <!-- test: ModelpipeSessionTests.testTheReadingsCrossTheSeamInTheAppsOwnVocabulary -->
+- Settings says the day this build stops opening, read from the provisioning
+  profile signed into it: a free team's build stops with its profile, seven
+  days after the profile was issued, and a later build can carry the same
+  one. A build with no profile, from the simulator, the App Store or
+  TestFlight, has no such line.
+  <!-- test: ProvisioningProfileTests.testTheDateIsReadFromTheListInsideTheEnvelope -->
+  <!-- test: ProvisioningProfileTests.testABlobWithNoListHasNoDate -->
+  <!-- test: ProvisioningProfileTests.testAListWithoutAnExpirationDateHasNoDate -->
+  <!-- test: ProvisioningProfileTests.testABundleWithNoProfileHasNoDate -->
+  <!-- test: ProvisioningProfileTests.testABundlesProfileIsReadUnderItsName -->
+  <!-- test: SettingsBuildExpiryTests.testTheLineSaysTheDayThisBuildStopsOpeningWhereThePersonIs -->
+  <!-- test: SettingsBuildExpiryTests.testABuildWithNoDateHasNoLine -->
+  <!-- test: ScreenGalleryUITests.testTheProvidersListAndTheTicketCountInSettings -->
 - The mock is DEBUG-only. A build without one refuses a perfectly good
   ticket with a sentence about the build, instead of mocking a pipe that
   is not there.
@@ -887,6 +900,14 @@ specific to a real device would otherwise first appear during an archive.
 Signing is off there rather than ad-hoc, because the iOS SDK refuses an
 ad-hoc identity outright and a real one needs a provisioning profile; what it
 proves is the compile and the link.
+
+`make phone` builds the app in Release, signed for a phone, and installs it
+with `xcrun devicectl` on the one iPhone this Mac can reach, or on the one
+`DEVICE` names; with none, or more than one, it refuses and says why. A
+build signed by a free team stops opening when its provisioning profile runs
+out, seven days after the profile was issued, so this is the refresh in one
+command. Run it on or after the day Settings shows: a build made while the
+old profile is still valid may keep its date.
 
 `make build-app-release` compiles the same two destinations with
 `-configuration Release`. Nothing else compiles the app target that way:

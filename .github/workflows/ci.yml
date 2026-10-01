@@ -89,6 +89,8 @@ jobs:
         run: scripts/check_readme_claims.sh
       - name: Test and marker counts have not fallen
         run: scripts/check_test_counts.sh
+      - name: make phone picks one iPhone or refuses
+        run: scripts/check_phone_device.sh
 
   build:
     name: Build
