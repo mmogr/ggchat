@@ -177,4 +177,27 @@ final class HubChatsSeenTests: XCTestCase {
         let rows = try earlier.mainContext.fetch(FetchDescriptor<EarlierBuild.ProviderRecord>())
         XCTAssertEqual(rows.map(\.name), ["home"])
     }
+
+    /// A Mac's chat says when it last changed: the time alone today, by the
+    /// clock given, and the date with it before.
+    func testAChatSaysTheTimeItChangedAndTheDateWhenNotToday() throws {
+        let changed = "2026-09-30 09:13:07"
+        let morning = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 9, day: 30, hour: 11)))
+        let stamp = { (now: Date) in
+            AppModel.hubRowStamp(changed, now: now, locale: self.locale, calendar: self.calendar)
+        }
+        XCTAssertEqual(stamp(morning), "09:13")
+        XCTAssertEqual(stamp(morning.addingTimeInterval(24 * 3600)), "30/09/2026, 09:13")
+    }
+
+    /// A time the Mac sent that cannot be read shows nothing; the row reads it
+    /// by the model's clock.
+    func testAChatWhoseTimeCannotBeReadShowsNone() async throws {
+        XCTAssertNil(AppModel.hubRowStamp("yesterday", now: seenAt, locale: locale, calendar: calendar))
+        let (model, _) = try await listed()
+        let unread = HubChatSummary(id: 9, title: "New Chat", updatedAt: "")
+        XCTAssertNil(model.stamp(for: unread, locale: locale, calendar: calendar))
+        XCTAssertEqual(
+            model.stamp(for: FakeChatsHub.summaries[1], locale: locale, calendar: calendar), "29/09/2026, 18:02")
+    }
 }

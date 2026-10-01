@@ -23,15 +23,18 @@ struct HubChatsSection: View {
     }
 }
 
-/// One of a Mac's chats: its title, the model it was made with, and
-/// "Writing" while the Mac is writing a reply to it.
+/// One of a Mac's chats: its title, the model it was made with, when it last
+/// changed, and "Writing" while the Mac is writing a reply to it.
 struct HubChatRow: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.locale) private var locale
+    @Environment(\.calendar) private var calendar
     let chat: HubChatSummary
     let providerID: UUID
 
     var body: some View {
         let mark = model.mark(for: chat, on: providerID)
+        let stamp = model.stamp(for: chat, locale: locale, calendar: calendar)
         VStack(alignment: .leading, spacing: 2) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(chat.title.isEmpty ? "New conversation" : chat.title)
@@ -41,11 +44,19 @@ struct HubChatRow: View {
                     ConversationMarkView(mark: mark)
                 }
             }
-            if let modelName = chat.model {
-                Text(modelName)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+            if chat.model != nil || stamp != nil {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(chat.model ?? "")
+                        .lineLimit(1)
+                    Spacer(minLength: 4)
+                    if let stamp {
+                        Text(stamp)
+                            .monospacedDigit()
+                            .lineLimit(1)
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
         }
         .accessibilityElement(children: .combine)

@@ -61,6 +61,18 @@ extension AppModel {
         return nil
     }
 
+    /// When a Mac's chat last changed, for its row: "09:13" today, the date
+    /// and the time before, and nothing when the Mac's time cannot be read.
+    public func stamp(for chat: HubChatSummary, locale: Locale, calendar: Calendar) -> String? {
+        Self.hubRowStamp(chat.updatedAt, now: now(), locale: locale, calendar: calendar)
+    }
+
+    static func hubRowStamp(_ updatedAt: String, now: Date, locale: Locale, calendar: Calendar) -> String? {
+        HubChatSummary.date(fromUpdatedAt: updatedAt).map {
+            shortStamp($0, now: now, locale: locale, calendar: calendar)
+        }
+    }
+
     /// Reads the titles each paired Mac's list last showed. One that will not
     /// read costs its section's titles, not the launch.
     func loadSeenHubChats() {

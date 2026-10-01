@@ -99,4 +99,27 @@ final class HubChatsWireTests: XCTestCase {
         let list = try JSONDecoder().decode(HubChatList.self, from: Data(json.utf8))
         XCTAssertEqual(list, HubChatList(chats: [HubChatSummary(id: 5, title: "t", updatedAt: "u")]))
     }
+
+    /// A chat's time, as gglib's database writes it, reads as that moment in
+    /// UTC, whatever zone this machine is in: here, ten hours east of it.
+    func testAChatsTimeReadsAsUTC() throws {
+        let text = try recorded().list.chats[0].updatedAt
+        let machineZone = NSTimeZone.default
+        NSTimeZone.default = try XCTUnwrap(TimeZone(identifier: "Australia/Brisbane"))
+        defer { NSTimeZone.default = machineZone }
+        XCTAssertEqual(DateFormatter().timeZone.secondsFromGMT(), 10 * 3600, "a formatter would read UTC anyway")
+        let date = try XCTUnwrap(HubChatSummary.date(fromUpdatedAt: text))
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = try XCTUnwrap(TimeZone(identifier: "UTC"))
+        let parts = utc.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
+        XCTAssertEqual(
+            parts, DateComponents(year: 2026, month: 9, day: 30, hour: 9, minute: 13, second: 7))
+    }
+
+    /// A time in any other shape, or not a time, reads as nothing.
+    func testATimeInAnotherShapeReadsAsNothing() {
+        for text in ["", "u", "2026-09-30", "2026-09-30T09:13:07Z", "2026-13-30 09:13:07", "30/09/2026 09:13:07"] {
+            XCTAssertNil(HubChatSummary.date(fromUpdatedAt: text), text)
+        }
+    }
 }

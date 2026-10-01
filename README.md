@@ -469,7 +469,8 @@ Each claim names the test that keeps it true.
   <!-- test: UnreadStoreTests.testAStoreOpensAcrossTheUnreadChangeInBothDirections -->
 - Each paired Mac has a section of its own in the list, "On home", with the
   chats gglib keeps there, listed at launch, when its pipe comes up and on a
-  pull, and marked "Writing" while the Mac is writing a reply to one. The
+  pull, each with the time it last changed (the date too when not today),
+  and marked "Writing" while the Mac is writing a reply to one. The
   phone's own chats are then headed "On this phone", with a line under them
   saying they are kept only on this phone and the Mac does not keep them.
   Opening one reads its questions and replies live, and Back drops them:
@@ -511,6 +512,10 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatsSeenTests.testTheTitlesAreKeptAfterEveryListAndSurviveARelaunch -->
   <!-- test: HubChatsSeenTests.testRemovingTheProviderForgetsItsTitles -->
   <!-- test: HubChatsSeenTests.testAStoreOpensAcrossTheTitlesChangeInBothDirections -->
+  <!-- test: HubChatsSeenTests.testAChatSaysTheTimeItChangedAndTheDateWhenNotToday -->
+  <!-- test: HubChatsSeenTests.testAChatWhoseTimeCannotBeReadShowsNone -->
+  <!-- test: HubChatsWireTests.testAChatsTimeReadsAsUTC -->
+  <!-- test: HubChatsWireTests.testATimeInAnotherShapeReadsAsNothing -->
   <!-- test: HubChatsOutcomeTests.testAFailedListKeepsWhatWasSeenAndSaysWhen -->
   <!-- test: HubChatsOutcomeTests.testAPullListsAgainThroughAPipeThatIsUp -->
   <!-- test: HubChatsOutcomeTests.testAnOlderGglibHasNoSectionUntilItLists -->
@@ -530,14 +535,21 @@ Each claim names the test that keeps it true.
   a refused send, or one to a Mac out of reach, puts its text back. A turn
   whose answer was lost is kept, still Writing, and put again under its id,
   whose answer settles it; a list that names its run marks it started, and one
-  that does not changes nothing, since the Mac names a run only once it has
-  reserved it. Leaving the chat and the background walk away
-  and cancel nothing; opening it again, coming back and the pipe coming up
-  read on from the last event, none applied twice, paced as this phone's own
-  replies are. Only the run's id and its chat are kept, on the provider's row:
-  a launch reads the run from its start, and a run the Mac no longer has, a
-  list that no longer names it, or removing the provider forgets it. The chat
-  says "Writing" in the list while this phone holds its reply.
+  that does not leaves it Writing, since the Mac names a run only once it has
+  reserved it, and the phone sends it again when the Mac next answers: that
+  list, coming back or the pipe coming up, with its chat open or not, but not
+  once Stop ended it or a refusal took it. A send refused while its chat is
+  not on screen gives its text back, with why, when the chat is next opened.
+  Leaving the chat does not stop a send on its way: one the leaving cut short
+  is sent again at once, and the phone reads its reply quietly until it ends;
+  leaving a chat whose reply is being read, and the background, walk away and
+  cancel nothing; opening it again, coming back and the pipe coming up read on
+  from the last event, none applied twice, paced as this phone's own replies
+  are. Only the run's id and
+  its chat are kept, on the provider's row: a launch reads the run from its
+  start, and a run the Mac no longer has, a list that no longer names it, or
+  removing the provider forgets it. The chat says "Writing" in the list while
+  this phone holds its reply.
   <!-- test: HubChatsWireTests.testATurnIsTheRecordedBodyWithOnlyItsTwoKeys -->
   <!-- test: HubTurnProviderTests.testATurnIsPutAsAnAgentRunWithOnlyItsTwoKeys -->
   <!-- test: HubTurnProviderTests.testNoModelAndAReplyInProgressAreTheirOwnRefusals -->
@@ -553,6 +565,17 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatContinueTests.testAMacThatStartsAChatRunForATurnIsOneWithoutTurns -->
   <!-- test: HubChatLostTurnTests.testALostTurnIsKeptAndPutAgainUnderItsIDThenReadFromItsStart -->
   <!-- test: HubChatLostTurnTests.testALostTurnTheListDoesNotNameIsKept -->
+  <!-- test: HubChatLostTurnTests.testADroppedTurnIsPutAgainWhenAListDoesNotNameIt -->
+  <!-- test: HubChatLostTurnTests.testADroppedTurnInAChatNotOnScreenIsPutAgainOnComingBack -->
+  <!-- test: HubChatLostTurnTests.testAStartedReplyIsNotPutAgain -->
+  <!-- test: HubChatPutAgainTests.testARefusedSendIsNotPutAgainByAListOnItsWay -->
+  <!-- test: HubChatPutAgainTests.testASendBeingPutIsNotPutBesideItself -->
+  <!-- test: HubChatPutAgainTests.testADroppedSendIsNotPutWhileItsMacIsOutOfReach -->
+  <!-- test: HubChatPutAgainTests.testAStoppedSendIsNotPutWhenThePipeComesBack -->
+  <!-- test: HubChatPutAgainTests.testNothingIsPutOnTheWayToTheBackground -->
+  <!-- test: HubChatPutAgainTests.testADroppedSendIsPutAgainWhenThePipeComesUp -->
+  <!-- test: HubChatPutAgainTests.testARefusedSendOffScreenGivesItsTextBackOnOpening -->
+  <!-- test: HubChatPutAgainTests.testASendCutShortByLeavingItsChatIsSentAgainAndReadToItsEnd -->
   <!-- test: HubChatLostTurnTests.testALostTurnPutAgainAfterItsRunEndedIsReadThenItsRows -->
   <!-- test: HubChatContinueTests.testASendToAMacOutOfReachGivesTheTextBack -->
   <!-- test: HubChatContinueTests.testAnAcceptedSendClearsTheTextGivenBack -->

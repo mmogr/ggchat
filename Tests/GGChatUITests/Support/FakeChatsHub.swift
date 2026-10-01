@@ -8,6 +8,8 @@ final class FakeChatsHub: HubChatsProvider {
         var list: Result<HubChatList, HubChatsFailure>
         var chats: [Int64: HubChatOpen] = [:]
         var lists = 0
+        /// Holds every list, once counted, until it is set false again.
+        var holdsLists = false
         var opens: [Int64] = []
         /// Holds every open until it is set false again.
         var holdsOpens = false
@@ -18,6 +20,13 @@ final class FakeChatsHub: HubChatsProvider {
         var turnFailure: HubTurnFailure?
         /// How many turns start and then lose their answer on the way back.
         var turnsLost = 0
+        /// How many turns never reach the Mac: the answer is lost, and the
+        /// run ids of those are kept here rather than in `turns`.
+        var turnsDropped = 0
+        var dropped: [String] = []
+        /// How many turns wait until their `PUT` is cancelled, and are then
+        /// dropped as above.
+        var turnsHeldUntilCancelled = 0
         /// The kind of run a turn starts: a gglib that does not know turns
         /// starts a chat run.
         var turnKind = RunKind.agent
@@ -87,10 +96,9 @@ final class FakeChatsHub: HubChatsProvider {
     }
 
     func listChats() async throws(HubChatsFailure) -> HubChatList {
-        try with { state in
-            state.lists += 1
-            return state.list
-        }.get()
+        with { $0.lists += 1 }
+        while with({ $0.holdsLists }) { await Task.yield() }
+        return try with(\.list).get()
     }
 
     func openChat(id: Int64) async throws(HubChatsFailure) -> HubChatOpen {
@@ -103,6 +111,19 @@ final class FakeChatsHub: HubChatsProvider {
     }
 
     func startTurn(runID: String, turn: HubTurn) async throws(HubTurnFailure) -> RunStart {
+        if with({ $0.turnsHeldUntilCancelled > 0 }) {
+            with { $0.turnsHeldUntilCancelled -= 1 }
+            while !Task.isCancelled { await Task.yield() }
+            with { $0.dropped.append(runID) }
+            throw .lost(.transport("the turn was cut short"))
+        }
+        let isDropped = with { state in
+            guard state.turnsDropped > 0 else { return false }
+            state.turnsDropped -= 1
+            state.dropped.append(runID)
+            return true
+        }
+        if isDropped { throw .lost(.transport("the turn never arrived")) }
         let (failure, lost, info) = with { state in
             state.turns.append((runID, turn))
             state.turnsLost -= 1

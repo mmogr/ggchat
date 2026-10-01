@@ -210,8 +210,15 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # does not name, since the Mac names a run only once reserved; three tests pin
 # a lost turn put again after its run ended, the text given back by a send to
 # a Mac out of reach, and an accepted send clearing it.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 433
+#
+# 2026-10-01: 433 -> 448 and 340 -> 355. Four tests pin the time on a Mac's
+# chat row and the hub's time read as UTC; eleven pin a lost send sent again
+# when a list does not name it, on coming back, on the pipe coming up and when
+# leaving its chat cut it short, and never beside itself, out of reach, on the
+# way away, after Stop, after a refusal, or once started, with a refused one's
+# text given back on opening; the claims name all fifteen.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 448
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 340
+floor "README test markers" "${markers:-0}" 355
 
 exit $status
