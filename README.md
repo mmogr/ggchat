@@ -888,6 +888,14 @@ Signing is off there rather than ad-hoc, because the iOS SDK refuses an
 ad-hoc identity outright and a real one needs a provisioning profile; what it
 proves is the compile and the link.
 
+`make phone` builds the app in Release, signed for a phone, and installs it
+with `xcrun devicectl` on the one iPhone this Mac can reach, or on the one
+`DEVICE` names; with none, or more than one, it refuses and says why. A
+build signed by a free team stops opening when its provisioning profile runs
+out, seven days after the profile was issued, so this is the refresh in one
+command. Run it on or after the day Settings shows: a build made while the
+old profile is still valid may keep its date.
+
 `make build-app-release` compiles the same two destinations with
 `-configuration Release`. Nothing else compiles the app target that way:
 the scheme's run and test actions are Debug, `xcodebuild build` with no

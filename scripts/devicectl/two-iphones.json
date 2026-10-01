@@ -1,0 +1,227 @@
+{
+  "info": {
+    "arguments": [
+      "devicectl",
+      "list",
+      "devices",
+      "--json-output",
+      "devices.json"
+    ],
+    "commandType": "devicectl.list.devices",
+    "environment": {
+      "TERM": "xterm-256color"
+    },
+    "jsonVersion": 2,
+    "outcome": "success",
+    "version": "477.29"
+  },
+  "result": {
+    "devices": [
+      {
+        "capabilities": [
+          {
+            "featureIdentifier": "com.apple.coredevice.feature.installapp",
+            "name": "Install Application"
+          },
+          {
+            "featureIdentifier": "com.apple.coredevice.feature.launchapplication",
+            "name": "Launch Application"
+          }
+        ],
+        "connectionProperties": {
+          "authenticationType": "manualPairing",
+          "isMobileDeviceOnly": false,
+          "lastConnectionDate": "2026-10-01T08:00:00.000Z",
+          "pairingState": "paired",
+          "potentialHostnames": [
+            "00008150-0000000000000001.coredevice.local",
+            "6A1B2C3D-0000-4000-8000-000000000001.coredevice.local"
+          ],
+          "transportType": "wired",
+          "tunnelState": "connected",
+          "tunnelTransportProtocol": "tcp"
+        },
+        "deviceProperties": {
+          "bootedFromSnapshot": true,
+          "bootedSnapshotName": "com.apple.os.update-0000000000000000000000000000000000000000000000000000000000000000",
+          "ddiServicesAvailable": true,
+          "developerModeStatus": "enabled",
+          "hasInternalOSBuild": false,
+          "name": "Sample iPhone",
+          "osBuildUpdate": "24A100",
+          "osVersionNumber": "26.0",
+          "rootFileSystemIsWritable": false
+        },
+        "hardwareProperties": {
+          "cpuType": {
+            "name": "arm64e",
+            "subType": 2,
+            "type": 16777228
+          },
+          "deviceType": "iPhone",
+          "ecid": 1000000000000001,
+          "hardwareModel": "D00AP",
+          "internalStorageCapacity": 256000000000,
+          "isProductionFused": true,
+          "marketingName": "iPhone 17 Pro",
+          "platform": "iOS",
+          "productType": "iPhone18,1",
+          "reality": "physical",
+          "serialNumber": "SAMPLE0000",
+          "supportedCPUTypes": [
+            {
+              "name": "arm64e",
+              "subType": 2,
+              "type": 16777228
+            }
+          ],
+          "supportedDeviceFamilies": [
+            1
+          ],
+          "thinningProductType": "iPhone18,1",
+          "udid": "00008150-0000000000000001"
+        },
+        "identifier": "6A1B2C3D-0000-4000-8000-000000000001",
+        "tags": [],
+        "visibilityClass": "default"
+      },
+      {
+        "capabilities": [
+          {
+            "featureIdentifier": "com.apple.coredevice.feature.installapp",
+            "name": "Install Application"
+          },
+          {
+            "featureIdentifier": "com.apple.coredevice.feature.launchapplication",
+            "name": "Launch Application"
+          }
+        ],
+        "connectionProperties": {
+          "authenticationType": "manualPairing",
+          "isMobileDeviceOnly": false,
+          "lastConnectionDate": "2026-10-01T08:00:00.000Z",
+          "pairingState": "paired",
+          "potentialHostnames": [
+            "00008132-0000000000000004.coredevice.local",
+            "6A1B2C3D-0000-4000-8000-000000000004.coredevice.local"
+          ],
+          "transportType": "wired",
+          "tunnelState": "connected",
+          "tunnelTransportProtocol": "tcp"
+        },
+        "deviceProperties": {
+          "bootedFromSnapshot": true,
+          "bootedSnapshotName": "com.apple.os.update-0000000000000000000000000000000000000000000000000000000000000000",
+          "ddiServicesAvailable": true,
+          "developerModeStatus": "enabled",
+          "hasInternalOSBuild": false,
+          "name": "Sample iPad",
+          "osBuildUpdate": "24A100",
+          "osVersionNumber": "26.0",
+          "rootFileSystemIsWritable": false
+        },
+        "hardwareProperties": {
+          "cpuType": {
+            "name": "arm64e",
+            "subType": 2,
+            "type": 16777228
+          },
+          "deviceType": "iPad",
+          "ecid": 1000000000000001,
+          "hardwareModel": "D00AP",
+          "internalStorageCapacity": 256000000000,
+          "isProductionFused": true,
+          "marketingName": "iPad Pro 11-inch (M4)",
+          "platform": "iOS",
+          "productType": "iPad16,3",
+          "reality": "physical",
+          "serialNumber": "SAMPLE0000",
+          "supportedCPUTypes": [
+            {
+              "name": "arm64e",
+              "subType": 2,
+              "type": 16777228
+            }
+          ],
+          "supportedDeviceFamilies": [
+            1,
+            2
+          ],
+          "thinningProductType": "iPad16,3",
+          "udid": "00008132-0000000000000004"
+        },
+        "identifier": "6A1B2C3D-0000-4000-8000-000000000004",
+        "tags": [],
+        "visibilityClass": "default"
+      },
+      {
+        "capabilities": [
+          {
+            "featureIdentifier": "com.apple.coredevice.feature.installapp",
+            "name": "Install Application"
+          },
+          {
+            "featureIdentifier": "com.apple.coredevice.feature.launchapplication",
+            "name": "Launch Application"
+          }
+        ],
+        "connectionProperties": {
+          "authenticationType": "manualPairing",
+          "isMobileDeviceOnly": false,
+          "lastConnectionDate": "2026-10-01T08:00:00.000Z",
+          "pairingState": "paired",
+          "potentialHostnames": [
+            "00008140-0000000000000002.coredevice.local",
+            "6A1B2C3D-0000-4000-8000-000000000002.coredevice.local"
+          ],
+          "transportType": "localNetwork",
+          "tunnelState": "disconnected",
+          "tunnelTransportProtocol": "tcp"
+        },
+        "deviceProperties": {
+          "bootedFromSnapshot": true,
+          "bootedSnapshotName": "com.apple.os.update-0000000000000000000000000000000000000000000000000000000000000000",
+          "ddiServicesAvailable": false,
+          "developerModeStatus": "enabled",
+          "hasInternalOSBuild": false,
+          "name": "Second iPhone",
+          "osBuildUpdate": "24A100",
+          "osVersionNumber": "26.0",
+          "rootFileSystemIsWritable": false
+        },
+        "hardwareProperties": {
+          "cpuType": {
+            "name": "arm64e",
+            "subType": 2,
+            "type": 16777228
+          },
+          "deviceType": "iPhone",
+          "ecid": 1000000000000001,
+          "hardwareModel": "D00AP",
+          "internalStorageCapacity": 256000000000,
+          "isProductionFused": true,
+          "marketingName": "iPhone 16 Pro",
+          "platform": "iOS",
+          "productType": "iPhone17,1",
+          "reality": "physical",
+          "serialNumber": "SAMPLE0000",
+          "supportedCPUTypes": [
+            {
+              "name": "arm64e",
+              "subType": 2,
+              "type": 16777228
+            }
+          ],
+          "supportedDeviceFamilies": [
+            1
+          ],
+          "thinningProductType": "iPhone17,1",
+          "udid": "00008140-0000000000000002"
+        },
+        "identifier": "6A1B2C3D-0000-4000-8000-000000000002",
+        "tags": [],
+        "visibilityClass": "default"
+      }
+    ]
+  }
+}

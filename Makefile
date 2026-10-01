@@ -3,7 +3,7 @@
 # those.
 SWIFT_SOURCES := Sources Tests Package.swift $(wildcard App/ggchat/*.swift) $(wildcard App/ggchatUITests/*.swift)
 
-.PHONY: icon build-app-device screenshots project bootstrap fmt fmt-check lint analyze boundaries enforce build build-release build-app build-app-release test test-live uitest uitest-ipad uitest-dark uitest-contrast unused docs ci
+.PHONY: icon build-app-device phone screenshots project bootstrap fmt fmt-check lint analyze boundaries enforce build build-release build-app build-app-release test test-live uitest uitest-ipad uitest-dark uitest-contrast unused docs ci
 
 project:
 	cd App && xcodegen generate --quiet
@@ -70,6 +70,7 @@ enforce:
 	scripts/check_file_size.sh
 	scripts/check_readme_claims.sh
 	scripts/check_test_counts.sh
+	scripts/check_phone_device.sh
 
 build:
 	swift build -Xswiftc -warnings-as-errors
@@ -118,7 +119,7 @@ build-app-release:
 # outright by the iOS SDK, and a real identity would need a provisioning
 # profile from Apple, which is not a thing a build check should reach for.
 # What this proves is the compile and the link, which is what has never been
-# proven; installing on a phone is Xcode's job and needs the profile.
+# proven; installing on a phone is `make phone`'s job and needs the profile.
 build-app-device:
 	xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat \
 		-configuration Release -destination 'generic/platform=iOS' \
@@ -127,6 +128,22 @@ build-app-device:
 build-release:
 	swift build -c release -Xswiftc -warnings-as-errors
 	scripts/check_no_mock_in_release.sh
+
+# Builds the app in Release, as Xcode's Run does, signed for a phone, and
+# installs it on the one iPhone this Mac can reach, or on DEVICE (a name, a
+# UDID or devicectl's identifier): `make phone DEVICE='My iPhone'`. A build
+# signed by a free team stops opening when its profile runs out, seven days
+# after the profile was issued, so this is the refresh in one command.
+# `-allowProvisioningUpdates` lets xcodebuild fetch a new profile when the
+# last one has run out, through the Apple ID signed in to Xcode. The phone is
+# picked first, so a missing one is said before minutes of compiling rather
+# than after them.
+PHONE_BUILD = .build/phone
+phone:
+	device=$$(scripts/phone_device.sh) || exit 1; \
+	xcodebuild build -project App/ggchat.xcodeproj -scheme ggchat -configuration Release \
+		-destination 'generic/platform=iOS' -derivedDataPath $(PHONE_BUILD) -allowProvisioningUpdates -quiet \
+		&& xcrun devicectl device install app --device "$$device" $(PHONE_BUILD)/Build/Products/Release-iphoneos/ggchat.app
 
 test:
 	swift test --parallel
