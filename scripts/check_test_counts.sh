@@ -266,8 +266,19 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # in the core and in both rows. A parse of the whole reply per token passes
 # everything else, so they are the whole of that guard, and the README
 # claim names all eleven.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 480
+#
+# 2026-10-02: 480 -> 483 and 392 -> 395. Three tests pin that a line break
+# inside a paragraph reads as a space and a hard break as a newline: in plain
+# text, beside code, emphasis and a link, and in a heading, a list item and a
+# quote. Each failed against the rendering that dropped a break, and nothing
+# else did, so they are the whole of that guard, and the README claim names
+# all three.
+#
+# 2026-10-02: 483 -> 484 and 395 -> 396. One test pins that punctuation
+# reads as typed, `---` not turned into an em dash. It is the only test that
+# fails when smart punctuation is on, and the README claim names it.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 484
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 392
+floor "README test markers" "${markers:-0}" 396
 
 exit $status

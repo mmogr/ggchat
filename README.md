@@ -876,6 +876,16 @@ Each claim names the test that keeps it true.
 - A block quote's `>` marker and a list item's indentation stay out of the
   rendered text.
   <!-- test: MarkdownTests.testListsHeadingsQuotesAndRules -->
+- A line break inside a paragraph reads as a space, so the words either
+  side of it never run together: in a heading, a list item or a quote too,
+  and beside code, emphasis or a link. A hard break, two spaces or a
+  backslash at the end of the line, starts a new line.
+  <!-- test: MarkdownTests.testASoftBreakReadsAsASpace -->
+  <!-- test: MarkdownTests.testASoftBreakBesideCodeEmphasisAndALinkReadsAsASpace -->
+  <!-- test: MarkdownTests.testAHardBreakIsANewline -->
+- Punctuation in the transcript reads as typed: `---` stays three hyphens
+  rather than becoming an em dash, and straight quotes stay straight.
+  <!-- test: MarkdownTests.testPunctuationReadsAsTyped -->
 
 ## Building and testing
 

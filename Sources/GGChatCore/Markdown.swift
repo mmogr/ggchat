@@ -46,9 +46,13 @@ public enum MarkdownBlocks {
 
     /// The top-level children of `text` parsed as a document. Every document
     /// parse goes through here, so a bound `ParseMeter` counts them all.
+    ///
+    /// Punctuation reads as typed. Smart punctuation, which swift-markdown
+    /// turns on unless told not to, makes `---` an em dash, `--` an en dash,
+    /// `...` an ellipsis and straight quotes curly.
     static func children(parsing text: String) -> [any Markup] {
         ParseMeter.current?.add(text.utf8.count)
-        return Array(Document(parsing: text).children)
+        return Array(Document(parsing: text, options: .disableSmartOpts).children)
     }
 
     /// The blocks for a document's top-level children.
@@ -124,7 +128,13 @@ public enum MarkdownBlocks {
 
     /// Inline styling via Foundation, which understands emphasis, strong,
     /// code spans and links.
-    private static func inline(_ container: some Markup) -> AttributedString {
+    private static func inline(_ markup: some Markup) -> AttributedString {
+        // A line break is turned into the text it reads as first. Formatted on
+        // its own, as each child is below, a break loses its newline — the
+        // formatter holds it back for whatever follows — and the words either
+        // side of a soft break would run together.
+        var breaks = BreaksAsText()
+        let container = breaks.visit(markup.detachedFromParent) ?? markup
         // `format()` renders a node in the context of its ancestors, so a
         // paragraph inside a block quote comes back with its "> " marker and
         // one inside a list item comes back indented. Detaching drops that
@@ -135,4 +145,14 @@ public enum MarkdownBlocks {
             interpretedSyntax: .inlineOnlyPreservingWhitespace)
         return (try? AttributedString(markdown: source, options: options)) ?? AttributedString(source)
     }
+}
+
+/// A paragraph's line breaks as the text they read as. CommonMark leaves a
+/// soft break, a newline inside a paragraph, to the renderer as a line ending
+/// or a space; here it is a space, so a paragraph wraps to the width it is
+/// shown at. A hard break, two spaces or a backslash before the newline, is a
+/// newline.
+private struct BreaksAsText: MarkupRewriter {
+    func visitSoftBreak(_: SoftBreak) -> (any Markup)? { Text(" ") }
+    func visitLineBreak(_: LineBreak) -> (any Markup)? { Text("\n") }
 }
