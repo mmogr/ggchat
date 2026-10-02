@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.6.0](https://github.com/mmogr/ggchat/compare/v0.5.0...v0.6.0) (2026-10-02)
+
+
+### What the app now does
+
+* **ui:** Settings says the day this build stops opening ([#160](https://github.com/mmogr/ggchat/issues/160)) ([b58b635](https://github.com/mmogr/ggchat/commit/b58b63560e8c7be8e29aede508e1f4aab77bec93))
+
+
+### What the app stopped getting wrong
+
+* **ui:** a Keychain that will not read is no longer called a missing ticket, and coming back dials every pipe at once ([#161](https://github.com/mmogr/ggchat/issues/161)) ([84938b8](https://github.com/mmogr/ggchat/commit/84938b82096980285e2b95d8b7178fa70c046300))
+* **ui:** a line break inside a paragraph reads as a space, and punctuation reads as typed ([#163](https://github.com/mmogr/ggchat/issues/163)) ([9b00071](https://github.com/mmogr/ggchat/commit/9b00071672f90b45383deaccaaee3ef50c49a69d))
+* **ui:** a markdown table is drawn as a table, and a streaming reply parses again only what a token can change ([#162](https://github.com/mmogr/ggchat/issues/162)) ([d97e57e](https://github.com/mmogr/ggchat/commit/d97e57e1740b64a12a03fb4308c5b490cd06d2d0))
+* **ui:** Settings no longer shows the readings the ADRs struck ([#158](https://github.com/mmogr/ggchat/issues/158)) ([0152426](https://github.com/mmogr/ggchat/commit/015242674fe6c1e0bc6e5857e84785e92ed1c397))
+
 ## [0.5.0](https://github.com/mmogr/ggchat/compare/v0.4.0...v0.5.0) (2026-10-01)
 
 
