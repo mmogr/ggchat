@@ -1081,6 +1081,13 @@ that breaks the published form is caught by the commit that made it.
 comment behind the seam is compiled by `make docs` but does not reach the
 site.
 
+Dependabot proposes Swift package and GitHub Actions updates once a week.
+To update the Swift packages now, run Actions → Update dependencies → Run
+workflow, or
+`gh workflow run update-deps.yml -R mmogr/ggchat` (add
+`-f package=modelpipe-ffi` for one pin): it runs `swift package update` and
+opens a PR listing each pin it moved, or says there is nothing to update.
+
 ## House rules
 
 - Commit messages and PR titles say what the system now does, as a

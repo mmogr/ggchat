@@ -1,0 +1,129 @@
+name: Update dependencies
+
+# Run by hand: Actions -> Update dependencies -> Run workflow, or
+# `gh workflow run update-deps.yml -R mmogr/ggchat [-f package=<identity>]`.
+# Dependabot cannot be made to update now, so this does what its PR would:
+# moves Package.resolved as far as Package.swift's ranges allow and opens a
+# PR that lists each pin it moved. Package.resolved is the only lock; the
+# Xcode project resolves the package from it too.
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: One dependency to update, for example modelpipe-ffi. Leave empty to update everything the version ranges allow.
+        type: string
+        required: false
+        default: ""
+
+# Everything that writes uses RELEASE_PLEASE_TOKEN, not GITHUB_TOKEN: a push
+# or a PR made with GITHUB_TOKEN starts no workflows, so CI and the Label
+# Check would never run on the PR this opens.
+permissions: {}
+
+concurrency:
+  group: update-deps
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Update and open a PR
+    runs-on: macos-26
+    env:
+      GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+      PACKAGE: ${{ inputs.package }}
+    steps:
+      - name: Require the token
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::RELEASE_PLEASE_TOKEN is not set; without it the PR would start no CI"
+            exit 1
+          fi
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+      - name: Toolchain
+        run: swift --version
+      - name: Update Package.resolved
+        id: update
+        run: |
+          set -euo pipefail
+          # `swift package update <name>` exits 0 having done nothing when no
+          # pin has that name, which would read as "nothing to update".
+          if [ -n "$PACKAGE" ] && ! jq -e --arg p "$PACKAGE" 'any(.pins[]; .identity == $p)' Package.resolved >/dev/null; then
+            echo "::error::no pin in Package.resolved has that name; the pins are $(jq -r '[.pins[].identity] | join(", ")' Package.resolved)"
+            exit 1
+          fi
+          git show HEAD:Package.resolved > "$RUNNER_TEMP/before.resolved"
+          if [ -n "$PACKAGE" ]; then
+            swift package update "$PACKAGE"
+          else
+            swift package update
+          fi
+          # One line per pin whose version or revision moved: identity old -> new.
+          python3 - "$RUNNER_TEMP/before.resolved" Package.resolved > "$RUNNER_TEMP/changes.txt" <<'PY'
+          import json, sys
+          def pins(path):
+              with open(path) as f:
+                  return {p["identity"]: p["state"] for p in json.load(f).get("pins", [])}
+          def name(state, other):
+              version = state.get("version") or state.get("branch")
+              revision = state.get("revision", "")[:7]
+              if not version:
+                  return revision
+              if version == (other.get("version") or other.get("branch")):
+                  return f"{version} ({revision})"
+              return version
+          old, new = pins(sys.argv[1]), pins(sys.argv[2])
+          for identity in sorted(old.keys() | new.keys()):
+              a, b = old.get(identity), new.get(identity)
+              if a == b:
+                  continue
+              before = name(a, b or {}) if a else "(none)"
+              after = name(b, a or {}) if b else "(removed)"
+              print(f"{identity} {before} -> {after}")
+          PY
+          if [ ! -s "$RUNNER_TEMP/changes.txt" ]; then
+            echo "Nothing to update: ${PACKAGE:-every pin} is already the newest version its range in Package.swift allows." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          cat "$RUNNER_TEMP/changes.txt"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+      - name: Open a pull request
+        if: steps.update.outputs.changed == 'true'
+        env:
+          BASE: ${{ github.event.repository.default_branch }}
+          BRANCH: chore(deps)/update-run-${{ github.run_number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          if [ -n "$PACKAGE" ]; then
+            subject="chore(deps): $PACKAGE moves to the newest version its range allows"
+          else
+            subject="chore(deps): dependencies move to the newest versions their ranges allow"
+          fi
+          changes=$(cat "$RUNNER_TEMP/changes.txt")
+          git switch -c "$BRANCH"
+          git add Package.resolved
+          git -c user.name=mmogr -c user.email=172192206+mmogr@users.noreply.github.com \
+            commit --quiet -F - <<EOF
+          $subject
+
+          $changes
+          EOF
+          # The size the Label Check would give it, so the PR passes from the
+          # start: lines added and removed, against the same thresholds.
+          lines=$(git show --numstat --format= HEAD | awk '{n += $1 + $2} END {print n + 0}')
+          if [ "$lines" -lt 10 ]; then size=size/xs
+          elif [ "$lines" -lt 100 ]; then size=size/s
+          elif [ "$lines" -lt 500 ]; then size=size/m
+          elif [ "$lines" -lt 1000 ]; then size=size/l
+          else size=size/xl
+          fi
+          git push origin "$BRANCH"
+          body="- ${changes//$'\n'/$'\n'- }
+
+          Opened by the Update dependencies workflow: $RUN_URL"
+          gh pr create --base "$BASE" --head "$BRANCH" --title "$subject" --body "$body" \
+            --label deps --label dependencies --label swift_package_manager --label "$size"
