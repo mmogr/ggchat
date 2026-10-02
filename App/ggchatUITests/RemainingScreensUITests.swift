@@ -36,7 +36,7 @@ final class RemainingScreensUITests: XCTestCase {
         let address = app.textFields["provider-address"].firstMatch
         XCTAssertTrue(address.waitForExistence(timeout: 10))
         enter(live.baseURL, into: address)
-        typeAPIKey(live.apiKey, in: app)
+        pasteAPIKey(live.apiKey, in: app)
         submitProviderForm(in: app)
 
         openConversation(in: app)

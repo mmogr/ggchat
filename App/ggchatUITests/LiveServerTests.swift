@@ -4,12 +4,12 @@ import XCTest
 /// walk picks, and when it skips instead -- and what a `LiveServer` prints,
 /// and nothing beyond those.
 ///
-/// It deliberately does not claim more. That a walk goes on to type the key
+/// It deliberately does not claim more. That a walk goes on to paste the key
 /// it resolved is not asserted here and cannot be: it needs the app running
 /// on a simulator against a server that rejects an unauthenticated request,
-/// and CI has neither. Deleting the key-typing line leaves every test in this
-/// file green, which is why the pull request says so rather than pointing at
-/// these.
+/// and CI has neither. Deleting the line that pastes the key leaves every
+/// test in this file green, which is why the pull request says so rather than
+/// pointing at these.
 final class LiveServerTests: XCTestCase {
     /// Counts the probes, so "taken at its word, not probed" is a checkable
     /// claim rather than a stated intention.

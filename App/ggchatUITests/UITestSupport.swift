@@ -141,20 +141,26 @@ extension XCTestCase {
         _ text: String, into field: XCUIElement, attempts: Int = 3,
         file: StaticString = #filePath, line: UInt = #line
     ) {
+        if focus(field, attempts: attempts, file: file, line: line) { field.typeText(text) }
+    }
+
+    /// Taps a field of the provider sheet until it has the keyboard; see
+    /// ``enter(_:into:attempts:file:line:)``. False, having failed the test,
+    /// when it never does.
+    @MainActor
+    func focus(_ field: XCUIElement, attempts: Int = 3, file: StaticString = #filePath, line: UInt = #line) -> Bool {
         let focused = NSPredicate(format: "hasKeyboardFocus == true")
         var tapped = false
         for _ in 0..<attempts where waitUntilHittable(field, timeout: 15, sweeping: false) {
             field.tap()
             tapped = true
             let took = XCTNSPredicateExpectation(predicate: focused, object: field)
-            if XCTWaiter().wait(for: [took], timeout: 5) == .completed {
-                field.typeText(text)
-                return
-            }
+            if XCTWaiter().wait(for: [took], timeout: 5) == .completed { return true }
         }
         XCTFail(
             tapped ? "the field was tapped and never took the keyboard" : "the field never became tappable",
             file: file, line: line)
+        return false
     }
 
     /// Puts the caret in a field and waits for the keyboard, because
@@ -244,25 +250,6 @@ extension XCTestCase {
         work()
         app.tap()
         dismissAnythingOnTop()
-    }
-
-    /// Types the live server's key into the provider form.
-    ///
-    /// `provider-key` is the Server kind's field, bound to the credential
-    /// stored as `.apiKey`. It is not `provider-token`: that is the Pipe
-    /// kind's, it holds a different credential, and the form only ever shows
-    /// one of the two, so a server walk that reached for it would find
-    /// nothing there.
-    ///
-    /// An empty key types nothing, which leaves a keyless walk exactly as it
-    /// was -- including not waking the password manager, whose offer arrives
-    /// only once something has been put in a `SecureField`.
-    @MainActor
-    func typeAPIKey(_ apiKey: String, in app: XCUIApplication) {
-        guard !apiKey.isEmpty else { return }
-        let field = app.secureTextFields["provider-key"].firstMatch
-        XCTAssertTrue(field.waitForExistence(timeout: 10), "the API key field is not reachable")
-        enter(apiKey, into: field)
     }
 
     /// Submits the provider form: taps Add, then waits for the sheet to go.

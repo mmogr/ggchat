@@ -148,10 +148,20 @@ Each is what `MockPipeConnector` and `MockPipeSession` do today and what
    `AppModel.report`), and the loopback URL in "pipe up for … at …".
    modelpipe-ffi's `no_error_renders_the_ticket` keeps the ticket out of
    its errors, and the token never reaches the binding:
-   `ModelpipeConnector` dials with the ticket alone. The app's redaction
-   test (`OpenAICompatibleProviderTests.testNoCredentialEverReachesALogLine`)
-   covers `OpenAICompatibleProvider`'s lines only, so nothing tests the
-   lines `AppModel` writes.
+   `ModelpipeConnector` dials with the ticket alone. Two tests look for a
+   credential in what reaches `LogSink`.
+   `OpenAICompatibleProviderTests.testNoCredentialEverReachesALogLine`
+   finds no bearer token in `OpenAICompatibleProvider`'s lines.
+   `AppModelPipeLogTests.testNoPipeOrPairingLineCarriesATicketATokenOrACode`
+   finds no ticket, token or pairing code in the lines `AppModel` writes as
+   a dial is refused, is refused quietly on a return to the foreground,
+   lands, is dropped, and as a code is spent. That test's refusals are its
+   own sentences, and `AppModel` passes a connector's sentence through
+   unchanged, so for a real dial what keeps the ticket out is still
+   `ModelpipeConnector.refusal` and `no_error_renders_the_ticket`.
+   `AppModelRunReadOnTests.testNoLogLineNamesARunItsTextOrAnAddress` reads
+   the run lines `AppModel` writes, for a run's id, a word of the reply or
+   an address, from a server added by address rather than a pipe.
 
 ## Pairing is inside the seam
 
