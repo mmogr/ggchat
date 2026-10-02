@@ -125,7 +125,7 @@ struct LiveReplyRow: View {
                     .controlSize(.small)
                     .accessibilityLabel("Waiting for the first token")
             } else {
-                MarkdownBlocksView(blocks: MarkdownBlocks.parse(live.content))
+                MarkdownBlocksView(blocks: live.blocks)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -2,7 +2,8 @@ import GGChatCore
 import SwiftUI
 
 /// Renders parsed markdown blocks. Prose is plain text on the background;
-/// code is a quiet inset panel with a copy button. No glass here.
+/// code is a quiet inset panel with a copy button, and a table a grid on a
+/// quieter one. No glass here.
 struct MarkdownBlocksView: View {
     let blocks: [MarkdownBlock]
 
@@ -51,6 +52,8 @@ struct MarkdownBlockView: View {
             }
         case .thematicBreak:
             Divider()
+        case .table(let table):
+            TableBlockView(table: table)
         }
     }
 }

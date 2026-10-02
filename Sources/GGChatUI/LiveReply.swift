@@ -32,6 +32,15 @@ public final class LiveReply {
     var detaching = false
     /// Whether the person stopped this reply, which is then never unread.
     var stoppedHere = false
+    /// The content's markdown, kept between tokens; see `blocks`.
+    @ObservationIgnored private var markdown = LiveMarkdown()
+
+    /// The content as markdown blocks. A token parses only what follows the
+    /// blocks it cannot change, not the whole reply again (`LiveMarkdown`).
+    var blocks: [MarkdownBlock] {
+        markdown.update(to: content)
+        return markdown.blocks
+    }
 
     init(conversationID: UUID, continuingMessageID: UUID?) {
         self.conversationID = conversationID

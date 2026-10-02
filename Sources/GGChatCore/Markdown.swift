@@ -11,6 +11,29 @@ public enum MarkdownBlock: Equatable, Sendable {
     case list(ordered: Bool, items: [AttributedString])
     case quote([MarkdownBlock])
     case thematicBreak
+    case table(MarkdownTable)
+}
+
+/// A GFM table: a header row, the rows under it, and how each column is
+/// aligned. Every row has one cell per column, and a cell keeps its inline
+/// styling as a paragraph does.
+public struct MarkdownTable: Equatable, Sendable {
+    public enum Alignment: Equatable, Sendable {
+        case leading
+        case center
+        case trailing
+    }
+
+    /// One per column; nil where the delimiter row gave none.
+    public let alignments: [Alignment?]
+    public let header: [AttributedString]
+    public let rows: [[AttributedString]]
+
+    public init(alignments: [Alignment?], header: [AttributedString], rows: [[AttributedString]]) {
+        self.alignments = alignments
+        self.header = header
+        self.rows = rows
+    }
 }
 
 public enum MarkdownBlocks {
@@ -18,8 +41,19 @@ public enum MarkdownBlocks {
     /// code block to the end of the text, so streaming code never flashes
     /// as prose.
     public static func parse(_ text: String) -> [MarkdownBlock] {
-        let document = Document(parsing: text)
-        return document.children.compactMap(block(for:))
+        blocks(of: children(parsing: text))
+    }
+
+    /// The top-level children of `text` parsed as a document. Every document
+    /// parse goes through here, so a bound `ParseMeter` counts them all.
+    static func children(parsing text: String) -> [any Markup] {
+        ParseMeter.current?.add(text.utf8.count)
+        return Array(Document(parsing: text).children)
+    }
+
+    /// The blocks for a document's top-level children.
+    static func blocks(of children: some Sequence<any Markup>) -> [MarkdownBlock] {
+        children.compactMap(block(for:))
     }
 
     private static func block(for markup: any Markup) -> MarkdownBlock? {
@@ -44,10 +78,35 @@ public enum MarkdownBlocks {
         case let html as HTMLBlock:
             return .code(language: "html", text: html.rawHTML)
         case let table as Table:
-            return .code(language: nil, text: table.format())
+            return .table(self.table(table))
         default:
             return .paragraph(AttributedString(markup.format()))
         }
+    }
+
+    private static func table(_ table: Table) -> MarkdownTable {
+        let alignments = table.columnAlignments.map { alignment -> MarkdownTable.Alignment? in
+            switch alignment {
+            case .left: .leading
+            case .center: .center
+            case .right: .trailing
+            case nil: nil
+            }
+        }
+        // The parser pads a short row with empty cells and cuts a long one
+        // to the header's width, so every row arrives one cell per column.
+        func cells(_ row: any Markup) -> [AttributedString] {
+            row.children.compactMap { $0 as? Table.Cell }.map(cell(_:))
+        }
+        return MarkdownTable(
+            alignments: alignments, header: cells(table.head), rows: table.body.children.map(cells(_:)))
+    }
+
+    /// The parser reads a cell holding only `^` as a mark that the cell above
+    /// runs on into this row, and empties it. GitHub draws no such thing, so
+    /// the mark is put back and drawn as written.
+    private static func cell(_ cell: Table.Cell) -> AttributedString {
+        cell.rowspan == 0 ? AttributedString("^") : inline(cell)
     }
 
     private static func listItem(for markup: any Markup) -> AttributedString {
@@ -69,7 +128,8 @@ public enum MarkdownBlocks {
         // `format()` renders a node in the context of its ancestors, so a
         // paragraph inside a block quote comes back with its "> " marker and
         // one inside a list item comes back indented. Detaching drops that
-        // context, leaving the inline markdown alone.
+        // context, leaving the inline markdown alone. A table cell is never
+        // formatted itself, which the formatter refuses; only its children.
         let source: String = container.detachedFromParent.children.map { $0.format() }.joined()
         let options = AttributedString.MarkdownParsingOptions(
             interpretedSyntax: .inlineOnlyPreservingWhitespace)

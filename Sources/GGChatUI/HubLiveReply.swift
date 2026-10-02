@@ -36,6 +36,15 @@ public final class HubLiveReply {
     var ended = false
     /// The reading under way, if one is.
     @ObservationIgnored var reading: Task<Void, Never>?
+    /// The content's markdown, kept between deltas; see `blocks`.
+    @ObservationIgnored private var markdown = LiveMarkdown()
+
+    /// The content as markdown blocks. A delta parses only what follows the
+    /// blocks it cannot change, not the whole reply again (`LiveMarkdown`).
+    var blocks: [MarkdownBlock] {
+        markdown.update(to: content)
+        return markdown.blocks
+    }
 
     init(providerID: UUID, chatID: Int64, runID: String, question: String?) {
         self.providerID = providerID

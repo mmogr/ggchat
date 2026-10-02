@@ -37,7 +37,7 @@ struct HubLiveReplyRows: View {
                     .controlSize(.small)
                     .accessibilityLabel("Waiting for the first token")
             } else {
-                MarkdownBlocksView(blocks: MarkdownBlocks.parse(reply.content))
+                MarkdownBlocksView(blocks: reply.blocks)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
