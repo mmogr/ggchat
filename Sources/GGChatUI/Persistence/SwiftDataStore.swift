@@ -132,15 +132,29 @@ public final class SwiftDataStore: Store {
     }
 
     public func save(conversation: Conversation) throws {
+        try write(conversation)
+        try context.save()
+    }
+
+    /// Brings one conversation's rows in line with it, without saving them.
+    ///
+    /// A field is assigned only when it differs from the row's, because a
+    /// `@Model` setter marks its row changed even for the value it already
+    /// holds: every save used to mark every row of its conversation changed,
+    /// twice a turn, though only one or two had changed (#139). A failure is
+    /// encoded only when it is not the one the row already holds. Apart from
+    /// `save(conversation:)` so a test can look at what a write marked before
+    /// it is saved.
+    func write(_ conversation: Conversation) throws {
         let record: ConversationRecord
         if let existing = try fetchConversation(conversation.id) {
             record = existing
-            record.title = conversation.title
-            record.providerID = conversation.providerID
-            record.model = conversation.model
-            record.systemPrompt = conversation.systemPrompt
-            record.hasUnreadReply = conversation.hasUnreadReply
-            record.updatedAt = conversation.updatedAt
+            Self.assign(\.title, of: record, to: conversation.title)
+            Self.assign(\.providerID, of: record, to: conversation.providerID)
+            Self.assign(\.model, of: record, to: conversation.model)
+            Self.assign(\.systemPrompt, of: record, to: conversation.systemPrompt)
+            Self.assign(\.hasUnreadReply, of: record, to: conversation.hasUnreadReply)
+            Self.assign(\.updatedAt, of: record, to: conversation.updatedAt)
         } else {
             record = ConversationRecord(
                 id: conversation.id, title: conversation.title, providerID: conversation.providerID,
@@ -150,21 +164,22 @@ public final class SwiftDataStore: Store {
         }
         var existing = Dictionary(record.messages.map { ($0.uuid, $0) }, uniquingKeysWith: { first, _ in first })
         for (order, message) in conversation.messages.enumerated() {
-            let failureData = try message.failure.map { try JSONEncoder().encode($0) }
             if let row = existing.removeValue(forKey: message.id) {
-                row.content = message.content
-                row.reasoning = message.reasoning
-                row.isPartial = message.isPartial
-                row.failureData = failureData
-                row.runID = message.runID
-                row.runCursor = message.runCursor.map(Int.init)
-                row.order = order
+                Self.assign(\.content, of: row, to: message.content)
+                Self.assign(\.reasoning, of: row, to: message.reasoning)
+                Self.assign(\.isPartial, of: row, to: message.isPartial)
+                if Self.failure(message.failure, differsFrom: row.failureData) {
+                    row.failureData = try message.failure.map { try JSONEncoder().encode($0) }
+                }
+                Self.assign(\.runID, of: row, to: message.runID)
+                Self.assign(\.runCursor, of: row, to: message.runCursor.map(Int.init))
+                Self.assign(\.order, of: row, to: order)
             } else {
                 let row = MessageRecord(
                     id: message.id, role: message.role.rawValue, content: message.content,
                     reasoning: message.reasoning, isPartial: message.isPartial, createdAt: message.createdAt,
-                    order: order, failureData: failureData, runID: message.runID,
-                    runCursor: message.runCursor.map(Int.init))
+                    order: order, failureData: try message.failure.map { try JSONEncoder().encode($0) },
+                    runID: message.runID, runCursor: message.runCursor.map(Int.init))
                 row.conversation = record
                 context.insert(row)
             }
@@ -172,7 +187,6 @@ public final class SwiftDataStore: Store {
         for orphan in existing.values {
             context.delete(orphan)
         }
-        try context.save()
     }
 
     public func deleteConversation(id: UUID) throws {
@@ -186,6 +200,22 @@ public final class SwiftDataStore: Store {
     /// conversation, so it is `try?`: the transcript is what matters.
     private static func failure(from data: Data?) -> Failure? {
         data.flatMap { try? JSONDecoder().decode(Failure.self, from: $0) }
+    }
+
+    /// Whether a message's failure is not the one its row holds. Compared as
+    /// values, so the same failure written in other bytes is the same. Bytes
+    /// this build cannot read differ from no failure, so they are cleared as
+    /// before.
+    private static func failure(_ failure: Failure?, differsFrom data: Data?) -> Bool {
+        guard let failure else { return data != nil }
+        return Self.failure(from: data) != failure
+    }
+
+    /// Sets a row's field only when the value is not already there.
+    private static func assign<Row, Value: Equatable>(
+        _ field: ReferenceWritableKeyPath<Row, Value>, of row: Row, to value: Value
+    ) {
+        if row[keyPath: field] != value { row[keyPath: field] = value }
     }
 
     private func fetchConversation(_ id: UUID) throws -> ConversationRecord? {

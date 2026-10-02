@@ -232,8 +232,26 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # file found under its name, and Settings' line, said where the person is and
 # absent with no date. They are the whole of that guard; the claim names them
 # and the gallery's Settings test, which finds no such line in the simulator.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 453
+#
+# 2026-10-02: 453 -> 456 and 362 -> 367. Three tests pin that a Keychain
+# that will not read a pipe's ticket or token is said as its own reason, in
+# the alert, on a waiting question and in a quiet dial's log line, and never
+# as missing (issue 85). They are the whole of that guard; the claim names
+# them, the missing case and the read the Keychain refuses.
+#
+# 2026-10-02: 456 -> 457 and 367 -> 369. A return to the foreground dials
+# every pipe at once (issue 85). The test that a hang-up stopped the resume
+# before its next dial goes, since there is no next dial: one test pins both
+# dials out before either lands, and one that a hang-up arriving before the
+# dials go out calls every one of them off. The claim names both.
+#
+# 2026-10-02: 457 -> 460 and 369 -> 372. Three tests pin that a save marks
+# only what changed (issue 139): an unchanged conversation marks no row, one
+# change marks only its row, and a failure is encoded again only when it
+# changed. Nothing else notices a save that marks every row, so they are the
+# whole of that guard, and the claim names all three.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 460
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 23
-floor "README test markers" "${markers:-0}" 362
+floor "README test markers" "${markers:-0}" 372
 
 exit $status

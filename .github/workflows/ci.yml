@@ -219,15 +219,14 @@ jobs:
           # nothing had ever driven the one an iPad user sees.
           #
           # It skips the Reduce Transparency reading, which is a measurement
-          # rather than a walk: it compares a band at 0.83-0.94 of the
-          # screenshot's height with one above it, and those fractions are an
-          # iPhone's. On an iPad Pro 13-inch the composer's glass is a strip
-          # in a much taller picture, so both bands are mostly background and
-          # the ratio moves 0.0026 where the test wants 0.01 -- it would fail
-          # for the shape of the screen, not for anything the app did. The
-          # iPhone leg above still runs it. Reaching it here means bands
-          # derived from the composer's own frame, not fractions of the
-          # picture.
+          # rather than a walk. Its bands were fractions of an iPhone's
+          # screenshot, 0.83-0.94 of the height against a band above it; on
+          # an iPad Pro 13-inch both were mostly background and the ratio
+          # moved 0.0026 where the test wanted 0.01, a failure about the
+          # shape of the screen rather than the app. The bands now come from
+          # the composer's own frame (#129), but the reading has been
+          # measured on iPhones only, so it stays off this leg until it has
+          # been measured here. The iPhone leg above still runs it.
           - name: iPad
             slug: ipad
             device: iPad

@@ -251,6 +251,16 @@ Each claim names the test that keeps it true.
 - A dial whose task is called off complains to nobody: nobody is waiting
   for its answer.
   <!-- test: AppModelQuietDialTests.testADialThatIsCalledOffSaysNothing -->
+- When the Keychain will not read a pipe's ticket or token for a dial, as
+  before the device's first unlock, the dial says the Keychain's own
+  reason, on the question waiting for the pipe or in the alert. Only a
+  credential that is not there is called missing: a missing one is a reason
+  to pair again, and a refused read is not.
+  <!-- test: AppModelKeychainReadTests.testAReadTheKeychainRefusesIsSaidAsThatRefusal -->
+  <!-- test: AppModelKeychainReadTests.testASendWaitingOnThePipeShowsTheRefusalOnItsQuestion -->
+  <!-- test: AppModelKeychainReadTests.testAQuietDialLogsTheRefusalAndRaisesNoAlert -->
+  <!-- test: AppModelPipeTests.testConnectWithoutSecretsRefusesWithASentence -->
+  <!-- test: KeychainSecretsTests.testAReadThatFailsForAnyOtherReasonThrows -->
 - A pipe that dies quietly is forgotten, so the next resume dials it again
   instead of finding a dead session installed and refusing.
   <!-- test: AppModelQuietDialTests.testASessionThatEndedIsForgottenSoAResumeCanDialAgain -->
@@ -380,6 +390,12 @@ Each claim names the test that keeps it true.
   key.
   <!-- test: SwiftDataStoreTests.testOneProviderAmongManyIsUpdatedAndDeletedByItsOwnKey -->
   <!-- test: SwiftDataStoreTests.testOneConversationAmongManyIsUpdatedAndDeletedByItsOwnKey -->
+- Saving a conversation sets only what changed: a field is set only when
+  it differs, and a failure is encoded only when it is not the one already
+  kept, so a save of an unchanged conversation marks no row.
+  <!-- test: SwiftDataStoreWriteTests.testWritingAnUnchangedConversationChangesNoRow -->
+  <!-- test: SwiftDataStoreWriteTests.testChangingOneThingChangesOnlyItsRow -->
+  <!-- test: SwiftDataStoreWriteTests.testAFailureIsWrittenOnlyWhenItChanged -->
 - Conversations, their messages and providers are kept in `ggchat-store` under
   Application Support, a directory readable by this user alone and marked out of
   the backup, and a store an earlier build left where SwiftData put it moves in
@@ -721,11 +737,12 @@ Each claim names the test that keeps it true.
 - Going to the background hangs up every pipe and writes the reply that was
   in flight into the conversation as a partial rather than losing it (a reply
   to gglib goes on being written there, and is read on); coming
-  back dials again, and only the pipes the app already had. The two take
-  turns: a hang-up calls off a resume that is still dialling, a resume waits
-  for a hang-up that is still closing, and a dial that lands while the app
-  is away hangs itself up, so no pipe outlives a suspension and none stays
-  down after a return.
+  back dials again, every pipe at once, and only the pipes the app already
+  had, so a machine that is asleep does not keep another waiting. The two
+  take turns: a hang-up calls off a resume that is still dialling, a resume
+  waits for a hang-up that is still closing, and a dial that lands while the
+  app is away hangs itself up, so no pipe outlives a suspension and none
+  stays down after a return.
   <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundHangsUpEveryPipeAndComingBackDialsAgain -->
   <!-- test: AppModelLifecycleTests.testGoingToTheBackgroundKeepsThePartialReplyInsteadOfLosingIt -->
   <!-- test: AppModelLifecycleTests.testABackgroundThatCutsAReplyOverAPipeShortKeepsThePartial -->
@@ -733,6 +750,8 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelScenePhaseTests.testABackgroundDuringAResumeLeavesNoPipeBehind -->
   <!-- test: AppModelScenePhaseTests.testAReturnDuringAHangUpWaitsForItAndDialsAgain -->
   <!-- test: AppModelScenePhaseTests.testADialThatLandsWhileTheAppIsAwayHangsItselfUp -->
+  <!-- test: AppModelScenePhaseTests.testAResumeDialsEveryPipeAtOnce -->
+  <!-- test: AppModelScenePhaseTests.testABackgroundBeforeTheResumeDialsCallsThemAllOff -->
 - A pairing that cannot be stored hangs up the pipe its code was spent over,
   rather than leaving one nothing in the app is holding. Every other pipe is
   reachable because it is in the session list the background pass and the
@@ -944,8 +963,8 @@ access and this app keeps every credential there.
 iPhone: the root is a `NavigationSplitView`, so the sidebar and the
 conversation are two columns rather than a stack, and Settings is on
 screen instead of one screen back. It is the leg CI runs, and like CI it
-leaves out the Reduce Transparency reading, whose bands are fractions of
-an iPhone's screen. CI runs the walk on both families.
+leaves out the Reduce Transparency reading, which has been measured on
+iPhones only. CI runs the walk on both families.
 
 `make uitest-dark` and `make uitest-contrast` run the same walk with the
 device set to dark mode and to Increase Contrast. Both are settings on the

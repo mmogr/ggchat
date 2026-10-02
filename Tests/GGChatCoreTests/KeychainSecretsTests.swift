@@ -151,11 +151,17 @@ import XCTest
             XCTAssertNil(try secrets().secret(.token, for: provider))
         }
 
+        /// Thrown, and said as a read: the device before its first unlock
+        /// refuses every read, and that is not a credential gone missing.
         func testAReadThatFailsForAnyOtherReasonThrows() {
             fake.answers(.copyMatching, with: errSecInteractionNotAllowed)
             XCTAssertThrowsError(try secrets().secret(.ticket, for: provider)) { error in
                 XCTAssertEqual(
-                    error as? KeychainError, KeychainError(status: errSecInteractionNotAllowed, kind: .ticket))
+                    error as? KeychainError,
+                    KeychainError(status: errSecInteractionNotAllowed, kind: .ticket, reading: true))
+                let sentence = error.localizedDescription
+                XCTAssertTrue(sentence.hasPrefix("The ticket could not be read from the Keychain: "), sentence)
+                XCTAssertTrue(sentence.contains("(\(errSecInteractionNotAllowed))"), sentence)
             }
         }
 

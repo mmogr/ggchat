@@ -55,18 +55,24 @@ public final class InMemorySecrets: Secrets, Sendable {
 #if canImport(Security)
     /// Carries the OSStatus and what the system calls it, because
     /// "operation couldn't be completed" tells a user nothing about a
-    /// credential that failed to save.
+    /// credential that failed to save, or to be read.
     public struct KeychainError: Error, Sendable, Equatable, LocalizedError {
         public var status: OSStatus
         public var kind: SecretKind
+        /// Whether the Keychain refused to read the credential, rather than
+        /// to save or delete it. A refused read is not a missing credential:
+        /// an item kept until first unlock cannot be read before it.
+        public var reading: Bool
 
-        public init(status: OSStatus, kind: SecretKind) {
+        public init(status: OSStatus, kind: SecretKind, reading: Bool = false) {
             self.status = status
             self.kind = kind
+            self.reading = reading
         }
 
         public var errorDescription: String? {
-            "The \(kind.name) could not be saved to the Keychain: \(reason) (\(status))."
+            let what = reading ? "read from" : "saved to"
+            return "The \(kind.name) could not be \(what) the Keychain: \(reason) (\(status))."
         }
 
         /// `errSecMissingEntitlement` is the one a developer meets: an app
@@ -144,7 +150,7 @@ public final class InMemorySecrets: Secrets, Sendable {
             case errSecItemNotFound:
                 return nil
             default:
-                throw KeychainError(status: status, kind: kind)
+                throw KeychainError(status: status, kind: kind, reading: true)
             }
         }
 

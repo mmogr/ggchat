@@ -204,11 +204,12 @@ uitest:
 IPAD ?= iPad Pro 13-inch (M5)
 
 # The iPad leg CI runs, which is the whole walk without the Reduce
-# Transparency reading. That one is a measurement, not a walk: its bands are
-# fractions of an iPhone's screen, so on an iPad both of them are mostly
-# background and it fails on the shape of the picture. `make uitest` pointed
-# at an iPad runs it and fails there, which is why this target exists rather
-# than a note in the README.
+# Transparency reading. That one is a measurement, not a walk, and it has
+# been measured on iPhones only. Its bands used to be fractions of an
+# iPhone's screen, mostly background on an iPad, and it failed there on the
+# shape of the picture; they now come from the composer's own frame, but
+# nobody has read what an iPad's glass moves by. This target leaves it out
+# until someone has, rather than a note in the README.
 uitest-ipad:
 	udid=$(ipad_udid); [ -n "$$udid" ] || { echo 'uitest-ipad: no simulator udid' >&2; exit 1; }; \
 	$(UITEST) -skip-testing:ggchatUITests/ReduceTransparencyUITests -destination "id=$$udid"

@@ -53,15 +53,23 @@ extension AppModel {
     public func connectPipe(for config: ProviderConfig, quietly: Bool = false) async {
         guard providers.contains(where: { $0.id == config.id }) else { return }
         guard config.isPipe, pipeSessions[config.id] == nil, !connecting.contains(config.id) else { return }
-        guard let ticket = try? secrets.secret(.ticket, for: config.id),
-            let token = try? secrets.secret(.token, for: config.id)
-        else {
-            let sentence = "The ticket or token for \(config.name) is missing from the Keychain."
-            if handToWaitingSend(sentence, for: config.id) || quietly {
-                log.log(.info, "\(config.name) was not dialled: this device has nothing to dial it with")
-            } else {
-                lastError = sentence
-            }
+        let ticket: String?
+        let token: String?
+        do {
+            ticket = try secrets.secret(.ticket, for: config.id)
+            token = try secrets.secret(.token, for: config.id)
+        } catch {
+            // Not missing: a Keychain that refuses a read, as one does before
+            // the device's first unlock, still holds both, and sending the
+            // person to pair again would be for nothing (#85).
+            let reason = error.localizedDescription
+            notDialled(config, saying: "\(config.name) was not dialled. \(reason)", because: reason, quietly: quietly)
+            return
+        }
+        guard let ticket, let token else {
+            notDialled(
+                config, saying: "The ticket or token for \(config.name) is missing from the Keychain.",
+                because: "this device has nothing to dial it with", quietly: quietly)
             return
         }
         let generation = nextDialGeneration(for: config.id)
@@ -97,6 +105,17 @@ extension AppModel {
             } else {
                 report(error)
             }
+        }
+    }
+
+    /// A dial that never went out, for want of what to dial with. The
+    /// sentence goes where a failed dial's does: to a send waiting on the
+    /// pipe, or else the alert, unless the dial was a quiet one.
+    private func notDialled(_ config: ProviderConfig, saying sentence: String, because reason: String, quietly: Bool) {
+        if handToWaitingSend(sentence, for: config.id) || quietly {
+            log.log(.info, "\(config.name) was not dialled: \(reason)")
+        } else {
+            lastError = sentence
         }
     }
 

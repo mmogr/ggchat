@@ -41,7 +41,8 @@ public final class AppModel {
     /// dial starts and again when one is called off, so a dial that returns
     /// late can tell that its session is no longer the one to install.
     var dialGeneration: [UUID: Int] = [:]
-    /// The resume pass in flight, so a hang-up can call it off between dials.
+    /// The resume pass in flight, so a hang-up can call off its dials not yet
+    /// out.
     var resumeInFlight: Task<Void, Never>?
     /// The hang-up pass in flight, so a resume waits for it instead of
     /// skipping every pipe it is still taking down.
