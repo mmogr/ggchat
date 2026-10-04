@@ -3,14 +3,30 @@ import XCTest
 @testable import GGChatCore
 
 /// Replays the chat bodies gglib records (`contracts/chats/recorded.json`
-/// there, copied here as `gglib-chats-recorded.json` from gglib 8ca14391)
-/// against the Swift hub chat types, and its `turn` against the body this
-/// build sends to carry a chat on.
+/// there, copied here as `gglib-chats-recorded.json` from gglib 58e8ef06)
+/// against the Swift hub chat types, its `turn` and `image_turn` against the
+/// bodies this build sends to carry a chat on, and its `upload` against how
+/// an image sent to the hub is named.
 final class HubChatsWireTests: XCTestCase {
     private struct Recorded: Decodable {
         let list: HubChatList
         let open: HubChatOpen
         let turn: HubTurn
+        let upload: ImageRef
+        let imageTurn: HubTurn
+
+        enum CodingKeys: String, CodingKey {
+            case list, open, turn, upload
+            case imageTurn = "image_turn"
+        }
+    }
+
+    private static let imageID = "8d5c68b0badbe2691f67bbaa4a8bfba6ff015a4c0e31860ceb388de709e6a84c"
+
+    /// One recorded body as the hub sends it, as an object.
+    private func recordedObject(_ key: String) throws -> [String: Any] {
+        let object = try JSONSerialization.jsonObject(with: try Fixtures.data("gglib-chats-recorded.json"))
+        return try XCTUnwrap((object as? [String: Any])?[key] as? [String: Any])
     }
 
     private func recorded() throws -> Recorded {
@@ -39,7 +55,8 @@ final class HubChatsWireTests: XCTestCase {
             [
                 HubMessage(
                     id: 40, conversationID: 12, role: "user", content: "Why did the build break?",
-                    createdAt: "2026-09-30 09:12:31", metadata: HubMessageMetadata(device: "phone-7c2e")),
+                    createdAt: "2026-09-30 09:12:31", metadata: HubMessageMetadata(device: "phone-7c2e"),
+                    images: [ImageRef(id: Self.imageID, mime: "image/png", width: 1280, height: 720)]),
                 HubMessage(
                     id: 41, conversationID: 12, role: "assistant", content: "A dependency moved.",
                     createdAt: "2026-09-30 09:13:07",
@@ -53,10 +70,31 @@ final class HubChatsWireTests: XCTestCase {
         let turn = HubTurn(conversationID: 12, content: "And how do I fix it?")
         XCTAssertEqual(try recorded().turn, turn)
         let sent = try JSONSerialization.jsonObject(with: try JSONEncoder().encode(turn)) as? [String: Any]
-        let object = try JSONSerialization.jsonObject(with: try Fixtures.data("gglib-chats-recorded.json"))
-        let want = try XCTUnwrap((object as? [String: Any])?["turn"] as? [String: Any])
+        let want = try recordedObject("turn")
         XCTAssertEqual(sent?.keys.sorted(), ["content", "conversation_id"])
         XCTAssertEqual(sent.map { $0 as NSDictionary }, want as NSDictionary)
+    }
+
+    /// A turn with images reads as recorded and is sent as exactly the
+    /// recorded body: its text, then the ids of its images in order.
+    func testATurnWithImagesIsTheRecordedBodyWithItsImageIDs() throws {
+        let turn = HubTurn(conversationID: 12, content: "What does this error mean?", images: [Self.imageID])
+        XCTAssertEqual(try recorded().imageTurn, turn)
+        let sent = try JSONSerialization.jsonObject(with: try JSONEncoder().encode(turn)) as? [String: Any]
+        XCTAssertEqual(sent?.keys.sorted(), ["content", "conversation_id", "images"])
+        XCTAssertEqual(sent.map { $0 as NSDictionary }, try recordedObject("image_turn") as NSDictionary)
+        let alone = HubTurn(conversationID: 12, content: "", images: [Self.imageID, "ab"])
+        let object = try JSONSerialization.jsonObject(with: try JSONEncoder().encode(alone)) as? [String: Any]
+        XCTAssertEqual(object?["content"] as? String, "")
+        XCTAssertEqual(object?["images"] as? [String], [Self.imageID, "ab"])
+    }
+
+    /// The hub's answer to an upload names the image as a message's images
+    /// do: its id, type and size. Its token estimate is passed over.
+    func testAnUploadIsAnsweredWithTheImagesReference() throws {
+        XCTAssertEqual(
+            try recorded().upload, ImageRef(id: Self.imageID, mime: "image/png", width: 1280, height: 720))
+        XCTAssertEqual(try recordedObject("upload")["image_tokens"] as? Int, 920)
     }
 
     /// gglib writes a conversation's model and prompt as `null` when it has

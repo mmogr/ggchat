@@ -81,15 +81,17 @@ public final class AppModel {
     /// phone and held in memory only; see `AppModel+HubTurns`.
     public internal(set) var hubReplies: [HubLiveReply] = []
     /// Sends a Mac refused while their chat was not on screen: why, and the
-    /// text, given back when the chat is next opened; see
+    /// text and images, given back when the chat is next opened; see
     /// `AppModel+HubTurnsReadingOn`.
-    var refusedHubSends: [UUID: [Int64: (notice: String, text: String?)]] = [:]
+    var refusedHubSends: [UUID: [Int64: (notice: String, draft: Draft?)]] = [:]
     /// Changes once each time a pipe first reaches a connected state; the
     /// one haptic in the app fires on it.
     public internal(set) var connectedPulse = 0
     /// The small pictures of kept images the rows have drawn; see
     /// `AppModel+Images`.
     @ObservationIgnored let thumbnails = NSCache<NSString, CGImage>()
+    /// The images of the Mac's chat open, in memory only; see `HubImages`.
+    let hubImages = HubImages()
 
     public let diagnostics: Diagnostics
     let store: any Store

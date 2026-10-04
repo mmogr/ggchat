@@ -650,8 +650,8 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatsOutcomeTests.testTheBackgroundStopsARefreshFromDialling -->
   <!-- test: HubChatsOutcomeTests.testAChatOnScreenKeepsItsRowsWhileItIsReadAgain -->
 - A paired Mac's chat is carried on from this phone. A send puts the new text
-  alone, as `{conversation_id, content}` and nothing else, and the Mac runs the
-  reply as an agent run and saves both rows; its text, reasoning and a line for
+  as `{conversation_id, content}` and nothing else, with the ids of its images
+  when it has some (below), and the Mac runs the reply as an agent run and saves both rows; its text, reasoning and a line for
   each tool it calls are read from the run into memory, and once the run ends
   the rows the Mac saved are read in its place. Nothing of it is written to the
   store (ADR 0007). Stop cancels the run, and nothing reads on beside it until
@@ -717,6 +717,50 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatHeldRunsTests.testALaunchReadsTheRunItKeptFromItsStartWhenItsChatOpens -->
   <!-- test: HubChatHeldRunsTests.testAListThatNoLongerNamesTheRunForgetsIt -->
   <!-- test: HubChatHeldRunsTests.testAStoreOpensAcrossTheHeldRunsChangeInBothDirections -->
+- A turn to a Mac's chat can carry images, picked, pasted or dropped through
+  the same downscale as this phone's own, with text or alone. Each is sent to
+  the Mac first, its bytes the whole body of `POST /v1/attachments`, and the
+  turn names them by the ids the Mac answers, as `images` beside
+  `conversation_id` and `content`; a turn without images is the two keys it
+  always was. The Mac's images are read by id from `GET /v1/attachments/{id}`
+  as their rows are drawn, with nothing cached and on a session with no cache,
+  held in memory only and dropped when the chat is left: no image of a Mac's
+  chat, its own or one this phone sent, is written by this app to the store,
+  a file or a URL cache (ADR 0007). Bytes whose hash is not their id are not kept, a row
+  of images alone is drawn, and an image this phone sent is not read back
+  while this phone still holds it; once the chat is left and opened again it
+  is read like any other. A turn the Mac refuses because it no longer holds
+  an image the turn or the chat names started nothing: a turn with images
+  sends them again from the bytes held here and is put again under the same
+  id, once, and one refused again, or a turn of text alone, says the Mac no
+  longer has an image this chat carries. A turn put again after a lost answer carries its
+  images without sending them again. A refused or unsent turn gives back its
+  text and its images. A chat whose model this phone knows cannot read images
+  refuses them here with gglib's sentence, and any other is sent them, for the
+  Mac to refuse by name. A Mac whose gglib is from before images, with no
+  upload route or refusing the key, says its gglib needs updating.
+  <!-- test: HubChatsWireTests.testATurnWithImagesIsTheRecordedBodyWithItsImageIDs -->
+  <!-- test: HubChatsWireTests.testAnUploadIsAnsweredWithTheImagesReference -->
+  <!-- test: HubImagesProviderTests.testAnImageIsUploadedAsItsBytesAndNamedAsTheHubAnswers -->
+  <!-- test: HubImagesProviderTests.testAnUploadToAGglibWithoutImagesTakesNoImagesAndTheRestAreRefusals -->
+  <!-- test: HubImagesProviderTests.testAnImageIsFetchedAsItsBytes -->
+  <!-- test: HubImagesProviderTests.testAFetchTheHubCannotAnswerIsNotFoundOrADrop -->
+  <!-- test: HubImagesProviderTests.testAFetchedImageIsNeverKeptInAURLCache -->
+  <!-- test: HubTurnProviderTests.testAnImageTheHubDoesNotHoldAndAGglibWithoutImagesAreTheirOwnRefusals -->
+  <!-- test: HubChatImageSendTests.testEachImageIsSentThenTheTurnNamesThem -->
+  <!-- test: HubChatImageSendTests.testATurnOfImagesAloneIsSentAndAnEmptyOneIsNot -->
+  <!-- test: HubChatImageSendTests.testAnImageTheMacLetGoIsSentAgainAndTheTurnPutUnderTheSameID -->
+  <!-- test: HubChatImageSendTests.testAMacThatKeepsNoImageIsSentThemOnceMoreAndThenSaysSo -->
+  <!-- test: HubChatImageSendTests.testATextTurnRefusedForAnImageIsNotSentImagesAndSaysSo -->
+  <!-- test: HubChatImageSendTests.testALostTurnIsPutAgainWithItsImagesWithoutSendingThemAgain -->
+  <!-- test: HubChatImageSendTests.testARefusedTurnGivesBackItsTextAndImages -->
+  <!-- test: HubChatImageSendTests.testASendToAMacOutOfReachGivesBackItsImages -->
+  <!-- test: HubChatImageSendTests.testAMacWithoutImagesSaysItsGglibNeedsUpdating -->
+  <!-- test: HubChatImageSendTests.testAChatWhoseModelCannotSeeRefusesImagesHere -->
+  <!-- test: HubChatImageRowsTests.testARowOfImagesAloneIsDrawnWithItsImages -->
+  <!-- test: HubChatImageRowsTests.testTheMacsImagesAreReadIntoMemoryOnceAndGoWithTheChat -->
+  <!-- test: HubChatImageRowsTests.testOnlyTheBytesTheIdNamesAreKept -->
+  <!-- test: HubChatImageRowsTests.testAnImageThisPhoneSentIsNotReadBack -->
 - A conversation can carry a system prompt. It goes ahead of every request
   the conversation makes, Continue and Retry included, and an edit reaches the
   next one. It is never a row in the transcript and never stored as a

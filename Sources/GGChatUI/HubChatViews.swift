@@ -74,7 +74,8 @@ struct HubChatView: View {
             LazyVStack(alignment: .leading, spacing: 20) {
                 if case .read(let rows) = chat.state {
                     ForEach(rows) { message in
-                        MessageRow(message: message, showsEnding: false, advice: nil, writingLine: nil)
+                        MessageRow(
+                            message: message, showsEnding: false, advice: nil, writingLine: nil, imagesFromHub: true)
                     }
                 }
                 if let reply = model.openHubReply {

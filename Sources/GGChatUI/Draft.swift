@@ -1,11 +1,23 @@
 import Foundation
 
-/// What the local composer holds before it is sent: text, images, or both.
-/// It is emptied only when the model takes it, so a refused draft keeps its
-/// text and its images.
-struct Draft {
+/// What a composer holds before it is sent: text, images, or both. It is
+/// emptied only when the model takes it, so a refused draft keeps its text
+/// and its images. A hub chat's draft is held in memory and never stored,
+/// its images' bytes included.
+struct Draft: Equatable {
     var text = ""
     private(set) var images: [DraftImage] = []
+
+    init(text: String = "", images: [DraftImage] = []) {
+        self.text = text
+        for image in images { add(image) }
+    }
+
+    /// The same text and the same images in the same order. An image's id is
+    /// the hash of its bytes, so the same id is the same bytes.
+    static func == (lhs: Draft, rhs: Draft) -> Bool {
+        lhs.text == rhs.text && lhs.images.map(\.id) == rhs.images.map(\.id)
+    }
 
     /// Whether there is anything to send: text that is not only spaces, or
     /// an image.

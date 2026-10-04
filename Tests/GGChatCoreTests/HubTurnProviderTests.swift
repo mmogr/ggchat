@@ -26,10 +26,12 @@ final class HubTurnProviderTests: XCTestCase {
         return script
     }
 
-    private func start(_ put: (Int, String), at host: String) async throws -> Result<RunStart, HubTurnFailure> {
+    private typealias Started = Result<RunStart, HubTurnFailure>
+
+    private func start(_ put: (Int, String), at host: String, turn: HubTurn? = nil) async throws -> Started {
         RunHub.serve(try script(put: put), at: host)
         do throws(HubTurnFailure) {
-            return .success(try await RunHub.provider(at: host).startTurn(runID: id, turn: turn))
+            return .success(try await RunHub.provider(at: host).startTurn(runID: id, turn: turn ?? self.turn))
         } catch {
             return .failure(error)
         }
@@ -136,6 +138,23 @@ final class HubTurnProviderTests: XCTestCase {
         let asked = try XCTUnwrap(RunHub.requests(at: host).first?.url)
         XCTAssertEqual(asked.path(), "/v1/runs/\(id)/events")
         XCTAssertEqual(asked.query(), "after=0")
+    }
+
+    /// A turn naming an image the hub does not hold is refused as such, and
+    /// started no run. A turn with images refused as `invalid_request` is a
+    /// gglib from before images; a turn of text alone refused the same way
+    /// stays a refusal.
+    func testAnImageTheHubDoesNotHoldAndAGglibWithoutImagesAreTheirOwnRefusals() async throws {
+        let pictured = HubTurn(conversationID: 12, content: "", images: ["8d5c"])
+        let gone = try await start(refusal(400, "attachment_not_found"), at: "turn-image-gone.test", turn: pictured)
+        XCTAssertEqual(gone, .failure(.imageGone))
+        let older = try await start(refusal(400, "invalid_request"), at: "turn-image-older.test", turn: pictured)
+        XCTAssertEqual(older, .failure(.takesNoImages))
+        let text = try await start(refusal(400, "invalid_request"), at: "turn-text-invalid.test")
+        XCTAssertEqual(text, .failure(.refused(.server(status: 400, code: "invalid_request", message: "refused"))))
+        let blind = try await start(refusal(400, "model_cannot_read_images"), at: "turn-blind.test", turn: pictured)
+        XCTAssertEqual(
+            blind, .failure(.refused(.server(status: 400, code: "model_cannot_read_images", message: "refused"))))
     }
 
     /// An error the run reports is passed on, and an event this build

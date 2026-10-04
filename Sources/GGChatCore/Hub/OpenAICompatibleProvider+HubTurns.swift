@@ -9,7 +9,9 @@ import Foundation
 extension OpenAICompatibleProvider {
     /// `PUT runs/{id}?kind=agent` with the turn as its whole body. A 404 or a
     /// 405 with neither a run code nor `conversation_not_found` is a hub with
-    /// no runs route.
+    /// no runs route. A turn with images refused as `invalid_request` is
+    /// taken for a gglib from before images, which refuses `images` as a key
+    /// it does not know.
     public func startTurn(runID: String, turn: HubTurn) async throws(HubTurnFailure) -> RunStart {
         let body: Data
         do {
@@ -32,6 +34,9 @@ extension OpenAICompatibleProvider {
                 error.code != HubChatsCode.conversationNotFound
             {
                 return .unsupported
+            }
+            if !turn.images.isEmpty, case .server(400, ProviderError.Code.invalidRequest.rawValue, _) = error {
+                throw .takesNoImages
             }
             throw Self.turnFailure(error)
         }
@@ -59,6 +64,7 @@ extension OpenAICompatibleProvider {
         case .server(422, HubChatsCode.noModel, _): .noModel
         case .server(409, RunCode.conflict, _): .replyInProgress
         case .server(404, HubChatsCode.conversationNotFound, _): .chatGone
+        case .server(400, ProviderError.Code.attachmentNotFound.rawValue, _): .imageGone
         case .transport: .lost(error)
         case .server, .stream, .decoding, .invalidResponse: .refused(error)
         }
