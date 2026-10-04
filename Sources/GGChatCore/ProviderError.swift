@@ -133,6 +133,17 @@ extension ProviderError {
         case stagnationDetected = "stagnation_detected"
         case upstreamError = "upstream_error"
         case upstreamTimeout = "upstream_timeout"
+
+        // gglib's image input: `docs/error-codes.json`. A run's chat writes
+        // the proxy's refusal as the run's error under the same code
+        // (`gglib-app-services/src/runs/chat.rs`), and
+        // `request_images_too_large` is only ever a run's error.
+        case modelCannotReadImages = "model_cannot_read_images"
+        case requestTooLarge = "request_too_large"
+        case imageTooLarge = "image_too_large"
+        case unsupportedImage = "unsupported_image"
+        case attachmentNotFound = "attachment_not_found"
+        case requestImagesTooLarge = "request_images_too_large"
     }
 }
 
@@ -169,9 +180,13 @@ extension ProviderError.Code {
             .connectingSide
 
         // The request itself, answerable by sending a different one.
+        // The image codes too: each is answered by sending other images, or
+        // none, or to another model, and the one whose fix is on the serving
+        // machine says so in its own sentence.
         case .badRequest, .contextLengthExceeded, .embeddingModelCannotChat, .invalidRequest,
             .loopDetected, .modelNotFound, .notAnEmbeddingModel, .pinnedModelMismatch,
-            .profileNotFound, .stagnationDetected:
+            .profileNotFound, .stagnationDetected, .modelCannotReadImages, .requestTooLarge,
+            .imageTooLarge, .unsupportedImage, .attachmentNotFound, .requestImagesTooLarge:
             .request
 
         // Nothing is wrong yet: a model still loading, a queue that did not
@@ -199,12 +214,33 @@ extension ProviderError.Code {
     /// writes it, and it writes the same answer when the other machine is
     /// asleep, off or out of reach, so "look at this device's connection"
     /// blamed only the side that is often fine.
+    ///
+    /// The image codes each have one, because "the request itself was
+    /// refused" does not say which part of it to change. The sentence for
+    /// `model_cannot_read_images` is also what this app says when it refuses
+    /// such a send itself.
     public var hint: String? {
         switch self {
         case .invalidAPIKey:
             "The serving machine did not accept the key this app sent."
         case .tunnelUnavailable:
             "This device may be offline, or the other machine may be asleep, switched off or out of reach."
+        case .modelCannotReadImages:
+            "This model has no projector, so it cannot read images. Pick a model that can see, or link a "
+                + "projector on the machine that serves it with "
+                + "\u{201C}gglib model update <model> --projector <file>\u{201D}."
+        case .requestTooLarge:
+            "The request is over the 32 MiB the server takes. Send fewer or smaller images, or start a new "
+                + "conversation."
+        case .imageTooLarge:
+            "The image is over the 8 MiB the server takes for one image. Send a smaller one."
+        case .unsupportedImage:
+            "The server takes only PNG and JPEG images whose size it can read."
+        case .attachmentNotFound:
+            "The server no longer has an image this conversation names. Send the image again."
+        case .requestImagesTooLarge:
+            "The images in this conversation are over the 16 MiB one request to a model may carry. Start a "
+                + "new conversation to send more."
         case .badRequest, .badGateway, .backendUnreachable, .incompleteRequest,
             .admissionTimeout, .contextLengthExceeded, .deviceNotPaired, .embeddingModelCannotChat,
             .hostNotAllowed, .internalError, .invalidPairingCode, .invalidRequest, .loopDetected,

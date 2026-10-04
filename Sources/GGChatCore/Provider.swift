@@ -1,15 +1,24 @@
+import Foundation
+
 /// What the app sends. Messages are the conversation so far, in order.
+/// `images` holds the bytes of every image they name, by ``ImageRef/id``: a
+/// message carries only references, and the request is where they are read.
 public struct ChatRequest: Sendable, Equatable {
     public var model: String
     public var messages: [Message]
+    public var images: [String: Data]
     public var maxTokens: Int?
     /// Whether to ask for gglib's progress frames while it reads the prompt.
     /// Set only for gglib: another server may refuse a field it does not know.
     public var returnProgress: Bool
 
-    public init(model: String, messages: [Message], maxTokens: Int? = nil, returnProgress: Bool = false) {
+    public init(
+        model: String, messages: [Message], images: [String: Data] = [:], maxTokens: Int? = nil,
+        returnProgress: Bool = false
+    ) {
         self.model = model
         self.messages = messages
+        self.images = images
         self.maxTokens = maxTokens
         self.returnProgress = returnProgress
     }

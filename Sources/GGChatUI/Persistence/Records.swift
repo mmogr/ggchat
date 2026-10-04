@@ -92,13 +92,18 @@ public final class MessageRecord {
     /// events the row holds, or nil. Optional, for `failureData`'s reason.
     public var runID: String?
     public var runCursor: Int?
+    /// The images the turn carries, in order, as JSON of `[ImageRef]`: each
+    /// one's id, type and size, never its bytes, which are the `ImageRecord`
+    /// under the same id. Nil for a turn with none. Optional, for
+    /// `failureData`'s reason.
+    public var imagesData: Data?
     public var createdAt: Date
     public var order: Int
     public var conversation: ConversationRecord?
 
     public init(
         id: UUID, role: String, content: String, reasoning: String?, isPartial: Bool, createdAt: Date, order: Int,
-        failureData: Data? = nil, runID: String? = nil, runCursor: Int? = nil
+        failureData: Data? = nil, runID: String? = nil, runCursor: Int? = nil, imagesData: Data? = nil
     ) {
         self.uuid = id
         self.role = role
@@ -108,7 +113,31 @@ public final class MessageRecord {
         self.failureData = failureData
         self.runID = runID
         self.runCursor = runCursor
+        self.imagesData = imagesData
         self.createdAt = createdAt
         self.order = order
+    }
+}
+
+/// An image's bytes, kept once under the SHA-256 they hash to however many
+/// turns name it. The bytes are external storage: SwiftData writes a large
+/// value to a file in a folder beside the store rather than into it, and a
+/// reset removes that folder with the store (`StoreDirectory`). A row is
+/// deleted with the last turn that names it (`SwiftDataStore+Images`). The
+/// key is `imageID` for `uuid`'s reason.
+@Model
+public final class ImageRecord {
+    @Attribute(.unique) public var imageID: String
+    public var mime: String
+    public var width: Int
+    public var height: Int
+    @Attribute(.externalStorage) public var data: Data
+
+    public init(imageID: String, mime: String, width: Int, height: Int, data: Data) {
+        self.imageID = imageID
+        self.mime = mime
+        self.width = width
+        self.height = height
+        self.data = data
     }
 }

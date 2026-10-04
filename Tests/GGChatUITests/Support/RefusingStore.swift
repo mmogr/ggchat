@@ -14,6 +14,11 @@ final class RefusingStore: Store {
     let inner = InMemoryStore()
     var refusesSaves = false
     var refusesDeletes = false
+    /// Answers every image as one it does not have.
+    var forgetsImages = false
+    /// How many more images it keeps before it refuses the next; nil for
+    /// no limit.
+    var imagesBeforeRefusing: Int?
 
     func loadProviders() throws -> [ProviderConfig] {
         try inner.loadProviders()
@@ -66,5 +71,19 @@ final class RefusingStore: Store {
 
     func deleteConversation(id: UUID) throws {
         try inner.deleteConversation(id: id)
+    }
+
+    func save(image: ImageRef, data: Data) throws {
+        if refusesSaves || imagesBeforeRefusing == 0 { throw Refused() }
+        imagesBeforeRefusing = imagesBeforeRefusing.map { $0 - 1 }
+        try inner.save(image: image, data: data)
+    }
+
+    func deleteImages(noTurnNames ids: Set<String>) throws {
+        try inner.deleteImages(noTurnNames: ids)
+    }
+
+    func loadImage(id: String) throws -> Data? {
+        forgetsImages ? nil : try inner.loadImage(id: id)
     }
 }

@@ -105,6 +105,69 @@ Each claim names the test that keeps it true.
   <!-- test: ErrorTests.testThePublishedHalfOfTheVocabularyIsModelpipesOwnList -->
   <!-- test: ErrorTests.testTheSideNamedIsTheSideThatWroteTheRefusal -->
   <!-- test: ErrorTests.testAMachineThatIsMerelyBusySaysToWaitRatherThanNamingASide -->
+- A message carries its images by reference: the SHA-256 of the bytes,
+  their type and size, which is how gglib names a stored image. A request
+  reads the bytes from this device's store, once per image, in one place
+  for a send, Retry and a run's `PUT` sent again, and an image that cannot
+  be read sends nothing. On the wire a turn with images is its text, then
+  one `image_url` part per image in order; a turn with none is the bare
+  string it always was, byte for byte. gglib's model list says which model
+  reads images with `vision`. A direct chat to a model that cannot is
+  refused by name either way it goes: the chat route answers 400 at once,
+  and a run takes the `PUT` and then fails with the code. Each of gglib's
+  six image codes says what to change, and an image's cost is gglib's own
+  estimate.
+  <!-- test: ImageRefTests.testTheIdIsTheSHA256OfTheBytesInLowercaseHex -->
+  <!-- test: ImageRefTests.testItReadsAndWritesGGLibsAttachmentInfo -->
+  <!-- test: ImageRefTests.testTheTokenEstimateIsGGLibsRule -->
+  <!-- test: ImageRefTests.testTheModelListSaysWhichModelReadsImages -->
+  <!-- test: ImageContentWireTests.testARequestWithNoImagesIsTheSameBytesAsBefore -->
+  <!-- test: ImageContentWireTests.testATurnWithImagesIsItsTextThenEachImageInOrder -->
+  <!-- test: ImageContentWireTests.testATurnOfImagesAloneHasNoTextPart -->
+  <!-- test: ImageContentWireTests.testATurnNamingAnImageWithNoBytesIsNotEncoded -->
+  <!-- test: ImageRefusalTests.testEachImageCodeSaysWhatToChange -->
+  <!-- test: ImageRefusalTests.testTheChatRouteRefusesAnImageAtOnceByName -->
+  <!-- test: ImageRefusalTests.testABodyOverTheLimitIsRefusedAsTooLarge -->
+  <!-- test: ImageRefusalTests.testARunIsTakenThenFailsWithTheCode -->
+  <!-- test: AppModelImageRequestTests.testARequestHoldsEveryImageItsTurnsNameReadOncePerImage -->
+  <!-- test: AppModelImageRequestTests.testATurnsImageIsSentAndOneThatCannotBeReadSendsNothing -->
+  <!-- test: AppModelImageRequestTests.testARunPutAgainCarriesItsImageOrIsGivenUpWithoutIt -->
+  <!-- test: AppModelImageRequestTests.testARunToAModelThatCannotSeeEndsWithTheCodeAndWhatToDo -->
+- An image joins a draft through the photo picker, a paste or a drop, and
+  every one goes through one downscale: turned upright by its orientation,
+  2560 pixels on its long edge at most and never made larger, none of the
+  original's metadata (its location included), a PNG while one fits in
+  8 MiB and a JPEG otherwise, refused with a sentence when even that does not
+  fit, and named by the SHA-256 of the bytes sent. The draft shows each with
+  gglib's token estimate, and a turn of images alone is sent and drawn. A
+  model gglib lists without `vision` cannot see: an image added for it, or a
+  draft with images to it, is refused here with gglib's own sentence, the
+  draft kept with its text and images, and a draft of text alone still goes
+  to it; any other server is sent them. A turn the server refuses keeps its
+  images for Retry. The bytes are kept once each beside the store, opened
+  across the change both ways, deleted with the last turn that names them or
+  taken back when a draft is refused partway, and gone after a reset.
+  <!-- test: ImageDownscaleTests.testAnImageIsTurnedUprightByItsOrientation -->
+  <!-- test: ImageDownscaleTests.testTheLongEdgeIsAtMost2560AndASmallImageIsNotMadeLarger -->
+  <!-- test: ImageDownscaleTests.testAPNGStaysAPNGWhileItFitsAndOtherwiseIsAJPEG -->
+  <!-- test: ImageDownscaleTests.testNothingOfTheOriginalsMetadataIsSent -->
+  <!-- test: ImageDownscaleTests.testTheIdIsTheSHA256OfTheBytesSent -->
+  <!-- test: AppModelImageSendTests.testOnlyAModelGGLibListsWithoutVisionCannotSee -->
+  <!-- test: AppModelImageSendTests.testADraftWithAnImageToAModelThatCannotSeeIsRefusedHere -->
+  <!-- test: AppModelImageSendTests.testATurnOfImagesAloneIsSentAndItsBytesAreKept -->
+  <!-- test: AppModelImageSendTests.testADraftWhoseImageCannotBeKeptIsRefused -->
+  <!-- test: AppModelImageSendTests.testATurnTheServerRefusesKeepsItsImagesForRetry -->
+  <!-- test: AppModelImageSendTests.testEachImageInTheStripSaysWhatGGLibEstimatesItCosts -->
+  <!-- test: AppModelImageSendTests.testAnImageAddedForAModelThatCannotSeeIsRefusedAtOnce -->
+  <!-- test: AppModelImageSendTests.testARefusedDraftLeavesNoImageBehindThatNoTurnNames -->
+  <!-- test: DraftTests.testARefusedDraftKeepsItsTextAndImagesAndATakenOneIsEmpty -->
+  <!-- test: DraftTests.testTheSameImageAddedTwiceIsOne -->
+  <!-- test: ConversationTests.testAFirstTurnOfImagesAloneIsCalledWhatItHolds -->
+  <!-- test: ImageStoreTests.testATurnsImagesAndTheirBytesOutliveAReopening -->
+  <!-- test: ImageStoreTests.testAnImageGoesWithTheLastTurnThatNamesIt -->
+  <!-- test: ImageStoreTests.testAStoreOpensAcrossTheImagesChangeInBothDirections -->
+  <!-- test: ImageStoreTests.testTheResetLeavesNoImageFileBehind -->
+  <!-- test: FirstRunUITests.testAPastedImageIsSentAloneAndDrawnInTheTranscript -->
 - A pairing string is read by modelpipe as it is typed and as it is scanned,
   against `docs/pairing-v0.md`'s normative vectors: the ticket comes back in
   its canonical lower-case form, so a QR scan and a paste of the same machine

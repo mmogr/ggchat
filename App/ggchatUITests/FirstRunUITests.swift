@@ -52,6 +52,58 @@ final class FirstRunUITests: XCTestCase {
         app.buttons["Cancel"].firstMatch.tap()
     }
 
+    /// A picture on the pasteboard joins the draft through the paste button,
+    /// with what gglib estimates it costs, and goes alone as the first turn:
+    /// the transcript draws it and the mock answers. iOS only, where the
+    /// paste button is the way a picture is pasted.
+    @MainActor
+    func testAPastedImageIsSentAloneAndDrawnInTheTranscript() throws {
+        #if os(iOS)
+            app = launchFreshApp()
+            let addProvider = app.buttons["Add a provider"].firstMatch
+            XCTAssertTrue(addProvider.waitForExistence(timeout: 30), "first run offers no way to add a provider")
+            addProvider.tap()
+            app.buttons["Cancel"].firstMatch.tap()
+            app.buttons["Providers"].firstMatch.tap()
+            let mock = app.buttons["Add mock provider"].firstMatch
+            XCTAssertTrue(mock.waitForExistence(timeout: 10), "DEBUG builds offer a mock provider")
+            mock.tap()
+            app.buttons["Done"].firstMatch.tap()
+            openConversation(in: app)
+
+            // 64 by 32 pixels is two of gglib's 32-pixel squares.
+            addTeardownBlock { @MainActor in UIPasteboard.general.items = [] }
+            let format = UIGraphicsImageRendererFormat()
+            format.scale = 1
+            let renderer = UIGraphicsImageRenderer(size: CGSize(width: 64, height: 32), format: format)
+            UIPasteboard.general.image = renderer.image { context in
+                UIColor.systemOrange.setFill()
+                context.fill(CGRect(x: 0, y: 0, width: 64, height: 32))
+            }
+            let paste = app.buttons["paste-image"].firstMatch
+            XCTAssertTrue(waitUntilHittable(paste, timeout: 15), "there is no way to paste an image")
+            paste.tap()
+            XCTAssertTrue(
+                app.buttons["Remove image"].firstMatch.waitForExistence(timeout: 15),
+                "the pasted image never joined the draft")
+            XCTAssertTrue(app.staticTexts["~2 tokens"].firstMatch.exists, "the draft does not say what the image costs")
+            attach(name: "pasted-image-in-the-draft")
+
+            let send = app.buttons["Send"].firstMatch
+            XCTAssertTrue(send.isEnabled, "a draft of an image alone cannot be sent")
+            send.tap()
+            XCTAssertTrue(
+                app.buttons["Image"].firstMatch.waitForExistence(timeout: 15),
+                "the transcript does not draw the turn's image")
+            XCTAssertFalse(app.buttons["Remove image"].firstMatch.exists, "the sent image stayed in the draft")
+            XCTAssertTrue(
+                app.staticTexts["ASSISTANT"].firstMatch.waitForExistence(timeout: 120), "no reply arrived")
+            attach(name: "pasted-image-sent")
+        #else
+            throw XCTSkip("the paste button is iOS's")
+        #endif
+    }
+
     /// Launches a fresh app and walks it. `XCUIApplication` is main-actor
     /// bound, so the whole walk is, and there is no `setUp` override to
     /// disagree about isolation.

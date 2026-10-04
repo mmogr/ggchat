@@ -129,14 +129,27 @@ struct StoreDirectory {
     }
 
     #if DEBUG
-        /// Removes the store from both places. The open that asks for it
-        /// calls it before the move, so nothing is moved in behind it.
+        /// Removes the store from both places, and the folder beside the
+        /// one it is opened at where SwiftData keeps its external storage:
+        /// an image's bytes are a file there, not a row in the store. A store
+        /// at the old place is never opened by a build that keeps images, so
+        /// it has no such folder. The open that asks for it calls it before
+        /// the move, so nothing is moved in behind it.
         func reset(log: any LogSink) {
             for suffix in Self.suffixesInMoveOrder {
                 try? FileManager.default.removeItem(at: stored(suffix))
                 try? FileManager.default.removeItem(at: legacy(suffix))
             }
+            try? FileManager.default.removeItem(at: Self.externalStorage(of: stored("")))
             log.log(.info, "store reset on request")
+        }
+
+        /// The hidden folder beside a store where SwiftData writes the values
+        /// it keeps outside it: `.ggchat_SUPPORT` for `ggchat.store`, its
+        /// files under `_EXTERNAL_DATA` (seen on macOS; a test pins the name).
+        static func externalStorage(of store: URL) -> URL {
+            let name = "." + store.deletingPathExtension().lastPathComponent + "_SUPPORT"
+            return store.deletingLastPathComponent().appending(path: name, directoryHint: .isDirectory)
         }
     #endif
 

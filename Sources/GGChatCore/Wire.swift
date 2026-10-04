@@ -1,16 +1,24 @@
 /// Codable shapes for `/v1/models` and chat completion chunks, with gglib's
-/// extras (`description`, `context_window`) optional so any server decodes.
+/// extras (`description`, `context_window`, `capabilities`) optional so any
+/// server decodes. The request is in `ChatCompletionRequest.swift`.
 public struct ModelInfo: Codable, Sendable, Equatable, Hashable, Identifiable {
     public var id: String
     public var ownedBy: String?
     public var description: String?
     public var contextWindow: Int?
+    /// What gglib says the model can do beyond chat, absent for a plain chat
+    /// model: `vision` for one that reads images (``readsImages``).
+    public var capabilities: [String]?
 
-    public init(id: String, ownedBy: String? = nil, description: String? = nil, contextWindow: Int? = nil) {
+    public init(
+        id: String, ownedBy: String? = nil, description: String? = nil, contextWindow: Int? = nil,
+        capabilities: [String]? = nil
+    ) {
         self.id = id
         self.ownedBy = ownedBy
         self.description = description
         self.contextWindow = contextWindow
+        self.capabilities = capabilities
     }
 
     enum CodingKeys: String, CodingKey {
@@ -18,6 +26,7 @@ public struct ModelInfo: Codable, Sendable, Equatable, Hashable, Identifiable {
         case ownedBy = "owned_by"
         case description
         case contextWindow = "context_window"
+        case capabilities
     }
 }
 
@@ -177,41 +186,6 @@ public struct PromptProgress: Decodable, Sendable, Equatable {
     enum CodingKeys: String, CodingKey {
         case processed, total, cache
         case timeMs = "time_ms"
-    }
-}
-
-struct ChatCompletionRequest: Encodable {
-    var model: String
-    var messages: [WireMessage]
-    var stream = true
-    var streamOptions = StreamOptions()
-    var maxTokens: Int?
-    /// `true` when asked and absent otherwise, so a server that is not gglib
-    /// never sees the key.
-    var returnProgress: Bool?
-
-    struct WireMessage: Encodable {
-        var role: String
-        var content: String
-    }
-
-    struct StreamOptions: Encodable {
-        var includeUsage = true
-        enum CodingKeys: String, CodingKey { case includeUsage = "include_usage" }
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case model, messages, stream
-        case streamOptions = "stream_options"
-        case maxTokens = "max_tokens"
-        case returnProgress = "return_progress"
-    }
-
-    init(_ request: ChatRequest) {
-        model = request.model
-        messages = request.messages.map { WireMessage(role: $0.role.rawValue, content: $0.content) }
-        maxTokens = request.maxTokens
-        returnProgress = request.returnProgress ? true : nil
     }
 }
 
