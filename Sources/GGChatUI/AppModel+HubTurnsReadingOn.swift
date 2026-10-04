@@ -25,10 +25,10 @@ extension AppModel {
         }
     }
 
-    /// Puts a turn whose `PUT` was never answered again under its id, when
-    /// nobody is reading it, the app is in front, and its Mac can be
-    /// reached, and while this phone still holds it: a refused one is gone.
-    /// The Mac answers a repeated id with the run already there.
+    /// Puts a turn whose `PUT` was never answered again under its id, with
+    /// its images, when nobody is reading it, the app is in front, and its
+    /// Mac can be reached, and while this phone still holds it: a refused
+    /// one is gone. The Mac answers a repeated id with the run already there.
     private func putAgain(_ reply: HubLiveReply) {
         guard !isAway, !reply.started, !reply.ended, reply.reading == nil, hubReplies.contains(where: { $0 === reply }),
             let config = providers.first(where: { $0.id == reply.providerID }),
@@ -40,10 +40,11 @@ extension AppModel {
         }
     }
 
-    /// A send refused while its chat was not on screen: why, and its text,
-    /// are kept in memory for the chat to give back when it is next opened.
+    /// A send refused while its chat was not on screen: why, and its text
+    /// and images, are kept in memory for the chat to give back when it is
+    /// next opened.
     func keepRefused(_ reply: HubLiveReply, _ why: String) {
-        refusedHubSends[reply.providerID, default: [:]][reply.chatID] = (why, reply.question)
+        refusedHubSends[reply.providerID, default: [:]][reply.chatID] = (why, reply.unsent)
     }
 
     /// Gives the chat open what a refusal kept for it while it was not.
@@ -52,7 +53,7 @@ extension AppModel {
             let refused = refusedHubSends[open.providerID]?.removeValue(forKey: open.chatID)
         else { return }
         openedHubChat?.notice = refused.notice
-        openedHubChat?.unsent = refused.text
+        openedHubChat?.unsent = refused.draft
     }
 
     /// The reading stopped before the run ended: the reply is kept, and read

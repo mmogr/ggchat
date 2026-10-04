@@ -18,6 +18,9 @@ struct MessageRow: View {
     let advice: String?
     /// Where the reply is still being written, while a hub writes it.
     let writingLine: String?
+    /// Whether the images are a Mac's chat's, read from it into memory,
+    /// rather than this device's kept ones.
+    var imagesFromHub = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -26,7 +29,7 @@ struct MessageRow: View {
                 ReasoningRow(text: reasoning, isThinking: false)
             }
             if !message.images.isEmpty {
-                MessageImages(images: message.images)
+                MessageImages(images: message.images, fromHub: imagesFromHub)
             }
             MarkdownBlocksView(blocks: MarkdownBlocks.parse(message.content))
             if showsEnding {

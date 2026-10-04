@@ -38,7 +38,8 @@ opened. Coming back to the foreground dials each of them again once, as
 
 > **Amended 2026-09-30 — a Mac's chat is carried on from this phone, and the
 > Mac writes the reply.** A send in a Mac's chat is `PUT runs/{id}?kind=agent`
-> with `{conversation_id, content}` and nothing else, under an id minted here.
+> with `{conversation_id, content}`, and the ids of any images it carries, and
+> nothing else, under an id minted here.
 > The Mac rebuilds the history from its own record, runs the reply as an agent
 > run, and saves the question and the reply to the chat. This phone reads the
 > run's events into memory, its text, its reasoning and a line for each tool,

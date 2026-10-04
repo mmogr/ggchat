@@ -17,6 +17,9 @@ public struct OpenAICompatibleProvider: Provider {
     let log: any LogSink
     let decoder = JSONDecoder()
 
+    /// A server's answer: its body, and the response it came with.
+    typealias Answer = (Data, HTTPURLResponse)
+
     /// Chat replies stream on `streamingSession`, or on `session` when it is
     /// nil.
     public init(
@@ -61,10 +64,11 @@ public struct OpenAICompatibleProvider: Provider {
         return request
     }
 
-    func perform(_ request: URLRequest) async throws(ProviderError) -> (Data, HTTPURLResponse) {
+    /// Sends `request` on `session`, or on `other` when one is given.
+    func perform(_ request: URLRequest, on other: URLSession? = nil) async throws(ProviderError) -> Answer {
         log.log(.debug, "\(request.httpMethod ?? "GET") \(Redaction.describe(request.url!))")
         do {
-            let (data, response) = try await session.data(for: request)
+            let (data, response) = try await (other ?? session).data(for: request)
             guard let http = response as? HTTPURLResponse else {
                 throw ProviderError.invalidResponse(String(describing: type(of: response)))
             }

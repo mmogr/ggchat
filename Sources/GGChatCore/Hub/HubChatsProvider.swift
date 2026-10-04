@@ -1,3 +1,5 @@
+import Foundation
+
 /// Why the hub's chats could not be read.
 public enum HubChatsFailure: Error, Sendable, Equatable {
     /// The hub reads its chats only to a device it paired, through its
@@ -29,6 +31,12 @@ public protocol HubChatsProvider: Provider {
     func turnEvents(runID: String, after: UInt32) -> AsyncStream<RunEvent>
     /// Stops the reply. Idempotent.
     func cancelTurn(runID: String) async throws(ProviderError) -> RunInfo
+    /// Sends the hub an image a turn will name, as its bytes, and answers how
+    /// the hub names it. The same bytes twice are one image there.
+    func uploadImage(_ data: Data, mime: String) async throws(HubTurnFailure) -> ImageRef
+    /// The bytes of an image one of the hub's chats names, for this device
+    /// to hold in memory and nowhere else.
+    func fetchImage(id: String) async throws(HubChatsFailure) -> Data
 }
 
 /// The codes the hub's chats routes answer with.

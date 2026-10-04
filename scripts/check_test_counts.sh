@@ -313,8 +313,20 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # refused partway takes back the images it kept, a refused draft keeps its
 # text and images while a taken one is empty, and the same image added twice
 # is one. The second README claim names them too.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 521
+#
+# 2026-10-04: 521 -> 543 and 435 -> 457. Twenty-two tests pin a turn to a
+# Mac's chat with images: the recorded image turn and upload, the upload and
+# the fetch on the wire, the fetch kept out of a URL cache that keeps
+# everything else, each image refusal, every image sent before the turn names
+# it, a turn of images alone, an image the Mac let go sent again under the
+# same run id, once only, a text turn refused for an image not sent any, a
+# lost turn put again without sending them twice, the text and images given
+# back, a Mac too old for images, the local refusal for a model that cannot
+# see, a row of images alone, and the Mac's images held in memory once, never
+# stored, and dropped with the chat. They are the whole of that guard, and
+# the README claim names all twenty-two.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 543
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 25
-floor "README test markers" "${markers:-0}" 435
+floor "README test markers" "${markers:-0}" 457
 
 exit $status

@@ -11,6 +11,11 @@ final class ChatsHub: URLProtocol, @unchecked Sendable {
         var status = 200
         var body: String
         var type = "application/json"
+        /// Sent in place of `body` when set: an image's bytes.
+        var bytes: Data?
+        /// Whether a URL cache may keep the answer, and is told it may for
+        /// an hour.
+        var cacheable = false
     }
 
     private static let answers = Mutex<[String: [String: Answer]]>([:])
@@ -25,9 +30,12 @@ final class ChatsHub: URLProtocol, @unchecked Sendable {
         seen.withLock { $0[host] ?? [] }
     }
 
-    static func provider(at host: String) -> OpenAICompatibleProvider {
+    /// A provider for `host` whose session reads through this hub, and
+    /// keeps answers in `cache` when one is given.
+    static func provider(at host: String, cache: URLCache? = nil) -> OpenAICompatibleProvider {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [ChatsHub.self]
+        if let cache { configuration.urlCache = cache }
         return OpenAICompatibleProvider(
             baseURL: URL(string: "http://\(host)/v1")!, apiKey: "hub-key",
             session: URLSession(configuration: configuration))
@@ -45,10 +53,12 @@ final class ChatsHub: URLProtocol, @unchecked Sendable {
             return
         }
         let answer = answers[url.path()] ?? Answer(status: 404, body: "", type: "text/plain")
+        var headers = ["Content-Type": answer.type]
+        if answer.cacheable { headers["Cache-Control"] = "max-age=3600" }
         let response = HTTPURLResponse(
-            url: url, statusCode: answer.status, httpVersion: "HTTP/1.1", headerFields: ["Content-Type": answer.type])!
-        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        client?.urlProtocol(self, didLoad: Data(answer.body.utf8))
+            url: url, statusCode: answer.status, httpVersion: "HTTP/1.1", headerFields: headers)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: answer.cacheable ? .allowed : .notAllowed)
+        client?.urlProtocol(self, didLoad: answer.bytes ?? Data(answer.body.utf8))
         client?.urlProtocolDidFinishLoading(self)
     }
 

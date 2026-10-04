@@ -16,6 +16,10 @@ public final class HubLiveReply {
     /// What this phone sent, drawn under the chat until the Mac's rows hold
     /// it.
     public let question: String?
+    /// The images sent with it, bytes and all, held here in memory until the
+    /// run ends: a turn put again sends them again, and nothing of them is
+    /// written to this phone (ADR 0007).
+    let images: [DraftImage]
     public internal(set) var content = ""
     public internal(set) var reasoning = ""
     /// A line for each tool the reply called.
@@ -24,6 +28,9 @@ public final class HubLiveReply {
     let key = UUID()
     /// The last of the run's events this reply holds.
     var cursor: UInt32 = 0
+    /// The ids the Mac holds the images under, once each was answered by
+    /// `POST attachments`. A turn put again sends them only when it does not.
+    @ObservationIgnored var uploaded: [String]?
     /// Whether the Mac has answered the turn's `PUT`. Until it has, the run
     /// may not exist, and the next read sends the `PUT` again under its id.
     var started = false
@@ -46,11 +53,12 @@ public final class HubLiveReply {
         return markdown.blocks
     }
 
-    init(providerID: UUID, chatID: Int64, runID: String, question: String?) {
+    init(providerID: UUID, chatID: Int64, runID: String, question: String?, images: [DraftImage] = []) {
         self.providerID = providerID
         self.chatID = chatID
         self.runID = runID
         self.question = question
+        self.images = images
     }
 
     /// Adds one event of the run to the reply. Only its text, its reasoning

@@ -1,11 +1,12 @@
 import Foundation
 import GGChatCore
 
-// Carrying a Mac's chat on from this phone. A send puts the new text alone as
-// a turn; the Mac rebuilds the history from its own record, runs the reply
-// as an agent run, and saves both rows. The reply is read from the run's
-// events into memory, and once the run ends the Mac's rows are read in its
-// place. Nothing of it is written to this phone's store (ADR 0007).
+// Carrying a Mac's chat on from this phone. A send puts the new text and the
+// ids of its images as a turn (`AppModel+HubTurnImages`); the Mac rebuilds
+// the history from its own record, runs the reply as an agent run, and saves
+// both rows. The reply is read from the run's events into memory, and once
+// the run ends the Mac's rows are read in its place. Nothing of it is written
+// to this phone's store (ADR 0007).
 extension AppModel {
     /// The reply this phone holds for one of a Mac's chats, ended or not.
     func hubReply(for chatID: Int64, on providerID: UUID) -> HubLiveReply? {
@@ -20,39 +21,6 @@ extension AppModel {
     /// Whether the chat open has a reply being written: its send is Stop.
     public var openHubChatIsWriting: Bool {
         openHubReply.map { !$0.ended } ?? false
-    }
-
-    /// Sends `text` as a turn on the chat open, and reads the Mac's reply.
-    /// Refused here while the chat has a reply being written, and when its
-    /// Mac cannot be reached, each with a sentence in the view.
-    @discardableResult
-    public func sendToHubChat(_ text: String) -> Task<Void, Never>? {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, let open = openedHubChat,
-            let config = providers.first(where: { $0.id == open.providerID })
-        else { return nil }
-        if openHubChatIsWriting {
-            openedHubChat?.notice = Self.busyLine(config)
-            openedHubChat?.unsent = trimmed
-            return nil
-        }
-        guard let hub = reachableHubChats(for: config) else {
-            openedHubChat?.notice = "\(config.name) is unreachable."
-            openedHubChat?.unsent = trimmed
-            return nil
-        }
-        openedHubChat?.notice = nil
-        openedHubChat?.unsent = nil
-        hubReplies.removeAll { $0.chatID == open.chatID && $0.providerID == open.providerID }
-        let reply = HubLiveReply(
-            providerID: config.id, chatID: open.chatID, runID: UUID().uuidString, question: trimmed)
-        hubReplies.append(reply)
-        let task = Task { [weak self] in
-            guard let self else { return }
-            await putTurn(reply, on: hub, config)
-        }
-        reply.reading = task
-        return task
     }
 
     /// Stop, under the chat open's reply: the run is cancelled on the Mac,
@@ -74,11 +42,10 @@ extension AppModel {
     /// Sends the turn's `PUT` and reads the reply. A refusal says why and
     /// keeps nothing.
     func putTurn(_ reply: HubLiveReply, on hub: any HubChatsProvider, _ config: ProviderConfig) async {
-        guard let question = reply.question else { return }
+        guard reply.question != nil else { return }
         let start: RunStart
         do throws(HubTurnFailure) {
-            start = try await hub.startTurn(
-                runID: reply.runID, turn: HubTurn(conversationID: reply.chatID, content: question))
+            start = try await startTurn(reply, on: hub)
         } catch {
             guard !Task.isCancelled else { return await putDown(reply, on: hub, config) }
             // Lost on the way, and it may have arrived: the id is kept, and
@@ -184,7 +151,7 @@ extension AppModel {
     }
 
     /// The Mac did not start the turn: the reply goes, the view says why,
-    /// and the text goes back into the composer.
+    /// and the text and images go back into the composer.
     private func refuse(_ reply: HubLiveReply, _ why: String, _ config: ProviderConfig) {
         reply.reading = nil
         hubReplies.removeAll { $0 === reply }
@@ -192,7 +159,7 @@ extension AppModel {
             return keepRefused(reply, why)
         }
         openedHubChat?.notice = why
-        openedHubChat?.unsent = reply.question
+        openedHubChat?.unsent = reply.unsent
         log.log(.info, "\(config.name) did not start a turn")
     }
 
@@ -221,13 +188,6 @@ extension AppModel {
         refusedHubSends[providerID] = nil
     }
 
-    /// The text a send that went nowhere left, for the composer to take
-    /// back; nil once taken.
-    public func takeUnsentHubText() -> String? {
-        defer { openedHubChat?.unsent = nil }
-        return openedHubChat?.unsent
-    }
-
     static func unsupportedLine(_ config: ProviderConfig) -> String {
         "\(config.name) cannot carry its chats on from this phone yet."
     }
@@ -242,6 +202,8 @@ extension AppModel {
         case .noModel: "This chat has no model and nothing is running on \(config.name). Start a model there."
         case .replyInProgress: busyLine(config)
         case .chatGone: "\(config.name) no longer has this chat."
+        case .imageGone: "\(config.name) no longer has an image this chat carries."
+        case .takesNoImages: takesNoImagesLine(config)
         case .refused(let error), .lost(let error):
             "\(config.name) did not take this message. \(error.errorDescription ?? "")"
                 .trimmingCharacters(in: .whitespaces)

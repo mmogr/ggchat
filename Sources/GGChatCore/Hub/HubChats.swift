@@ -125,10 +125,14 @@ public struct HubMessage: Codable, Sendable, Equatable, Identifiable {
     public let content: String
     public let createdAt: String
     public let metadata: HubMessageMetadata?
+    /// The images a user's message carries, by reference, in order: each is
+    /// read by its id from `GET attachments/{id}` when it is drawn. Nil when
+    /// the row carries none.
+    public let images: [ImageRef]?
 
     public init(
         id: Int64, conversationID: Int64, role: String, content: String, createdAt: String,
-        metadata: HubMessageMetadata? = nil
+        metadata: HubMessageMetadata? = nil, images: [ImageRef]? = nil
     ) {
         self.id = id
         self.conversationID = conversationID
@@ -136,6 +140,7 @@ public struct HubMessage: Codable, Sendable, Equatable, Identifiable {
         self.content = content
         self.createdAt = createdAt
         self.metadata = metadata
+        self.images = images
     }
 
     enum CodingKeys: String, CodingKey {
@@ -145,6 +150,7 @@ public struct HubMessage: Codable, Sendable, Equatable, Identifiable {
         case content
         case createdAt = "created_at"
         case metadata
+        case images
     }
 
     /// Metadata is whatever the hub saved beside the row, so metadata this
@@ -157,6 +163,7 @@ public struct HubMessage: Codable, Sendable, Equatable, Identifiable {
         content = try container.decode(String.self, forKey: .content)
         createdAt = try container.decode(String.self, forKey: .createdAt)
         metadata = try? container.decodeIfPresent(HubMessageMetadata.self, forKey: .metadata)
+        images = try container.decodeIfPresent([ImageRef].self, forKey: .images)
     }
 }
 

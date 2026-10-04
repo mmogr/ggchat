@@ -108,7 +108,7 @@ final class HubChatContinueTests: XCTestCase {
             await model.sendToHubChat(question)?.value
             XCTAssertEqual(model.openedHubChat?.notice, line, "\(failure)")
             XCTAssertEqual(model.hubReplies.count, 0, "\(failure)")
-            XCTAssertEqual(model.takeUnsentHubText(), question, "the text was not given back: \(failure)")
+            XCTAssertEqual(model.takeUnsentHubDraft()?.text, question, "the text was not given back: \(failure)")
             XCTAssertNil(model.openedHubChat?.unsent)
         }
         XCTAssertEqual(hub.runs.with(\.reads).count, 0)
@@ -125,7 +125,7 @@ final class HubChatContinueTests: XCTestCase {
         try await until("the first frame") { model.openHubReply?.tools.isEmpty == false }
         XCTAssertNil(model.sendToHubChat("And again?"))
         XCTAssertEqual(model.openedHubChat?.notice, "A reply is already being written on home.")
-        XCTAssertEqual(model.openedHubChat?.unsent, "And again?", "the text was not given back")
+        XCTAssertEqual(model.openedHubChat?.unsent?.text, "And again?", "the text was not given back")
         XCTAssertEqual(hub.with(\.turns).count, 1)
         hub.runs.release()
     }
@@ -155,7 +155,7 @@ final class HubChatContinueTests: XCTestCase {
         let (model, config) = try await Self.opened(hub, store: store)
         await model.sendToHubChat(question)?.value
         XCTAssertEqual(model.openedHubChat?.notice, "home cannot carry its chats on from this phone yet.")
-        XCTAssertEqual(model.openedHubChat?.unsent, question)
+        XCTAssertEqual(model.openedHubChat?.unsent?.text, question)
         XCTAssertEqual(model.hubReplies.count, 0)
         let runID = try XCTUnwrap(hub.with(\.turns).first?.runID)
         try await until("the cancel") { hub.runs.with(\.cancels) == [runID] }
@@ -171,7 +171,7 @@ final class HubChatContinueTests: XCTestCase {
         await model.disconnectPipe(for: config.id, leaving: .closed)
         XCTAssertNil(model.sendToHubChat(question))
         XCTAssertEqual(model.openedHubChat?.notice, "home is unreachable.")
-        XCTAssertEqual(model.openedHubChat?.unsent, question)
+        XCTAssertEqual(model.openedHubChat?.unsent?.text, question)
         XCTAssertEqual(hub.with(\.turns).count, 0)
     }
 
@@ -181,7 +181,7 @@ final class HubChatContinueTests: XCTestCase {
         let (model, _) = try await Self.opened(hub)
         hub.with { $0.turnFailure = .noModel }
         await model.sendToHubChat(question)?.value
-        XCTAssertEqual(model.openedHubChat?.unsent, question)
+        XCTAssertEqual(model.openedHubChat?.unsent?.text, question)
         hub.with { $0.turnFailure = nil }
         model.sendToHubChat(question)
         XCTAssertNil(model.openedHubChat?.unsent)

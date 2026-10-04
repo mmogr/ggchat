@@ -152,7 +152,7 @@ final class HubChatPutAgainTests: XCTestCase {
 
         model.selection = .hub(providerID: config.id, chatID: 12)
         XCTAssertEqual(model.openedHubChat?.notice, AppModel.busyLine(config))
-        XCTAssertEqual(model.takeUnsentHubText(), question)
+        XCTAssertEqual(model.takeUnsentHubDraft()?.text, question)
         model.selection = nil
         model.selection = .hub(providerID: config.id, chatID: 12)
         XCTAssertNil(model.openedHubChat?.unsent)

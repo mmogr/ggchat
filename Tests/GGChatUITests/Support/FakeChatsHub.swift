@@ -1,3 +1,4 @@
+import Foundation
 import GGChatCore
 import Synchronization
 
@@ -35,6 +36,22 @@ final class FakeChatsHub: HubChatsProvider {
         /// Holds every cancel until it is set false again, and counts them.
         var holdsCancels = false
         var cancelsAsked = 0
+        /// The images the Mac holds, by id: each upload adds one, and a turn
+        /// naming one it does not hold is refused with `imageGone`.
+        var images: [String: Data] = [:]
+        /// The bytes of every upload, in order, and what the next ones are
+        /// answered with.
+        var uploads: [Data] = []
+        var uploadFailure: HubTurnFailure?
+        /// How many uploads are answered and then not held, as if the Mac
+        /// had let them go before the turn that names them.
+        var forgetsUploads = 0
+        /// The id of every image read, in order, and what the next reads are
+        /// answered with.
+        var fetches: [String] = []
+        var fetchFailure: HubChatsFailure?
+        /// Holds every read of an image, once counted, until it is set false.
+        var holdsFetches = false
     }
 
     let state: Mutex<State>
@@ -124,6 +141,12 @@ final class FakeChatsHub: HubChatsProvider {
             return true
         }
         if isDropped { throw .lost(.transport("the turn never arrived")) }
+        let gone = with { state in
+            guard turn.images.contains(where: { state.images[$0] == nil }) else { return false }
+            state.turns.append((runID, turn))
+            return true
+        }
+        if gone { throw .imageGone }
         let (failure, lost, info) = with { state in
             state.turns.append((runID, turn))
             state.turnsLost -= 1
@@ -138,6 +161,30 @@ final class FakeChatsHub: HubChatsProvider {
 
     func turnEvents(runID: String, after: UInt32) -> AsyncStream<RunEvent> {
         runs.runEvents(id: runID, after: after)
+    }
+
+    func uploadImage(_ data: Data, mime: String) async throws(HubTurnFailure) -> ImageRef {
+        let failure = with { state in
+            state.uploads.append(data)
+            return state.uploadFailure
+        }
+        if let failure { throw failure }
+        let id = ImageRef.id(of: data)
+        with { state in
+            if state.forgetsUploads > 0 { state.forgetsUploads -= 1 } else { state.images[id] = data }
+        }
+        return ImageRef(id: id, mime: mime, width: 1, height: 1)
+    }
+
+    func fetchImage(id: String) async throws(HubChatsFailure) -> Data {
+        let (data, failure) = with { state in
+            state.fetches.append(id)
+            return (state.images[id], state.fetchFailure)
+        }
+        while with({ $0.holdsFetches }) { await Task.yield() }
+        if let failure { throw failure }
+        guard let data else { throw .notFound }
+        return data
     }
 
     func cancelTurn(runID: String) async throws(ProviderError) -> RunInfo {
