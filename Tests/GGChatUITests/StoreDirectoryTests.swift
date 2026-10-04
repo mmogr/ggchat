@@ -48,8 +48,12 @@ final class StoreDirectoryTests: XCTestCase {
                 .posixPermissions] as? NSNumber)
         XCTAssertEqual(
             mode.int16Value & 0o077, 0, "another user can read the store: \(String(mode.int16Value, radix: 8))")
+        // `.ggchat_SUPPORT` is where SwiftData writes an image's bytes, made
+        // with the store because a row keeps some outside it: inside the
+        // directory, so the mark covers it too.
         XCTAssertEqual(
-            scratch.names(in: location.directory), ["ggchat.store", "ggchat.store-shm", "ggchat.store-wal"])
+            scratch.names(in: location.directory),
+            [".ggchat_SUPPORT", "ggchat.store", "ggchat.store-shm", "ggchat.store-wal"])
         XCTAssertEqual(
             scratch.names(in: scratch.support).filter { $0.hasPrefix("ggchat.store") }, [],
             "part of the store was made at the old place, where a backup carries it")

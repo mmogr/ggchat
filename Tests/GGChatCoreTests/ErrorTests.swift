@@ -66,7 +66,8 @@ final class ErrorTests: XCTestCase {
             .hostNotAllowed, .internalError, .invalidRequest, .loopDetected, .mcpNotAllowedOverTunnel,
             .modelFileNotFound, .modelLoading, .modelNotFound, .notAnEmbeddingModel,
             .pinnedModelMismatch, .profileNotFound, .stagnationDetected, .upstreamError,
-            .upstreamTimeout,
+            .upstreamTimeout, .modelCannotReadImages, .requestTooLarge, .imageTooLarge, .unsupportedImage,
+            .attachmentNotFound, .requestImagesTooLarge,
         ]
         XCTAssertEqual(
             Set(published.map(\.rawValue)), publishedCodes,
@@ -139,8 +140,10 @@ final class ErrorTests: XCTestCase {
         let wedged = ProviderError.server(status: 502, code: "bad_gateway", message: "bad gateway")
         XCTAssertEqual(wedged.hint, WhereToLook.servingSide.hint)
         XCTAssertNil(ProviderError.server(status: 418, code: "something_new", message: "?").hint)
-        // `tunnel_unavailable`'s sentence is read in `QuietMachineTests`.
-        for code in ProviderError.Code.allCases where ![.invalidAPIKey, .tunnelUnavailable].contains(code) {
+        // `tunnel_unavailable`'s sentence is read in `QuietMachineTests`, and
+        // the image codes' in `ImageRefusalTests`.
+        let read = Set<ProviderError.Code>([.invalidAPIKey, .tunnelUnavailable]).union(ImageRefusalTests.hints.keys)
+        for code in ProviderError.Code.allCases where !read.contains(code) {
             XCTAssertNil(code.hint, "\(code.rawValue) has a sentence of its own that no test reads")
         }
     }

@@ -288,8 +288,33 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # 120). One test pastes a key that is not one into the form and finds the
 # field holding it and the pasteboard empty. It is the whole of that guard,
 # and the claim names it.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 485
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 24
-floor "README test markers" "${markers:-0}" 398
+#
+# 2026-10-04: 485 -> 501 and 398 -> 414. Sixteen tests pin a message's
+# images: the id and the shape gglib names a stored image by, its token
+# estimate, which model the list says reads images, the wire (a turn with
+# none the same bytes as before, text then each image in order, no empty
+# text part, no turn sent without its bytes), the bytes read once per image
+# for a send, Retry and a run's PUT sent again, and both ways a model that
+# cannot see refuses, with each image code's line. They are the whole of
+# that guard, and the README claim names all sixteen.
+#
+# 2026-10-04: 501 -> 517, 24 -> 25 and 414 -> 431. Seventeen more pin the
+# images from this side: the one downscale (upright, the 2560-pixel edge,
+# no metadata, PNG or JPEG, the 8 MiB refusal, the id of the bytes sent),
+# which model can see and the local refusal that keeps the draft, a turn of
+# images alone, a turn refused keeping its images for Retry, the strip's
+# estimate, the title of an image-only turn, the bytes kept beside the store,
+# deleted with the last turn naming them and gone after a reset, and a paste
+# walked on a simulator. They are the whole of that guard, and the second
+# README claim names all seventeen.
+#
+# 2026-10-04: 517 -> 521 and 431 -> 435. Four more pin the draft: an image
+# added for a model that cannot see is refused as it is added, a draft
+# refused partway takes back the images it kept, a refused draft keeps its
+# text and images while a taken one is empty, and the same image added twice
+# is one. The second README claim names them too.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 521
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 25
+floor "README test markers" "${markers:-0}" 435
 
 exit $status

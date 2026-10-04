@@ -44,4 +44,21 @@ final class ConversationTests: XCTestCase {
             ChatRequest(model: "m", messages: prompted.requestMessages),
             ChatRequest(model: "m", messages: prompted.requestMessages))
     }
+
+    /// A conversation whose first turn is images alone is called what that
+    /// turn holds; one with text is still called by its first line.
+    func testAFirstTurnOfImagesAloneIsCalledWhatItHolds() {
+        let image = ImageRef(id: "ab", mime: ImageRef.png, width: 1, height: 1)
+        let other = ImageRef(id: "cd", mime: ImageRef.jpeg, width: 1, height: 1)
+        func titled(_ text: String, _ images: [ImageRef]) -> String {
+            Conversation(
+                messages: [Message(role: .user, content: text, createdAt: stamp, images: images)], createdAt: stamp,
+                updatedAt: stamp
+            ).derivedTitle
+        }
+        XCTAssertEqual(titled("", [image]), "An image")
+        XCTAssertEqual(titled("", [image, other]), "2 images")
+        XCTAssertEqual(titled("what is this\nand this", [image]), "what is this")
+        XCTAssertEqual(titled("", []), "")
+    }
 }

@@ -55,11 +55,14 @@ struct StoreScratch {
         ((try? FileManager.default.contentsOfDirectory(atPath: directory.path(percentEncoded: false))) ?? []).sorted()
     }
 
-    /// Every file a directory holds, by name, with its bytes.
+    /// Every file a directory holds, by name, with its bytes. A folder in it,
+    /// such as the one SwiftData keeps image bytes in, is left out.
     func contents(of directory: URL) throws -> [String: Data] {
         var contents: [String: Data] = [:]
         for name in names(in: directory) {
-            contents[name] = try Data(contentsOf: directory.appending(path: name))
+            let url = directory.appending(path: name)
+            if (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true { continue }
+            contents[name] = try Data(contentsOf: url)
         }
         return contents
     }

@@ -12,7 +12,8 @@ public enum Role: String, Codable, Sendable, Equatable, Hashable {
 /// turn early when something said so, kept on the message that ended it.
 /// `runID` names the run on the hub still writing this reply, and
 /// `runCursor` the last of its events this message holds; both are nil once
-/// the reply is no longer being written there.
+/// the reply is no longer being written there. `images` names the images the
+/// turn carries, in order; their bytes are kept apart, by id.
 public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
     public var id: UUID
     public var role: Role
@@ -23,6 +24,7 @@ public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
     public var createdAt: Date
     public var runID: String?
     public var runCursor: UInt32?
+    public var images: [ImageRef]
 
     public init(
         id: UUID = UUID(),
@@ -33,7 +35,8 @@ public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
         failure: Failure? = nil,
         createdAt: Date,
         runID: String? = nil,
-        runCursor: UInt32? = nil
+        runCursor: UInt32? = nil,
+        images: [ImageRef] = []
     ) {
         self.id = id
         self.role = role
@@ -44,6 +47,7 @@ public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
         self.createdAt = createdAt
         self.runID = runID
         self.runCursor = runCursor
+        self.images = images
     }
 
     /// Whether a hub is still writing this reply, away from this device.
@@ -163,10 +167,14 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
         return [system] + messages
     }
 
-    /// The first line of the first user message, or empty.
+    /// The first line of the first user message, or empty. A first turn of
+    /// images alone is called what it holds.
     public var derivedTitle: String {
         guard let first = messages.first(where: { $0.role == .user }) else { return "" }
         let line = first.content.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
+        if line.isEmpty, !first.images.isEmpty {
+            return first.images.count == 1 ? "An image" : "\(first.images.count) images"
+        }
         return String(line.prefix(80))
     }
 }

@@ -3,7 +3,7 @@ import GGChatCore
 
 /// What the app remembers between launches, minus credentials, which live
 /// in `Secrets`.
-public protocol Store {
+public protocol Store: ImageStore {
     func loadProviders() throws -> [ProviderConfig]
     func save(provider: ProviderConfig) throws
     func deleteProvider(id: UUID) throws
@@ -29,6 +29,19 @@ public protocol Store {
     func loadConversations() throws -> [Conversation]
     func save(conversation: Conversation) throws
     func deleteConversation(id: UUID) throws
+}
+
+/// Where the bytes of the images messages name are kept on this device, by
+/// `ImageRef.id`. A message holds only the reference; a request reads the
+/// bytes from here when it is built (`AppModel+Request`).
+public protocol ImageStore {
+    /// Keeps an image's bytes under its id. The same bytes kept twice are
+    /// one image, since the id is their hash.
+    func save(image: ImageRef, data: Data) throws
+    /// The bytes kept under `id`, or nil when there are none.
+    func loadImage(id: String) throws -> Data?
+    /// Deletes the bytes of each of `ids` that no kept turn names.
+    func deleteImages(noTurnNames ids: Set<String>) throws
 }
 
 /// One of a paired Mac's chats as the list last saw it: its id, its title
@@ -76,6 +89,7 @@ public final class InMemoryStore: Store {
     private var hubChats: [UUID: SeenHubChats] = [:]
     private var hubRuns: [UUID: [HeldHubRun]] = [:]
     private var conversations: [UUID: Conversation] = [:]
+    private var images: [String: Data] = [:]
 
     public init() {}
 
@@ -133,5 +147,20 @@ public final class InMemoryStore: Store {
 
     public func deleteConversation(id: UUID) throws {
         conversations[id] = nil
+    }
+
+    public func save(image: ImageRef, data: Data) throws {
+        images[image.id] = data
+    }
+
+    public func loadImage(id: String) throws -> Data? {
+        images[id]
+    }
+
+    public func deleteImages(noTurnNames ids: Set<String>) throws {
+        let named = conversations.values.reduce(into: Set<String>()) { named, conversation in
+            for message in conversation.messages { named.formUnion(message.images.map(\.id)) }
+        }
+        for id in ids.subtracting(named) { images[id] = nil }
     }
 }

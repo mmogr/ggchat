@@ -21,15 +21,28 @@ extension AppModel {
     /// Appends the user's message and streams the reply.
     @discardableResult
     public func send(_ text: String) -> Task<Void, Never>? {
+        guard let conversation = appendTurn(text, images: []) else { return nil }
+        return stream(conversation, continuing: nil)
+    }
+
+    /// Appends the user's turn to the open conversation and answers it, or
+    /// nil when the turn has neither text nor an image, or the conversation
+    /// cannot take one now.
+    func appendTurn(_ text: String, images: [ImageRef]) -> Conversation? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, var conversation = selectedConversation, !isStreaming,
-            !conversation.messages.contains(where: \.isBeingWritten)
+        guard !trimmed.isEmpty || !images.isEmpty, var conversation = selectedConversation, takesTurn(conversation)
         else { return nil }
         let stamp = now()
-        conversation.messages.append(Message(role: .user, content: trimmed, createdAt: stamp))
+        conversation.messages.append(Message(role: .user, content: trimmed, createdAt: stamp, images: images))
         conversation.updatedAt = stamp
         update(conversation)
-        return stream(conversation, continuing: nil)
+        return conversation
+    }
+
+    /// Whether a turn can be added now: no reply is in flight, and no hub is
+    /// still writing one of this conversation's.
+    func takesTurn(_ conversation: Conversation) -> Bool {
+        !isStreaming && !conversation.messages.contains(where: \.isBeingWritten)
     }
 
     /// Re-sends the conversation with its partial reply as the last message,
@@ -74,13 +87,21 @@ extension AppModel {
         streamTask?.cancel()
     }
 
-    private func stream(_ conversation: Conversation, continuing: UUID?) -> Task<Void, Never>? {
+    @discardableResult
+    func stream(_ conversation: Conversation, continuing: UUID?) -> Task<Void, Never>? {
         guard let config = provider(for: conversation) else {
             lastError = "This conversation has no provider. Add one, then pick it."
             return nil
         }
         guard let modelID = conversation.model ?? config.defaultModel else {
             lastError = "Pick a model first."
+            return nil
+        }
+        let request: ChatRequest
+        do {
+            request = try chatRequest(model: modelID, messages: conversation.requestMessages, for: config)
+        } catch {
+            lastError = error.errorDescription
             return nil
         }
         // A pipe that is not connected is waited for, not refused.
@@ -91,8 +112,6 @@ extension AppModel {
         let live = LiveReply(conversationID: conversation.id, continuingMessageID: continuing)
         live.waitingFor = waits ? config.id : nil
         liveReply = live
-        let request = ChatRequest(
-            model: modelID, messages: conversation.requestMessages, returnProgress: asksForProgress(config))
         let task = Task { [weak self] in
             var connected = ready
             if connected == nil { connected = await self?.providerOnceConnected(config, for: live) }

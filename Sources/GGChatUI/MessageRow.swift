@@ -1,11 +1,11 @@
 import GGChatCore
 import SwiftUI
 
-/// One stored turn. Flat: a role label, reasoning collapsed, then the
-/// content as markdown blocks. The last one, once nothing is streaming after
-/// it, says how its turn ended: under a partial reply, with Continue, and
-/// under a question with no reply, with Retry and the reason when something
-/// gave one. A reply a hub is still writing away from this device offers
+/// One stored turn. Flat: a role label, reasoning collapsed, the images it
+/// carries, then the content as markdown blocks. The last one, once nothing
+/// is streaming after it, says how its turn ended: under a partial reply,
+/// with Continue, and under a question with no reply, with Retry and the
+/// reason when something gave one. A reply a hub is still writing away from this device offers
 /// neither, says where it is being written, and offers Stop.
 struct MessageRow: View {
     @Environment(AppModel.self) private var model
@@ -24,6 +24,9 @@ struct MessageRow: View {
             RoleLabel(role: message.role)
             if let reasoning = message.reasoning, !reasoning.isEmpty {
                 ReasoningRow(text: reasoning, isThinking: false)
+            }
+            if !message.images.isEmpty {
+                MessageImages(images: message.images)
             }
             MarkdownBlocksView(blocks: MarkdownBlocks.parse(message.content))
             if showsEnding {

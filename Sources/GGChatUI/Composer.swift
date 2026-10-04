@@ -11,16 +11,11 @@ struct Composer: View {
     @Environment(\.locale) private var locale
     @Environment(\.calendar) private var calendar
     @Namespace private var glass
-    @State private var draft = ""
     @State private var pickingModel = false
     let conversation: Conversation
 
     private var provider: ProviderConfig? {
         model.provider(for: conversation)
-    }
-
-    private var streaming: Bool {
-        model.isStreaming(conversation.id)
     }
 
     var body: some View {
@@ -72,47 +67,12 @@ struct Composer: View {
 
     // MARK: - Composer capsule
 
+    /// The field, its images and Send, in `DraftField`; the glass is drawn
+    /// here, with the other two.
     private var composer: some View {
-        HStack(alignment: .bottom, spacing: 8) {
-            TextField("Message", text: $draft, axis: .vertical)
-                .lineLimit(1...8)
-                .textFieldStyle(.plain)
-                .accessibilityIdentifier("composer")
-                .padding(.vertical, 8)
-                .padding(.leading, 6)
-                .onSubmit(sendIfPossible)
-                .disabled(streaming)
-            Button {
-                if streaming { model.stop() } else { sendIfPossible() }
-            } label: {
-                Image(systemName: streaming ? "stop.fill" : "arrow.up")
-                    .font(.body.weight(.semibold))
-                    .frame(minWidth: 28, minHeight: 28)
-            }
-            .buttonStyle(.glassProminent)
-            .buttonBorderShape(.circle)
-            .disabled(!streaming && !canSend)
-            .accessibilityLabel(streaming ? "Stop" : "Send")
-            .keyboardShortcut(.return, modifiers: .command)
-        }
-        .padding(8)
-        .glassEffect(.regular, in: .rect(cornerRadius: 24))
-    }
-
-    /// False while any reply is in flight, even in another conversation, and
-    /// while a hub is still writing this one's last reply: the model would
-    /// refuse the send, and the draft would be cleared for nothing.
-    private var canSend: Bool {
-        !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && provider != nil
-            && (conversation.model ?? provider?.defaultModel) != nil && !model.isStreaming
-            && !conversation.messages.contains(where: \.isBeingWritten)
-    }
-
-    private func sendIfPossible() {
-        guard canSend, !streaming else { return }
-        let text = draft
-        draft = ""
-        model.send(text)
+        DraftField(conversation: conversation)
+            .padding(8)
+            .glassEffect(.regular, in: .rect(cornerRadius: 24))
     }
 
     // MARK: - Model pill

@@ -82,7 +82,15 @@ extension AppModel {
             return false
         }
         guard let hub = reachableHub(for: config) else { return false }
-        let request = live.started ? nil : sentRequest(for: message, in: conversation, config: config)
+        var request: ChatRequest?
+        do {
+            request = live.started ? nil : try sentRequest(for: message, in: conversation, config: config)
+        } catch {
+            // Sent again without its image it would be another question, so
+            // the reply is given up with the reason, and Retry asks again.
+            finish(live, finished: false, cancelled: false, refusal: error.failure)
+            return false
+        }
         if !live.started, request == nil { return false }
         liveReply = live
         streamTask = Task { [weak self] in
@@ -100,15 +108,13 @@ extension AppModel {
     /// Continue's partial. Nothing had been read into it, so it is as sent.
     private func sentRequest(
         for message: Message, in conversation: Conversation, config: ProviderConfig
-    )
-        -> ChatRequest?
-    {
+    ) throws(ImageUnavailable) -> ChatRequest? {
         guard let modelID = conversation.model ?? config.defaultModel,
             let index = conversation.messages.firstIndex(where: { $0.id == message.id })
         else { return nil }
         var sent = conversation
         sent.messages = Array(conversation.messages[..<index]) + (message.content.isEmpty ? [] : [message])
-        return ChatRequest(model: modelID, messages: sent.requestMessages, returnProgress: asksForProgress(config))
+        return try chatRequest(model: modelID, messages: sent.requestMessages, for: config)
     }
 
     /// The provider as a run hub, when it can be reached without dialling.

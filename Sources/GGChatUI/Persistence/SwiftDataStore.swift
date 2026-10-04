@@ -13,7 +13,9 @@ public final class SwiftDataStore: Store {
         self.context = container.mainContext
     }
 
-    public static let schema = Schema([ProviderRecord.self, ConversationRecord.self, MessageRecord.self])
+    public static let schema = Schema([
+        ProviderRecord.self, ConversationRecord.self, MessageRecord.self, ImageRecord.self,
+    ])
 
     /// A container that keeps nothing on disk: what tests open, and what the
     /// app runs from for a launch in which its store cannot be kept in
@@ -124,16 +126,20 @@ public final class SwiftDataStore: Store {
                         id: message.uuid, role: Role(rawValue: message.role) ?? .user, content: message.content,
                         reasoning: message.reasoning, isPartial: message.isPartial,
                         failure: Self.failure(from: message.failureData), createdAt: message.createdAt,
-                        runID: message.runID, runCursor: message.runCursor.flatMap(UInt32.init(exactly:)))
+                        runID: message.runID, runCursor: message.runCursor.flatMap(UInt32.init(exactly:)),
+                        images: Self.images(from: message.imagesData))
                 },
                 systemPrompt: record.systemPrompt, createdAt: record.createdAt, updatedAt: record.updatedAt,
                 hasUnreadReply: record.hasUnreadReply ?? false)
         }
     }
 
+    /// Then deletes the images no turn names any more, of those this save
+    /// took off a turn.
     public func save(conversation: Conversation) throws {
-        try write(conversation)
+        let dropped = try write(conversation)
         try context.save()
+        try deleteImages(noTurnNames: dropped)
     }
 
     /// Brings one conversation's rows in line with it, without saving them.
@@ -144,8 +150,9 @@ public final class SwiftDataStore: Store {
     /// twice a turn, though only one or two had changed (#139). A failure is
     /// encoded only when it is not the one the row already holds. Apart from
     /// `save(conversation:)` so a test can look at what a write marked before
-    /// it is saved.
-    func write(_ conversation: Conversation) throws {
+    /// it is saved. Answers the ids of the images it took off a turn.
+    @discardableResult
+    func write(_ conversation: Conversation) throws -> Set<String> {
         let record: ConversationRecord
         if let existing = try fetchConversation(conversation.id) {
             record = existing
@@ -163,6 +170,7 @@ public final class SwiftDataStore: Store {
             context.insert(record)
         }
         var existing = Dictionary(record.messages.map { ($0.uuid, $0) }, uniquingKeysWith: { first, _ in first })
+        var dropped = Set<String>()
         for (order, message) in conversation.messages.enumerated() {
             if let row = existing.removeValue(forKey: message.id) {
                 Self.assign(\.content, of: row, to: message.content)
@@ -173,26 +181,37 @@ public final class SwiftDataStore: Store {
                 }
                 Self.assign(\.runID, of: row, to: message.runID)
                 Self.assign(\.runCursor, of: row, to: message.runCursor.map(Int.init))
+                let held = Self.images(from: row.imagesData)
+                if held != message.images {
+                    dropped.formUnion(held.map(\.id))
+                    row.imagesData = try Self.data(of: message.images)
+                }
                 Self.assign(\.order, of: row, to: order)
             } else {
                 let row = MessageRecord(
                     id: message.id, role: message.role.rawValue, content: message.content,
                     reasoning: message.reasoning, isPartial: message.isPartial, createdAt: message.createdAt,
                     order: order, failureData: try message.failure.map { try JSONEncoder().encode($0) },
-                    runID: message.runID, runCursor: message.runCursor.map(Int.init))
+                    runID: message.runID, runCursor: message.runCursor.map(Int.init),
+                    imagesData: try Self.data(of: message.images))
                 row.conversation = record
                 context.insert(row)
             }
         }
         for orphan in existing.values {
+            dropped.formUnion(Self.images(from: orphan.imagesData).map(\.id))
             context.delete(orphan)
         }
+        return dropped
     }
 
+    /// With its images that no other conversation names.
     public func deleteConversation(id: UUID) throws {
         if let record = try fetchConversation(id) {
+            let named = Set(record.messages.flatMap { Self.images(from: $0.imagesData).map(\.id) })
             context.delete(record)
             try context.save()
+            try deleteImages(noTurnNames: named)
         }
     }
 

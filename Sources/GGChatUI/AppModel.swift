@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import GGChatCore
 import Observation
@@ -86,6 +87,9 @@ public final class AppModel {
     /// Changes once each time a pipe first reaches a connected state; the
     /// one haptic in the app fires on it.
     public internal(set) var connectedPulse = 0
+    /// The small pictures of kept images the rows have drawn; see
+    /// `AppModel+Images`.
+    @ObservationIgnored let thumbnails = NSCache<NSString, CGImage>()
 
     public let diagnostics: Diagnostics
     let store: any Store
