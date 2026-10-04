@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.0](https://github.com/mmogr/ggchat/compare/v0.6.0...v0.7.0) (2026-10-04)
+
+
+### What the app now does
+
+* **chat:** a message carries images ([#167](https://github.com/mmogr/ggchat/issues/167)) ([5bae572](https://github.com/mmogr/ggchat/commit/5bae572ac2e4a310d3616a7e2ec45ef4dd3cb656))
+* **hub:** a turn to the Mac carries images ([#168](https://github.com/mmogr/ggchat/issues/168)) ([a5bb562](https://github.com/mmogr/ggchat/commit/a5bb562d800e4822d6b74a5d8d68167aeab5c595))
+
 ## [0.6.0](https://github.com/mmogr/ggchat/compare/v0.5.0...v0.6.0) (2026-10-02)
 
 
