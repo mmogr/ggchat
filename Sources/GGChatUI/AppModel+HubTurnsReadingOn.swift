@@ -126,6 +126,7 @@ extension AppModel {
             let live = list.chats.first { $0.id == reply.chatID }?.liveRun
             if live == reply.runID, !reply.started {
                 reply.started = true
+                hubTookTurn(reply)
                 keepHubRuns(reply.providerID)
             } else if live != reply.runID, reply.started {
                 endHubReply(reply)

@@ -130,7 +130,8 @@ public final class SwiftDataStore: Store {
                         images: Self.images(from: message.imagesData))
                 },
                 systemPrompt: record.systemPrompt, createdAt: record.createdAt, updatedAt: record.updatedAt,
-                hasUnreadReply: record.hasUnreadReply ?? false, context: Self.reading(from: record.contextData))
+                hasUnreadReply: record.hasUnreadReply ?? false, context: Self.reading(from: record.contextData),
+                thinkingOff: record.thinkingOff ?? false)
         }
     }
 
@@ -161,6 +162,7 @@ public final class SwiftDataStore: Store {
             Self.assign(\.model, of: record, to: conversation.model)
             Self.assign(\.systemPrompt, of: record, to: conversation.systemPrompt)
             Self.assign(\.hasUnreadReply, of: record, to: conversation.hasUnreadReply)
+            Self.assign(\.thinkingOff, of: record, to: conversation.thinkingOff)
             Self.assign(\.updatedAt, of: record, to: conversation.updatedAt)
             if Self.reading(from: record.contextData) != conversation.context {
                 record.contextData = try conversation.context.map { try JSONEncoder().encode($0) }
@@ -170,7 +172,8 @@ public final class SwiftDataStore: Store {
                 id: conversation.id, title: conversation.title, providerID: conversation.providerID,
                 model: conversation.model, createdAt: conversation.createdAt, updatedAt: conversation.updatedAt,
                 systemPrompt: conversation.systemPrompt, hasUnreadReply: conversation.hasUnreadReply,
-                contextData: try conversation.context.map { try JSONEncoder().encode($0) })
+                contextData: try conversation.context.map { try JSONEncoder().encode($0) },
+                thinkingOff: conversation.thinkingOff)
             context.insert(record)
         }
         var existing = Dictionary(record.messages.map { ($0.uuid, $0) }, uniquingKeysWith: { first, _ in first })

@@ -61,7 +61,8 @@ public struct MockProvider: Provider {
         return AsyncStream { continuation in
             let task = Task {
                 do {
-                    if let reasoning = script.reasoning {
+                    // A budget of zero is no thinking, as gglib takes it.
+                    if let reasoning = script.reasoning, request.reasoningBudgetTokens != ChatRequest.noThinking {
                         for token in Self.tokens(of: reasoning) {
                             try await sleeper.sleep(for: tokenDelay)
                             continuation.yield(.reasoning(token))
@@ -111,8 +112,12 @@ public struct MockProvider: Provider {
         return tokens
     }
 
+    /// The first thinks, as gglib would list it, so a mock pipe, the one
+    /// mock taken for gglib, shows the Thinking switch.
     public static let sampleModels: [ModelInfo] = [
-        ModelInfo(id: "mock-27b", ownedBy: "ggchat", description: "a canned model", contextWindow: 131_072),
+        ModelInfo(
+            id: "mock-27b", ownedBy: "ggchat", description: "a canned model", contextWindow: 131_072,
+            capabilities: ["reasoning"]),
         ModelInfo(id: "mock-4b", ownedBy: "ggchat", description: "a smaller canned model", contextWindow: 32_768),
     ]
 

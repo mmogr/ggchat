@@ -3,14 +3,16 @@ import XCTest
 @testable import GGChatCore
 
 /// Replays the chat bodies gglib records (`contracts/chats/recorded.json`
-/// there, copied here byte for byte as `gglib-chats-recorded.json` from gglib
-/// pull request #1273) against the Swift hub chat types, its `turn` and
-/// `image_turn` against the bodies this build sends to carry a chat on, and
-/// its `upload` against how an image sent to the hub is named.
+/// there, copied here byte for byte as `gglib-chats-recorded.json` from the
+/// gglib pull request #1278, the one that adds the Thinking choice)
+/// against the Swift hub chat types, its `turn`, `image_turn` and
+/// `thinking_turn` against the bodies this build sends to carry a chat on,
+/// and its `upload` against how an image sent to the hub is named.
 ///
-/// The opened chat ends with a turn sent from a device whose reply did not
-/// finish: its finished reply's row carries the counts, the context's size
-/// and why the call ended, and the unfinished one only gglib's mark.
+/// The opened chat remembers its thinking switched off, and ends with a turn
+/// sent from a device whose reply did not finish: its finished reply's row
+/// carries the counts, the context's size and why the call ended, and the
+/// unfinished one only gglib's mark.
 final class HubChatsWireTests: XCTestCase {
     private struct Recorded: Decodable {
         let list: HubChatList
@@ -18,10 +20,12 @@ final class HubChatsWireTests: XCTestCase {
         let turn: HubTurn
         let upload: ImageRef
         let imageTurn: HubTurn
+        let thinkingTurn: HubTurn
 
         enum CodingKeys: String, CodingKey {
             case list, open, turn, upload
             case imageTurn = "image_turn"
+            case thinkingTurn = "thinking_turn"
         }
     }
 
@@ -53,7 +57,8 @@ final class HubChatsWireTests: XCTestCase {
             open.conversation,
             HubConversation(
                 id: 12, title: "Why the build broke", modelID: 3, systemPrompt: "You are a helpful assistant.",
-                createdAt: "2026-09-30 09:12:30", updatedAt: "2026-09-30 09:14:21"))
+                settings: HubChatSettings(thinking: .off), createdAt: "2026-09-30 09:12:30",
+                updatedAt: "2026-09-30 09:14:21"))
         let fromDevice = HubMessageMetadata(device: "phone-7c2e")
         XCTAssertEqual(
             open.messages,
@@ -126,6 +131,62 @@ final class HubChatsWireTests: XCTestCase {
         let want = try recordedObject("turn")
         XCTAssertEqual(sent?.keys.sorted(), ["content", "conversation_id"])
         XCTAssertEqual(sent.map { $0 as NSDictionary }, want as NSDictionary)
+    }
+
+    /// A turn that changes the Thinking choice reads as recorded and is sent
+    /// as exactly the recorded body: the two keys and the word. Turning it
+    /// back on says `default`, and a turn that says nothing has no such key.
+    func testATurnThatChangesThinkingIsTheRecordedBody() throws {
+        let turn = HubTurn(conversationID: 12, content: "Answer in one line.", thinking: .off)
+        XCTAssertEqual(try recorded().thinkingTurn, turn)
+        func sent(_ turn: HubTurn) throws -> [String: Any] {
+            try XCTUnwrap(JSONSerialization.jsonObject(with: try JSONEncoder().encode(turn)) as? [String: Any])
+        }
+        XCTAssertEqual(try sent(turn).keys.sorted(), ["content", "conversation_id", "thinking"])
+        XCTAssertEqual(try sent(turn) as NSDictionary, try recordedObject("thinking_turn") as NSDictionary)
+        let back = HubTurn(conversationID: 12, content: "Answer in one line.", thinking: .default)
+        XCTAssertEqual(try sent(back)["thinking"] as? String, "default")
+        XCTAssertNotEqual(turn, back)
+        let withImage = HubTurn(conversationID: 12, content: "", images: [Self.imageID], thinking: .off)
+        XCTAssertEqual(try sent(withImage).keys.sorted(), ["content", "conversation_id", "images", "thinking"])
+        XCTAssertNil(try recorded().turn.thinking)
+        XCTAssertNil(try recorded().imageTurn.thinking)
+        XCTAssertEqual(try JSONDecoder().decode(HubTurn.self, from: try JSONEncoder().encode(back)), back)
+    }
+
+    /// An opened chat says what the hub remembers of its Thinking choice,
+    /// `off` or nothing, and the model its last run used. The settings' other
+    /// keys are passed over, either of the two that does not read costs only
+    /// itself, and settings that are not an object cost the chat its
+    /// settings and not its rows.
+    func testAnOpenedChatReadsTheThinkingItRemembersAndItsModel() throws {
+        XCTAssertEqual(try recorded().open.conversation.settings, HubChatSettings(thinking: .off))
+        func open(_ settings: String?) throws -> HubChatOpen {
+            let key = settings.map { #""settings": \#($0), "# } ?? ""
+            let json =
+                #"{"conversation": {"id": 1, "title": "t", \#(key)"created_at": "a", "updated_at": "b"}, "#
+                + #""messages": [{"id": 2, "conversation_id": 1, "role": "user", "content": "q", "created_at": "c"}]}"#
+            return try JSONDecoder().decode(HubChatOpen.self, from: Data(json.utf8))
+        }
+        let cases: [(String?, HubChatSettings?)] = [
+            (nil, nil), ("null", nil), ("3", nil), (#""off""#, nil), ("[]", nil),
+            ("{}", HubChatSettings()),
+            (#"{"max_iterations": 8}"#, HubChatSettings()),
+            (
+                #"{"model_name": "Qwen3.8-27B", "temperature": 0.7, "thinking": "off", "tools": ["a"]}"#,
+                HubChatSettings(thinking: .off, modelName: "Qwen3.8-27B")
+            ),
+            (#"{"thinking": "default"}"#, HubChatSettings(thinking: .default)),
+            (#"{"thinking": "loud", "model_name": "m"}"#, HubChatSettings(modelName: "m")),
+            (#"{"thinking": "off", "model_name": 7}"#, HubChatSettings(thinking: .off)),
+            (#"{"thinking": 0, "model_name": null}"#, HubChatSettings()),
+            (#"{"reasoning_budget_tokens": 0, "modelName": "m"}"#, HubChatSettings()),
+        ]
+        for (settings, want) in cases {
+            let chat = try open(settings)
+            XCTAssertEqual(chat.conversation.settings, want, settings ?? "no settings")
+            XCTAssertEqual(chat.messages.map(\.content), ["q"], settings ?? "no settings")
+        }
     }
 
     /// A turn with images reads as recorded and is sent as exactly the

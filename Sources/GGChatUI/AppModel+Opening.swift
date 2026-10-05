@@ -26,7 +26,8 @@ extension AppModel {
     /// From here on the provider is followed. Each time its pipe comes up,
     /// `setPipeStatus` catches it up again, quietly, so a pipe that was not
     /// answering yet when the conversation opened gets its models the moment
-    /// it is.
+    /// it is, and one that comes back lists them again. Opening one of a
+    /// Mac's chats follows its provider too (`openHubChat`).
     @discardableResult
     public func open(_ config: ProviderConfig) -> Task<Void, Never> {
         followed.insert(config.id)
@@ -43,8 +44,8 @@ extension AppModel {
         return task
     }
 
-    /// Lists the provider's models if it has none, and asks about its status
-    /// pane, for a provider that can answer now.
+    /// Lists the provider's models if it has none, or again when `relisting`,
+    /// and asks about its status pane, for a provider that can answer now.
     ///
     /// A pipe that is not connected is left alone, and its pulse catches it up
     /// instead. `connect` returns once the local port is bound, before the far
@@ -66,12 +67,17 @@ extension AppModel {
     ///     cost: when a conversation was opened before its pipe was up, the
     ///     list it asked for comes from the pulse, and if that fails the model
     ///     picker stays empty with no alert.
-    func catchUp(_ providerID: UUID, quietly: Bool = false) async {
+    ///   - relisting: whether to list models the provider already has. A
+    ///     pipe coming up does: a model may have been added, removed or
+    ///     changed on its machine while it was away, and what the list says
+    ///     of each decides the Thinking switch and whether images are sent.
+    ///     A list that fails keeps the one before.
+    func catchUp(_ providerID: UUID, quietly: Bool = false, relisting: Bool = false) async {
         guard let config = providers.first(where: { $0.id == providerID }) else { return }
         if config.isPipe, pipeSessions[config.id] == nil || pipeStatuses[config.id]?.isConnected != true {
             return
         }
-        if models(for: config.id).isEmpty {
+        if relisting || models(for: config.id).isEmpty {
             await refreshModels(for: config, quietly: quietly)
         }
         await probeProxyStatus(for: config)

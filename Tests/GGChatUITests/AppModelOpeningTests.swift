@@ -111,7 +111,9 @@ final class AppModelOpeningTests: XCTestCase {
     /// A list that failed while the pipe was up is asked for again the next
     /// time the pipe comes up, and nothing on screen has to be opened again.
     /// A pipe coming up is nothing the person asked for, so its failure raises
-    /// no alert. A list it already has is not asked for again.
+    /// no alert. A list it already has is asked for again too, since its
+    /// machine's models may have changed meanwhile, and one that fails then
+    /// keeps the list it had.
     @MainActor
     func testAFollowedPipeThatComesBackAsksAgainForAListThatFailed() async throws {
         let host = "comes-back.models.test"
@@ -137,9 +139,11 @@ final class AppModelOpeningTests: XCTestCase {
             listed(model, config), ModelsServer.listed, "the pipe came back and the list was not asked again")
         XCTAssertEqual(ModelsServer.modelRequests(at: host), 2)
 
+        ModelsServer.answer(.refusing, at: host)
         try await dropAndReconnect(config, of: model)
         await waitUntil { model.proxyStatusAvailable(for: config.id) }
-        XCTAssertEqual(ModelsServer.modelRequests(at: host), 2, "a list the pipe already had was asked for again")
+        XCTAssertEqual(ModelsServer.modelRequests(at: host), 3, "the pipe came back and its list was not asked again")
+        XCTAssertEqual(listed(model, config), ModelsServer.listed, "a list that failed took the one before with it")
         XCTAssertNil(model.lastError)
     }
 
@@ -156,6 +160,7 @@ final class AppModelOpeningTests: XCTestCase {
 
     /// A server added by address has no pipe to wait for: opening its
     /// conversation lists its models and asks about its pane at once.
+    /// Opened again with that list in hand, it is not asked for another.
     @MainActor
     func testAServerAddedByAddressListsItsModelsAndIsAskedAboutItsPane() async throws {
         let host = "address.models.test"
@@ -168,6 +173,9 @@ final class AppModelOpeningTests: XCTestCase {
         XCTAssertEqual(ModelsServer.statusRequests(at: host), 1)
         XCTAssertTrue(model.proxyStatusAvailable(for: config.id))
         XCTAssertNil(model.lastError)
+
+        await model.open(config).value
+        XCTAssertEqual(ModelsServer.modelRequests(at: host), 1, "a list the server already gave was asked for again")
     }
 
     /// An opening that has finished is done with: opening the conversation

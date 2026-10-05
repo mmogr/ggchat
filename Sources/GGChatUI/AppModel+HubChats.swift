@@ -45,6 +45,9 @@ public struct OpenHubChat: Equatable, Sendable {
     /// How much of its model's context the chat used, as the rows last read
     /// say it. In memory with them, and gone with the chat (ADR 0007).
     var context: ContextReading?
+    /// Its Thinking choice, as the Mac remembers it and as set here, and the
+    /// model it runs on. In memory with the rows, and gone with the chat.
+    var thinking = HubChatThinking()
     /// Why the last send went nowhere, or how the last reply ended badly.
     public internal(set) var notice: String?
     /// The text and images of a send that went nowhere, for the composer to
@@ -152,6 +155,11 @@ extension AppModel {
         openedHubChat = OpenHubChat(providerID: providerID, chatID: chatID, title: title, state: .reading)
         readHubChat()
         readOnHubReply()
+        // Its Mac's models say whether its model thinks and reads images, so
+        // they are listed if they never were, and again each time its pipe
+        // comes up (`AppModel+Opening`).
+        followed.insert(providerID)
+        Task { await catchUp(providerID, quietly: true) }
     }
 
     /// A dial ended: the open chat that waited for it, and was not read
@@ -199,6 +207,7 @@ extension AppModel {
         case .success(let chat):
             openedHubChat?.state = .read(Self.rows(of: chat, at: now()))
             openedHubChat?.context = ContextReading.last(in: chat.messages)
+            openedHubChat?.thinking.read(chat)
             dropEndedHubReplies(open.chatID, on: open.providerID)
         case .failure(.notShared):
             openedHubChat?.state = .unavailable("\(config.name) does not share its chats with this phone.")

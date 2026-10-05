@@ -57,6 +57,12 @@ opened. Coming back to the foreground dials each of them again once, as
 > and with the provider. Still no message text from the Mac is written to the
 > phone.
 
+> **Amended 2026-10-05 — a Mac's chat has a Thinking switch, and the Mac
+> remembers it.** The turn that changes the choice also says `thinking`, and
+> the choice is held in memory with the open chat, never written to this
+> phone (ADR 0009). Opening a Mac's chat lists that Mac's models when this
+> phone has none.
+
 ## What would undo it
 
 - The owner asking to read a Mac's chats while it is asleep: then the rows

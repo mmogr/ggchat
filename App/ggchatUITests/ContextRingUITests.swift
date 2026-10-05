@@ -4,7 +4,8 @@ import XCTest
 /// beside its counts as gglib does: no ring before the first reply, a ring
 /// at the trailing end of the model's row once one finishes, which stays
 /// where it is while the model list is open, and a sheet that says the
-/// counts and closes with Done.
+/// counts and closes with Done. The same mock lists a model that thinks and
+/// is not gglib, so the walk also finds no Thinking switch.
 ///
 /// The sheet's one button is titled "Done", which no sweep reaches for, so
 /// the waits in here may sweep.
@@ -54,6 +55,13 @@ final class ContextRingUITests: XCTestCase {
         XCTAssertEqual(opened.maxX, closed.maxX, accuracy: 1, "opening the model list moved the ring's far edge")
         pill.tap()
         XCTAssertTrue(listed.waitForNonExistence(timeout: 10), "the model list did not close")
+
+        // The mock's list, read by now, names mock-27b as one that thinks,
+        // but a mock added by address is not gglib: no Thinking switch.
+        let thinking = NSPredicate(format: "label == 'Thinking' AND (value == 'On' OR value == 'Off')")
+        XCTAssertFalse(
+            app.descendants(matching: .any).matching(thinking).firstMatch.exists,
+            "a server that is not gglib has a Thinking switch")
 
         let counts = app.staticTexts.matching(
             NSPredicate(format: "label CONTAINS ' tokens (' AND label ENDSWITH 'after the last finished reply.'")

@@ -60,6 +60,32 @@ final class MockProviderTests: XCTestCase {
         XCTAssertNil(failed)
     }
 
+    /// The mock's first model thinks, as gglib would list it, and a request
+    /// with a thinking budget of zero skips the script's reasoning and
+    /// streams the same text, so a preview and a UI walk show the switch
+    /// working. Any other budget, and none, thinks.
+    func testABudgetOfZeroSkipsTheMocksReasoning() async {
+        XCTAssertEqual(MockProvider.sampleModels.filter(\.thinks).map(\.id), ["mock-27b"])
+        let provider = MockProvider(scripts: [.init(reasoning: "think first", text: "then answer")])
+        func stream(budget: Int?) async -> [ChatEvent] {
+            let request = ChatRequest(
+                model: "mock-27b", messages: [Message(role: .user, content: "hi", createdAt: .distantPast)],
+                reasoningBudgetTokens: budget)
+            var events: [ChatEvent] = []
+            for await event in provider.stream(request) { events.append(event) }
+            return events
+        }
+        let finish = ChatEvent.finished(
+            reason: "stop", usage: Usage(promptTokens: 1, completionTokens: 2, contextSize: 4_096))
+        let answer: [ChatEvent] = [.delta("then "), .delta("answer"), finish]
+        let off = await stream(budget: ChatRequest.noThinking)
+        XCTAssertEqual(off, answer)
+        for budget in [nil, -1, 1, 4_096] {
+            let thought = await stream(budget: budget)
+            XCTAssertEqual(thought, [.reasoning("think "), .reasoning("first")] + answer, "\(budget ?? -2)")
+        }
+    }
+
     func testFailAfterTokensEndsWithATransportError() async {
         let events = await collect(MockProvider(scripts: [.init(text: "a b c d e")], failAfterTokens: 3))
         let deltas = events.filter { if case .delta = $0 { true } else { false } }

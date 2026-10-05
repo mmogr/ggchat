@@ -429,7 +429,8 @@ Each claim names the test that keeps it true.
   its models when it comes up, and one whose last try failed asks again the
   next time it comes up. A list asked for as a pipe comes up raises no alert
   when it fails, the first after an opening included, and a list the pipe
-  already has is not asked for again. A second opening while the first runs
+  already has is asked for again each time it comes back, one that fails then
+  keeping the list it had. A second opening while the first runs
   asks nothing more, opening again once it has finished asks again for what
   it still lacks, and a list asked for by a task that was called off raises
   no alert.
@@ -651,7 +652,7 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatsOutcomeTests.testAChatOnScreenKeepsItsRowsWhileItIsReadAgain -->
 - A paired Mac's chat is carried on from this phone. A send puts the new text
   as `{conversation_id, content}` and nothing else, with the ids of its images
-  when it has some (below), and the Mac runs the reply as an agent run and saves both rows; its text, reasoning and a line for
+  when it has some and its Thinking choice when that changes (both below), and the Mac runs the reply as an agent run and saves both rows; its text, reasoning and a line for
   each tool it calls are read from the run into memory, and once the run ends
   the rows the Mac saved are read in its place. Nothing of it is written to the
   store (ADR 0007). Stop cancels the run, and nothing reads on beside it until
@@ -806,6 +807,45 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatContextTests.testALiveCallReplacesItAndOneWithNoSizeHidesIt -->
   <!-- test: HubChatContextTests.testAChatTheMacStopsSendingDrawsNoRing -->
   <!-- test: HubChatContextTests.testNoReadingIsWrittenToThePhone -->
+- A conversation whose model gglib lists as one that thinks has a Thinking
+  switch in its top bar, kept with the conversation: off sends
+  `reasoning_budget_tokens: 0` with every request from the next one on, to
+  gglib alone, and on sends the request it always sent (ADR 0009).
+  <!-- test: ThinkingWireTests.testAModelThatThinksSaysSoInItsCapabilities -->
+  <!-- test: ThinkingWireTests.testOffIsABudgetOfZeroAndOtherwiseTheBodyIsByteForByteWhatItWas -->
+  <!-- test: MockProviderTests.testABudgetOfZeroSkipsTheMocksReasoning -->
+  <!-- test: AppModelThinkingTests.testOffIsSentOnSendContinueRetryAndARunsPut -->
+  <!-- test: AppModelThinkingTests.testOnSendsNoKeyAndAServerThatIsNotGglibNeverSeesIt -->
+  <!-- test: AppModelThinkingTests.testAModelTheListNamesAsNotThinkingIsNotSentTheBudget -->
+  <!-- test: AppModelThinkingTests.testTheChoiceSurvivesARelaunch -->
+  <!-- test: AppModelThinkingTests.testPickingAModelThatDoesNotThinkClearsTheChoice -->
+  <!-- test: AppModelThinkingTests.testTheSwitchIsOfferedOnlyForAGglibModelListedAsThinking -->
+  <!-- test: AppModelThinkingTests.testTheSwitchShowsOnUnlessOffAndAPressSetsWhatItShows -->
+  <!-- test: AppModelThinkingTests.testTheSwitchSaysItsStateWithASymbolAndAWord -->
+  <!-- test: ThinkingStoreTests.testTheChoiceIsKeptAndAnUnchangedOneMarksNoRow -->
+  <!-- test: ThinkingStoreTests.testAStoreOpensAcrossTheChoiceInBothDirections -->
+  <!-- test: ThinkingSwitchUITests.testTurningThinkingOffDropsTheReasoningRow -->
+- A Mac's chat has the same switch and the Mac remembers it: the chat opens
+  showing what the Mac remembers, the one turn that changes it says `off` or
+  `default`, and this phone stores nothing of it, looking the chat's model up
+  in that Mac's model list, which it reads when a chat is opened while it
+  holds no list for that Mac, and again when the pipe comes up.
+  <!-- test: HubChatsWireTests.testAnOpenedChatReadsTheThinkingItRemembersAndItsModel -->
+  <!-- test: HubChatsWireTests.testATurnThatChangesThinkingIsTheRecordedBody -->
+  <!-- test: HubTurnProviderTests.testATurnThatSaysTheThinkingChoiceIsPutWithIt -->
+  <!-- test: HubChatThinkingTests.testAnOpenedChatShowsWhatTheMacRemembers -->
+  <!-- test: HubChatThinkingTests.testAChangeGoesWithTheNextTurnOnceAndBackOnSaysDefault -->
+  <!-- test: HubChatThinkingTests.testATurnTheMacTookIsWhatItRemembersAndASwitchSetMeanwhileIsSaidNext -->
+  <!-- test: HubChatThinkingTests.testAChoiceChangedAtTheMacAfterThisPhoneSetItIsShown -->
+  <!-- test: HubChatThinkingTests.testAMacChatsSwitchShowsOnUnlessOffAndAPressSetsWhatItShows -->
+  <!-- test: HubChatThinkingTests.testATurnPutAgainCarriesTheSameChoice -->
+  <!-- test: HubChatThinkingTests.testARefusedTurnKeepsTheChoice -->
+  <!-- test: HubChatThinkingTests.testTheChoiceIsNeverStoredAndGoesWithTheChat -->
+  <!-- test: HubChatModelListTests.testTheSwitchIsHiddenWhenTheModelIsNotInTheMacsList -->
+  <!-- test: HubChatModelListTests.testAReplyThatNamesNoModelDoesNotHideTheOneBeforeIt -->
+  <!-- test: HubChatModelListTests.testOpeningAChatListsTheMacsModels -->
+  <!-- test: HubChatModelListTests.testAListThatFailsOnOpeningAChatRaisesNoAlert -->
+  <!-- test: HubChatModelListTests.testAPipeComingUpListsAgainAndAFailedListKeepsTheOld -->
 - A request refused before anything arrived has no reply to sit under, so
   the sentence that says why, the line about where to look and a Retry
   button go under the question instead. That covers a key the serving
@@ -1210,6 +1250,10 @@ against the mock.
 - [ADR 0008](docs/adr/0008-the-ring-shows-gglibs-reading-never-an-estimate.md):
   the context ring draws the reading gglib reported, and is hidden rather
   than estimated when gglib reported no context size.
+- [ADR 0009](docs/adr/0009-thinking-is-a-conversation-setting.md): thinking
+  is a setting of the conversation, offered only where gglib lists the model
+  as one that thinks; a Mac's chat keeps its own, and this phone stores
+  nothing of it.
 
 ## Releases
 

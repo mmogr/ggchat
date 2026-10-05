@@ -7,7 +7,8 @@ public struct ModelInfo: Codable, Sendable, Equatable, Hashable, Identifiable {
     public var description: String?
     public var contextWindow: Int?
     /// What gglib says the model can do beyond chat, absent for a plain chat
-    /// model: `vision` for one that reads images (``readsImages``).
+    /// model: `vision` for one that reads images (``readsImages``) and
+    /// `reasoning` for one that thinks (``thinks``).
     public var capabilities: [String]?
 
     public init(

@@ -4,12 +4,15 @@ import GGChatCore
 extension AppModel {
     /// The request that sends `messages` to `model` through `config`. A send,
     /// Continue and Retry build it here, and so does a run's `PUT` sent
-    /// again, so every one carries the same images and the same flags.
+    /// again, so every one carries the same images and the same flags, and
+    /// the conversation's Thinking choice (`thinkingBudget`).
     func chatRequest(
-        model: String, messages: [Message], for config: ProviderConfig
+        model: String, messages: [Message], thinkingOff: Bool, for config: ProviderConfig
     ) throws(ImageUnavailable) -> ChatRequest {
-        try ChatRequest(
+        var request = try ChatRequest(
             model: model, messages: messages, returnProgress: asksForProgress(config), imagesFrom: store)
+        request.reasoningBudgetTokens = thinkingBudget(off: thinkingOff, model: model, for: config)
+        return request
     }
 }
 

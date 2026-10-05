@@ -61,6 +61,7 @@ extension AppModel {
             return refuse(reply, Self.unsupportedLine(config), config)
         }
         reply.started = true
+        hubTookTurn(reply)
         keepHubRuns(reply.providerID)
         guard !Task.isCancelled else { return await putDown(reply, on: hub, config) }
         switch start {

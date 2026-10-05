@@ -115,7 +115,8 @@ extension AppModel {
         else { return nil }
         var sent = conversation
         sent.messages = Array(conversation.messages[..<index]) + (message.content.isEmpty ? [] : [message])
-        return try chatRequest(model: modelID, messages: sent.requestMessages, for: config)
+        return try chatRequest(
+            model: modelID, messages: sent.requestMessages, thinkingOff: conversation.thinkingOff, for: config)
     }
 
     /// The provider as a run hub, when it can be reached without dialling.
