@@ -110,6 +110,7 @@ extension AppModel {
         if !waits, ready == nil { return nil }
         streamErrors[conversation.id] = nil
         let live = LiveReply(conversationID: conversation.id, continuingMessageID: continuing)
+        live.model = modelID
         live.waitingFor = waits ? config.id : nil
         liveReply = live
         let task = Task { [weak self] in
@@ -131,21 +132,30 @@ extension AppModel {
     func streamChat(_ request: ChatRequest, on provider: any Provider, live: LiveReply) async {
         var finished = false
         for await event in provider.stream(request) {
-            if case .finished = event { finished = true } else { apply(event, to: live) }
+            if case .finished = event { finished = true }
+            apply(event, to: live)
         }
         let cancelled = Task.isCancelled
         finish(live, finished: finished && !cancelled, cancelled: cancelled)
     }
 
     /// Adds one event to the reply in flight. The end of a reply is not one of
-    /// them: the chat route and a run each say it in their own way.
+    /// them: the chat route and a run each say it in their own way. What a
+    /// finished call counted is kept, the last one over any before it: the
+    /// chat route says it as it finishes, and a run in a frame of its own.
     func apply(_ event: ChatEvent, to live: LiveReply) {
         switch event {
         case .delta(let text): live.content += text
         case .reasoning(let text): live.reasoning += text
         case .progress(let progress): live.progress = progress
         case .error(let error): live.error = error
-        case .tool, .finished: break
+        case .usage(let usage, let reason):
+            live.usage = usage
+            live.finishReason = reason
+        case .finished(let reason, let usage):
+            live.usage = usage
+            live.finishReason = reason
+        case .tool: break
         }
     }
 

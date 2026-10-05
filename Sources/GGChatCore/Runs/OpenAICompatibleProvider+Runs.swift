@@ -69,6 +69,7 @@ extension OpenAICompatibleProvider: RunProvider {
         request.url = request.url?.appending(queryItems: [URLQueryItem(name: "after", value: String(after))])
         var cursor = after
         var reply = ReplyState()
+        reply.yieldsUsage = true
         do {
             let items = try await eventStream(
                 request, over: streamingSession, flushingAtEnd: false, requiringEventStream: true)

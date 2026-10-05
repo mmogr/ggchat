@@ -104,15 +104,49 @@ public struct HubConversation: Codable, Sendable, Equatable {
 }
 
 /// What the hub saved beside a row: which device made the turn, and for a
-/// reply the model that wrote it. Its other keys are passed over.
+/// reply the model that wrote it and what its last model call counted. Its
+/// other keys are passed over.
 public struct HubMessageMetadata: Codable, Sendable, Equatable {
     /// The paired device that made the turn; nil for the hub's own.
     public let device: String?
     public let modelName: String?
+    /// The counts a ``ContextReading`` is made of, each nil when the hub did
+    /// not save it: unknown, not zero.
+    public let promptTokens: Int?
+    public let completionTokens: Int?
+    public let contextSize: Int?
+    public let trimmedMessages: Int?
+    /// Why that call ended, as the model's stream said it.
+    public let finishReason: String?
+    /// The hub's mark on a reply that did not finish.
+    public let incomplete: Bool?
 
-    public init(device: String? = nil, modelName: String? = nil) {
+    public init(
+        device: String? = nil, modelName: String? = nil, promptTokens: Int? = nil, completionTokens: Int? = nil,
+        contextSize: Int? = nil, trimmedMessages: Int? = nil, finishReason: String? = nil, incomplete: Bool? = nil
+    ) {
         self.device = device
         self.modelName = modelName
+        self.promptTokens = promptTokens
+        self.completionTokens = completionTokens
+        self.contextSize = contextSize
+        self.trimmedMessages = trimmedMessages
+        self.finishReason = finishReason
+        self.incomplete = incomplete
+    }
+
+    /// A count, a reason or a mark that does not read costs only itself, so
+    /// the row keeps who made it.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        device = try container.decodeIfPresent(String.self, forKey: .device)
+        modelName = try container.decodeIfPresent(String.self, forKey: .modelName)
+        promptTokens = try? container.decodeIfPresent(Int.self, forKey: .promptTokens)
+        completionTokens = try? container.decodeIfPresent(Int.self, forKey: .completionTokens)
+        contextSize = try? container.decodeIfPresent(Int.self, forKey: .contextSize)
+        trimmedMessages = try? container.decodeIfPresent(Int.self, forKey: .trimmedMessages)
+        finishReason = try? container.decodeIfPresent(String.self, forKey: .finishReason)
+        incomplete = try? container.decodeIfPresent(Bool.self, forKey: .incomplete)
     }
 }
 

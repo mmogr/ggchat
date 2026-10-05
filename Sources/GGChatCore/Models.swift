@@ -121,6 +121,10 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
     /// another conversation was the one open, and this one has not been
     /// opened since. Kept on this device only.
     public var hasUnreadReply: Bool
+    /// How much of its model's context the conversation used at the last
+    /// finished reply, or nil when the server reported no context size. A
+    /// reply that stops or fails leaves it as it was.
+    public var context: ContextReading?
 
     /// The id the system turn carries in `requestMessages`. Fixed rather than
     /// a fresh `UUID()`, so two requests built from the same conversation are
@@ -136,7 +140,8 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
         systemPrompt: String? = nil,
         createdAt: Date,
         updatedAt: Date,
-        hasUnreadReply: Bool = false
+        hasUnreadReply: Bool = false,
+        context: ContextReading? = nil
     ) {
         self.id = id
         self.title = title
@@ -147,6 +152,7 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.hasUnreadReply = hasUnreadReply
+        self.context = context
     }
 
     /// Whether there is a system prompt to send. Blank counts as none, so a

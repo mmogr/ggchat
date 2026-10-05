@@ -43,7 +43,9 @@ final class HubChatsProviderTests: XCTestCase {
         ChatsHub.serve(.init(body: try recorded("open")), at: "/v1/chats/12", on: host)
         let open = try await ChatsHub.provider(at: host).openChat(id: 12)
         XCTAssertEqual(open.conversation.title, "Why the build broke")
-        XCTAssertEqual(open.messages.map(\.content), ["Why did the build break?", "A dependency moved."])
+        XCTAssertEqual(
+            open.messages.map(\.content),
+            ["Why did the build break?", "A dependency moved.", "And how do I fix it?", "Pin the"])
         let request = try XCTUnwrap(ChatsHub.requests(at: host).first)
         XCTAssertEqual(request.httpMethod, "GET")
         XCTAssertEqual(request.url?.path(), "/v1/chats/12")

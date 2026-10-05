@@ -76,6 +76,7 @@ extension AppModel {
         live.runID = message.runID
         live.cursor = message.runCursor ?? 0
         live.started = message.runCursor != nil
+        live.model = conversation.model ?? provider(for: conversation)?.defaultModel
         guard let config = provider(for: conversation) else {
             // Its provider is gone, and the hub with it.
             giveUp(live, saying: "is no longer a provider here, so the rest of this reply cannot be read.")

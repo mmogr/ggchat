@@ -59,12 +59,16 @@ public final class ConversationRecord {
     /// Whether the conversation has a reply nobody has opened it to see, or
     /// nil, which reads as no. Optional, for `systemPrompt`'s reason.
     public var hasUnreadReply: Bool?
+    /// The conversation's `ContextReading` as JSON, or nil: the counts its
+    /// last finished reply left, never any text. Optional, for
+    /// `systemPrompt`'s reason.
+    public var contextData: Data?
     @Relationship(deleteRule: .cascade, inverse: \MessageRecord.conversation)
     public var messages: [MessageRecord] = []
 
     public init(
         id: UUID, title: String, providerID: UUID?, model: String?, createdAt: Date, updatedAt: Date,
-        systemPrompt: String? = nil, hasUnreadReply: Bool? = nil
+        systemPrompt: String? = nil, hasUnreadReply: Bool? = nil, contextData: Data? = nil
     ) {
         self.uuid = id
         self.title = title
@@ -72,6 +76,7 @@ public final class ConversationRecord {
         self.model = model
         self.systemPrompt = systemPrompt
         self.hasUnreadReply = hasUnreadReply
+        self.contextData = contextData
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }

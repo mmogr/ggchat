@@ -3,10 +3,14 @@ import XCTest
 @testable import GGChatCore
 
 /// Replays the chat bodies gglib records (`contracts/chats/recorded.json`
-/// there, copied here as `gglib-chats-recorded.json` from gglib 58e8ef06)
-/// against the Swift hub chat types, its `turn` and `image_turn` against the
-/// bodies this build sends to carry a chat on, and its `upload` against how
-/// an image sent to the hub is named.
+/// there, copied here byte for byte as `gglib-chats-recorded.json` from gglib
+/// pull request #1273) against the Swift hub chat types, its `turn` and
+/// `image_turn` against the bodies this build sends to carry a chat on, and
+/// its `upload` against how an image sent to the hub is named.
+///
+/// The opened chat ends with a turn sent from a device whose reply did not
+/// finish: its finished reply's row carries the counts, the context's size
+/// and why the call ended, and the unfinished one only gglib's mark.
 final class HubChatsWireTests: XCTestCase {
     private struct Recorded: Decodable {
         let list: HubChatList
@@ -36,7 +40,7 @@ final class HubChatsWireTests: XCTestCase {
     func testTheListReadsEveryChatNewestFirst() throws {
         let want = HubChatList(chats: [
             HubChatSummary(
-                id: 12, title: "Why the build broke", modelID: 3, model: "qwen3-8b", updatedAt: "2026-09-30 09:13:07",
+                id: 12, title: "Why the build broke", modelID: 3, model: "qwen3-8b", updatedAt: "2026-09-30 09:14:21",
                 liveRun: "chat-5b1e"),
             HubChatSummary(id: 9, title: "New Chat", updatedAt: "2026-09-29 18:02:41"),
         ])
@@ -49,19 +53,68 @@ final class HubChatsWireTests: XCTestCase {
             open.conversation,
             HubConversation(
                 id: 12, title: "Why the build broke", modelID: 3, systemPrompt: "You are a helpful assistant.",
-                createdAt: "2026-09-30 09:12:30", updatedAt: "2026-09-30 09:13:07"))
+                createdAt: "2026-09-30 09:12:30", updatedAt: "2026-09-30 09:14:21"))
+        let fromDevice = HubMessageMetadata(device: "phone-7c2e")
         XCTAssertEqual(
             open.messages,
             [
                 HubMessage(
                     id: 40, conversationID: 12, role: "user", content: "Why did the build break?",
-                    createdAt: "2026-09-30 09:12:31", metadata: HubMessageMetadata(device: "phone-7c2e"),
+                    createdAt: "2026-09-30 09:12:31", metadata: fromDevice,
                     images: [ImageRef(id: Self.imageID, mime: "image/png", width: 1280, height: 720)]),
                 HubMessage(
                     id: 41, conversationID: 12, role: "assistant", content: "A dependency moved.",
-                    createdAt: "2026-09-30 09:13:07",
-                    metadata: HubMessageMetadata(device: "phone-7c2e", modelName: "qwen3-8b")),
+                    createdAt: "2026-09-30 09:13:07", metadata: Self.finished),
+                HubMessage(
+                    id: 42, conversationID: 12, role: "user", content: "And how do I fix it?",
+                    createdAt: "2026-09-30 09:14:02", metadata: fromDevice),
+                HubMessage(
+                    id: 43, conversationID: 12, role: "assistant", content: "Pin the",
+                    createdAt: "2026-09-30 09:14:21", metadata: HubMessageMetadata(incomplete: true)),
             ])
+    }
+
+    /// What the recorded chat's finished reply carries beside it.
+    private static let finished = HubMessageMetadata(
+        device: "phone-7c2e", modelName: "qwen3-8b", promptTokens: 812, completionTokens: 96, contextSize: 8_192,
+        finishReason: "stop")
+
+    /// A reply's row says what its last model call counted, how large the
+    /// context was, what was trimmed and why the call ended, in camel case,
+    /// and carries gglib's mark on a reply that did not finish. Each is nil
+    /// when the hub did not save it, and one that does not read costs only
+    /// itself: the row keeps who made it and its other counts.
+    func testARowsMetadataReadsItsCountsSizeAndTrim() throws {
+        let rows = try recorded().open.messages
+        XCTAssertEqual(rows[1].metadata, Self.finished)
+        XCTAssertEqual(rows[0].metadata, HubMessageMetadata(device: "phone-7c2e"))
+        XCTAssertNil(rows[0].metadata?.incomplete)
+        XCTAssertNil(rows[0].metadata?.contextSize)
+        XCTAssertEqual(rows[3].metadata, HubMessageMetadata(incomplete: true))
+
+        func metadata(_ json: String) throws -> HubMessageMetadata {
+            try JSONDecoder().decode(HubMessageMetadata.self, from: Data(json.utf8))
+        }
+        XCTAssertEqual(
+            try metadata(#"{"device":"phone-7c2e","incomplete":true,"modelName":"qwen3-8b"}"#),
+            HubMessageMetadata(device: "phone-7c2e", modelName: "qwen3-8b", incomplete: true))
+        XCTAssertEqual(try metadata(#"{"incomplete":false}"#).incomplete, false)
+        // The row gglib records for a reply that trimmed (`contracts/runs/turn_made.json`).
+        XCTAssertEqual(
+            try metadata(
+                #"{"cachedTokens":2100,"completionTokens":496,"contextSize":8192,"device":"phone-7c2e","#
+                    + #""finishReason":"stop","modelName":"Qwen3.8-27B","modelQuantization":"Q8_0","#
+                    + #""promptTokens":3180,"trimmedMessages":3,"turnDurationMs":41000,"writingDurationMs":38200}"#),
+            HubMessageMetadata(
+                device: "phone-7c2e", modelName: "Qwen3.8-27B", promptTokens: 3_180, completionTokens: 496,
+                contextSize: 8_192, trimmedMessages: 3, finishReason: "stop"))
+        XCTAssertEqual(try metadata(#"{"promptTokens":9,"completionTokens":0}"#).completionTokens, 0)
+        let odd = try metadata(
+            #"{"device":"phone-7c2e","modelName":"m","promptTokens":812,"completionTokens":"96","#
+                + #""contextSize":8192.5,"trimmedMessages":null,"finishReason":7,"incomplete":"yes"}"#)
+        XCTAssertEqual(odd, HubMessageMetadata(device: "phone-7c2e", modelName: "m", promptTokens: 812))
+        // Snake case is the stream's spelling, not a row's.
+        XCTAssertEqual(try metadata(#"{"prompt_tokens":9,"context_size":8192}"#), HubMessageMetadata())
     }
 
     /// The turn reads as recorded, and is sent as exactly the recorded body:
@@ -151,7 +204,7 @@ final class HubChatsWireTests: XCTestCase {
         utc.timeZone = try XCTUnwrap(TimeZone(identifier: "UTC"))
         let parts = utc.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
         XCTAssertEqual(
-            parts, DateComponents(year: 2026, month: 9, day: 30, hour: 9, minute: 13, second: 7))
+            parts, DateComponents(year: 2026, month: 9, day: 30, hour: 9, minute: 14, second: 21))
     }
 
     /// A time in any other shape, or not a time, reads as nothing.

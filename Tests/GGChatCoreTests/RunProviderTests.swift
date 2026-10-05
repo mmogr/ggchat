@@ -111,6 +111,49 @@ final class RunProviderTests: XCTestCase {
         XCTAssertEqual(asked.query(), "after=0")
     }
 
+    /// A run has no `.finished`, so its usage frame is passed on as what the
+    /// call counted, once, in the frame that carried it, with the finish
+    /// reason read in the frame before. A read that starts after that frame
+    /// has the counts and no reason. The chat route says both in `.finished`
+    /// and passes on no `.usage`. The frames are the recorded stream's, with
+    /// gglib's two context keys added to its usage frame by hand, pending
+    /// gglib's own recording.
+    func testARunsUsageFrameIsPassedOnWithItsFinishReason() async throws {
+        var frames = try recordedFrames()
+        let last = UInt32(frames.count)
+        let extended = frames[frames.count - 1].replacingOccurrences(
+            of: #""total_tokens":85}"#, with: #""total_tokens":85,"context_size":8192,"trimmed_messages":2}"#)
+        XCTAssertNotEqual(extended, frames[frames.count - 1], "the recorded usage frame is not where it was")
+        frames[frames.count - 1] = extended
+        let want = Usage(
+            promptTokens: 57, completionTokens: 28, totalTokens: 85, cachedTokens: 42, contextSize: 8_192,
+            trimmedMessages: 2)
+        func counted(_ events: [RunEvent]) -> [RunEvent] {
+            events.filter { event in
+                guard case .frame(_, let chat) = event else { return false }
+                return chat.contains { if case .usage = $0 { true } else { false } }
+            }
+        }
+        let script = RunHub.Script(frames: frames, ending: RunHub.report("run-u", "completed", lastSeq: frames.count))
+        RunHub.serve(script, at: "usage.runs.test")
+        let provider = RunHub.provider(at: "usage.runs.test")
+        let whole = await read(provider, "run-u", after: 0)
+        XCTAssertEqual(counted(whole), [.frame(seq: last, events: [.usage(want, reason: "stop")])])
+        let late = await read(provider, "run-u", after: last - 1)
+        XCTAssertEqual(counted(late), [.frame(seq: last, events: [.usage(want, reason: nil)])])
+
+        let body = Data((frames.map { "data: \($0)\n\n" }.joined() + "data: [DONE]\n\n").utf8)
+        StubURLProtocol.register(
+            host: "usage.chat.test", path: "/v1/chat/completions",
+            .init(status: 200, headers: ["Content-Type": "text/event-stream"], chunks: [body]))
+        let chat = OpenAICompatibleProvider(
+            baseURL: try XCTUnwrap(URL(string: "http://usage.chat.test/v1")), session: StubURLProtocol.makeSession())
+        var streamed: [ChatEvent] = []
+        for await event in chat.stream(request) { streamed.append(event) }
+        XCTAssertEqual(streamed.last, .finished(reason: "stop", usage: want))
+        XCTAssertFalse(streamed.contains { if case .usage = $0 { true } else { false } }, "the chat route sent .usage")
+    }
+
     /// The stream dropped after every byte of it in turn, then read again
     /// from the last frame it yielded, adds up to the same reply as one
     /// unbroken read: no event applied twice, none skipped, and none taken

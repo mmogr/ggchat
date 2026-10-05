@@ -9,6 +9,12 @@ import XCTest
 /// `AgentEvent` per line as gglib serialises it
 /// (`gglib-core/src/domain/agent/events.rs` at gglib a6f36850, the shapes
 /// its `events_tests.rs` pins), framed as `runs/sse.rs` frames them.
+///
+/// The fixture's `turn_usage` line follows gglib pull request #1273, whose
+/// recorded frame is in `contracts/runs/turn_made.json`: every key the line
+/// has is a key of that frame with the same type (`prompt_tokens`,
+/// `completion_tokens`, `duration_ms`, `finish_reason`, `context_size`), and
+/// the line keeps fewer keys than the frame.
 final class HubTurnProviderTests: XCTestCase {
     private let turn = HubTurn(conversationID: 12, content: "And how do I fix it?")
     private let id = "5B1E0C2A-7D11-4F0E-9C3B-2E8A1D6F4B90"
@@ -109,9 +115,9 @@ final class HubTurnProviderTests: XCTestCase {
         }
     }
 
-    /// The run's events are read as an agent's: text, reasoning and a line
-    /// per tool call, every event a frame whether or not it means anything
-    /// here, then the run's report.
+    /// The run's events are read as an agent's: text, reasoning, a line per
+    /// tool call and what a finished model call counted, every event a frame
+    /// whether or not it means anything here, then the run's report.
     func testAnAgentRunsEventsAreItsTextReasoningAndToolLines() async throws {
         let host = "turn-events.test"
         RunHub.serve(try script(put: (201, "")), at: host)
@@ -129,6 +135,7 @@ final class HubTurnProviderTests: XCTestCase {
             [
                 .reasoning("The lock file"), .reasoning(" moved."), .tool("Read File: Cargo.lock"), .tool("List Dir"),
                 .delta("Pin "), .delta("the version."),
+                .usage(Usage(promptTokens: 812, completionTokens: 12, contextSize: 8_192), reason: "stop"),
             ])
         XCTAssertEqual(
             events.last,
@@ -166,6 +173,37 @@ final class HubTurnProviderTests: XCTestCase {
         XCTAssertEqual(OpenAICompatibleProvider.agentEvents(SSEEvent(data: "not json")), [])
         XCTAssertEqual(OpenAICompatibleProvider.agentEvents(SSEEvent(data: #"{"type":"text_delta"}"#)), [])
         XCTAssertEqual(OpenAICompatibleProvider.agentEvents(SSEEvent(data: "")), [])
+    }
+
+    /// `turn_usage` is what one finished model call counted, flat: the
+    /// counts, the context's size and what was trimmed under the names a
+    /// chat stream's `usage` gives them, and why the call ended. Every one is
+    /// optional and absent is unknown, as from a gglib that sends only the
+    /// completion count. Counts that cannot be read pass the event over.
+    func testATurnUsageEventIsThatCallsCounts() {
+        func counted(_ fields: String) -> [ChatEvent] {
+            OpenAICompatibleProvider.agentEvents(SSEEvent(data: #"{"type":"turn_usage","duration_ms":900\#(fields)}"#))
+        }
+        XCTAssertEqual(
+            counted(
+                #","model":"qwen3-8b","prompt_tokens":31000,"cached_tokens":9,"completion_tokens":400,"#
+                    + #""finish_reason":"length","context_size":32768,"trimmed_messages":3"#),
+            [
+                .usage(
+                    Usage(promptTokens: 31_000, completionTokens: 400, contextSize: 32_768, trimmedMessages: 3),
+                    reason: "length")
+            ])
+        XCTAssertEqual(
+            counted(#","completion_tokens":12"#), [.usage(Usage(completionTokens: 12), reason: nil)])
+        XCTAssertEqual(counted(""), [.usage(Usage(), reason: nil)])
+        XCTAssertEqual(
+            counted(#","prompt_tokens":7,"completion_tokens":1,"finish_reason":"tool_calls""#),
+            [.usage(Usage(promptTokens: 7, completionTokens: 1), reason: "tool_calls")])
+        XCTAssertEqual(
+            counted(#","prompt_tokens":7,"completion_tokens":1,"context_size":"big","trimmed_messages":[2]"#),
+            [.usage(Usage(promptTokens: 7, completionTokens: 1), reason: nil)], "a bad size cost the counts")
+        XCTAssertEqual(counted(#","prompt_tokens":"many""#), [])
+        XCTAssertEqual(counted(#","finish_reason":7"#), [])
     }
 
     /// Stop is the run's cancel.

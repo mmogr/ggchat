@@ -25,6 +25,11 @@ public struct MockProvider: Provider {
     /// in place of the finish, and with an empty script it is a refusal
     /// before the first token.
     public var failure: ProviderError?
+    /// The context size a finished reply reports beside its counts, as gglib
+    /// reports one, so a preview and a UI walk have a reading to draw. Small,
+    /// so a few words fill enough of it to see. Nil reports none, as a
+    /// server that is not gglib.
+    public var contextSize: Int?
 
     public init(
         models: [ModelInfo] = MockProvider.sampleModels,
@@ -32,7 +37,8 @@ public struct MockProvider: Provider {
         sleeper: any Sleeper = ImmediateSleeper(),
         tokenDelay: Duration = .milliseconds(30),
         failAfterTokens: Int? = nil,
-        failure: ProviderError? = nil
+        failure: ProviderError? = nil,
+        contextSize: Int? = 4_096
     ) {
         self.modelList = models
         self.scripts = scripts
@@ -40,6 +46,7 @@ public struct MockProvider: Provider {
         self.tokenDelay = tokenDelay
         self.failAfterTokens = failAfterTokens
         self.failure = failure
+        self.contextSize = contextSize
     }
 
     public func models() async throws -> [ModelInfo] {
@@ -72,8 +79,12 @@ public struct MockProvider: Provider {
                     if let failure {
                         continuation.yield(.error(failure))
                     } else {
-                        let words = script.text.split(separator: " ").count
-                        continuation.yield(.finished(reason: "stop", usage: Usage(completionTokens: words)))
+                        // A word stands for a token: what the request held
+                        // was read, and what the script says was written.
+                        let read = request.messages.reduce(0) { $0 + $1.content.split(separator: " ").count }
+                        let written = script.text.split(separator: " ").count
+                        let usage = Usage(promptTokens: read, completionTokens: written, contextSize: contextSize)
+                        continuation.yield(.finished(reason: "stop", usage: usage))
                     }
                 } catch {
                     // Cancelled: end without a terminal event, like the real provider.

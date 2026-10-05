@@ -53,6 +53,12 @@ extension AppModel {
             // the sentence under, it goes on the question.
             putOnTheQuestion(failure, in: &conversation)
         }
+        // The reading is the last finished reply's. One that stopped or failed
+        // leaves it as it was, and one that finished with no size reported
+        // leaves none: an older reply's is not shown in its place.
+        if finished {
+            conversation.context = ContextReading(live.usage, reason: live.finishReason, model: live.model)
+        }
         if !keepsRun { markUnreadUnlessRead(&conversation, stoppedHere: live.stoppedHere) }
         conversation.updatedAt = stamp
         if let providerID = conversation.providerID {

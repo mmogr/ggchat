@@ -47,20 +47,27 @@ struct Composer: View {
         .sensoryFeedback(.success, trigger: model.connectedPulse)
     }
 
-    /// Side by side when they fit, stacked at accessibility sizes.
+    /// Side by side when they fit, stacked at accessibility sizes, with the
+    /// context ring at the trailing end once a reply has left a reading. The
+    /// ring is plain drawing, not glass. The row is aligned on its bottom
+    /// edge, so the ring and the status pill stay where they are while the
+    /// model pill grows upward into its list.
     @ViewBuilder
     private var pills: some View {
         let status = model.pipeStatus(for: conversation)
+        let reading = model.contextReading(for: conversation)
         if typeSize.isAccessibilitySize {
             VStack(alignment: .leading, spacing: 8) {
                 modelPill
                 if let status { statusPill(status) }
+                if let reading { ContextRing(reading: reading) }
             }
         } else {
-            HStack(spacing: 8) {
+            HStack(alignment: .bottom, spacing: 8) {
                 modelPill
                 if let status { statusPill(status) }
                 Spacer(minLength: 0)
+                if let reading { ContextRing(reading: reading) }
             }
         }
     }

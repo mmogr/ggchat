@@ -325,8 +325,23 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # see, a row of images alone, and the Mac's images held in memory once, never
 # stored, and dropped with the chat. They are the whole of that guard, and
 # the README claim names all twenty-two.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 543
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 25
-floor "README test markers" "${markers:-0}" 457
+#
+# 2026-10-05: 543 -> 570, 25 -> 26 and 457 -> 485. Twenty-eight tests pin the
+# context ring: gglib's worked examples replayed through each way a reading
+# arrives, and which saved reply decides; that a reading needs both counts
+# and a size and is never estimated; the percent, its levels, the figure from
+# 70 and the mark from 90, the sheet's sentences, the locale's digits and what
+# VoiceOver hears; gglib's keys on the wire, in a run's usage frame, an agent
+# run's `turn_usage` and a saved row; the mock's counts; a finished reply
+# keeping its reading on both routes, a stopped or failed one leaving it,
+# another model hiding it, a reply read on, a reply cut off; the column,
+# written only when changed and opened across in both directions; a Mac's
+# chat reading its rows, a reply in hand replacing them, no ring over a chat
+# the Mac stops sending, and nothing of it written to the phone; and the ring
+# and its sheet walked on a simulator. They are the whole of that guard, and
+# the two README claims name all twenty-eight.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 570
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 26
+floor "README test markers" "${markers:-0}" 485
 
 exit $status

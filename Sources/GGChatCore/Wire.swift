@@ -34,19 +34,31 @@ struct ModelsResponse: Decodable {
     var data: [ModelInfo]
 }
 
+/// What one model call counted. `contextSize` and `trimmedMessages` are
+/// gglib's own, sent to a request that asked for progress and on an agent
+/// run's `turn_usage`: no other server sends them, and absent means unknown,
+/// never zero. Either that does not read costs only itself.
 public struct Usage: Codable, Sendable, Equatable {
     public var promptTokens: Int?
     public var completionTokens: Int?
     public var totalTokens: Int?
     public var cachedTokens: Int?
+    /// The context the server that answered was started with.
+    public var contextSize: Int?
+    /// How many earlier messages were shortened or left out so this request
+    /// fit.
+    public var trimmedMessages: Int?
 
     public init(
-        promptTokens: Int? = nil, completionTokens: Int? = nil, totalTokens: Int? = nil, cachedTokens: Int? = nil
+        promptTokens: Int? = nil, completionTokens: Int? = nil, totalTokens: Int? = nil, cachedTokens: Int? = nil,
+        contextSize: Int? = nil, trimmedMessages: Int? = nil
     ) {
         self.promptTokens = promptTokens
         self.completionTokens = completionTokens
         self.totalTokens = totalTokens
         self.cachedTokens = cachedTokens
+        self.contextSize = contextSize
+        self.trimmedMessages = trimmedMessages
     }
 
     enum CodingKeys: String, CodingKey {
@@ -54,6 +66,8 @@ public struct Usage: Codable, Sendable, Equatable {
         case completionTokens = "completion_tokens"
         case totalTokens = "total_tokens"
         case promptTokensDetails = "prompt_tokens_details"
+        case contextSize = "context_size"
+        case trimmedMessages = "trimmed_messages"
     }
 
     struct Details: Codable {
@@ -67,6 +81,8 @@ public struct Usage: Codable, Sendable, Equatable {
         completionTokens = try container.decodeIfPresent(Int.self, forKey: .completionTokens)
         totalTokens = try container.decodeIfPresent(Int.self, forKey: .totalTokens)
         cachedTokens = try container.decodeIfPresent(Details.self, forKey: .promptTokensDetails)?.cachedTokens
+        contextSize = try? container.decodeIfPresent(Int.self, forKey: .contextSize)
+        trimmedMessages = try? container.decodeIfPresent(Int.self, forKey: .trimmedMessages)
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -77,6 +93,8 @@ public struct Usage: Codable, Sendable, Equatable {
         if let cachedTokens {
             try container.encode(Details(cachedTokens: cachedTokens), forKey: .promptTokensDetails)
         }
+        try container.encodeIfPresent(contextSize, forKey: .contextSize)
+        try container.encodeIfPresent(trimmedMessages, forKey: .trimmedMessages)
     }
 }
 

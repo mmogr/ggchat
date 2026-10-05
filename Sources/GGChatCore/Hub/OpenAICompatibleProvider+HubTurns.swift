@@ -71,12 +71,20 @@ extension OpenAICompatibleProvider {
     }
 
     /// What one of an agent run's events means for the reply: its text, its
-    /// reasoning, a line for a tool it calls, and an error it reports. The
-    /// rest, and an event this build cannot read, mean nothing here: the
-    /// run's last report says how it ended, and the hub saves the reply.
+    /// reasoning, a line for a tool it calls, what a finished model call
+    /// counted, and an error it reports. The rest, and an event this build
+    /// cannot read, mean nothing here: the run's last report says how it
+    /// ended, and the hub saves the reply.
+    ///
+    /// `turn_usage` carries its counts flat, under the names a chat stream's
+    /// `usage` gives them, so it is read as one.
     static func agentEvents(_ event: SSEEvent) -> [ChatEvent] {
-        guard let agent = try? JSONDecoder().decode(AgentEvent.self, from: Data(event.data.utf8)) else { return [] }
+        let data = Data(event.data.utf8)
+        guard let agent = try? JSONDecoder().decode(AgentEvent.self, from: data) else { return [] }
         switch agent.type {
+        case "turn_usage":
+            guard let usage = try? JSONDecoder().decode(Usage.self, from: data) else { return [] }
+            return [.usage(usage, reason: agent.finishReason)]
         case "text_delta": return agent.content.map { [.delta($0)] } ?? []
         case "reasoning_delta": return agent.content.map { [.reasoning($0)] } ?? []
         case "tool_call_start":
@@ -95,6 +103,7 @@ private struct AgentEvent: Decodable {
     let displayName: String?
     let argsSummary: String?
     let message: String?
+    let finishReason: String?
 
     enum CodingKeys: String, CodingKey {
         case type
@@ -102,5 +111,6 @@ private struct AgentEvent: Decodable {
         case displayName = "display_name"
         case argsSummary = "args_summary"
         case message
+        case finishReason = "finish_reason"
     }
 }
