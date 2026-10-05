@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.0](https://github.com/mmogr/ggchat/compare/v0.7.0...v0.8.0) (2026-10-05)
+
+
+### What the app now does
+
+* **chat:** a conversation can turn a model's thinking off ([#173](https://github.com/mmogr/ggchat/issues/173)) ([6153c24](https://github.com/mmogr/ggchat/commit/6153c2426f06460bbb961a4753b6de90786e4f35))
+* **chat:** a ring shows how much of the model's context a conversation uses ([#171](https://github.com/mmogr/ggchat/issues/171)) ([98d0cd3](https://github.com/mmogr/ggchat/commit/98d0cd38b3780fc6f7faa7a792e8b0025bd036d4))
+
 ## [0.7.0](https://github.com/mmogr/ggchat/compare/v0.6.0...v0.7.0) (2026-10-04)
 
 
