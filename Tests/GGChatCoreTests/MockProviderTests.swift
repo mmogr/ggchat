@@ -24,7 +24,40 @@ final class MockProviderTests: XCTestCase {
         let text = events.compactMap { if case .delta(let text) = $0 { text } else { nil } }.joined()
         XCTAssertEqual(reasoning, "think first")
         XCTAssertEqual(text, "then answer")
-        XCTAssertEqual(events.last, .finished(reason: "stop", usage: Usage(completionTokens: 2)))
+        XCTAssertEqual(
+            events.last,
+            .finished(reason: "stop", usage: Usage(promptTokens: 1, completionTokens: 2, contextSize: 4_096)))
+    }
+
+    /// A finished reply counts a word as a token, read and written, and
+    /// reports a context size beside the counts as gglib does, so a preview
+    /// and a UI walk have a reading to draw. A mock told it has no size
+    /// reports none, as a server that is not gglib, and a reply that fails
+    /// reports nothing.
+    func testTheMockReportsWhatItReadAndItsContext() async {
+        func usage(_ provider: MockProvider) async -> Usage? {
+            let request = ChatRequest(
+                model: "mock-27b",
+                messages: [
+                    Message(role: .system, content: "Be brief.", createdAt: .distantPast),
+                    Message(role: .user, content: "what is a ticket", createdAt: .distantPast),
+                ])
+            var last: ChatEvent?
+            for await event in provider.stream(request) { last = event }
+            guard case .finished("stop", let usage)? = last else { return nil }
+            return usage
+        }
+        let script = MockProvider.Script(text: "a short answer")
+        let counted = await usage(MockProvider(scripts: [script]))
+        XCTAssertEqual(counted, Usage(promptTokens: 6, completionTokens: 3, contextSize: 4_096))
+        XCTAssertEqual(ContextReading(counted, reason: "stop")?.used, 9)
+        let sized = await usage(MockProvider(scripts: [script], contextSize: 100))
+        XCTAssertEqual(sized?.contextSize, 100)
+        let unsized = await usage(MockProvider(scripts: [script], contextSize: nil))
+        XCTAssertEqual(unsized, Usage(promptTokens: 6, completionTokens: 3))
+        XCTAssertNil(ContextReading(unsized, reason: "stop"))
+        let failed = await usage(MockProvider(scripts: [script], failure: .transport("gone")))
+        XCTAssertNil(failed)
     }
 
     func testFailAfterTokensEndsWithATransportError() async {

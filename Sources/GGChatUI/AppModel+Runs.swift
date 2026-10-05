@@ -88,8 +88,11 @@ extension AppModel {
         readOnDetachedRuns()
     }
 
-    /// Ends the reply as the run's last report says it ended.
+    /// Ends the reply as the run's last report says it ended. The report
+    /// names the model the run was sent to, which a reply read on after the
+    /// conversation's model was changed would otherwise get wrong.
     private func endReply(_ live: LiveReply, as info: RunInfo) {
+        live.model = info.model ?? live.model
         switch info.status {
         case .completed:
             live.error = nil

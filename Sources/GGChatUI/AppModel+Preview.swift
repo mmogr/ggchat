@@ -36,6 +36,10 @@ extension AppModel {
                 content: "It starts with `pipe` and is followed by base32 with no padding.",
                 createdAt: seeded.createdAt),
         ]
+        // 72 percent, so the ring is seen with its figure beside it.
+        seeded.context = ContextReading(
+            promptTokens: 23_400, completionTokens: 193, contextSize: 32_768, trimmedMessages: 3,
+            model: seeded.model)
         model.update(seeded)
         return model
     }

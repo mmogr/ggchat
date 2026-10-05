@@ -771,6 +771,41 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelSystemPromptTests.testContinueAndRetryResendTheSystemPrompt -->
   <!-- test: SwiftDataStoreTests.testASystemPromptSurvivesTheRoundTrip -->
   <!-- test: WireTests.testASystemMessageIsSentWithTheSystemRole -->
+- After a reply, a ring at the end of the model's row shows how much of the
+  model's context the conversation uses, and pressing it gives the counts,
+  what was trimmed and whether the reply was cut off; from 70% it shows the
+  figure and from 90% a mark.
+  <!-- test: ContextReadingTests.testThePercentRoundsAHalfUpAndNeverPassesAHundred -->
+  <!-- test: ContextReadingTests.testSeverityTurnsAtSeventyAndNinetyAndEachHasAWord -->
+  <!-- test: ContextReadingTests.testTheFigureShowsFromSeventyAndTheMarkFromNinety -->
+  <!-- test: ContextReadingTests.testTheSheetSaysTheCountsTheTrimAndACutOffReply -->
+  <!-- test: ContextReadingTests.testNumbersUseTheLocalesDigits -->
+  <!-- test: ContextReadingTests.testVoiceOverHearsThePercentAndTheSeverityWord -->
+  <!-- test: AppModelContextTests.testAFinishedReplyKeepsItsReadingOnBothRoutes -->
+  <!-- test: AppModelContextTests.testAStoppedOrFailedReplyLeavesTheReadingAndAFinishedOneWithoutASizeClearsIt -->
+  <!-- test: AppModelContextTests.testAnotherModelHidesTheReadingAndTheSameModelShowsItAgain -->
+  <!-- test: AppModelContextTests.testReadingOnFromARunKeepsItsReading -->
+  <!-- test: AppModelContextTests.testAReplyCutOffSaysSo -->
+  <!-- test: ContextStoreTests.testTheReadingIsKeptAndAnUnchangedOneMarksNoRow -->
+  <!-- test: ContextStoreTests.testAStoreOpensAcrossTheReadingInBothDirections -->
+  <!-- test: ContextRingUITests.testAReplyRaisesTheRingAndItsSheetSaysTheCounts -->
+- The numbers are gglib's and nothing is estimated, so there is no ring when
+  gglib reports no context size, and a Mac chat's reading is held in memory
+  only.
+  <!-- test: ContextContractTests.testEveryWorkedReadingIsDrawnAsTheContractSays -->
+  <!-- test: ContextContractTests.testEveryWorkedSourceNamesTheReplyThatDecides -->
+  <!-- test: ContextReadingTests.testAReadingNeedsBothCountsAndASize -->
+  <!-- test: WireTests.testUsageReadsGglibsTwoKeysAndReadsWithoutThem -->
+  <!-- test: WireTests.testAContextKeyThatDoesNotReadCostsOnlyItself -->
+  <!-- test: RunProviderTests.testARunsUsageFrameIsPassedOnWithItsFinishReason -->
+  <!-- test: MockProviderTests.testTheMockReportsWhatItReadAndItsContext -->
+  <!-- test: ContextReadingTests.testTheNewestFinishedRowDecidesAChatsReading -->
+  <!-- test: HubChatsWireTests.testARowsMetadataReadsItsCountsSizeAndTrim -->
+  <!-- test: HubTurnProviderTests.testATurnUsageEventIsThatCallsCounts -->
+  <!-- test: HubChatContextTests.testAnOpenedChatShowsItsLastRepliesReading -->
+  <!-- test: HubChatContextTests.testALiveCallReplacesItAndOneWithNoSizeHidesIt -->
+  <!-- test: HubChatContextTests.testAChatTheMacStopsSendingDrawsNoRing -->
+  <!-- test: HubChatContextTests.testNoReadingIsWrittenToThePhone -->
 - A request refused before anything arrived has no reply to sit under, so
   the sentence that says why, the line about where to look and a Retry
   button go under the question instead. That covers a key the serving
@@ -1172,6 +1207,9 @@ against the mock.
   paired Mac's chats are read live and never stored; only the titles its list
   last showed, and when, are kept. Amended: a Mac's chat is carried on from
   here and the Mac writes the reply; only the run's id and chat are kept.
+- [ADR 0008](docs/adr/0008-the-ring-shows-gglibs-reading-never-an-estimate.md):
+  the context ring draws the reading gglib reported, and is hidden rather
+  than estimated when gglib reported no context size.
 
 ## Releases
 

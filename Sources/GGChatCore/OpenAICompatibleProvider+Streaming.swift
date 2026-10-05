@@ -98,6 +98,9 @@ extension OpenAICompatibleProvider {
             }
             if let reason = choice.finishReason { reply.finishReason = reason }
         }
+        // A run has no `.finished` to carry the counts, so they are passed on
+        // here, after the choices, with the reason read so far.
+        if reply.yieldsUsage, let usage = chunk.usage { events.append(.usage(usage, reason: reply.finishReason)) }
         // A failure written into the stream ends the reply here. gglib sends
         // `[DONE]` after it, and ending here is what keeps that from counting
         // the reply as finished.
@@ -205,6 +208,9 @@ enum EventOutcome {
 struct ReplyState {
     var finishReason: String?
     var usage: Usage?
+    /// Whether a usage chunk is passed on as `.usage` when it is read. Set
+    /// by a run's reader only: the chat route says it in `ending`.
+    var yieldsUsage = false
     /// Whether any text or reasoning has been passed on.
     var passedTextOrReasoning = false
     /// The decoding error of the first chunk that was skipped.

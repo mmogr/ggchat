@@ -130,7 +130,7 @@ public final class SwiftDataStore: Store {
                         images: Self.images(from: message.imagesData))
                 },
                 systemPrompt: record.systemPrompt, createdAt: record.createdAt, updatedAt: record.updatedAt,
-                hasUnreadReply: record.hasUnreadReply ?? false)
+                hasUnreadReply: record.hasUnreadReply ?? false, context: Self.reading(from: record.contextData))
         }
     }
 
@@ -162,11 +162,15 @@ public final class SwiftDataStore: Store {
             Self.assign(\.systemPrompt, of: record, to: conversation.systemPrompt)
             Self.assign(\.hasUnreadReply, of: record, to: conversation.hasUnreadReply)
             Self.assign(\.updatedAt, of: record, to: conversation.updatedAt)
+            if Self.reading(from: record.contextData) != conversation.context {
+                record.contextData = try conversation.context.map { try JSONEncoder().encode($0) }
+            }
         } else {
             record = ConversationRecord(
                 id: conversation.id, title: conversation.title, providerID: conversation.providerID,
                 model: conversation.model, createdAt: conversation.createdAt, updatedAt: conversation.updatedAt,
-                systemPrompt: conversation.systemPrompt, hasUnreadReply: conversation.hasUnreadReply)
+                systemPrompt: conversation.systemPrompt, hasUnreadReply: conversation.hasUnreadReply,
+                contextData: try conversation.context.map { try JSONEncoder().encode($0) })
             context.insert(record)
         }
         var existing = Dictionary(record.messages.map { ($0.uuid, $0) }, uniquingKeysWith: { first, _ in first })
@@ -228,6 +232,13 @@ public final class SwiftDataStore: Store {
     private static func failure(_ failure: Failure?, differsFrom data: Data?) -> Bool {
         guard let failure else { return data != nil }
         return Self.failure(from: data) != failure
+    }
+
+    /// A reading this build cannot read reads as none, as a failure does. It
+    /// is compared with the conversation's as a value, so the row is written
+    /// only when the reading has changed.
+    private static func reading(from data: Data?) -> ContextReading? {
+        data.flatMap { try? JSONDecoder().decode(ContextReading.self, from: $0) }
     }
 
     /// Sets a row's field only when the value is not already there.

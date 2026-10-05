@@ -50,8 +50,9 @@ struct HubLiveReplyRows: View {
 }
 
 /// Where a Mac's chat is carried on: a message field with the images its
-/// draft carries, whose button is Stop while the Mac writes the reply, and
-/// the sentence the last send left. An image is picked, pasted or dropped
+/// draft carries, whose button is Stop while the Mac writes the reply, the
+/// sentence the last send left, and above them the context ring once the
+/// chat has a reading. An image is picked, pasted or dropped
 /// as in the local composer, through the one downscale, and a draft may be
 /// images alone. Stock controls: the app's glass is the local composer's
 /// alone.
@@ -71,6 +72,13 @@ struct HubComposer: View {
         let writing = model.openHubChatIsWriting
         let canSee = model.openedHubChat.map(model.canSeeHubChat) ?? true
         VStack(alignment: .leading, spacing: 8) {
+            // The same ring, at the same end, as the local composer's row.
+            if let reading = model.hubContextReading {
+                HStack {
+                    Spacer(minLength: 0)
+                    ContextRing(reading: reading)
+                }
+            }
             if let notice {
                 Text(notice)
                     .font(.footnote)

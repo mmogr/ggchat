@@ -17,6 +17,8 @@ final class FakeRunHub: RunProvider {
         var frames: [[ChatEvent]]
         var ending = RunStatus.completed
         var error: RunError?
+        /// The model the run's last report says it was sent to.
+        var reportsModel: String?
         /// A read passes on frames up to this seq, then holds the stream
         /// open, as a run still being written does; nil ends it.
         var holdAt: UInt32?
@@ -103,7 +105,8 @@ final class FakeRunHub: RunProvider {
             // A cancelled run ends, as the hub ends one it has cancelled.
             if state.holdAt != nil, !state.cancels.contains(id) { return (events, true) }
             let status = state.cancels.contains(id) ? .cancelled : state.ending
-            return (events + [.ended(info(id, status, lastSeq: limit, error: state.error))], false)
+            let end = info(id, status, lastSeq: limit, error: state.error, model: state.reportsModel)
+            return (events + [.ended(end)], false)
         }
         return AsyncStream { continuation in
             for event in events { continuation.yield(event) }
@@ -118,18 +121,18 @@ final class FakeRunHub: RunProvider {
     /// Ends every held read with the rest of its frames and the run's end,
     /// and holds no more.
     func release() {
-        let (held, frames, status, from) = with { state in
+        let (held, frames, status, from, model) = with { state in
             defer {
                 state.held = []
                 state.holdAt = nil
             }
-            return (state.held, state.frames, state.ending, state.holdAt ?? 0)
+            return (state.held, state.frames, state.ending, state.holdAt ?? 0, state.reportsModel)
         }
         for (id, continuation) in held {
             for (index, frame) in frames.enumerated() where UInt32(index + 1) > from {
                 continuation.yield(.frame(seq: UInt32(index + 1), events: frame))
             }
-            continuation.yield(.ended(info(id, status, lastSeq: UInt32(frames.count))))
+            continuation.yield(.ended(info(id, status, lastSeq: UInt32(frames.count), model: model)))
             continuation.finish()
         }
     }
@@ -143,7 +146,11 @@ final class FakeRunHub: RunProvider {
         return info(id, .cancelled, lastSeq: 0)
     }
 
-    private func info(_ id: String, _ status: RunStatus, lastSeq: UInt32, error: RunError? = nil) -> RunInfo {
-        RunInfo(id: id, kind: .chat, status: status, createdAtMs: 1_790_000_000_000, lastSeq: lastSeq, error: error)
+    private func info(
+        _ id: String, _ status: RunStatus, lastSeq: UInt32, error: RunError? = nil, model: String? = nil
+    ) -> RunInfo {
+        RunInfo(
+            id: id, kind: .chat, status: status, model: model, createdAtMs: 1_790_000_000_000, lastSeq: lastSeq,
+            error: error)
     }
 }

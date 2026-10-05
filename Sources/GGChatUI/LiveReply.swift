@@ -16,6 +16,12 @@ public final class LiveReply {
     /// only: `finish` never reads it, so it is never stored.
     public var progress: PromptProgress?
     public var error: ProviderError?
+    /// What the last finished model call counted and why it ended, and the
+    /// model the reply was asked of. `finish` makes the conversation's
+    /// reading of them, and only for a reply that finished.
+    var usage: Usage?
+    var finishReason: String?
+    var model: String?
     /// The pipe provider this reply is waiting for, until it connects; nil
     /// while it streams. See `AppModel+Waiting`.
     public internal(set) var waitingFor: UUID?

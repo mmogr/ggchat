@@ -7,5 +7,5 @@
 {"type":"tool_call_start","tool_call":{"id":"c2","name":"builtin_list_dir","arguments":{}},"display_name":"List Dir","args_summary":null}
 {"type":"text_delta","content":"Pin "}
 {"type":"text_delta","content":"the version."}
-{"type":"turn_usage","completion_tokens":12,"duration_ms":900}
+{"type":"turn_usage","prompt_tokens":812,"completion_tokens":12,"duration_ms":900,"finish_reason":"stop","context_size":8192}
 {"type":"final_answer","content":"Pin the version."}

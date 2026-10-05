@@ -17,6 +17,7 @@
 		C3CA847E3248F9EEBB33E2FC /* UITestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A72388942EA2BF180AE457CF /* UITestSupport.swift */; };
 		C6B588CC1AD15333CC66DF6A /* GGChatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3827CC1C411258C3A02FB0E8 /* GGChatUI */; };
 		EAC5B2A85F5E64C39AE8383E /* RefusalUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C57F8EBA75E46EA0DCD65189 /* RefusalUITests.swift */; };
+		ECF98E598E431213FBA52015 /* ContextRingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89A5B151C23B46CE0B51A157 /* ContextRingUITests.swift */; };
 		FAF20668F07257B8B61A72B7 /* LiveServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3513C1C38B6CD42BBB5ADA4 /* LiveServer.swift */; };
 /* End PBXBuildFile section */
 
@@ -37,6 +38,7 @@
 		3B587441DB44EB8387612415 /* ScreenGalleryUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenGalleryUITests.swift; sourceTree = "<group>"; };
 		56D176E1F0D09146E5E6384D /* ggchatApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ggchatApp.swift; sourceTree = "<group>"; };
 		8887D474A25D1148508A1A8A /* RemainingScreensUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemainingScreensUITests.swift; sourceTree = "<group>"; };
+		89A5B151C23B46CE0B51A157 /* ContextRingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextRingUITests.swift; sourceTree = "<group>"; };
 		A0ABE63F6756B69704008146 /* ggchat.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ggchat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A620F205B643A7E1B77C12F3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A72388942EA2BF180AE457CF /* UITestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestSupport.swift; sourceTree = "<group>"; };
@@ -122,6 +124,7 @@
 		85B1B4C232285CA7CEF58345 /* ggchatUITests */ = {
 			isa = PBXGroup;
 			children = (
+				89A5B151C23B46CE0B51A157 /* ContextRingUITests.swift */,
 				D2FD64D354A297A69A640EC4 /* FirstRunUITests.swift */,
 				C3513C1C38B6CD42BBB5ADA4 /* LiveServer.swift */,
 				261ADF538454ADA1B24301E8 /* LiveServerTests.swift */,
@@ -233,6 +236,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ECF98E598E431213FBA52015 /* ContextRingUITests.swift in Sources */,
 				2BC2B73C5C5BDAF36DDDA295 /* FirstRunUITests.swift in Sources */,
 				FAF20668F07257B8B61A72B7 /* LiveServer.swift in Sources */,
 				95328C623F60DECDC145792B /* LiveServerTests.swift in Sources */,

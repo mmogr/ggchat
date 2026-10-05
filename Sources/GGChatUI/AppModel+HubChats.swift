@@ -42,6 +42,9 @@ public struct OpenHubChat: Equatable, Sendable {
     public let chatID: Int64
     public let title: String
     public internal(set) var state: State
+    /// How much of its model's context the chat used, as the rows last read
+    /// say it. In memory with them, and gone with the chat (ADR 0007).
+    var context: ContextReading?
     /// Why the last send went nowhere, or how the last reply ended badly.
     public internal(set) var notice: String?
     /// The text and images of a send that went nowhere, for the composer to
@@ -195,11 +198,14 @@ extension AppModel {
         switch answer {
         case .success(let chat):
             openedHubChat?.state = .read(Self.rows(of: chat, at: now()))
+            openedHubChat?.context = ContextReading.last(in: chat.messages)
             dropEndedHubReplies(open.chatID, on: open.providerID)
         case .failure(.notShared):
             openedHubChat?.state = .unavailable("\(config.name) does not share its chats with this phone.")
+            openedHubChat?.context = nil
         case .failure(.notFound):
             openedHubChat?.state = .unavailable("\(config.name) no longer has this chat.")
+            openedHubChat?.context = nil
         case .failure(let failure):
             log.log(.info, "\(config.name) did not send a chat: \(Self.kind(of: failure))")
             // A read again under rows already shown keeps them.

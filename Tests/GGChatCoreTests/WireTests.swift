@@ -32,6 +32,53 @@ final class WireTests: XCTestCase {
         XCTAssertEqual(usage.usage?.cachedTokens, 42)
     }
 
+    /// gglib puts the context's size and the count of messages trimmed to
+    /// fit inside `usage`, for a request that asked for progress. The frame
+    /// is the recorded usage frame with the two keys added by hand, pending
+    /// gglib's own recording. The recorded stream, from before them, reads
+    /// as it did, with neither.
+    func testUsageReadsGglibsTwoKeysAndReadsWithoutThem() throws {
+        let frame =
+            #"{"choices":[],"usage":{"completion_tokens":28,"prompt_tokens":57,"prompt_tokens_details":"#
+            + #"{"cached_tokens":42},"total_tokens":85,"context_size":8192,"trimmed_messages":2}}"#
+        let chunk = try JSONDecoder().decode(ChatCompletionChunk.self, from: Data(frame.utf8))
+        let recorded = Usage(promptTokens: 57, completionTokens: 28, totalTokens: 85, cachedTokens: 42)
+        var want = recorded
+        want.contextSize = 8_192
+        want.trimmedMessages = 2
+        XCTAssertEqual(chunk.usage, want)
+        XCTAssertEqual(try chunks().last(where: { $0.usage != nil })?.usage, recorded)
+        XCTAssertNil(recorded.contextSize)
+        XCTAssertNil(recorded.trimmedMessages)
+
+        let encoded = try JSONEncoder().encode(Usage(contextSize: 8_192, trimmedMessages: 2))
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Int])
+        XCTAssertEqual(object, ["context_size": 8_192, "trimmed_messages": 2])
+        XCTAssertEqual(try JSONDecoder().decode(Usage.self, from: try JSONEncoder().encode(want)), want)
+    }
+
+    /// Either of gglib's two keys that does not read is dropped, and the
+    /// counts and the other key are read as before: a frame that decoded
+    /// without them still does.
+    func testAContextKeyThatDoesNotReadCostsOnlyItself() throws {
+        func usage(_ extras: String) throws -> Usage? {
+            let frame = #"{"choices":[],"usage":{"completion_tokens":28,"prompt_tokens":57,\#(extras)}}"#
+            return try JSONDecoder().decode(ChatCompletionChunk.self, from: Data(frame.utf8)).usage
+        }
+        let counts = Usage(promptTokens: 57, completionTokens: 28)
+        for size in [#""8192""#, "81.5", "null", "{}", "true"] {
+            var want = counts
+            want.trimmedMessages = 2
+            XCTAssertEqual(try usage(#""context_size":\#(size),"trimmed_messages":2"#), want, size)
+        }
+        for trimmed in [#""two""#, "2.5", "null", "[2]"] {
+            var want = counts
+            want.contextSize = 8_192
+            XCTAssertEqual(try usage(#""context_size":8192,"trimmed_messages":\#(trimmed)"#), want, trimmed)
+        }
+        XCTAssertEqual(try usage(#""context_size":[],"trimmed_messages":{}"#), counts)
+    }
+
     func testFinishReasonStop() throws {
         let reasons = try chunks().compactMap { $0.choices?.first?.finishReason }
         XCTAssertEqual(reasons, ["stop"])
