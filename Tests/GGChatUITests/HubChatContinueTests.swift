@@ -17,7 +17,9 @@ final class HubChatContinueTests: XCTestCase {
         try await AppModelRunTests.until(what, condition)
     }
 
-    /// A model behind `hub` with chat 12 open and its rows read.
+    /// A model behind `hub` with chat 12 open, its rows read, and the Mac's
+    /// models listed, which opening a chat asks for: a test that then sets
+    /// the list by hand is not overtaken by the one on its way.
     static func opened(
         _ hub: FakeChatsHub, store: any Store = InMemoryStore(), sleeper: any Sleeper = ReadOnSleeper(immediate: false)
     ) async throws -> (AppModel, ProviderConfig) {
@@ -25,6 +27,7 @@ final class HubChatContinueTests: XCTestCase {
         try await AppModelRunTests.until("the list") { model.hubChats[config.id] != nil && model.hubListing.isEmpty }
         model.selection = .hub(providerID: config.id, chatID: 12)
         try await AppModelRunTests.until("the rows") { model.openedHubChat?.state.showsRows == true }
+        try await AppModelRunTests.until("the models") { model.models(for: config.id) == hub.with(\.models) }
         return (model, config)
     }
 

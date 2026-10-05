@@ -20,6 +20,9 @@ public final class HubLiveReply {
     /// run ends: a turn put again sends them again, and nothing of them is
     /// written to this phone (ADR 0007).
     let images: [DraftImage]
+    /// What the turn says of the chat's Thinking choice, fixed when it is
+    /// sent, so a turn put again carries the same body.
+    let thinking: HubThinking?
     public internal(set) var content = ""
     public internal(set) var reasoning = ""
     /// A line for each tool the reply called.
@@ -58,12 +61,16 @@ public final class HubLiveReply {
         return markdown.blocks
     }
 
-    init(providerID: UUID, chatID: Int64, runID: String, question: String?, images: [DraftImage] = []) {
+    init(
+        providerID: UUID, chatID: Int64, runID: String, question: String?, images: [DraftImage] = [],
+        thinking: HubThinking? = nil
+    ) {
         self.providerID = providerID
         self.chatID = chatID
         self.runID = runID
         self.question = question
         self.images = images
+        self.thinking = thinking
     }
 
     /// Adds one event of the run to the reply. Its text, its reasoning and

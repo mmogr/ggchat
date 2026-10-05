@@ -340,8 +340,26 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # the Mac stops sending, and nothing of it written to the phone; and the ring
 # and its sheet walked on a simulator. They are the whole of that guard, and
 # the two README claims name all twenty-eight.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 570
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 26
-floor "README test markers" "${markers:-0}" 485
+#
+# 2026-10-05: 570 -> 599, 26 -> 27 and 485 -> 515. Thirty tests pin the
+# Thinking switch: gglib's `reasoning` capability; a budget of zero on the
+# wire and the body unchanged without it; the budget on a send, Continue,
+# Retry and a run's `PUT` sent again, to gglib alone and not for a model
+# listed as not thinking; the choice kept across a relaunch, cleared by a
+# model that does not think, in a column opened across in both directions;
+# where the switch is offered, its symbol and spoken value, and that it shows
+# on unless off and a press sets what it shows, in both kinds of chat; the
+# mock skipping its reasoning; gglib's recorded `thinking_turn` and the
+# settings an opened chat carries; a Mac's chat opening as the Mac remembers,
+# saying the choice once as `off` or `default`, following the Mac again once
+# the Mac has taken a choice set here, a turn put again and a refused turn,
+# nothing of it written to the phone; the chat's model looked up in the Mac's
+# list, a reply that names none not hiding the one before it, the list read
+# on opening, quietly, and again when the pipe comes up; and the switch walked
+# on a simulator. They are the whole of that guard, and the two README claims
+# name all thirty.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 599
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 27
+floor "README test markers" "${markers:-0}" 515
 
 exit $status

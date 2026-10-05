@@ -99,7 +99,9 @@ extension AppModel {
         }
         let request: ChatRequest
         do {
-            request = try chatRequest(model: modelID, messages: conversation.requestMessages, for: config)
+            request = try chatRequest(
+                model: modelID, messages: conversation.requestMessages, thinkingOff: conversation.thinkingOff,
+                for: config)
         } catch {
             lastError = error.errorDescription
             return nil

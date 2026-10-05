@@ -77,10 +77,10 @@ extension AppModel {
             // one, and so is any answer still on its way.
             proxyStatusAvailability[providerID] = nil
             probeGeneration[providerID] = (probeGeneration[providerID] ?? 0) + 1
-            // A provider a conversation has been opened on asks again now,
-            // and lists its models if it still has none; see `open(_:)`.
+            // A provider a conversation or one of its chats has been opened
+            // on asks again now, and lists its models again; see `open(_:)`.
             if followed.contains(providerID) {
-                Task { await catchUp(providerID, quietly: true) }
+                Task { await catchUp(providerID, quietly: true, relisting: true) }
             }
             // A reply its hub went on writing is read on from here, with the
             // pauses between tries started afresh.

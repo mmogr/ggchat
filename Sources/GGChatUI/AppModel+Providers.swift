@@ -203,6 +203,9 @@ extension AppModel {
     public func select(model modelID: String, for conversationID: UUID) {
         guard var conversation = conversations.first(where: { $0.id == conversationID }) else { return }
         conversation.model = modelID
+        // A model the list names as one that does not think has no switch to
+        // turn back on, so a choice made under another model goes with it.
+        if listsAsThinking(modelID, on: conversation.providerID) == false { conversation.thinkingOff = false }
         update(conversation)
         if var config = provider(for: conversation) {
             config.defaultModel = modelID

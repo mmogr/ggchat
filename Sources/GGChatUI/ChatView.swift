@@ -56,6 +56,14 @@ struct ChatView: View {
                 }
                 .accessibilityValue(conversation.hasSystemPrompt ? "Set" : "None")
             }
+            // Only for a model gglib lists as one that thinks.
+            if model.offersThinking(for: conversation) {
+                ToolbarItem(placement: .automatic) {
+                    ThinkingToggle(isOn: model.thinkingOn(for: conversation)) { on in
+                        model.setThinking(on: on, for: conversation.id)
+                    }
+                }
+            }
             if let provider, model.proxyStatusAvailable(for: provider.id) {
                 ToolbarItem(placement: .automatic) {
                     Button("Server status", systemImage: "gauge.with.dots.needle.33percent") {

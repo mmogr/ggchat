@@ -71,24 +71,27 @@ public struct HubChatList: Codable, Sendable, Equatable {
     }
 }
 
-/// The conversation of an opened chat. Its settings are the hub's own and
-/// are not read here.
+/// The conversation of an opened chat. Its settings are the hub's own, and
+/// two of them are read here: its Thinking choice and its model's name.
 public struct HubConversation: Codable, Sendable, Equatable {
     public let id: Int64
     public let title: String
     public let modelID: Int64?
     public let systemPrompt: String?
+    /// Nil when the chat has none, or none this build can read.
+    public let settings: HubChatSettings?
     public let createdAt: String
     public let updatedAt: String
 
     public init(
-        id: Int64, title: String, modelID: Int64? = nil, systemPrompt: String? = nil, createdAt: String,
-        updatedAt: String
+        id: Int64, title: String, modelID: Int64? = nil, systemPrompt: String? = nil,
+        settings: HubChatSettings? = nil, createdAt: String, updatedAt: String
     ) {
         self.id = id
         self.title = title
         self.modelID = modelID
         self.systemPrompt = systemPrompt
+        self.settings = settings
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -98,8 +101,22 @@ public struct HubConversation: Codable, Sendable, Equatable {
         case title
         case modelID = "model_id"
         case systemPrompt = "system_prompt"
+        case settings
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+    }
+
+    /// Settings are whatever the hub saved with the chat, so settings this
+    /// build cannot read cost the chat its settings, not its rows.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int64.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        modelID = try container.decodeIfPresent(Int64.self, forKey: .modelID)
+        systemPrompt = try container.decodeIfPresent(String.self, forKey: .systemPrompt)
+        settings = try? container.decodeIfPresent(HubChatSettings.self, forKey: .settings)
+        createdAt = try container.decode(String.self, forKey: .createdAt)
+        updatedAt = try container.decode(String.self, forKey: .updatedAt)
     }
 }
 

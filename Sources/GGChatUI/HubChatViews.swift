@@ -109,5 +109,14 @@ struct HubChatView: View {
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
         #endif
+        .toolbar {
+            // Only for a model the Mac lists as one that thinks. The Mac
+            // remembers the choice; here it is held with the chat.
+            if model.hubChatOffersThinking {
+                ToolbarItem(placement: .automatic) {
+                    ThinkingToggle(isOn: model.hubThinkingOn) { model.setHubThinking(on: $0) }
+                }
+            }
+        }
     }
 }

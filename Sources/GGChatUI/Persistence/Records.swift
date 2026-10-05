@@ -63,12 +63,16 @@ public final class ConversationRecord {
     /// last finished reply left, never any text. Optional, for
     /// `systemPrompt`'s reason.
     public var contextData: Data?
+    /// Whether the conversation asks its model not to think, or nil, which
+    /// reads as no. Optional, for `systemPrompt`'s reason.
+    public var thinkingOff: Bool?
     @Relationship(deleteRule: .cascade, inverse: \MessageRecord.conversation)
     public var messages: [MessageRecord] = []
 
     public init(
         id: UUID, title: String, providerID: UUID?, model: String?, createdAt: Date, updatedAt: Date,
-        systemPrompt: String? = nil, hasUnreadReply: Bool? = nil, contextData: Data? = nil
+        systemPrompt: String? = nil, hasUnreadReply: Bool? = nil, contextData: Data? = nil,
+        thinkingOff: Bool? = nil
     ) {
         self.uuid = id
         self.title = title
@@ -77,6 +81,7 @@ public final class ConversationRecord {
         self.systemPrompt = systemPrompt
         self.hasUnreadReply = hasUnreadReply
         self.contextData = contextData
+        self.thinkingOff = thinkingOff
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }

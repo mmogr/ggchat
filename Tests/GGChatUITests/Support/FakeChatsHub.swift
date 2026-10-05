@@ -52,6 +52,11 @@ final class FakeChatsHub: HubChatsProvider {
         var fetchFailure: HubChatsFailure?
         /// Holds every read of an image, once counted, until it is set false.
         var holdsFetches = false
+        /// The models the Mac lists, how often it was asked, and whether the
+        /// lists from now on are lost on the way.
+        var models = MockProvider.sampleModels
+        var modelLists = 0
+        var losesModelLists = false
     }
 
     let state: Mutex<State>
@@ -105,7 +110,12 @@ final class FakeChatsHub: HubChatsProvider {
     }
 
     func models() async throws -> [ModelInfo] {
-        MockProvider.sampleModels
+        let (models, lost) = with { state in
+            state.modelLists += 1
+            return (state.models, state.losesModelLists)
+        }
+        if lost { throw ProviderError.transport("the list was lost") }
+        return models
     }
 
     func stream(_ request: ChatRequest) -> AsyncStream<ChatEvent> {
@@ -149,6 +159,10 @@ final class FakeChatsHub: HubChatsProvider {
         if gone { throw .imageGone }
         let (failure, lost, info) = with { state in
             state.turns.append((runID, turn))
+            // A turn the Mac takes sets what its chat remembers of Thinking.
+            if state.turnFailure == nil, let said = turn.thinking, let chat = state.chats[turn.conversationID] {
+                state.chats[turn.conversationID] = chat.remembering(said)
+            }
             state.turnsLost -= 1
             let info = RunInfo(
                 id: runID, kind: state.turnKind, status: state.turnStatus, createdAtMs: 1_790_000_000_000, lastSeq: 0)
@@ -191,5 +205,24 @@ final class FakeChatsHub: HubChatsProvider {
         with { $0.cancelsAsked += 1 }
         while with({ $0.holdsCancels }) { await Task.yield() }
         return try await runs.cancelRun(id: runID)
+    }
+}
+
+extension HubChatOpen {
+    /// The chat with these settings in place of its own, its rows as they
+    /// were or `rows`.
+    func with(_ settings: HubChatSettings?, rows: [HubMessage]? = nil) -> HubChatOpen {
+        HubChatOpen(
+            conversation: HubConversation(
+                id: conversation.id, title: conversation.title, modelID: conversation.modelID,
+                systemPrompt: conversation.systemPrompt, settings: settings, createdAt: conversation.createdAt,
+                updatedAt: conversation.updatedAt),
+            messages: rows ?? messages)
+    }
+
+    /// The chat as gglib leaves it once it takes a turn that said `said`:
+    /// `off` is remembered, `default` forgets it, and its model stays.
+    func remembering(_ said: HubThinking) -> HubChatOpen {
+        with(HubChatSettings(thinking: said == .off ? .off : nil, modelName: conversation.settings?.modelName))
     }
 }

@@ -11,6 +11,9 @@ struct ChatCompletionRequest: Encodable {
     /// `true` when asked and absent otherwise, so a server that is not gglib
     /// never sees the key.
     var returnProgress: Bool?
+    /// gglib's thinking budget, `0` for none, and absent unless the request
+    /// sets one, so the body is what it always was.
+    var reasoningBudgetTokens: Int?
 
     struct WireMessage: Encodable {
         var role: String
@@ -71,6 +74,7 @@ struct ChatCompletionRequest: Encodable {
         case streamOptions = "stream_options"
         case maxTokens = "max_tokens"
         case returnProgress = "return_progress"
+        case reasoningBudgetTokens = "reasoning_budget_tokens"
     }
 
     /// Throws ``MissingImage`` when a message names an image whose bytes the
@@ -82,6 +86,7 @@ struct ChatCompletionRequest: Encodable {
         }
         maxTokens = request.maxTokens
         returnProgress = request.returnProgress ? true : nil
+        reasoningBudgetTokens = request.reasoningBudgetTokens
     }
 
     private static func content(of message: Message, images: [String: Data]) throws(MissingImage) -> Content {

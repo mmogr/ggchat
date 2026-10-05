@@ -71,6 +71,18 @@ final class HubTurnProviderTests: XCTestCase {
         XCTAssertEqual(info.status, .inProgress)
     }
 
+    /// A turn that says the Thinking choice is put with it, as the word.
+    func testATurnThatSaysTheThinkingChoiceIsPutWithIt() async throws {
+        let host = "turn-thinking.test"
+        let said = HubTurn(conversationID: 12, content: "Answer in one line.", thinking: .off)
+        _ = try await start((201, RunHub.report(id, "queued", lastSeq: 0, kind: "agent")), at: host, turn: said)
+        let put = try XCTUnwrap(RunHub.requests(at: host).first)
+        let body = try XCTUnwrap(put.httpBody ?? put.bodyStreamData)
+        let sent = try XCTUnwrap(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        XCTAssertEqual(sent.keys.sorted(), ["content", "conversation_id", "thinking"])
+        XCTAssertEqual(sent["thinking"] as? String, "off")
+    }
+
     /// A chat with no model and a chat with a reply already being written
     /// each have a refusal of their own, told apart from the rest.
     func testNoModelAndAReplyInProgressAreTheirOwnRefusals() async throws {

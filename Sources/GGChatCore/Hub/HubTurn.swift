@@ -2,13 +2,13 @@
 // refuses one.
 //
 // Written by hand to mirror `gglib_core::domain::hub_chats::HubTurn` in
-// gglib. The bodies gglib records under `turn` and `image_turn` in
-// `contracts/chats/recorded.json` are replayed against it by
-// `HubChatsWireTests`.
+// gglib. The bodies gglib records under `turn`, `image_turn` and
+// `thinking_turn` in `contracts/chats/recorded.json` are replayed against it
+// by `HubChatsWireTests`.
 
 /// The user's new message on one of the hub's chats, and nothing else: the
-/// hub rebuilds the history from its own record, and refuses a body with any
-/// other key.
+/// hub rebuilds the history from its own record, and refuses a body with a
+/// key it does not know.
 public struct HubTurn: Codable, Sendable, Equatable {
     /// The chat's id on the hub.
     public let conversationID: Int64
@@ -18,17 +18,24 @@ public struct HubTurn: Codable, Sendable, Equatable {
     /// already holds from `POST attachments`. Left out of the body when there
     /// are none, so a turn of text alone is the two keys it always was.
     public let images: [String]
+    /// The chat's Thinking choice, said only on the turn that changes it.
+    /// Left out of the body when nil: the turn then runs as the hub
+    /// remembers, and a hub from before the key, which would refuse it, is
+    /// never sent it.
+    public let thinking: HubThinking?
 
-    public init(conversationID: Int64, content: String, images: [String] = []) {
+    public init(conversationID: Int64, content: String, images: [String] = [], thinking: HubThinking? = nil) {
         self.conversationID = conversationID
         self.content = content
         self.images = images
+        self.thinking = thinking
     }
 
     enum CodingKeys: String, CodingKey {
         case conversationID = "conversation_id"
         case content
         case images
+        case thinking
     }
 
     public init(from decoder: any Decoder) throws {
@@ -36,6 +43,7 @@ public struct HubTurn: Codable, Sendable, Equatable {
         conversationID = try container.decode(Int64.self, forKey: .conversationID)
         content = try container.decode(String.self, forKey: .content)
         images = try container.decodeIfPresent([String].self, forKey: .images) ?? []
+        thinking = try container.decodeIfPresent(HubThinking.self, forKey: .thinking)
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -43,6 +51,7 @@ public struct HubTurn: Codable, Sendable, Equatable {
         try container.encode(conversationID, forKey: .conversationID)
         try container.encode(content, forKey: .content)
         if !images.isEmpty { try container.encode(images, forKey: .images) }
+        try container.encodeIfPresent(thinking, forKey: .thinking)
     }
 }
 

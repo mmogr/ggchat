@@ -11,16 +11,21 @@ public struct ChatRequest: Sendable, Equatable {
     /// Whether to ask for gglib's progress frames while it reads the prompt.
     /// Set only for gglib: another server may refuse a field it does not know.
     public var returnProgress: Bool
+    /// How many tokens the model may spend thinking, or nil to say nothing:
+    /// ``noThinking`` turns thinking off for this request. Set only for
+    /// gglib, as `returnProgress` is.
+    public var reasoningBudgetTokens: Int?
 
     public init(
         model: String, messages: [Message], images: [String: Data] = [:], maxTokens: Int? = nil,
-        returnProgress: Bool = false
+        returnProgress: Bool = false, reasoningBudgetTokens: Int? = nil
     ) {
         self.model = model
         self.messages = messages
         self.images = images
         self.maxTokens = maxTokens
         self.returnProgress = returnProgress
+        self.reasoningBudgetTokens = reasoningBudgetTokens
     }
 }
 

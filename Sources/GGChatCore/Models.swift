@@ -125,6 +125,11 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
     /// finished reply, or nil when the server reported no context size. A
     /// reply that stops or fails leaves it as it was.
     public var context: ContextReading?
+    /// Whether the model is asked not to think in this conversation. A
+    /// setting of the conversation, as its system prompt is, sent with each
+    /// request to gglib alone, and not for a model its list names as not
+    /// thinking (ADR 0009).
+    public var thinkingOff: Bool
 
     /// The id the system turn carries in `requestMessages`. Fixed rather than
     /// a fresh `UUID()`, so two requests built from the same conversation are
@@ -141,7 +146,8 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
         createdAt: Date,
         updatedAt: Date,
         hasUnreadReply: Bool = false,
-        context: ContextReading? = nil
+        context: ContextReading? = nil,
+        thinkingOff: Bool = false
     ) {
         self.id = id
         self.title = title
@@ -153,6 +159,7 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
         self.updatedAt = updatedAt
         self.hasUnreadReply = hasUnreadReply
         self.context = context
+        self.thinkingOff = thinkingOff
     }
 
     /// Whether there is a system prompt to send. Blank counts as none, so a
