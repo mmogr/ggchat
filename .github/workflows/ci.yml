@@ -60,7 +60,7 @@ jobs:
 
   boundaries:
     name: Check Boundaries
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
       - name: Check module boundaries
@@ -68,7 +68,7 @@ jobs:
 
   enforcement:
     name: Enforce Architecture
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
       - name: Glass sites

@@ -13,7 +13,7 @@ concurrency:
 jobs:
   enrich:
     name: Enrich labels
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     if: github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       pull-requests: write
@@ -54,7 +54,7 @@ jobs:
 
   label-check:
     name: Label Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [enrich]
     if: always()
     permissions:
