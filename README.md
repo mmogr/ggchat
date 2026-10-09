@@ -786,6 +786,8 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatImageRowsTests.testAReplyThatEndedAfterItsToolIsItsImagesAlone -->
   <!-- test: HubChatToolImagesTests.testASavedReplysImagesAreDrawnUnderItsTextAndAQuestionsAbove -->
   <!-- test: HubChatImageRowsTests.testAToolsImagesAreReadFromTheMacByIdOnceFromReplyToRow -->
+  <!-- test: RunsWireTests.testARecordedToolReplyReadsAsItsToolLineItsImageAndItsText -->
+  <!-- test: HubChatsWireTests.testARecordedToolRowCarriesTheImageItsToolMade -->
 - A conversation can carry a system prompt. It goes ahead of every request
   the conversation makes, Continue and Retry included, and an edit reaches the
   next one. It is never a row in the transcript and never stored as a

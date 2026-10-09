@@ -407,8 +407,14 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # under its text and a question's above; and an image a tool made read from
 # the Mac by id once, while the reply is written, and not again for its row.
 # They are the whole of that guard, and the README claim names all four.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 650
+#
+# 2026-10-09: 650 -> 652 and 567 -> 569. Two tests replay gglib's recorded
+# tool reply: its frames read as the tool's line, its image and its text, and
+# its rows put the image on the tool's row alone. They are the only check
+# that the shape gglib records is the shape read here, and the README claim
+# names both.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 652
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 567
+floor "README test markers" "${markers:-0}" 569
 
 exit $status

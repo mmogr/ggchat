@@ -3,7 +3,10 @@ import XCTest
 @testable import GGChatCore
 
 /// Replays the run bodies gglib records (`contracts/runs/recorded.json` there,
-/// copied here as a fixture) against the Swift run types.
+/// copied here as a fixture) against the Swift run types, and its
+/// `tool_reply` frames against how an agent run's events are read. The copy
+/// is from gglib's `test(contracts): a tool result with images is recorded`,
+/// in the change that adds a tool's images to its result.
 final class RunsWireTests: XCTestCase {
     private struct Recorded: Decodable {
         let queued: RunInfo
@@ -83,6 +86,21 @@ final class RunsWireTests: XCTestCase {
         let object = try JSONSerialization.jsonObject(with: try JSONEncoder().encode(run))
         let keys = try XCTUnwrap(object as? [String: Any]).keys.sorted()
         XCTAssertEqual(keys, ["created_at_ms", "id", "kind", "last_seq", "status"])
+    }
+
+    /// The recorded reply whose tool made one image reads as its tool line,
+    /// that image with its id, type and size, and its text.
+    func testARecordedToolReplyReadsAsItsToolLineItsImageAndItsText() throws {
+        let object = try JSONSerialization.jsonObject(with: try Fixtures.data("gglib-runs-recorded.json"))
+        let frames = try XCTUnwrap((object as? [String: Any])?["tool_reply"] as? [Any])
+        let events = try frames.flatMap { frame in
+            let data = try JSONSerialization.data(withJSONObject: frame)
+            return OpenAICompatibleProvider.agentEvents(SSEEvent(data: String(decoding: data, as: UTF8.self)))
+        }
+        let image = ImageRef(
+            id: "ece5c33be7ce69ce71231b9d81671f4de1c35ee51fc684b014da4eb244e9a8ae", mime: "image/png", width: 1024,
+            height: 1024)
+        XCTAssertEqual(events, [.tool("Draw"), .images([image]), .delta("Here is a red dot.")])
     }
 
     func testOnlyCompletedFailedAndCancelledAreTerminal() {
