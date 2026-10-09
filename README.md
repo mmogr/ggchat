@@ -769,10 +769,23 @@ Each claim names the test that keeps it true.
   the order the tools made them, read from the Mac by id like the chat's
   other images and held in memory only (ADR 0007). A finished tool with no
   images, or with images that cannot be read, means nothing here, as before.
+  Once the run ends, the tool's row the Mac saved carries the same images, and
+  they are drawn as they were while the reply was written: on the next
+  assistant row that has words, under its text and after its own images, in
+  the order the tools made them across tool rows, without the words the model
+  read, and as a reply of those images alone when no words come before the
+  next question or the chat's end. A tool's row without images is still the
+  Mac's to show. A saved reply's images are drawn under its text, a
+  question's above its words. An image read while the reply was written is
+  not read again for its row.
   <!-- test: HubTurnProviderTests.testAFinishedToolsImagesAreReadAndOneWithoutMeansNothing -->
   <!-- test: HubTurnProviderTests.testAnAgentRunsEventsAreItsTextReasoningAndToolLines -->
   <!-- test: HubChatToolImagesTests.testAToolsImagesJoinTheReplyInOrderAcrossToolCalls -->
   <!-- test: HubChatToolImagesTests.testTheImagesAToolMadeAreDrawnAsTheMacs -->
+  <!-- test: HubChatImageRowsTests.testAToolsImagesGoUnderTheTextOfTheReplyThatFollows -->
+  <!-- test: HubChatImageRowsTests.testAReplyThatEndedAfterItsToolIsItsImagesAlone -->
+  <!-- test: HubChatToolImagesTests.testASavedReplysImagesAreDrawnUnderItsTextAndAQuestionsAbove -->
+  <!-- test: HubChatImageRowsTests.testAToolsImagesAreReadFromTheMacByIdOnceFromReplyToRow -->
 - A conversation can carry a system prompt. It goes ahead of every request
   the conversation makes, Continue and Retry included, and an edit reaches the
   next one. It is never a row in the transcript and never stored as a

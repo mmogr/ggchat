@@ -115,24 +115,57 @@ extension AppModel {
     }
 
     /// The rows this phone draws: the questions and the replies with words
-    /// or images in them, each with the images it carries. The system
-    /// prompt, tool results and a reply that only called tools are the
-    /// Mac's to show.
+    /// or images in them, each with the images it carries. The images a tool
+    /// made go to the next assistant row that has words, under its text,
+    /// after its own images and in the order the tools made them, as the
+    /// reply was drawn while it was written. A reply that never gets words
+    /// before the next question or the chat's end is those images alone.
+    /// The system prompt, a tool's text and a reply that only called tools
+    /// are the Mac's to show.
     static func rows(of chat: HubChatOpen, at stamp: Date) -> [Message] {
         drawn(chat, at: stamp).map(\.message)
     }
 
     /// The rows drawn, each with the id of the Mac's row it shows, which a
     /// change to the chat names (ADR 0010). A row keeps its id each time the
-    /// chat is read, so an editor open on it still names it.
+    /// chat is read, so an editor open on it still names it. A reply that is
+    /// a tool's images alone shows the first tool row it draws an image of.
     static func drawn(_ chat: HubChatOpen, at stamp: Date) -> [(message: Message, rowID: Int64)] {
-        chat.messages.compactMap { row in
-            let images = row.images ?? []
-            guard let role = Role(rawValue: row.role), role != .system, !row.content.isEmpty || !images.isEmpty
-            else { return nil }
-            let id = rowUUID(chat: chat.conversation.id, row: row.id)
-            return (Message(id: id, role: role, content: row.content, createdAt: stamp, images: images), row.id)
+        var rows: [(message: Message, rowID: Int64)] = []
+        var made: [ImageRef] = []
+        var madeBy: Int64?
+        func add(_ row: Int64, _ role: Role, _ content: String, _ images: [ImageRef]) {
+            let id = rowUUID(chat: chat.conversation.id, row: row)
+            rows.append((Message(id: id, role: role, content: content, createdAt: stamp, images: images), row))
         }
+        func madeAlone() {
+            guard let row = madeBy, !made.isEmpty else { return }
+            add(row, .assistant, "", made)
+            made = []
+            madeBy = nil
+        }
+        for row in chat.messages {
+            let images = row.images ?? []
+            if row.role == "tool" {
+                if !images.isEmpty, madeBy == nil { madeBy = row.id }
+                made += images
+                continue
+            }
+            guard let role = Role(rawValue: row.role), role != .system, !row.content.isEmpty || !images.isEmpty
+            else { continue }
+            if role == .assistant, !row.content.isEmpty {
+                add(row.id, role, row.content, images + made)
+                made = []
+                madeBy = nil
+            } else if role == .assistant {
+                add(row.id, role, row.content, images)
+            } else {
+                madeAlone()
+                add(row.id, role, row.content, images)
+            }
+        }
+        madeAlone()
+        return rows
     }
 
     /// The id a Mac's row is drawn with: the chat's id and the row's, side

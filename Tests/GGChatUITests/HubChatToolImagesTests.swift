@@ -56,4 +56,33 @@ final class HubChatToolImagesTests: XCTestCase {
             XCTAssertEqual(drawn?.fromHub, true, "the images were read from this phone's store")
         }
     }
+
+    /// The names of the views a view is built from that are one of `names`,
+    /// in the order it draws them.
+    private func drawn(_ names: Set<String>, in value: Any, depth: Int = 0) -> [String] {
+        let name = String(describing: type(of: value))
+        if names.contains(name) { return [name] }
+        guard depth < 40 else { return [] }
+        return Mirror(reflecting: value).children.flatMap { drawn(names, in: $0.value, depth: depth + 1) }
+    }
+
+    /// A saved reply's images are drawn under its text, as a reply being
+    /// written draws the images its tools made; a question's stay above its
+    /// words.
+    func testASavedReplysImagesAreDrawnUnderItsTextAndAQuestionsAbove() {
+        let names: Set<String> = ["MessageImages", "MarkdownBlocksView"]
+        func order(_ role: Role) -> [String] {
+            let message = Message(
+                role: role, content: "Words.", createdAt: .distantPast, images: [ref("a1")])
+            let row = MessageRow(
+                message: message, showsEnding: false, advice: nil, writingLine: nil, imagesFromHub: true)
+            return drawn(names, in: row.body)
+        }
+        XCTAssertEqual(order(.assistant), ["MarkdownBlocksView", "MessageImages"])
+        XCTAssertEqual(order(.user), ["MessageImages", "MarkdownBlocksView"])
+        let live = reply()
+        live.apply(.images([ref("a1")]))
+        live.apply(.delta("Words."))
+        XCTAssertEqual(drawn(names, in: HubLiveReplyRows(reply: live, rows: .read([])).body), order(.assistant))
+    }
 }

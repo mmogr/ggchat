@@ -399,8 +399,16 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # and the reply drawing them as the Mac's, with words or before any. They are
 # the whole of that guard, and the README claim names all three and the run's
 # events test that now carries one.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 646
+#
+# 2026-10-09: 646 -> 650 and 563 -> 567. Four tests pin a tool's saved row:
+# its images under the text of the reply that follows, in order across two
+# tool rows, and one without images still passed over; a reply that ended
+# after its tool drawn as those images alone; a saved reply's images drawn
+# under its text and a question's above; and an image a tool made read from
+# the Mac by id once, while the reply is written, and not again for its row.
+# They are the whole of that guard, and the README claim names all four.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 650
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 563
+floor "README test markers" "${markers:-0}" 567
 
 exit $status
