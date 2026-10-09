@@ -157,7 +157,7 @@ extension AppModel {
         case .finished(let reason, let usage):
             live.usage = usage
             live.finishReason = reason
-        case .tool: break
+        case .tool, .images: break
         }
     }
 

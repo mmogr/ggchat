@@ -762,6 +762,17 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatImageRowsTests.testTheMacsImagesAreReadIntoMemoryOnceAndGoWithTheChat -->
   <!-- test: HubChatImageRowsTests.testOnlyTheBytesTheIdNamesAreKept -->
   <!-- test: HubChatImageRowsTests.testAnImageThisPhoneSentIsNotReadBack -->
+- An image a tool makes on a paired Mac, while the Mac writes a reply this
+  phone is reading, arrives on the run's `tool_call_complete` as gglib's
+  `result.images`: each one's id, type and size, in the order the tool made
+  them. They are drawn under the reply's text, with words or before any, in
+  the order the tools made them, read from the Mac by id like the chat's
+  other images and held in memory only (ADR 0007). A finished tool with no
+  images, or with images that cannot be read, means nothing here, as before.
+  <!-- test: HubTurnProviderTests.testAFinishedToolsImagesAreReadAndOneWithoutMeansNothing -->
+  <!-- test: HubTurnProviderTests.testAnAgentRunsEventsAreItsTextReasoningAndToolLines -->
+  <!-- test: HubChatToolImagesTests.testAToolsImagesJoinTheReplyInOrderAcrossToolCalls -->
+  <!-- test: HubChatToolImagesTests.testTheImagesAToolMadeAreDrawnAsTheMacs -->
 - A conversation can carry a system prompt. It goes ahead of every request
   the conversation makes, Continue and Retry included, and an edit reaches the
   next one. It is never a row in the transcript and never stored as a

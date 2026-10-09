@@ -30,6 +30,10 @@ public final class HubLiveReply {
     public internal(set) var reasoning = ""
     /// A line for each tool the reply called.
     public internal(set) var tools: [String] = []
+    /// The images the reply's tools made, in order, by reference: each is
+    /// read from the Mac by id as it is drawn, into memory like the chat's
+    /// other images.
+    public internal(set) var made: [ImageRef] = []
     /// What the run's last finished model call counted and why it ended, once
     /// one has: the chat's reading while this reply is on screen, in memory
     /// like the rest of it.
@@ -77,15 +81,16 @@ public final class HubLiveReply {
         self.thinking = thinking
     }
 
-    /// Adds one event of the run to the reply. Its text, its reasoning and
-    /// its tool calls are drawn, and what a finished call counted is kept,
-    /// the last one over any before it; the run's last report says how it
-    /// ended.
+    /// Adds one event of the run to the reply. Its text, its reasoning, its
+    /// tool calls and the images they made are drawn, and what a finished
+    /// call counted is kept, the last one over any before it; the run's last
+    /// report says how it ended.
     func apply(_ event: ChatEvent) {
         switch event {
         case .delta(let text): content += text
         case .reasoning(let text): reasoning += text
         case .tool(let line): tools.append(line)
+        case .images(let images): made += images
         case .usage(let counted, let reason):
             usage = counted
             finishReason = reason
