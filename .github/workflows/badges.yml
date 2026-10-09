@@ -13,7 +13,7 @@ permissions:
 jobs:
   badges:
     name: Publish badge JSON
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     if: github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v7

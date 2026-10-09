@@ -74,7 +74,7 @@ jobs:
     # enabled it, which was taken on 2026-09-17. So the guard is gone and main
     # publishes on push, which is also the only ref the `github-pages`
     # environment admits.
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
