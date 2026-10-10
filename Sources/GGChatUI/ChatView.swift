@@ -7,6 +7,7 @@ struct ChatView: View {
     @Environment(AppModel.self) private var model
     @State private var showingStatus = false
     @State private var editingPrompt = false
+    @State private var editing: Message?
     let conversation: Conversation
 
     private var provider: ProviderConfig? {
@@ -14,6 +15,7 @@ struct ChatView: View {
     }
 
     var body: some View {
+        let points = model.branchPoints(of: conversation)
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 20) {
                 ForEach(conversation.messages) { message in
@@ -22,11 +24,17 @@ struct ChatView: View {
                         showsEnding: message.id == conversation.messages.last?.id
                             && !model.isStreaming(conversation.id),
                         advice: message.failure.flatMap { model.advice(for: $0, in: conversation) },
-                        writingLine: model.writingLine(for: message, in: conversation)
+                        writingLine: model.writingLine(for: message, in: conversation),
+                        branch: points.first { $0.messageID == message.id }.map {
+                            BranchChoice($0) { model.openBranch($0) }
+                        },
+                        changes: model.messageChanges(in: conversation.id) { editing = $0 }
                     )
                 }
                 if let live = model.liveReply, live.conversationID == conversation.id {
                     LiveReplyRow(live: live)
+                } else if let end = points.first(where: { $0.messageID == nil }) {
+                    BranchEndRow(choice: BranchChoice(end) { model.openBranch($0) })
                 }
             }
             .padding(.horizontal)
@@ -79,6 +87,9 @@ struct ChatView: View {
         }
         .sheet(isPresented: $editingPrompt) {
             SystemPromptView(conversation: conversation)
+        }
+        .sheet(item: $editing) { message in
+            MessageEditor(message: message) { model.edit(message.id, in: conversation.id, to: $0) }
         }
         // What clears the list's unread mark. Appear, not a `.task`, and no
         // disappear, which iOS 27 sends at once while the chat stays; see

@@ -1116,6 +1116,19 @@ Each claim names the test that keeps it true.
   <!-- test: ConversationBranchesTests.testABranchOfABranchIsOfTheFirstFamilyAndCopiesTheFirstMessages -->
   <!-- test: ConversationBranchesTests.testAQuestionEditedInPlaceIsANewMessage -->
   <!-- test: BranchStoreTests.testABranchsLineageSurvivesTheRoundTrip -->
+- Any message of a conversation on this device can be edited from its
+  menu, a question asked again by Send and a reply kept as written by Save,
+  and a reply regenerated or a turn branched from. The editor saves only a
+  change. Where the conversation's
+  family parts, the turn says which branch is open, of how many, and its
+  previous and next open the others; the list names each option by its line.
+  An edited reply opens its branch with the switcher, and Previous goes back
+  to the conversation as it was (ADR 0010).
+  <!-- test: BranchingUITests.testAnEditedReplyOpensABranchAndPreviousGoesBack -->
+  <!-- test: BranchSwitcherTests.testTheSwitcherSaysWhichOfHowManyTheOpenConversationIs -->
+  <!-- test: BranchSwitcherTests.testAnOptionIsListedByItsLineOrWhatStandsInForOne -->
+  <!-- test: MessageChangesTests.testEachMenuItemMakesItsOwnChange -->
+  <!-- test: MessageChangesTests.testTheEditorSavesOnlyAChange -->
 
 ## Building and testing
 
