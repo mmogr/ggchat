@@ -9,19 +9,9 @@ struct HubLiveReplyRows: View {
     let reply: HubLiveReply
     let rows: OpenHubChat.State
 
-    /// Whether the rows on screen already end with the question.
-    private var rowsHoldTheQuestion: Bool {
-        guard case .read(let messages) = rows, let last = messages.last else { return false }
-        return last.role == .user && last.content == reply.question
-            && last.images.map(\.id) == reply.images.map(\.id)
-    }
-
     var body: some View {
-        if let question = reply.question, !rowsHoldTheQuestion {
-            MessageRow(
-                message: Message(
-                    role: .user, content: question, createdAt: .distantPast, images: reply.images.map(\.ref)),
-                showsEnding: false, advice: nil, writingLine: nil, imagesFromHub: true)
+        if let question = reply.questionToDraw(under: rows) {
+            MessageRow(message: question, showsEnding: false, advice: nil, writingLine: nil, imagesFromHub: true)
         }
         VStack(alignment: .leading, spacing: 6) {
             RoleLabel(role: .assistant)

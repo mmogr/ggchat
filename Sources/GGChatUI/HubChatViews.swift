@@ -24,7 +24,8 @@ struct HubChatsSection: View {
 }
 
 /// One of a Mac's chats: its title, the model it was made with, when it last
-/// changed, and "Writing" while the Mac is writing a reply to it.
+/// changed, and "Writing" while the Mac is writing a reply to it. A branch of
+/// another of its chats (ADR 0010) carries the branch symbol.
 struct HubChatRow: View {
     @Environment(AppModel.self) private var model
     @Environment(\.locale) private var locale
@@ -37,6 +38,7 @@ struct HubChatRow: View {
         let stamp = model.stamp(for: chat, locale: locale, calendar: calendar)
         VStack(alignment: .leading, spacing: 2) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
+                if chat.branchOf != nil { BranchMark() }
                 Text(chat.title.isEmpty ? "New conversation" : chat.title)
                     .lineLimit(1)
                 if let mark {
@@ -64,9 +66,12 @@ struct HubChatRow: View {
 }
 
 /// A Mac's chat, read live and carried on from here. Nothing here is kept:
-/// going Back drops it, and opening it again reads it again.
+/// going Back drops it, and opening it again reads it again. Its rows offer
+/// the changes a local conversation's do, which the Mac makes, and its
+/// branch points the Mac's chats of the family (ADR 0010).
 struct HubChatView: View {
     @Environment(AppModel.self) private var model
+    @State private var editing: Message?
     let chat: OpenHubChat
 
     var body: some View {
@@ -75,11 +80,21 @@ struct HubChatView: View {
                 if case .read(let rows) = chat.state {
                     ForEach(rows) { message in
                         MessageRow(
-                            message: message, showsEnding: false, advice: nil, writingLine: nil, imagesFromHub: true)
+                            message: message, showsEnding: false, advice: nil, writingLine: nil, imagesFromHub: true,
+                            branch: chat.pointAt[message.id].map(choice),
+                            changes: model.hubMessageChanges { editing = $0 })
                     }
                 }
                 if let reply = model.openHubReply {
                     HubLiveReplyRows(reply: reply, rows: chat.state)
+                } else if chat.state.showsRows {
+                    if let end = chat.endPoint {
+                        BranchEndRow(choice: choice(end))
+                    }
+                    if chat.answerable {
+                        Button("Answer", systemImage: "arrow.clockwise") { model.answerHubChat() }
+                            .buttonStyle(.bordered)
+                    }
                 }
             }
             .padding(.horizontal)
@@ -105,6 +120,9 @@ struct HubChatView: View {
         .safeAreaInset(edge: .bottom) {
             HubComposer(notice: chat.notice, unsent: chat.unsent)
         }
+        .sheet(item: $editing) { message in
+            MessageEditor(message: message) { model.editHubMessage(message.id, to: $0) }
+        }
         .navigationTitle(chat.title.isEmpty ? "New conversation" : chat.title)
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -118,5 +136,10 @@ struct HubChatView: View {
                 }
             }
         }
+    }
+
+    /// The switcher at a branch point, opening the Mac's chats.
+    private func choice(_ point: BranchPoint<Int64, Int64>) -> BranchChoice {
+        BranchChoice(point) { model.openHubBranch($0) }
     }
 }

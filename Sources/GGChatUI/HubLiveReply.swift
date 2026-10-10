@@ -23,6 +23,9 @@ public final class HubLiveReply {
     /// What the turn says of the chat's Thinking choice, fixed when it is
     /// sent, so a turn put again carries the same body.
     let thinking: HubThinking?
+    /// Whether the turn answers the question the chat already ends in, as a
+    /// change on the Mac leaves it (ADR 0010), rather than asking one.
+    let answersSaved: Bool
     public internal(set) var content = ""
     public internal(set) var reasoning = ""
     /// A line for each tool the reply called.
@@ -63,11 +66,12 @@ public final class HubLiveReply {
 
     init(
         providerID: UUID, chatID: Int64, runID: String, question: String?, images: [DraftImage] = [],
-        thinking: HubThinking? = nil
+        thinking: HubThinking? = nil, answersSaved: Bool = false
     ) {
         self.providerID = providerID
         self.chatID = chatID
         self.runID = runID
+        self.answersSaved = answersSaved
         self.question = question
         self.images = images
         self.thinking = thinking

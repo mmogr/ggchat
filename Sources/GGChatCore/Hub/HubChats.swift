@@ -25,10 +25,12 @@ public struct HubChatSummary: Codable, Sendable, Equatable, Hashable, Identifiab
     public let updatedAt: String
     /// The run whose reply to it is not yet saved, if one is.
     public let liveRun: String?
+    /// The chat it was branched from, when it is a branch (ADR 0010).
+    public let branchOf: Int64?
 
     public init(
         id: Int64, title: String, modelID: Int64? = nil, model: String? = nil, updatedAt: String,
-        liveRun: String? = nil
+        liveRun: String? = nil, branchOf: Int64? = nil
     ) {
         self.id = id
         self.title = title
@@ -36,6 +38,7 @@ public struct HubChatSummary: Codable, Sendable, Equatable, Hashable, Identifiab
         self.model = model
         self.updatedAt = updatedAt
         self.liveRun = liveRun
+        self.branchOf = branchOf
     }
 
     enum CodingKeys: String, CodingKey {
@@ -45,6 +48,7 @@ public struct HubChatSummary: Codable, Sendable, Equatable, Hashable, Identifiab
         case model
         case updatedAt = "updated_at"
         case liveRun = "live_run"
+        case branchOf = "branch_of"
     }
 }
 
@@ -218,13 +222,44 @@ public struct HubMessage: Codable, Sendable, Equatable, Identifiable {
     }
 }
 
-/// One chat opened: the conversation and its rows, oldest first.
+/// One chat opened: the conversation and its rows, oldest first, with
+/// where its family parts and whether it ends in a question nothing
+/// answers (ADR 0010). Both are left out of the body when there is nothing
+/// to say.
 public struct HubChatOpen: Codable, Sendable, Equatable {
     public let conversation: HubConversation
     public let messages: [HubMessage]
+    public let points: [BranchPoint<Int64, Int64>]
+    public let answerable: Bool
 
-    public init(conversation: HubConversation, messages: [HubMessage]) {
+    public init(
+        conversation: HubConversation, messages: [HubMessage], points: [BranchPoint<Int64, Int64>] = [],
+        answerable: Bool = false
+    ) {
         self.conversation = conversation
         self.messages = messages
+        self.points = points
+        self.answerable = answerable
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case conversation, messages, points, answerable
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        conversation = try container.decode(HubConversation.self, forKey: .conversation)
+        messages = try container.decode([HubMessage].self, forKey: .messages)
+        // Points that cannot be read cost the chat its switchers, not its rows.
+        points = ((try? container.decodeIfPresent([HubBranchPointWire].self, forKey: .points)) ?? []).map(\.point)
+        answerable = try container.decodeIfPresent(Bool.self, forKey: .answerable) ?? false
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(conversation, forKey: .conversation)
+        try container.encode(messages, forKey: .messages)
+        if !points.isEmpty { try container.encode(points.map(HubBranchPointWire.init), forKey: .points) }
+        if answerable { try container.encode(true, forKey: .answerable) }
     }
 }

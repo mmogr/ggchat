@@ -19,14 +19,10 @@ extension AppModel {
     /// from the message only by the space around it.
     @discardableResult
     public func edit(_ messageID: UUID, in conversationID: UUID, to text: String) -> Task<Void, Never>? {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let conversation = conversation(conversationID),
             let message = conversation.messages.first(where: { $0.id == messageID }),
-            !trimmed.isEmpty || !message.images.isEmpty
+            let content = message.edited(to: text)
         else { return nil }
-        // A reply is saved as it streamed, space and all.
-        let same = trimmed == message.content.trimmingCharacters(in: .whitespacesAndNewlines)
-        let content = same ? message.content : trimmed
         let images = message.role == .user ? message.images : []
         return make(.edit(messageID: messageID, content: content, images: []), images: images, in: conversation)
     }

@@ -205,6 +205,8 @@ extension AppModel {
         case .chatGone: "\(config.name) no longer has this chat."
         case .imageGone: "\(config.name) no longer has an image this chat carries."
         case .takesNoImages: takesNoImagesLine(config)
+        case .refused(let error) where error.code == BranchRefusal.nothingToAnswer.code:
+            sentence(for: .nothingToAnswer) ?? ""
         case .refused(let error), .lost(let error):
             "\(config.name) did not take this message. \(error.errorDescription ?? "")"
                 .trimmingCharacters(in: .whitespaces)

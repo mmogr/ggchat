@@ -105,6 +105,16 @@ extension Conversation {
 }
 
 extension Message {
+    /// The text an edit to `text` saves: nil when it would leave the message
+    /// blank, unless the message carries images, and the message's own text,
+    /// space and all, when it differs from it only by the space around it,
+    /// so the rules refuse it as unchanged.
+    public func edited(to text: String) -> String? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty || !images.isEmpty else { return nil }
+        return trimmed == content.trimmingCharacters(in: .whitespacesAndNewlines) ? content : trimmed
+    }
+
     /// A copy for a branch: a new id, remembering the message it copies as
     /// first written. Never a reply being written: a copy carries no run.
     var copied: Message {

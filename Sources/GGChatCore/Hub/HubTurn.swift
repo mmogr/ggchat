@@ -23,12 +23,20 @@ public struct HubTurn: Codable, Sendable, Equatable {
     /// remembers, and a hub from before the key, which would refuse it, is
     /// never sent it.
     public let thinking: HubThinking?
+    /// Whether the turn answers the question the chat already ends in, as a
+    /// change leaves it (ADR 0010), rather than adding a message: it then
+    /// has no text and no image. Left out of the body when false.
+    public let answerSaved: Bool
 
-    public init(conversationID: Int64, content: String, images: [String] = [], thinking: HubThinking? = nil) {
+    public init(
+        conversationID: Int64, content: String, images: [String] = [], thinking: HubThinking? = nil,
+        answerSaved: Bool = false
+    ) {
         self.conversationID = conversationID
         self.content = content
         self.images = images
         self.thinking = thinking
+        self.answerSaved = answerSaved
     }
 
     enum CodingKeys: String, CodingKey {
@@ -36,6 +44,7 @@ public struct HubTurn: Codable, Sendable, Equatable {
         case content
         case images
         case thinking
+        case answerSaved = "answer_saved"
     }
 
     public init(from decoder: any Decoder) throws {
@@ -44,6 +53,7 @@ public struct HubTurn: Codable, Sendable, Equatable {
         content = try container.decode(String.self, forKey: .content)
         images = try container.decodeIfPresent([String].self, forKey: .images) ?? []
         thinking = try container.decodeIfPresent(HubThinking.self, forKey: .thinking)
+        answerSaved = try container.decodeIfPresent(Bool.self, forKey: .answerSaved) ?? false
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -52,6 +62,7 @@ public struct HubTurn: Codable, Sendable, Equatable {
         try container.encode(content, forKey: .content)
         if !images.isEmpty { try container.encode(images, forKey: .images) }
         try container.encodeIfPresent(thinking, forKey: .thinking)
+        if answerSaved { try container.encode(true, forKey: .answerSaved) }
     }
 }
 

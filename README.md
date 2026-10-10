@@ -614,7 +614,7 @@ Each claim names the test that keeps it true.
   device has lost its ticket for says to pair again. A chat on screen keeps
   its rows while it is read again. The wire shapes replay the bodies gglib records, and a row
   whose metadata cannot be read still opens without it.
-  <!-- test: HubChatsWireTests.testTheListReadsEveryChatNewestFirst -->
+  <!-- test: HubChatsWireTests.testTheListReadsEveryChatInTheHubsOrder -->
   <!-- test: HubChatsWireTests.testAnOpenedChatReadsItsConversationAndRows -->
   <!-- test: HubChatsWireTests.testNullAndMissingOptionalsDecodeAsNil -->
   <!-- test: HubChatsWireTests.testUnknownKeysArePassedOver -->
@@ -1129,6 +1129,36 @@ Each claim names the test that keeps it true.
   <!-- test: BranchSwitcherTests.testAnOptionIsListedByItsLineOrWhatStandsInForOne -->
   <!-- test: MessageChangesTests.testEachMenuItemMakesItsOwnChange -->
   <!-- test: MessageChangesTests.testTheEditorSavesOnlyAChange -->
+- A Mac's chat offers the same changes from each turn's menu, and the Mac
+  makes them by the same rules, keeping any branch as one of its chats: the
+  change names the Mac's row, the chat the Mac names opens with its branch
+  points, a reply's at its text even when it first called a tool, and a
+  question the Mac says to answer is answered by a turn that says so, with
+  the Thinking choice set here. A refusal says the rule's sentence, and a
+  chat that ends in a question nothing answers offers Answer. Nothing is
+  sent while a reply is written or another change is on its way, or to a
+  Mac out of reach; a change answered after its chat was left opens
+  nothing; an editor open while the chat is read again still names its
+  row; and nothing of either chat is written here. The wire shapes replay
+  the bodies gglib records, and its refusals keep their codes (ADR 0010).
+  <!-- test: HubChatBranchingTests.testAnEditOfAnAnsweredQuestionOpensTheMacsBranchAndAnswersIt -->
+  <!-- test: HubChatBranchingTests.testBranchFromHereOpensTheBranchAndAnswersNothing -->
+  <!-- test: HubChatBranchingTests.testARefusalSaysTheRulesSentence -->
+  <!-- test: HubChatBranchingTests.testAnswerAnswersTheQuestionNothingAnswers -->
+  <!-- test: HubChatBranchingTests.testTheAnswerSaysTheThinkingChoiceOfTheChatItWasAskedFrom -->
+  <!-- test: HubChatBranchingTests.testAPointAtAReplyThatCalledAToolIsDrawnAtItsText -->
+  <!-- test: HubChatBranchingTests.testOnlyASentQuestionIsDrawnAboveItsReply -->
+  <!-- test: HubChatBranchGuardsTests.testAChangeWhileAReplyIsWrittenOrAChangeIsOnItsWayIsRefused -->
+  <!-- test: HubChatBranchGuardsTests.testAChangeToAMacOutOfReachIsRefused -->
+  <!-- test: HubChatBranchGuardsTests.testAChangeAnsweredAfterItsChatWasLeftOpensNothing -->
+  <!-- test: HubChatBranchGuardsTests.testAChangeMadeInPlaceReadsTheChatAgainAndAnswersIt -->
+  <!-- test: HubChatBranchGuardsTests.testAnEditorOpenAcrossAReadStillNamesItsRow -->
+  <!-- test: HubChatBranchesWireTests.testABranchOpensWithItsPointAndAnswerable -->
+  <!-- test: HubChatBranchesWireTests.testAChatWithoutBranchesSaysNeither -->
+  <!-- test: HubChatBranchesWireTests.testAChangeIsTheRecordedBody -->
+  <!-- test: HubChatBranchesWireTests.testTheAnswerTurnIsTheRecordedBody -->
+  <!-- test: HubChatBranchesWireTests.testEachRowIsKeyedByTheRowThatStartsItsTurn -->
+  <!-- test: HubChatBranchesWireTests.testGglibsRefusalsOfAChangeKeepTheirCodes -->
 
 ## Building and testing
 
