@@ -81,7 +81,7 @@ extension ProviderError.Code {
         case .invalidImageSize:
             "The image model does not draw that size. Ask for a size the server's sentence names."
         case .imageGenerationFailed:
-            "The image model started the picture and failed. Ask again, or for another picture or size."
+            "No picture was drawn. Ask again, or for another picture or size."
         case .imageRenderStalled:
             "The picture stopped making progress, so the image model was stopped. Ask again."
         case .imageRuntimeNotInstalled:

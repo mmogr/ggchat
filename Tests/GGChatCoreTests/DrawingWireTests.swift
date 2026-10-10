@@ -13,8 +13,7 @@ final class DrawingWireTests: XCTestCase {
             "The serving machine has nothing to draw with for this message. It needs an image model with all its "
             + "files, and a default one when it has several.",
         .invalidImageSize: "The image model does not draw that size. Ask for a size the server's sentence names.",
-        .imageGenerationFailed:
-            "The image model started the picture and failed. Ask again, or for another picture or size.",
+        .imageGenerationFailed: "No picture was drawn. Ask again, or for another picture or size.",
         .imageRenderStalled: "The picture stopped making progress, so the image model was stopped. Ask again.",
         .imageRuntimeNotInstalled:
             "The serving machine has no image runtime. Install it there with \u{201C}gglib config sd install\u{201D}.",
