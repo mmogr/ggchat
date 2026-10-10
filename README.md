@@ -1075,6 +1075,24 @@ Each claim names the test that keeps it true.
 - Punctuation in the transcript reads as typed: `---` stays three hyphens
   rather than becoming an em dash, and straight quotes stay straight.
   <!-- test: MarkdownTests.testPunctuationReadsAsTyped -->
+- The rules that decide when a change to a chat branches it are gglib's,
+  held to every case gglib records: an edit of an answered question, a
+  regenerate, an edit of a reply and a branch from a turn each copy the chat
+  into a new one of its family, and only an edit of the last question
+  nothing answers is made in place; a change that names no message, changes
+  nothing, regenerates a question or gives a reply an image is refused with
+  gglib's code. The options a family holds where its chats part are the ones
+  gglib finds, each shown by its first line of text, cut at 80 characters,
+  or by what stands in for an image (ADR 0010).
+  <!-- test: BranchingContractTests.testEveryChangeIsPlannedOrRefusedAsGglibDoes -->
+  <!-- test: BranchingContractTests.testEveryFamilysBranchPointsAreTheOnesGglibFinds -->
+  <!-- test: BranchRulesTests.testAQuestionIsShownByItsFirstLineCutAtEightyCharacters -->
+  <!-- test: BranchRulesTests.testAQuestionOfImagesAloneSaysHowMany -->
+  <!-- test: BranchRulesTests.testAReplyIsShownByItsLastLineOfText -->
+  <!-- test: BranchRulesTests.testAFamilyOfThisDevicesChatsPartsWhereItsTurnsDiffer -->
+  <!-- test: BranchRulesTests.testAnEditOfTheLastQuestionIsMadeInPlaceOnlyWhileNothingIsWritingItsReply -->
+  <!-- test: BranchRulesTests.testAReplyEditedToItsOwnTextIsRefused -->
+  <!-- test: BranchRulesTests.testATieInTimeIsBrokenByTheHigherChatID -->
 
 ## Building and testing
 
@@ -1254,6 +1272,11 @@ against the mock.
   is a setting of the conversation, offered only where gglib lists the model
   as one that thinks; a Mac's chat keeps its own, and this phone stores
   nothing of it.
+- [ADR 0010](docs/adr/0010-history-is-never-rewritten.md): a saved reply is
+  never rewritten. A change that would discard or alter one copies the chat,
+  as far as the change, into a new conversation of its family, by gglib's
+  rules; a Mac's chat is changed by the Mac, and nothing of it is copied
+  here.
 
 ## Releases
 
