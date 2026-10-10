@@ -127,6 +127,9 @@ struct LiveReplyRow: View {
             if !live.reasoning.isEmpty {
                 ReasoningRow(text: live.reasoning, isThinking: live.content.isEmpty)
             }
+            ForEach(Array(live.tools.enumerated()), id: \.offset) { _, line in
+                ToolLine(line: line)
+            }
             if let waiting = model.waitingLine(for: live, locale: locale, calendar: calendar) {
                 // Plain text, which VoiceOver reads as it is shown. Stop is the
                 // composer's button, as for any reply in flight.
@@ -139,13 +142,14 @@ struct LiveReplyRow: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
-            } else if live.content.isEmpty, live.reasoning.isEmpty {
+            } else if live.awaitsFirstToken {
                 ProgressView()
                     .controlSize(.small)
                     .accessibilityLabel("Waiting for the first token")
             } else {
                 MarkdownBlocksView(blocks: live.blocks)
             }
+            LiveReplyWork(live: live)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: live.content.count)

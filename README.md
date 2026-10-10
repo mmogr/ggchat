@@ -306,6 +306,22 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingRunImageTests.testAReplyOfAPictureAloneIsKept -->
   <!-- test: DrawingStoreTests.testThatAQuestionDrewAndHowItsRunWritesOutliveAReopening -->
   <!-- test: DrawingStoreTests.testAStoreOpensAcrossTheDrawingColumnsInBothDirections -->
+- Both composers have a Draw switch beside the field, the local one only
+  where the provider is gglib, and dimmed there unless it is a paired Mac. Its state is never colour alone: the brush is
+  filled while on and an outline while off, with "On" or "Off" to hear. A
+  hub that cannot draw dims it and keeps it showing off, VoiceOver hears
+  "Unavailable" and the reason, and a press says the reason and turns
+  nothing on. While a picture is drawn or waited for, a reply shows the
+  line for it in the spinner's place, or under its words when it has some,
+  with a bar while the steps are counted and the latest look at the
+  picture, drawn from the frame as it came and scaled up smoothly; bytes
+  that are not a picture draw nothing. A reply kept on this device also
+  shows a line for each tool it calls, and under it the pictures made, read
+  from this device's store.
+  <!-- test: DrawingViewTests.testTheDrawSwitchSaysItsStateAndAPressSaysWhyItCannotDraw -->
+  <!-- test: DrawingViewTests.testAMacsReplyDrawsTheWorkInPlaceOfTheSpinner -->
+  <!-- test: DrawingViewTests.testTheWorkIsItsLineItsBarAndTheLatestLook -->
+  <!-- test: DrawingViewTests.testAReplyKeptHereShowsItsToolsAndNoSpinnerWhileAPictureIsDrawn -->
 - A pairing string is read by modelpipe as it is typed and as it is scanned,
   against `docs/pairing-v0.md`'s normative vectors: the ticket comes back in
   its canonical lower-case form, so a QR scan and a paste of the same machine

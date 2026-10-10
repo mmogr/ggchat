@@ -4,8 +4,9 @@ import SwiftUI
 /// The reply a Mac is writing to its chat open, under the chat's rows: the
 /// question this phone sent, with its images, until the rows read from the
 /// Mac hold it, then the reply as it arrives, a line for each tool it calls,
-/// and under the reply's text the images its tools made, as the Mac's own
-/// page draws them.
+/// how far a picture being drawn has got with the latest look at it, and
+/// under the reply's text the images its tools made, as the Mac's own page
+/// draws them.
 struct HubLiveReplyRows: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let reply: HubLiveReply
@@ -21,17 +22,19 @@ struct HubLiveReplyRows: View {
                 ReasoningRow(text: reply.reasoning, isThinking: reply.content.isEmpty && !reply.ended)
             }
             ForEach(Array(reply.tools.enumerated()), id: \.offset) { _, line in
-                Label(line, systemImage: "wrench.and.screwdriver")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                ToolLine(line: line)
             }
-            if reply.content.isEmpty, !reply.ended {
+            if reply.awaitsFirstToken {
                 ProgressView()
                     .controlSize(.small)
                     .accessibilityLabel("Waiting for the first token")
             } else {
                 MarkdownBlocksView(blocks: reply.blocks)
+            }
+            // In the spinner's place while a picture is drawn, and beside
+            // the words when the model wrote some before it called the tool.
+            if !reply.work.isEmpty {
+                ToolWorkView(work: reply.work)
             }
             if !reply.made.isEmpty {
                 MessageImages(images: reply.made, fromHub: true)
@@ -49,7 +52,7 @@ struct HubLiveReplyRows: View {
 /// sentence the last send left, and above them the context ring once the
 /// chat has a reading. An image is picked, pasted or dropped
 /// as in the local composer, through the one downscale, and a draft may be
-/// images alone. Stock controls: the app's glass is the local composer's
+/// images alone. Draw is pressed for one message (`DrawToggle`). Stock controls: the app's glass is the local composer's
 /// alone.
 struct HubComposer: View {
     @Environment(AppModel.self) private var model
@@ -85,6 +88,11 @@ struct HubComposer: View {
             HStack(alignment: .bottom, spacing: 8) {
                 AddImageButtons(
                     disabled: writing, refusal: canSee ? nil : "This model cannot read images.", take: take)
+                DrawToggle(isOn: draft.draws, refusal: model.hubDrawRefusal, disabled: writing) {
+                    draft.draws = $0
+                } say: {
+                    model.lastError = $0
+                }
                 TextField("Message", text: $draft.text, axis: .vertical)
                     .lineLimit(1...8)
                     .textFieldStyle(.roundedBorder)

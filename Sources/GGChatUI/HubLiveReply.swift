@@ -88,6 +88,12 @@ public final class HubLiveReply {
         self.draws = draws
     }
 
+    /// Whether the reply shows the spinner: it has no words, its run has not
+    /// ended, and no picture is being drawn or waited for in their place.
+    var awaitsFirstToken: Bool {
+        content.isEmpty && !ended && work.isEmpty
+    }
+
     /// Whether nothing of a reply has arrived: no word, no thought, no tool
     /// called and no image made.
     var isEmpty: Bool {

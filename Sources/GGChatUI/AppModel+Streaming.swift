@@ -174,7 +174,8 @@ extension AppModel {
             live.finishReason = reason
         case .images(let images):
             live.made += images.filter { image in !live.made.contains { $0.id == image.id } }
-        case .tool, .toolProgress, .toolEnded, .waiting: break
+        case .tool(let line): live.tools.append(line)
+        case .toolProgress, .toolEnded, .waiting: break
         }
     }
 

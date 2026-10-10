@@ -466,8 +466,22 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # own line, and a run that failed otherwise, or after its reply began, ending
 # as a reply that stopped. It is the whole of that guard, and the README
 # claim names it.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 695
+#
+# 2026-10-10: 695 -> 699 and 612 -> 616. Four tests pin what is drawn of
+# drawing: the switch's symbol, spoken value and what a press does; a Mac's
+# reply drawing the work in the spinner's place; the work's bar and latest
+# look; and a reply kept here with its tool lines, its spinner and what is
+# drawn under it. No UI walk covers the switch in a composer, so they are the
+# whole of that guard, and the README claim names all four.
+#
+# 2026-10-10: 699 -> 703 and 616 -> 620. Four more tests pin drawing from a
+# conversation kept here: a question a hub refused to draw for no longer
+# asking; a provider moved to another Mac forgetting what was said of
+# drawing; a run written a way this build cannot read stopped and given up;
+# and its report, and a list holding it, still read. The README claim for a
+# kept conversation names all four.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 703
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 612
+floor "README test markers" "${markers:-0}" 620
 
 exit $status
