@@ -127,11 +127,11 @@ public final class SwiftDataStore: Store {
                         reasoning: message.reasoning, isPartial: message.isPartial,
                         failure: Self.failure(from: message.failureData), createdAt: message.createdAt,
                         runID: message.runID, runCursor: message.runCursor.flatMap(UInt32.init(exactly:)),
-                        images: Self.images(from: message.imagesData))
+                        images: Self.images(from: message.imagesData), originID: message.originID)
                 },
                 systemPrompt: record.systemPrompt, createdAt: record.createdAt, updatedAt: record.updatedAt,
                 hasUnreadReply: record.hasUnreadReply ?? false, context: Self.reading(from: record.contextData),
-                thinkingOff: record.thinkingOff ?? false)
+                thinkingOff: record.thinkingOff ?? false, branchOf: record.branchOf, family: record.family)
         }
     }
 
@@ -163,6 +163,8 @@ public final class SwiftDataStore: Store {
             Self.assign(\.systemPrompt, of: record, to: conversation.systemPrompt)
             Self.assign(\.hasUnreadReply, of: record, to: conversation.hasUnreadReply)
             Self.assign(\.thinkingOff, of: record, to: conversation.thinkingOff)
+            Self.assign(\.branchOf, of: record, to: conversation.branchOf)
+            Self.assign(\.family, of: record, to: conversation.family)
             Self.assign(\.updatedAt, of: record, to: conversation.updatedAt)
             if Self.reading(from: record.contextData) != conversation.context {
                 record.contextData = try conversation.context.map { try JSONEncoder().encode($0) }
@@ -173,7 +175,7 @@ public final class SwiftDataStore: Store {
                 model: conversation.model, createdAt: conversation.createdAt, updatedAt: conversation.updatedAt,
                 systemPrompt: conversation.systemPrompt, hasUnreadReply: conversation.hasUnreadReply,
                 contextData: try conversation.context.map { try JSONEncoder().encode($0) },
-                thinkingOff: conversation.thinkingOff)
+                thinkingOff: conversation.thinkingOff, branchOf: conversation.branchOf, family: conversation.family)
             context.insert(record)
         }
         var existing = Dictionary(record.messages.map { ($0.uuid, $0) }, uniquingKeysWith: { first, _ in first })
@@ -200,7 +202,7 @@ public final class SwiftDataStore: Store {
                     reasoning: message.reasoning, isPartial: message.isPartial, createdAt: message.createdAt,
                     order: order, failureData: try message.failure.map { try JSONEncoder().encode($0) },
                     runID: message.runID, runCursor: message.runCursor.map(Int.init),
-                    imagesData: try Self.data(of: message.images))
+                    imagesData: try Self.data(of: message.images), originID: message.originID)
                 row.conversation = record
                 context.insert(row)
             }

@@ -66,13 +66,18 @@ public final class ConversationRecord {
     /// Whether the conversation asks its model not to think, or nil, which
     /// reads as no. Optional, for `systemPrompt`'s reason.
     public var thinkingOff: Bool?
+    /// The conversation this one was branched from, and the first of its
+    /// family, or nil for one started here (ADR 0010). Optional, for
+    /// `systemPrompt`'s reason.
+    public var branchOf: UUID?
+    public var family: UUID?
     @Relationship(deleteRule: .cascade, inverse: \MessageRecord.conversation)
     public var messages: [MessageRecord] = []
 
     public init(
         id: UUID, title: String, providerID: UUID?, model: String?, createdAt: Date, updatedAt: Date,
         systemPrompt: String? = nil, hasUnreadReply: Bool? = nil, contextData: Data? = nil,
-        thinkingOff: Bool? = nil
+        thinkingOff: Bool? = nil, branchOf: UUID? = nil, family: UUID? = nil
     ) {
         self.uuid = id
         self.title = title
@@ -82,6 +87,8 @@ public final class ConversationRecord {
         self.hasUnreadReply = hasUnreadReply
         self.contextData = contextData
         self.thinkingOff = thinkingOff
+        self.branchOf = branchOf
+        self.family = family
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -107,13 +114,17 @@ public final class MessageRecord {
     /// under the same id. Nil for a turn with none. Optional, for
     /// `failureData`'s reason.
     public var imagesData: Data?
+    /// The message this one copies as first written, when a branch copied
+    /// it, or nil (ADR 0010). Optional, for `failureData`'s reason.
+    public var originID: UUID?
     public var createdAt: Date
     public var order: Int
     public var conversation: ConversationRecord?
 
     public init(
         id: UUID, role: String, content: String, reasoning: String?, isPartial: Bool, createdAt: Date, order: Int,
-        failureData: Data? = nil, runID: String? = nil, runCursor: Int? = nil, imagesData: Data? = nil
+        failureData: Data? = nil, runID: String? = nil, runCursor: Int? = nil, imagesData: Data? = nil,
+        originID: UUID? = nil
     ) {
         self.uuid = id
         self.role = role
@@ -124,6 +135,7 @@ public final class MessageRecord {
         self.runID = runID
         self.runCursor = runCursor
         self.imagesData = imagesData
+        self.originID = originID
         self.createdAt = createdAt
         self.order = order
     }

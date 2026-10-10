@@ -1093,6 +1093,29 @@ Each claim names the test that keeps it true.
   <!-- test: BranchRulesTests.testAnEditOfTheLastQuestionIsMadeInPlaceOnlyWhileNothingIsWritingItsReply -->
   <!-- test: BranchRulesTests.testAReplyEditedToItsOwnTextIsRefused -->
   <!-- test: BranchRulesTests.testATieInTimeIsBrokenByTheHigherChatID -->
+- A saved reply is never rewritten on this device. Editing a question that
+  has been answered, or regenerating a reply, opens a new branch of the
+  conversation, a copy as far as the change with the same title, model,
+  system prompt and Thinking choice, and answers it there; the conversation
+  it was made on is left as it was, and each offers the other's reply where
+  they part. An edited reply is kept as written on a branch and not
+  answered; Branch from here copies the conversation and sends nothing. Only
+  the last question nothing answers, while no reply to it is being written,
+  is edited in place, and a reply saved as it was changes nothing. A copy carries no
+  run, a branch of a branch belongs to the first conversation's family, and
+  a branch's lineage survives a relaunch (ADR 0010).
+  <!-- test: AppModelBranchingTests.testAnEditOfAnAnsweredQuestionOpensABranchAnsweredThere -->
+  <!-- test: AppModelBranchingTests.testARegenerateBranchesAndBothConversationsOfferEitherReply -->
+  <!-- test: AppModelBranchingTests.testAnEditedReplyIsKeptAsWrittenOnABranchAndNotAnswered -->
+  <!-- test: AppModelBranchingTests.testBranchFromHereCopiesTheConversationAndSendsNothing -->
+  <!-- test: AppModelBranchingTests.testAnEditOfTheLastQuestionNothingAnswersIsMadeInPlace -->
+  <!-- test: AppModelBranchingTests.testARegenerateOfAQuestionIsRefusedAndChangesNothing -->
+  <!-- test: AppModelBranchingTests.testAReplySavedAsItWasIsRefusedAndMakesNoBranch -->
+  <!-- test: AppModelBranchingTests.testAQuestionWhoseReplyIsStreamingIsEditedOnABranch -->
+  <!-- test: ConversationBranchesTests.testABranchCopiesTheSettingsAndNoRun -->
+  <!-- test: ConversationBranchesTests.testABranchOfABranchIsOfTheFirstFamilyAndCopiesTheFirstMessages -->
+  <!-- test: ConversationBranchesTests.testAQuestionEditedInPlaceIsANewMessage -->
+  <!-- test: BranchStoreTests.testABranchsLineageSurvivesTheRoundTrip -->
 
 ## Building and testing
 
