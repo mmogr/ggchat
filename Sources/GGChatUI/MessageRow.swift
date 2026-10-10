@@ -6,7 +6,9 @@ import SwiftUI
 /// is streaming after it, says how its turn ended: under a partial reply,
 /// with Continue, and under a question with no reply, with Retry and the
 /// reason when something gave one. A reply a hub is still writing away from this device offers
-/// neither, says where it is being written, and offers Stop.
+/// neither, says where it is being written, and offers Stop. A turn offers
+/// Edit, Regenerate and Branch from here in its menu, and where the chat's
+/// family parts at it, the switcher (ADR 0010).
 struct MessageRow: View {
     @Environment(AppModel.self) private var model
     let message: Message
@@ -21,10 +23,22 @@ struct MessageRow: View {
     /// Whether the images are a Mac's chat's, read from it into memory,
     /// rather than this device's kept ones.
     var imagesFromHub = false
+    /// The switcher at the branch point the turn starts, if the family
+    /// parts here.
+    var branch: BranchChoice?
+    /// What the menu offers on the turn, made the chat's own way; nil for a
+    /// turn that offers none.
+    var changes: MessageChanges?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            RoleLabel(role: message.role)
+            HStack {
+                RoleLabel(role: message.role)
+                if let branch {
+                    Spacer()
+                    BranchSwitcher(choice: branch)
+                }
+            }
             if let reasoning = message.reasoning, !reasoning.isEmpty {
                 ReasoningRow(text: reasoning, isThinking: false)
             }
@@ -43,6 +57,15 @@ struct MessageRow: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .contextMenu {
+            if let changes, !message.isBeingWritten {
+                Button("Edit", systemImage: "pencil") { changes.edit(message) }
+                if message.role == .assistant {
+                    Button("Regenerate", systemImage: "arrow.clockwise") { changes.regenerate(message.id) }
+                }
+                Button("Branch from here", systemImage: "arrow.triangle.branch") { changes.branch(message.id) }
+            }
+        }
     }
 
     /// Under a reply a hub is still writing: where, and Stop, which is always

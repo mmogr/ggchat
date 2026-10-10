@@ -2,7 +2,8 @@ import GGChatCore
 import SwiftUI
 
 /// One conversation in the list: its title, what it talks to, and, beside
-/// the title, whether a reply is still being written or waits unread.
+/// the title, whether a reply is still being written or waits unread. A
+/// branch of another conversation (ADR 0010) carries the branch symbol.
 struct ConversationRow: View {
     @Environment(AppModel.self) private var model
     let conversation: Conversation
@@ -11,6 +12,7 @@ struct ConversationRow: View {
         let mark = model.mark(for: conversation)
         VStack(alignment: .leading, spacing: 2) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
+                if conversation.branchOf != nil { BranchMark() }
                 Text(title)
                     .fontWeight(mark == .unread ? .semibold : nil)
                     .lineLimit(1)

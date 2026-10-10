@@ -45,6 +45,14 @@ extension AppModel {
         make(.branch(messageID: messageID), in: conversation)
     }
 
+    /// What a turn's menu offers on the conversation, `edit` opening the
+    /// editor on the turn.
+    func messageChanges(in conversationID: UUID, edit: @escaping (Message) -> Void) -> MessageChanges {
+        MessageChanges(
+            edit: edit, regenerate: { [weak self] in self?.regenerate($0, in: conversationID) },
+            branch: { [weak self] in self?.branch(from: $0, in: conversationID) })
+    }
+
     /// Opens a conversation of the family: an option at a branch point.
     public func openBranch(_ conversationID: UUID) {
         guard conversation(conversationID) != nil else { return }

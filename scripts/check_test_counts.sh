@@ -376,8 +376,15 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # regenerate; a copy's settings, origin and no run; a branch of a branch in
 # the first family; and the lineage through the store. The README claim
 # names all twelve.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 621
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 27
-floor "README test markers" "${markers:-0}" 536
+#
+# 2026-10-10: 621 -> 625, 27 -> 28 and 536 -> 541. Five tests pin the
+# branch screens: the switcher's position, said and shown, and how it lists
+# an option; what each item of a turn's menu does; when the editor can save;
+# and a reply edited from its menu walked on a simulator, opening its branch
+# with the switcher and going back by Previous. The README claim names all
+# five.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 625
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
+floor "README test markers" "${markers:-0}" 541
 
 exit $status
