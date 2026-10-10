@@ -67,7 +67,9 @@ final class ErrorTests: XCTestCase {
             .modelFileNotFound, .modelLoading, .modelNotFound, .notAnEmbeddingModel,
             .pinnedModelMismatch, .profileNotFound, .stagnationDetected, .upstreamError,
             .upstreamTimeout, .modelCannotReadImages, .requestTooLarge, .imageTooLarge, .unsupportedImage,
-            .attachmentNotFound, .requestImagesTooLarge,
+            .attachmentNotFound, .requestImagesTooLarge, .imageModelCannotChat, .drawingUnavailable,
+            .invalidImageSize, .imageGenerationFailed, .imageRenderStalled, .imageRuntimeNotInstalled,
+            .imageModelIncomplete, .imageModelDoesNotFit, .modelUnavailable, .unavailable,
         ]
         XCTAssertEqual(
             Set(published.map(\.rawValue)), publishedCodes,
@@ -141,8 +143,10 @@ final class ErrorTests: XCTestCase {
         XCTAssertEqual(wedged.hint, WhereToLook.servingSide.hint)
         XCTAssertNil(ProviderError.server(status: 418, code: "something_new", message: "?").hint)
         // `tunnel_unavailable`'s sentence is read in `QuietMachineTests`, and
-        // the image codes' in `ImageRefusalTests`.
+        // the image codes' in `ImageRefusalTests`, and the drawing codes' in
+        // `DrawingWireTests`.
         let read = Set<ProviderError.Code>([.invalidAPIKey, .tunnelUnavailable]).union(ImageRefusalTests.hints.keys)
+            .union(DrawingWireTests.hints.keys)
         for code in ProviderError.Code.allCases where !read.contains(code) {
             XCTAssertNil(code.hint, "\(code.rawValue) has a sentence of its own that no test reads")
         }

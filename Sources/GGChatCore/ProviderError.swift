@@ -144,6 +144,22 @@ extension ProviderError {
         case unsupportedImage = "unsupported_image"
         case attachmentNotFound = "attachment_not_found"
         case requestImagesTooLarge = "request_images_too_large"
+
+        // gglib's drawing: `docs/error-codes.json`. A turn or a run that
+        // asked to draw is refused with one, or its run ends with one, and
+        // so does a chat sent to a model that only draws. The last two are
+        // a run's own: gglib now creates a run before its model is loaded,
+        // so what a `PUT` used to answer can be how the run ends.
+        case imageModelCannotChat = "image_model_cannot_chat"
+        case drawingUnavailable = "drawing_unavailable"
+        case invalidImageSize = "invalid_image_size"
+        case imageGenerationFailed = "image_generation_failed"
+        case imageRenderStalled = "image_render_stalled"
+        case imageRuntimeNotInstalled = "image_runtime_not_installed"
+        case imageModelIncomplete = "image_model_incomplete"
+        case imageModelDoesNotFit = "image_model_does_not_fit"
+        case modelUnavailable = "model_unavailable"
+        case unavailable
     }
 }
 
@@ -167,8 +183,12 @@ extension ProviderError.Code {
         // used as a key, most likely — and the code that fixes it is handed
         // out there. A device that machine has forgotten never gets this far:
         // the edge refuses its key first, with `invalid_api_key`.
+        // The drawing codes here are each about what the serving machine
+        // has to draw with, or about a picture it started and lost.
         case .invalidAPIKey, .badGateway, .backendUnreachable, .deviceNotPaired, .hostNotAllowed, .internalError,
-            .invalidPairingCode, .mcpNotAllowedOverTunnel, .modelFileNotFound, .upstreamError:
+            .invalidPairingCode, .mcpNotAllowedOverTunnel, .modelFileNotFound, .upstreamError,
+            .drawingUnavailable, .imageGenerationFailed, .imageRuntimeNotInstalled, .imageModelIncomplete,
+            .modelUnavailable:
             .servingSide
 
         // Written on this device, about this device's reach.
@@ -186,12 +206,17 @@ extension ProviderError.Code {
         case .badRequest, .contextLengthExceeded, .embeddingModelCannotChat, .invalidRequest,
             .loopDetected, .modelNotFound, .notAnEmbeddingModel, .pinnedModelMismatch,
             .profileNotFound, .stagnationDetected, .modelCannotReadImages, .requestTooLarge,
-            .imageTooLarge, .unsupportedImage, .attachmentNotFound, .requestImagesTooLarge:
+            .imageTooLarge, .unsupportedImage, .attachmentNotFound, .requestImagesTooLarge,
+            .imageModelCannotChat, .invalidImageSize:
             .request
 
         // Nothing is wrong yet: a model still loading, a queue that did not
         // reach this request in time, a first byte that has not arrived.
-        case .admissionTimeout, .modelLoading, .upstreamTimeout:
+        // A picture that stalled was stopped and can be asked for again, and
+        // an image model that does not fit will once the reply in its way
+        // has ended.
+        case .admissionTimeout, .modelLoading, .upstreamTimeout, .imageRenderStalled, .imageModelDoesNotFit,
+            .unavailable:
             .waitAndRetry
         }
     }
@@ -219,6 +244,9 @@ extension ProviderError.Code {
     /// refused" does not say which part of it to change. The sentence for
     /// `model_cannot_read_images` is also what this app says when it refuses
     /// such a send itself.
+    ///
+    /// The drawing codes each have one too, in `drawingHint`: their side
+    /// alone does not say that a picture is what failed, or what to do.
     public var hint: String? {
         switch self {
         case .invalidAPIKey:
@@ -241,12 +269,15 @@ extension ProviderError.Code {
         case .requestImagesTooLarge:
             "The images in this conversation are over the 16 MiB one request to a model may carry. Start a "
                 + "new conversation to send more."
+        case .imageModelCannotChat, .drawingUnavailable, .invalidImageSize, .imageGenerationFailed,
+            .imageRenderStalled, .imageRuntimeNotInstalled, .imageModelIncomplete, .imageModelDoesNotFit:
+            drawingHint
         case .badRequest, .badGateway, .backendUnreachable, .incompleteRequest,
             .admissionTimeout, .contextLengthExceeded, .deviceNotPaired, .embeddingModelCannotChat,
             .hostNotAllowed, .internalError, .invalidPairingCode, .invalidRequest, .loopDetected,
             .mcpNotAllowedOverTunnel, .modelFileNotFound, .modelLoading, .modelNotFound,
             .notAnEmbeddingModel, .pinnedModelMismatch, .profileNotFound, .stagnationDetected,
-            .upstreamError, .upstreamTimeout:
+            .upstreamError, .upstreamTimeout, .modelUnavailable, .unavailable:
             nil
         }
     }

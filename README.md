@@ -168,6 +168,19 @@ Each claim names the test that keeps it true.
   <!-- test: ImageStoreTests.testAStoreOpensAcrossTheImagesChangeInBothDirections -->
   <!-- test: ImageStoreTests.testTheResetLeavesNoImageFileBehind -->
   <!-- test: FirstRunUITests.testAPastedImageIsSentAloneAndDrawnInTheTranscript -->
+- gglib draws pictures with an image model, and its model list names one
+  with `image_generation`. Such a model cannot chat, and neither can one
+  listed with `embeddings`: the model list offers neither, and a provider
+  with no model chosen takes the first that can chat, not the first listed.
+  Each of the eight codes gglib's drawing refuses with has a line of its own
+  that says what happened to the picture and what to do, on a saved failure
+  too; a picture that stalled, and an image model with no room while another
+  reply is written, say to ask again and name no machine. The two codes a
+  run can now end with, `model_unavailable` and `unavailable`, name a side.
+  <!-- test: DrawingWireTests.testEachDrawingCodeSaysWhatToDo -->
+  <!-- test: DrawingWireTests.testTheModelListSaysWhichModelDrawsAndWhichCanChat -->
+  <!-- test: DrawingModelListTests.testTheModelListOffersOnlyModelsThatCanChat -->
+  <!-- test: DrawingModelListTests.testTheDefaultModelIsTheFirstThatCanChat -->
 - A pairing string is read by modelpipe as it is typed and as it is scanned,
   against `docs/pairing-v0.md`'s normative vectors: the ticket comes back in
   its canonical lower-case form, so a QR scan and a paste of the same machine

@@ -114,7 +114,7 @@ struct Composer: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 if let provider {
-                    let models = model.models(for: provider.id)
+                    let models = model.chatModels(for: provider.id)
                     if models.isEmpty {
                         Text("No models listed yet.")
                             .foregroundStyle(.secondary)

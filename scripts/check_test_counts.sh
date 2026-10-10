@@ -413,8 +413,15 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # its rows put the image on the tool's row alone. They are the only check
 # that the shape gglib records is the shape read here, and the README claim
 # names both.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 652
+#
+# 2026-10-10: 652 -> 656 and 569 -> 573. Four tests pin what gglib's drawing
+# adds to its list and its refusals: each drawing code's own line and side,
+# on a saved failure too; `image_generation` and `embeddings` read as models
+# that cannot chat; the model list offering only those that can; and a
+# provider with no model chosen taking the first that can. They are the whole
+# of that guard, and the README claim names all four.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 656
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 569
+floor "README test markers" "${markers:-0}" 573
 
 exit $status

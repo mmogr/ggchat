@@ -162,6 +162,13 @@ extension AppModel {
         modelsByProvider[providerID] ?? []
     }
 
+    /// The models a conversation can be had with, which is what the model
+    /// list offers: every one the provider lists but those gglib names as
+    /// drawing pictures or serving embeddings (`ModelInfo.chats`).
+    public func chatModels(for providerID: UUID) -> [ModelInfo] {
+        models(for: providerID).filter(\.chats)
+    }
+
     /// Lists the provider's models and remembers them. Errors surface as
     /// the server's sentence.
     ///
@@ -181,7 +188,9 @@ extension AppModel {
             let models = try await provider.models()
             heard(config.id)
             modelsByProvider[config.id] = models
-            if config.defaultModel == nil, let first = models.first {
+            // The first that can chat: an image model or an embeddings model
+            // listed first is never chosen for a conversation.
+            if config.defaultModel == nil, let first = models.first(where: \.chats) {
                 var updated = config
                 updated.defaultModel = first.id
                 updateProvider(updated)
