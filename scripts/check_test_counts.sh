@@ -480,8 +480,14 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # drawing; a run written a way this build cannot read stopped and given up;
 # and its report, and a list holding it, still read. The README claim for a
 # kept conversation names all four.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 703
+#
+# 2026-10-11: 703 -> 704 and 620 -> 621. One test pins a run that draws
+# reporting an error of its own before it ends failed: that sentence is what
+# the question shows, with no code, and Retry asks for the picture again. It
+# is what gglib does when the model never asks for the picture, and the
+# README claim for a kept conversation names it.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 704
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 620
+floor "README test markers" "${markers:-0}" 621
 
 exit $status

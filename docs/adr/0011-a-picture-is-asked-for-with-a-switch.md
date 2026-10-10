@@ -105,7 +105,8 @@ a run that ends so, with nothing of a reply read, is a refused turn: the
 draft goes back to the composer. `drawing_unavailable` and
 `image_model_cannot_chat` are answers to the `PUT`, before any run; they
 are taken the same way should a run ever end with one. For a conversation kept here the
-code goes on the question, as any run's failure does.
+code goes on the question, as any run's failure does; when the run reported
+an error of its own first, that sentence goes there instead, with no code.
 
 gglib's model list names an image model with `image_generation`. It cannot
 chat, and neither can one listed with `embeddings`: the model list offers

@@ -265,7 +265,9 @@ Each claim names the test that keeps it true.
   kept as one that drew, so Retry asks for the picture again while the hub
   can draw and goes without once it cannot; Continue never asks for one. A
   run that ends with one of drawing's codes leaves it on the question with
-  the code's own line, and a question the hub refused to draw for, with
+  the code's own line, unless the run reported an error of its own first:
+  then that sentence is what the question shows, with no code and no line
+  under it. A question the hub refused to draw for, with
   `drawing_unavailable` on the `PUT` or at the run's end, stops asking. A
   run whose answer names a way of writing its events this build does not
   know still reads as a run, is stopped, and is given up with a sentence;
@@ -279,6 +281,7 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingRunTests.testTheSwitchIsOffAgainOnceTheMessageIsSent -->
   <!-- test: DrawingRunTests.testTheRunsAnswerSaysHowItsEventsAreRead -->
   <!-- test: DrawingRunTests.testRetryAsksForThePictureAgainWhileTheHubCanDraw -->
+  <!-- test: DrawingRunTests.testARunsOwnErrorIsWhatTheQuestionShows -->
   <!-- test: DrawingRunTests.testContinueNeverAsksForAPicture -->
   <!-- test: DrawingRunTests.testAQuestionAHubRefusedToDrawForStopsAsking -->
   <!-- test: DrawingRunTests.testAProviderMovedToAnotherMacForgetsWhetherItCanDraw -->

@@ -128,6 +128,32 @@ final class DrawingRunTests: XCTestCase {
         XCTAssertEqual(model.selectedConversation?.messages.count, 1, "a retry added a second question")
     }
 
+    /// A run that reports an error of its own and then ends failed leaves
+    /// that sentence on the question, with no code and no line under it:
+    /// what gglib does when the model never asked for the picture. Retry
+    /// asks for the picture again.
+    func testARunsOwnErrorIsWhatTheQuestionShows() async throws {
+        let said = "the model did not ask for the picture; try again or pick a model that calls tools"
+        let hub = FakeRunHub(frames: [[.error(.stream(code: nil, message: said))]])
+        hub.with {
+            $0.ending = .failed
+            $0.error = RunError(code: "image_generation_failed", message: said)
+        }
+        let (model, _) = try await Self.makeModel(behind: hub)
+        XCTAssertTrue(model.send("a fox in snow", images: [], draws: true))
+        try await Runs.until("the failure") { Runs.settled(model) }
+        let failed = try question(model)
+        XCTAssertEqual(failed.failure?.message, "The reply stopped: \(said)")
+        XCTAssertNil(failed.failure?.code)
+        XCTAssertNil(failed.failure?.hint)
+        XCTAssertTrue(failed.draws)
+
+        try await XCTUnwrap(model.retry()).value
+        XCTAssertEqual(hub.with { $0.starts.map(\.request.draws) }, [true, true])
+        XCTAssertTrue(try question(model).draws)
+        XCTAssertEqual(model.selectedConversation?.messages.count, 1, "a retry added a second question")
+    }
+
     /// Continue carries a partial reply on, and never asks for a picture,
     /// though the question it answers did.
     func testContinueNeverAsksForAPicture() async throws {
