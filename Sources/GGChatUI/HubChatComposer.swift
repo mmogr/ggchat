@@ -118,9 +118,7 @@ struct HubComposer: View {
 
     private func sendIfPossible() {
         guard canSend else { return }
-        let sent = draft
-        draft = Draft()
-        model.sendToHubChat(sent.text, images: sent.images)
+        draft.sendToHubChat(through: model)
     }
 
     private func take(_ files: [Data]) {

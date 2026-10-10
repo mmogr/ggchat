@@ -196,6 +196,20 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingAvailabilityTests.testAnAskThatFailsKeepsTheAnswerBefore -->
   <!-- test: DrawingAvailabilityTests.testOnlyGGLibIsAskedAndOfferedTheSwitch -->
   <!-- test: DrawingAvailabilityTests.testAMacsChatSaysWhyItsMacCannotDraw -->
+- A picture is asked for with a switch, never detected: Draw is pressed for
+  one message, and it is the draft's, so the draft a send leaves has it off
+  again. A turn to a Mac's chat says `draw: true` only for a message sent
+  with it on to a Mac that said it can draw; any other turn is the body it
+  always was, with no such key. A Mac that cannot draw, one from before
+  drawing and one never heard from are sent the message without the word,
+  since an older gglib refuses a key it does not know. A turn the Mac
+  refuses gives its draft back with the switch as it was, and one put again
+  says the same as the first time.
+  <!-- test: DrawingWireTests.testATurnSaysDrawOnlyWhenItDraws -->
+  <!-- test: HubChatDrawTests.testATurnSaysDrawOnlyWhenTheSwitchIsOn -->
+  <!-- test: HubChatDrawTests.testAMacThatCannotDrawIsNeverSentTheWord -->
+  <!-- test: HubChatDrawTests.testTheSwitchIsOffAgainOnceTheMessageIsSent -->
+  <!-- test: HubChatDrawTests.testARefusedTurnKeepsItsSwitchAndALostOneIsPutAgainWithIt -->
 - A pairing string is read by modelpipe as it is typed and as it is scanned,
   against `docs/pairing-v0.md`'s normative vectors: the ticket comes back in
   its canonical lower-case form, so a QR scan and a paste of the same machine

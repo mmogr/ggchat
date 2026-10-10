@@ -111,4 +111,25 @@ final class DrawingWireTests: XCTestCase {
             XCTAssertEqual(error, .server(status: 503, code: nil, message: "busy"))
         }
     }
+
+    /// A turn that draws says `draw: true` beside its other keys, and one
+    /// that does not is the body it always was, with no such key: a gglib
+    /// from before drawing refuses a body with a key it does not know. A
+    /// body without the key reads as a turn that does not draw.
+    func testATurnSaysDrawOnlyWhenItDraws() throws {
+        func sent(_ turn: HubTurn) throws -> [String: Any] {
+            try XCTUnwrap(JSONSerialization.jsonObject(with: try JSONEncoder().encode(turn)) as? [String: Any])
+        }
+        let plain = HubTurn(conversationID: 12, content: "a fox in snow")
+        XCTAssertEqual(try sent(plain).keys.sorted(), ["content", "conversation_id"])
+        let drawn = HubTurn(conversationID: 12, content: "a fox in snow", draw: true)
+        XCTAssertEqual(try sent(drawn).keys.sorted(), ["content", "conversation_id", "draw"])
+        XCTAssertEqual(try sent(drawn)["draw"] as? Bool, true)
+        XCTAssertNotEqual(plain, drawn)
+
+        let decoder = JSONDecoder()
+        XCTAssertEqual(try decoder.decode(HubTurn.self, from: try JSONEncoder().encode(drawn)), drawn)
+        let body = Data(#"{"conversation_id":12,"content":"a fox in snow"}"#.utf8)
+        XCTAssertEqual(try decoder.decode(HubTurn.self, from: body), plain)
+    }
 }

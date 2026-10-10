@@ -26,6 +26,9 @@ public final class HubLiveReply {
     /// Whether the turn answers the question the chat already ends in, as a
     /// change on the Mac leaves it (ADR 0010), rather than asking one.
     let answersSaved: Bool
+    /// Whether the turn asks to draw: Draw was pressed for it and its Mac
+    /// could draw then. Fixed when it is sent, as `thinking` is.
+    let draws: Bool
     public internal(set) var content = ""
     public internal(set) var reasoning = ""
     /// A line for each tool the reply called.
@@ -70,7 +73,7 @@ public final class HubLiveReply {
 
     init(
         providerID: UUID, chatID: Int64, runID: String, question: String?, images: [DraftImage] = [],
-        thinking: HubThinking? = nil, answersSaved: Bool = false
+        thinking: HubThinking? = nil, answersSaved: Bool = false, draws: Bool = false
     ) {
         self.providerID = providerID
         self.chatID = chatID
@@ -79,6 +82,7 @@ public final class HubLiveReply {
         self.question = question
         self.images = images
         self.thinking = thinking
+        self.draws = draws
     }
 
     /// Adds one event of the run to the reply. Its text, its reasoning, its

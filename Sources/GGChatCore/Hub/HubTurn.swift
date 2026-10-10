@@ -4,7 +4,8 @@
 // Written by hand to mirror `gglib_core::domain::hub_chats::HubTurn` in
 // gglib. The bodies gglib records under `turn`, `image_turn` and
 // `thinking_turn` in `contracts/chats/recorded.json` are replayed against it
-// by `HubChatsWireTests`.
+// by `HubChatsWireTests`. It records none with `draw`, which
+// `DrawingWireTests` reads as this build writes it.
 
 /// The user's new message on one of the hub's chats, and nothing else: the
 /// hub rebuilds the history from its own record, and refuses a body with a
@@ -27,16 +28,23 @@ public struct HubTurn: Codable, Sendable, Equatable {
     /// change leaves it (ADR 0010), rather than adding a message: it then
     /// has no text and no image. Left out of the body when false.
     public let answerSaved: Bool
+    /// Whether the message was sent with Draw pressed, which is what lets
+    /// the chat's model ask for a picture in this reply and no other. Left
+    /// out of the body unless true: a turn that does not draw is the body
+    /// it always was, and a hub from before drawing, which would refuse the
+    /// key, is never sent it.
+    public let draw: Bool
 
     public init(
         conversationID: Int64, content: String, images: [String] = [], thinking: HubThinking? = nil,
-        answerSaved: Bool = false
+        answerSaved: Bool = false, draw: Bool = false
     ) {
         self.conversationID = conversationID
         self.content = content
         self.images = images
         self.thinking = thinking
         self.answerSaved = answerSaved
+        self.draw = draw
     }
 
     enum CodingKeys: String, CodingKey {
@@ -45,6 +53,7 @@ public struct HubTurn: Codable, Sendable, Equatable {
         case images
         case thinking
         case answerSaved = "answer_saved"
+        case draw
     }
 
     public init(from decoder: any Decoder) throws {
@@ -54,6 +63,7 @@ public struct HubTurn: Codable, Sendable, Equatable {
         images = try container.decodeIfPresent([String].self, forKey: .images) ?? []
         thinking = try container.decodeIfPresent(HubThinking.self, forKey: .thinking)
         answerSaved = try container.decodeIfPresent(Bool.self, forKey: .answerSaved) ?? false
+        draw = try container.decodeIfPresent(Bool.self, forKey: .draw) ?? false
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -63,6 +73,7 @@ public struct HubTurn: Codable, Sendable, Equatable {
         if !images.isEmpty { try container.encode(images, forKey: .images) }
         try container.encodeIfPresent(thinking, forKey: .thinking)
         if answerSaved { try container.encode(true, forKey: .answerSaved) }
+        if draw { try container.encode(true, forKey: .draw) }
     }
 }
 

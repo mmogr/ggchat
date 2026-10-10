@@ -428,8 +428,15 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # removed provider taking its own; only gglib asked and offered the switch;
 # and a Mac's chat saying its Mac's sentence. They are the whole of that
 # guard, and the README claim names all five.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 661
+#
+# 2026-10-10: 661 -> 666 and 578 -> 583. Five tests pin Draw on a Mac's chat:
+# the turn's body with and without `draw`; the word said only with the switch
+# on; never to a Mac that cannot draw, is too old or was never heard from;
+# the switch off again in the draft a send leaves; and a refused draft and a
+# turn put again keeping it. They are the whole of that guard, and the README
+# claim names all five.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 666
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 578
+floor "README test markers" "${markers:-0}" 583
 
 exit $status
