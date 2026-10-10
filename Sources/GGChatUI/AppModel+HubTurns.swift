@@ -142,6 +142,7 @@ extension AppModel {
     func endHubReply(_ reply: HubLiveReply, notice: String? = nil) {
         reply.reading = nil
         reply.ended = true
+        reply.work.end()
         readOnAttempts[reply.key] = nil
         keepHubRuns(reply.providerID)
         guard openedHubChat?.providerID == reply.providerID, openedHubChat?.chatID == reply.chatID else {

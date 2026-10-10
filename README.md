@@ -210,6 +210,23 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatDrawTests.testAMacThatCannotDrawIsNeverSentTheWord -->
   <!-- test: HubChatDrawTests.testTheSwitchIsOffAgainOnceTheMessageIsSent -->
   <!-- test: HubChatDrawTests.testARefusedTurnKeepsItsSwitchAndALostOneIsPutAgainWithIt -->
+- While a picture is drawn its run says how far it has got, and a reply held
+  up behind one says what it waits for: gglib's `tool_progress` and `waiting`
+  events, read as gglib records them, with the counts it reported and no
+  others. A tool's end is read by its call's id, ahead of the images it
+  made, and an image list that does not read still ends the call. A stage or
+  a reason this build does not know means nothing, and the reply reads on.
+  The reply holds the latest word in memory and nothing of it is kept: one
+  line for it, "Drawing: step 12 of 20" in the locale's digits, with the
+  picture's number from the second on and the place in line when it is not
+  next; a tool's progress goes when its own call ends and not another's, a
+  wait gives way to whatever comes next, and a run that ends leaves none.
+  <!-- test: ToolProgressWireTests.testTheRecordedFramesOfAPictureReadAsItsWaitItsStagesAndItsEnd -->
+  <!-- test: ToolProgressWireTests.testAWaitForAModelAndFramesThatDoNotReadMeanNothing -->
+  <!-- test: ToolWorkTests.testEachStageOfAPictureHasItsLine -->
+  <!-- test: ToolWorkTests.testAWaitSaysWhatIsInTheWay -->
+  <!-- test: ToolWorkTests.testTheLatestWordIsShownUntilItsToolEnds -->
+  <!-- test: ToolWorkTests.testAMacsReplyShowsTheWorkItsRunReportsUntilTheRunEnds -->
 - A pairing string is read by modelpipe as it is typed and as it is scanned,
   against `docs/pairing-v0.md`'s normative vectors: the ticket comes back in
   its canonical lower-case form, so a QR scan and a paste of the same machine

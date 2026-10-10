@@ -435,8 +435,15 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # the switch off again in the draft a send leaves; and a refused draft and a
 # turn put again keeping it. They are the whole of that guard, and the README
 # claim names all five.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 666
+#
+# 2026-10-10: 666 -> 672 and 583 -> 589. Six tests pin a picture's progress:
+# gglib's recorded `tool_progress` and `waiting` frames read stage by stage,
+# with the call's end ahead of its image; frames that do not read meaning
+# nothing; the line for each stage and for each wait; the latest word shown
+# until its own tool ends; and a Mac's reply holding it until its run ends.
+# They are the whole of that guard, and the README claim names all six.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 672
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 583
+floor "README test markers" "${markers:-0}" 589
 
 exit $status

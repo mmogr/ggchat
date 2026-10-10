@@ -71,10 +71,11 @@ extension OpenAICompatibleProvider {
     }
 
     /// What one of an agent run's events means for the reply: its text, its
-    /// reasoning, a line for a tool it calls, the images a finished tool
-    /// made, what a finished model call counted, and an error it reports. The
-    /// rest, and an event this build cannot read, mean nothing here: the
-    /// run's last report says how it ended, and the hub saves the reply.
+    /// reasoning, a line for a tool it calls, how far that tool has got, that
+    /// it finished and the images it made, a wait for something else, what a
+    /// finished model call counted, and an error it reports. The rest, and an
+    /// event this build cannot read, mean nothing here: the run's last
+    /// report says how it ended, and the hub saves the reply.
     ///
     /// `turn_usage` carries its counts flat, under the names a chat stream's
     /// `usage` gives them, so it is read as one.
@@ -90,28 +91,49 @@ extension OpenAICompatibleProvider {
         case "tool_call_start":
             guard let name = agent.displayName else { return [] }
             return [.tool(agent.argsSummary.map { "\(name): \($0)" } ?? name)]
-        case "tool_call_complete": return madeImages(data)
+        case "tool_call_complete": return finishedTool(data)
+        case "tool_progress": return read(ToolProgress.self, data).map { [.toolProgress($0)] } ?? []
+        case "waiting": return read(RunWait.self, data).map { [.waiting($0)] } ?? []
         case "error": return [.error(.stream(code: nil, message: agent.message ?? "the reply failed"))]
         default: return []
         }
     }
 
-    /// The images a finished tool made: `result.images`, gglib's
-    /// `AttachmentInfo` each, which gglib leaves out when there are none. A
-    /// result without them, or with images that cannot be read, means
-    /// nothing here, as every finished tool did before.
-    private static func madeImages(_ data: Data) -> [ChatEvent] {
-        guard let complete = try? JSONDecoder().decode(ToolCallComplete.self, from: data),
-            let images = complete.result.images, !images.isEmpty
-        else { return [] }
-        return [.images(images)]
+    /// One event's data as `type`, or nil when it does not read as one: a
+    /// stage or a reason this build does not know means nothing here.
+    private static func read<T: Decodable>(_ type: T.Type, _ data: Data) -> T? {
+        try? JSONDecoder().decode(type, from: data)
+    }
+
+    /// A finished tool: that its call ended, by `result.tool_call_id`, and
+    /// then the images it made, `result.images`, gglib's `AttachmentInfo`
+    /// each, which gglib leaves out when there are none. Images that cannot
+    /// be read are passed over and the call has still ended; a result with
+    /// no call id means nothing here.
+    private static func finishedTool(_ data: Data) -> [ChatEvent] {
+        guard let complete = try? JSONDecoder().decode(ToolCallComplete.self, from: data) else { return [] }
+        let images = complete.result.images ?? []
+        return [.toolEnded(complete.result.callID)] + (images.isEmpty ? [] : [.images(images)])
     }
 }
 
 /// The part of gglib's `tool_call_complete` this device reads.
 private struct ToolCallComplete: Decodable {
     struct Result: Decodable {
+        let callID: String
         let images: [ImageRef]?
+
+        enum CodingKeys: String, CodingKey {
+            case callID = "tool_call_id"
+            case images
+        }
+
+        /// Images that do not read are none, not a result that does not.
+        init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            callID = try container.decode(String.self, forKey: .callID)
+            images = try? container.decodeIfPresent([ImageRef].self, forKey: .images)
+        }
     }
 
     let result: Result
