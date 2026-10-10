@@ -88,6 +88,12 @@ public final class HubLiveReply {
         self.draws = draws
     }
 
+    /// Whether nothing of a reply has arrived: no word, no thought, no tool
+    /// called and no image made.
+    var isEmpty: Bool {
+        content.isEmpty && reasoning.isEmpty && tools.isEmpty && made.isEmpty
+    }
+
     /// Adds one event of the run to the reply. Its text, its reasoning, its
     /// tool calls and the images they made are drawn, with how far a tool at
     /// work has got and what the reply waits for (`ToolWork`), and what a

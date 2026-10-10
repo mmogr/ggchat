@@ -94,6 +94,9 @@ extension AppModel {
         }
         switch end {
         case .ended(let info)? where info.status.isTerminal:
+            if info.status == .failed, let error = info.error, Self.refusesTheTurn(error), reply.isEmpty {
+                return refuseStarted(reply, error, config)
+            }
             let failure = info.status == .failed ? info.error?.message ?? "the run failed" : nil
             endHubReply(reply, notice: failure.map { "The reply stopped on \(config.name): \($0)" })
         case .notFound?:
@@ -168,6 +171,35 @@ extension AppModel {
         openedHubChat?.notice = why
         openedHubChat?.unsent = reply.unsent
         log.log(.info, "\(config.name) did not start a turn")
+    }
+
+    /// The codes with which a run that failed is a turn the Mac refused.
+    /// The Mac now starts the run before it loads the model, so a refusal
+    /// can be how the run ends, and then it saved no row. gglib names three
+    /// such codes (`hub_turn.rs`): `model_unavailable`, `unavailable` and
+    /// `conflict`. The other two it answers on the `PUT`, before any run;
+    /// they are taken the same way here should a run ever end with one.
+    static let turnRefusals: Set<String> = [
+        ProviderError.Code.modelUnavailable.rawValue, ProviderError.Code.unavailable.rawValue, RunCode.conflict,
+        ProviderError.Code.drawingUnavailable.rawValue, ProviderError.Code.imageModelCannotChat.rawValue,
+    ]
+
+    /// Whether a run that failed with `error` is a turn the Mac refused.
+    static func refusesTheTurn(_ error: RunError) -> Bool {
+        turnRefusals.contains(error.code)
+    }
+
+    /// The Mac started the turn's run and then refused it, with nothing
+    /// written: said as a refused turn is, with the code's own line, and
+    /// the text and images go back into the composer, Draw as it was.
+    private func refuseStarted(_ reply: HubLiveReply, _ error: RunError, _ config: ProviderConfig) {
+        reply.ended = true
+        reply.work.end()
+        readOnAttempts[reply.key] = nil
+        let hint = ProviderError.hint(forCode: error.code, on: .unknown)
+        let line = "\(config.name) did not take this message. \(error.message)"
+        refuse(reply, [line, hint].compactMap(\.self).joined(separator: " "), config)
+        keepHubRuns(reply.providerID)
     }
 
     /// Drops the ended replies of a chat, whose rows now hold them.

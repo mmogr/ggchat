@@ -210,6 +210,18 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatDrawTests.testAMacThatCannotDrawIsNeverSentTheWord -->
   <!-- test: HubChatDrawTests.testTheSwitchIsOffAgainOnceTheMessageIsSent -->
   <!-- test: HubChatDrawTests.testARefusedTurnKeepsItsSwitchAndALostOneIsPutAgainWithIt -->
+- A Mac can refuse a turn after it has started the turn's run, since it now
+  starts the run before it loads the model: the run ends failed with
+  `model_unavailable`, `unavailable` or `conflict`, and no row saved. With
+  nothing of a reply read, each is said as a refused turn is, with the
+  code's own line when it has one, the run is no longer kept as one to read
+  on, the Mac's rows are not read again, and the text and images go back
+  into the composer, Draw as it was. `drawing_unavailable` and
+  `image_model_cannot_chat` are answers to the `PUT`, before any run, and
+  are taken the same way should a run ever end with one. A run that
+  fails any other way, or after something of its reply came, ends as a
+  reply that stopped.
+  <!-- test: HubChatDrawTests.testARunThatEndsAsARefusalGivesTheDraftBack -->
 - While a picture is drawn its run says how far it has got, and a reply held
   up behind one says what it waits for: gglib's `tool_progress` and `waiting`
   events, read as gglib records them, with the counts it reported and no

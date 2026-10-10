@@ -460,8 +460,14 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # a reply of a picture alone; and the two columns kept, and opened across the
 # change. They are the whole of that guard, and the README claims name all
 # seventeen.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 694
+#
+# 2026-10-10: 694 -> 695 and 611 -> 612. One test pins a turn a Mac refuses
+# by ending its run: the draft given back with Draw as it was and the code's
+# own line, and a run that failed otherwise, or after its reply began, ending
+# as a reply that stopped. It is the whole of that guard, and the README
+# claim names it.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 695
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 611
+floor "README test markers" "${markers:-0}" 612
 
 exit $status
