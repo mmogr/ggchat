@@ -16,6 +16,12 @@ final class FakeChatsHub: HubChatsProvider {
         var holdsOpens = false
         /// Answers every open with this, when set.
         var openFailure: HubChatsFailure?
+        /// Every change asked for, and what each is answered with: a chat
+        /// that is not here when unset.
+        var changes: [(chatID: Int64, change: HubChatChange)] = []
+        var changeAnswer: Result<HubChatChanged, HubChatsFailure>?
+        /// Holds every change, once counted, until it is set false again.
+        var holdsChanges = false
         /// Every turn started, and what the next ones are answered with.
         var turns: [(runID: String, turn: HubTurn)] = []
         var turnFailure: HubTurnFailure?
@@ -135,6 +141,14 @@ final class FakeChatsHub: HubChatsProvider {
         if let failure { throw failure }
         guard let chat else { throw .notFound }
         return chat
+    }
+
+    func changeChat(id: Int64, change: HubChatChange) async throws(HubChatsFailure) -> HubChatChanged {
+        with { $0.changes.append((id, change)) }
+        while with({ $0.holdsChanges }) { await Task.yield() }
+        let answer = with(\.changeAnswer)
+        guard let answer else { throw .notFound }
+        return try answer.get()
     }
 
     func startTurn(runID: String, turn: HubTurn) async throws(HubTurnFailure) -> RunStart {

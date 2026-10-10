@@ -383,8 +383,17 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # and a reply edited from its menu walked on a simulator, opening its branch
 # with the switcher and going back by Previous. The README claim names all
 # five.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 625
+#
+# 2026-10-10: 625 -> 643 and 541 -> 559. Eighteen tests pin a Mac's chat's
+# branches: an edit that opens the Mac's branch and answers it, keeping
+# nothing here; Branch from here answering nothing; a refusal's sentence;
+# Answer; the Thinking choice on the answer; a point at a reply that called
+# a tool; no question drawn above an answer; nothing sent while busy or out
+# of reach; nothing opened for a chat left; a change in place read again;
+# an editor across a read; and the branching bodies gglib records, the turn
+# a row is in, and gglib's refusals. The README claim names all eighteen.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 643
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 541
+floor "README test markers" "${markers:-0}" 559
 
 exit $status

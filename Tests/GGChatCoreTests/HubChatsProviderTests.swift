@@ -29,7 +29,7 @@ final class HubChatsProviderTests: XCTestCase {
         let host = "chats-list.test"
         ChatsHub.serve(.init(body: try recorded("list")), at: "/v1/chats", on: host)
         let list = try await ChatsHub.provider(at: host).listChats()
-        XCTAssertEqual(list.chats.map(\.id), [12, 9])
+        XCTAssertEqual(list.chats.map(\.id), [12, 9, 13])
         XCTAssertEqual(list.chats.first?.liveRun, "chat-5b1e")
         let request = try XCTUnwrap(ChatsHub.requests(at: host).first)
         XCTAssertEqual(request.httpMethod, "GET")

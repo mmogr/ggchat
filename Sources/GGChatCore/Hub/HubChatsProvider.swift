@@ -22,6 +22,9 @@ public protocol HubChatsProvider: Provider {
     func listChats() async throws(HubChatsFailure) -> HubChatList
     /// One chat and every row of it.
     func openChat(id: Int64) async throws(HubChatsFailure) -> HubChatOpen
+    /// Asks the Mac to make a change to one of its chats, by its branching
+    /// rules (ADR 0010): in place, or on a new branch the answer names.
+    func changeChat(id: Int64, change: HubChatChange) async throws(HubChatsFailure) -> HubChatChanged
     /// Adds `turn` to one of the hub's chats, and the hub writes the reply as
     /// the agent run `runID`, an id this device minted as for its own runs. A
     /// repeated id answers with the run already there.

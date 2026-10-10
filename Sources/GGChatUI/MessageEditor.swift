@@ -21,9 +21,7 @@ struct MessageEditor: View {
     /// Whether `text` changes the message: not blank, unless the message
     /// carries images, and not the same but for the space around it.
     static func canSave(_ text: String, for message: Message) -> Bool {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        return (!trimmed.isEmpty || !message.images.isEmpty)
-            && trimmed != message.content.trimmingCharacters(in: .whitespacesAndNewlines)
+        message.edited(to: text).map { $0 != message.content } ?? false
     }
 
     private var isQuestion: Bool {

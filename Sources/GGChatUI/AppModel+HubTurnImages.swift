@@ -20,7 +20,7 @@ extension AppModel {
         else { return nil }
         let draft = Draft(text: trimmed, images: images)
         if !images.isEmpty, !canSeeHubChat(open) { return giveBack(draft, Self.cannotSee) }
-        if openHubChatIsWriting { return giveBack(draft, Self.busyLine(config)) }
+        if openHubChatIsWriting || open.changing { return giveBack(draft, Self.busyLine(config)) }
         guard let hub = reachableHubChats(for: config) else {
             return giveBack(draft, "\(config.name) is unreachable.")
         }
@@ -87,7 +87,7 @@ extension AppModel {
     private func turn(of reply: HubLiveReply, _ hub: any HubChatsProvider) async throws(HubTurnFailure) -> HubTurn {
         HubTurn(
             conversationID: reply.chatID, content: reply.question ?? "", images: try await imageIDs(reply, hub),
-            thinking: reply.thinking)
+            thinking: reply.thinking, answerSaved: reply.answersSaved)
     }
 
     /// The ids the Mac holds the reply's images under, each sent to it the
@@ -119,19 +119,55 @@ extension AppModel {
     /// prompt, tool results and a reply that only called tools are the
     /// Mac's to show.
     static func rows(of chat: HubChatOpen, at stamp: Date) -> [Message] {
+        drawn(chat, at: stamp).map(\.message)
+    }
+
+    /// The rows drawn, each with the id of the Mac's row it shows, which a
+    /// change to the chat names (ADR 0010). A row keeps its id each time the
+    /// chat is read, so an editor open on it still names it.
+    static func drawn(_ chat: HubChatOpen, at stamp: Date) -> [(message: Message, rowID: Int64)] {
         chat.messages.compactMap { row in
             let images = row.images ?? []
             guard let role = Role(rawValue: row.role), role != .system, !row.content.isEmpty || !images.isEmpty
             else { return nil }
-            return Message(role: role, content: row.content, createdAt: stamp, images: images)
+            let id = rowUUID(chat: chat.conversation.id, row: row.id)
+            return (Message(id: id, role: role, content: row.content, createdAt: stamp, images: images), row.id)
         }
+    }
+
+    /// The id a Mac's row is drawn with: the chat's id and the row's, side
+    /// by side.
+    static func rowUUID(chat: Int64, row: Int64) -> UUID {
+        var bytes = [UInt8](repeating: 0, count: 16)
+        for at in 0..<8 {
+            bytes[at] = UInt8(truncatingIfNeeded: UInt64(bitPattern: chat) >> (56 - 8 * at))
+            bytes[8 + at] = UInt8(truncatingIfNeeded: UInt64(bitPattern: row) >> (56 - 8 * at))
+        }
+        return UUID(
+            uuid: (
+                bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7], bytes[8], bytes[9],
+                bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]
+            ))
     }
 }
 
 extension HubLiveReply {
+    /// The question this phone sent, to draw above the reply until `rows`
+    /// end with it. A turn that answers a saved question sent none.
+    func questionToDraw(under rows: OpenHubChat.State) -> Message? {
+        guard let question, !answersSaved else { return nil }
+        if case .read(let messages) = rows, let last = messages.last, last.role == .user, last.content == question,
+            last.images.map(\.id) == images.map(\.id)
+        {
+            return nil
+        }
+        return Message(role: .user, content: question, createdAt: .distantPast, images: images.map(\.ref))
+    }
+
     /// What this phone sent, as a draft to give back when the Mac refuses
-    /// it: the text and the images, bytes and all.
+    /// it: the text and the images, bytes and all. A turn that answers a
+    /// saved question sent none.
     var unsent: Draft? {
-        question.map { Draft(text: $0, images: images) }
+        answersSaved ? nil : question.map { Draft(text: $0, images: images) }
     }
 }

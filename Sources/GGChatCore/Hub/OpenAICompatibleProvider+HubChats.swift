@@ -8,16 +8,18 @@ import Foundation
 extension OpenAICompatibleProvider: HubChatsProvider {
     /// `GET chats`.
     public func listChats() async throws(HubChatsFailure) -> HubChatList {
-        try await readHub(HubChatList.self, at: "chats")
+        try await callHub(HubChatList.self, at: "chats")
     }
 
     /// `GET chats/{id}`.
     public func openChat(id: Int64) async throws(HubChatsFailure) -> HubChatOpen {
-        try await readHub(HubChatOpen.self, at: "chats/\(id)")
+        try await callHub(HubChatOpen.self, at: "chats/\(id)")
     }
 
-    private func readHub<T: Decodable>(_ type: T.Type, at path: String) async throws(HubChatsFailure) -> T {
-        let request = makeRequest(path: path, method: "GET", body: nil)
+    func callHub<T: Decodable>(
+        _ type: T.Type, at path: String, method: String = "GET", body: Data? = nil
+    ) async throws(HubChatsFailure) -> T {
+        let request = makeRequest(path: path, method: method, body: body)
         let answer: (Data, HTTPURLResponse)
         do {
             answer = try await perform(request)
@@ -42,10 +44,13 @@ extension OpenAICompatibleProvider: HubChatsProvider {
 
     /// What a failed read of the hub's chats means, as a run's read does: a
     /// 404 is no such chat, any other 4xx or a body that cannot be read is a
-    /// refusal, and the rest is a drop. `device_not_named` has its own case.
+    /// refusal, and the rest is a drop. `device_not_named` has its own case,
+    /// and a change naming a row the chat no longer holds, a 404 with the
+    /// branching rules' code, is a refusal by them (ADR 0010).
     static func hubFailure(_ error: ProviderError) -> HubChatsFailure {
         switch error {
         case .server(403, HubChatsCode.deviceNotNamed, _): .notShared
+        case .server(404, BranchRefusal.messageNotFound.code, _): .refused(error)
         case .server(404, _, _): .notFound
         case .server(let status, _, _) where (400..<500).contains(status): .refused(error)
         case .decoding: .refused(error)

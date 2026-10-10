@@ -53,6 +53,43 @@ public struct OpenHubChat: Equatable, Sendable {
     /// The text and images of a send that went nowhere, for the composer to
     /// put back.
     var unsent: Draft?
+    /// The Mac's row each drawn message shows, where its family parts, the
+    /// point drawn at each message that starts a turn the family parts at,
+    /// and whether it ends in a question nothing answers (ADR 0010). In
+    /// memory with the rows.
+    var rowIDs: [UUID: Int64] = [:]
+    var points: [BranchPoint<Int64, Int64>] = []
+    var pointAt: [UUID: BranchPoint<Int64, Int64>] = [:]
+    var answerable = false
+    /// Whether a change to it is on its way to the Mac: it is answered by
+    /// the change, so nothing else is sent meanwhile.
+    var changing = false
+
+    /// The branch point after its last message, where other chats of the
+    /// family go on.
+    var endPoint: BranchPoint<Int64, Int64>? {
+        points.first { $0.messageID == nil }
+    }
+
+    /// Takes the rows the Mac sent, drawn at `stamp`, with their branching.
+    mutating func read(_ chat: HubChatOpen, at stamp: Date) {
+        let drawn = AppModel.drawn(chat, at: stamp)
+        state = .read(drawn.map(\.message))
+        rowIDs = Dictionary(drawn.map { ($0.message.id, $0.rowID) }) { first, _ in first }
+        points = chat.points
+        answerable = chat.answerable
+        // A turn's point goes on the first of its rows that is drawn: its
+        // first row may be a reply that only called a tool.
+        let starts = chat.turnStarts
+        pointAt = [:]
+        var placed = Set<Int64>()
+        for row in drawn {
+            guard let start = starts[row.rowID], placed.insert(start).inserted,
+                let point = chat.points.first(where: { $0.messageID == start })
+            else { continue }
+            pointAt[row.message.id] = point
+        }
+    }
 }
 
 // "On home" in the list: each paired Mac's chats, read live through its pipe.
@@ -205,7 +242,7 @@ extension AppModel {
         hubReading = nil
         switch answer {
         case .success(let chat):
-            openedHubChat?.state = .read(Self.rows(of: chat, at: now()))
+            openedHubChat?.read(chat, at: now())
             openedHubChat?.context = ContextReading.last(in: chat.messages)
             openedHubChat?.thinking.read(chat)
             dropEndedHubReplies(open.chatID, on: open.providerID)

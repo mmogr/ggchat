@@ -3,8 +3,9 @@ import XCTest
 @testable import GGChatCore
 
 /// Replays the chat bodies gglib records (`contracts/chats/recorded.json`
-/// there, copied here byte for byte as `gglib-chats-recorded.json` from the
-/// gglib pull request #1278, the one that adds the Thinking choice)
+/// there, copied here byte for byte as `gglib-chats-recorded.json` from
+/// gglib pull request #1380, the one that adds branching; its branching
+/// bodies are `HubChatBranchesWireTests`')
 /// against the Swift hub chat types, its `turn`, `image_turn` and
 /// `thinking_turn` against the bodies this build sends to carry a chat on,
 /// and its `upload` against how an image sent to the hub is named.
@@ -41,12 +42,15 @@ final class HubChatsWireTests: XCTestCase {
         try JSONDecoder().decode(Recorded.self, from: try Fixtures.data("gglib-chats-recorded.json"))
     }
 
-    func testTheListReadsEveryChatNewestFirst() throws {
+    func testTheListReadsEveryChatInTheHubsOrder() throws {
         let want = HubChatList(chats: [
             HubChatSummary(
                 id: 12, title: "Why the build broke", modelID: 3, model: "qwen3-8b", updatedAt: "2026-09-30 09:14:21",
                 liveRun: "chat-5b1e"),
             HubChatSummary(id: 9, title: "New Chat", updatedAt: "2026-09-29 18:02:41"),
+            HubChatSummary(
+                id: 13, title: "Why the build broke", modelID: 3, model: "qwen3-8b", updatedAt: "2026-09-30 09:20:05",
+                branchOf: 12),
         ])
         XCTAssertEqual(try recorded().list, want)
     }
