@@ -1523,6 +1523,11 @@ against the mock.
   as far as the change, into a new conversation of its family, by gglib's
   rules; a Mac's chat is changed by the Mac, and nothing of it is copied
   here.
+- [ADR 0011](docs/adr/0011-a-picture-is-asked-for-with-a-switch.md): a
+  picture is asked for with a Draw switch, one message at a time, of a hub
+  that said it can draw; what is shown while it is drawn is never kept, and
+  the picture a conversation kept here asked for is kept in this device's
+  store.
 
 ## Releases
 
