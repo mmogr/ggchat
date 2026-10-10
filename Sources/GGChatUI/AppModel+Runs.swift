@@ -45,7 +45,14 @@ extension AppModel {
         live.started = true
         guard !Task.isCancelled else { return await putDown(live, on: hub) }
         switch start {
-        case .started:
+        case .started(let info) where info.frames == .unknown:
+            // A later gglib's way of writing events: the run is stopped and
+            // the reply given up, since reading it would show nothing.
+            cancelRun(id, on: hub)
+            live.runID = nil
+            giveUp(live, saying: "is writing this reply in a way this version of the app cannot read.")
+        case .started(let info):
+            live.frames = info.frames ?? .openai
             await readRun(on: hub, live: live)
         case .unsupported:
             log.log(.info, "\(config.name) has no runs, so replies to it stream as they did")
@@ -57,20 +64,27 @@ extension AppModel {
 
     /// Reads the run's events after the reply's cursor, applying each frame
     /// whole and moving the cursor with it, then ends the reply as the run
-    /// did, or walks away from the run when the reading stopped first.
+    /// did, or walks away from the run when the reading stopped first. A
+    /// frame that names images a tool made is applied once their bytes are
+    /// kept (`keepImages`); one whose bytes were lost on the way is not, so
+    /// the next reading meets it again. A look at a picture being drawn is
+    /// shown and moves no cursor.
     func readRun(on hub: any RunProvider, live: LiveReply) async {
         guard let id = live.runID else { return }
         var end: RunEvent?
         var readAny = false
-        for await event in hub.runEvents(id: id, after: live.cursor) {
-            // A look at a picture is no end and moves no cursor.
-            if case .preview = event { continue }
+        for await event in hub.runEvents(id: id, after: live.cursor, frames: live.frames) {
+            if case .preview(let frame) = event {
+                live.work.show(frame)
+                continue
+            }
             guard case .frame(let seq, let events) = event else {
                 end = event
                 continue
             }
             // Never applied twice, whatever the hub sends.
             guard seq > live.cursor else { continue }
+            guard await keepImages(named: events, from: hub) else { break }
             for chat in events { apply(chat, to: live) }
             live.cursor = seq
             readAny = true

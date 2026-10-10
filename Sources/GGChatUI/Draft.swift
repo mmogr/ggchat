@@ -44,7 +44,7 @@ struct Draft: Equatable {
     /// Hands the draft to `model` as the open conversation's next turn, and
     /// empties it once taken. A refused draft stays as it was.
     mutating func send(through model: AppModel) {
-        guard model.send(text, images: images) else { return }
+        guard model.send(text, images: images, draws: draws) else { return }
         self = Draft()
     }
 

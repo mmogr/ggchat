@@ -89,8 +89,10 @@ struct ChatCompletionRequest: Encodable {
         reasoningBudgetTokens = request.reasoningBudgetTokens
     }
 
+    /// A reply's images are ones a tool made for the person to look at.
+    /// They are never sent back to the model: a reply is its text alone.
     private static func content(of message: Message, images: [String: Data]) throws(MissingImage) -> Content {
-        guard !message.images.isEmpty else { return .text(message.content) }
+        guard !message.images.isEmpty, message.role != .assistant else { return .text(message.content) }
         let text: [Part] = message.content.isEmpty ? [] : [.text(message.content)]
         let pictures = try message.images.map { image throws(MissingImage) -> Part in
             guard let data = images[image.id] else { throw MissingImage(id: image.id) }

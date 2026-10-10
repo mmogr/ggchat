@@ -43,9 +43,9 @@ extension AppModel {
     /// the composer keeps a refused draft as it was. Once taken, the turn is
     /// the conversation's, with its images kept under their ids: a refusal
     /// from the server is drawn under it, and Retry sends it again, images
-    /// and all.
+    /// and all. `draws` is the composer's Draw switch for this message.
     @discardableResult
-    func send(_ text: String, images: [DraftImage]) -> Bool {
+    func send(_ text: String, images: [DraftImage], draws: Bool = false) -> Bool {
         guard let conversation = selectedConversation, takesTurn(conversation) else { return false }
         if !images.isEmpty, !canSee(conversation) {
             lastError = Self.cannotSee
@@ -60,7 +60,7 @@ extension AppModel {
             forget(images)
             return false
         }
-        guard let turn = appendTurn(text, images: images.map(\.ref)) else {
+        guard let turn = appendTurn(text, images: images.map(\.ref), draws: draws) else {
             forget(images)
             return false
         }

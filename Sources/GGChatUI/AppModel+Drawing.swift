@@ -63,4 +63,40 @@ extension AppModel {
         }
         return drawRefusal(on: config)
     }
+
+    /// Keeps the bytes of the images a run's frame names, before the frame
+    /// is applied: each read from the hub by its id, once, and stored under
+    /// that id as a question's images are, since a conversation kept here
+    /// owns its images and the hub lets go of one no chat of its own names.
+    /// One already in the store is not read again.
+    ///
+    /// Answers false when an image was lost on the way, and the frame is
+    /// then not applied: the run is read on from the frame before it, and
+    /// the image asked for again. An image the hub no longer has, or whose
+    /// bytes are not the ones its id names, is passed over: the reply names
+    /// it, and it is drawn as one this device does not have.
+    func keepImages(named events: [ChatEvent], from hub: any RunProvider) async -> Bool {
+        for case .images(let images) in events {
+            for image in images where (try? store.loadImage(id: image.id)) == nil {
+                let data: Data
+                do throws(HubChatsFailure) {
+                    data = try await hub.fetchImage(id: image.id)
+                } catch {
+                    if case .dropped = error { return false }
+                    log.log(.info, "a hub did not send an image its run made: \(Self.kind(of: error))")
+                    continue
+                }
+                guard ImageRef.id(of: data) == image.id else {
+                    log.log(.info, "a hub sent an image whose bytes are not its id")
+                    continue
+                }
+                do {
+                    try store.save(image: image, data: data)
+                } catch {
+                    log.log(.error, "could not keep an image a run made (\(StoreDirectory.describe(error)))")
+                }
+            }
+        }
+        return true
+    }
 }

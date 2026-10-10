@@ -16,6 +16,25 @@ public enum RunKind: String, Codable, Sendable, Equatable {
     case agent
 }
 
+/// How the data of a run's numbered events is written.
+public enum RunFrames: String, Codable, Sendable, Equatable {
+    /// As the chat route's chunks, which a chat run records.
+    case openai
+    /// As gglib's agent events, which an agent run records, and a chat run
+    /// started with gglib's own tools.
+    case agent
+    /// Some way this build does not know, from a later gglib. The run's
+    /// report still reads, so its status and its end do; its events cannot
+    /// be read, and a reply is not started on them.
+    case unknown
+
+    /// A word this build does not know reads as `.unknown`, so a report
+    /// that carries one, and a list that holds such a report, still read.
+    public init(from decoder: any Decoder) throws {
+        self = Self(rawValue: try decoder.singleValueContainer().decode(String.self)) ?? .unknown
+    }
+}
+
 /// Where a run is in its life.
 public enum RunStatus: String, Codable, Sendable, Equatable {
     /// Accepted, and waiting for a model.
@@ -73,10 +92,16 @@ public struct RunInfo: Codable, Sendable, Equatable, Identifiable {
     public let lastSeq: UInt32
     /// Why the run failed; set only when `status` is `.failed`.
     public let error: RunError?
+    /// How the run's events are written, so a reader picks the decoder for
+    /// them. Absent from a run that records the chat route's chunks, and
+    /// from every gglib before a chat run could carry tools: nil reads as
+    /// `.openai`.
+    public let frames: RunFrames?
 
     public init(
         id: String, kind: RunKind, status: RunStatus, model: String? = nil, device: String? = nil,
-        createdAtMs: UInt64, finishedAtMs: UInt64? = nil, lastSeq: UInt32, error: RunError? = nil
+        createdAtMs: UInt64, finishedAtMs: UInt64? = nil, lastSeq: UInt32, error: RunError? = nil,
+        frames: RunFrames? = nil
     ) {
         self.id = id
         self.kind = kind
@@ -87,6 +112,7 @@ public struct RunInfo: Codable, Sendable, Equatable, Identifiable {
         self.finishedAtMs = finishedAtMs
         self.lastSeq = lastSeq
         self.error = error
+        self.frames = frames
     }
 
     enum CodingKeys: String, CodingKey {
@@ -99,6 +125,7 @@ public struct RunInfo: Codable, Sendable, Equatable, Identifiable {
         case finishedAtMs = "finished_at_ms"
         case lastSeq = "last_seq"
         case error
+        case frames
     }
 }
 

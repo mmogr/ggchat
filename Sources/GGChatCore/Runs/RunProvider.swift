@@ -1,3 +1,5 @@
+import Foundation
+
 /// How a hub answered a request to start a run.
 public enum RunStart: Sendable, Equatable {
     /// The run exists, new or already there under this id.
@@ -42,11 +44,24 @@ public enum RunEvent: Sendable, Equatable {
 public protocol RunProvider: Provider {
     /// Starts the run `id` with the request `send` would stream. The id is
     /// this device's: 1 to 64 of `[A-Za-z0-9_-]`, a UUID string fitting.
+    /// A request that draws (`ChatRequest.draws`) starts a chat run that
+    /// carries gglib's own tools, whose events are an agent's.
     func startRun(id: String, _ request: ChatRequest) async throws(ProviderError) -> RunStart
-    /// The events of the run `id` numbered above `after`, then its end.
-    func runEvents(id: String, after: UInt32) -> AsyncStream<RunEvent>
+    /// The events of the run `id` numbered above `after`, each read as
+    /// `frames` says the run writes them, then its end.
+    func runEvents(id: String, after: UInt32, frames: RunFrames) -> AsyncStream<RunEvent>
     /// Stops the run `id`. Idempotent.
     func cancelRun(id: String) async throws(ProviderError) -> RunInfo
+    /// The bytes of an image a tool of a run made, by the id the run named
+    /// it with: gglib's `attachments` route.
+    func fetchImage(id: String) async throws(HubChatsFailure) -> Data
+}
+
+extension RunProvider {
+    /// The events of a run that records the chat route's chunks.
+    public func runEvents(id: String, after: UInt32) -> AsyncStream<RunEvent> {
+        runEvents(id: id, after: after, frames: .openai)
+    }
 }
 
 /// The codes a hub that has runs answers its runs routes with.

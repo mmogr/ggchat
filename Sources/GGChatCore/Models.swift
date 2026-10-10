@@ -13,9 +13,15 @@ public enum Role: String, Codable, Sendable, Equatable, Hashable {
 /// `runID` names the run on the hub still writing this reply, and
 /// `runCursor` the last of its events this message holds; both are nil once
 /// the reply is no longer being written there. `images` names the images the
-/// turn carries, in order; their bytes are kept apart, by id. `originID` is
-/// the message this one copies as first written, when a branch copied it
-/// (ADR 0010), and nil for a message written here.
+/// turn carries, in order; their bytes are kept apart, by id: a question's
+/// are the ones sent with it, and a reply's the ones a tool made for it.
+/// `originID` is the message this one copies as first written, when a branch
+/// copied it (ADR 0010), and nil for a message written here.
+/// `draws` is a question sent with Draw pressed to a hub that could draw:
+/// its reply may have a picture made, and Retry asks for one again.
+/// `runFrames` is how the run named by `runID` writes its events, when not
+/// as the chat route's chunks, so a reply read on is read with the decoder
+/// its run needs; nil with `runID`, and for a run of chunks.
 public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
     public var id: UUID
     public var role: Role
@@ -28,6 +34,8 @@ public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
     public var runCursor: UInt32?
     public var images: [ImageRef]
     public var originID: UUID?
+    public var draws: Bool
+    public var runFrames: RunFrames?
 
     public init(
         id: UUID = UUID(),
@@ -40,7 +48,9 @@ public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
         runID: String? = nil,
         runCursor: UInt32? = nil,
         images: [ImageRef] = [],
-        originID: UUID? = nil
+        originID: UUID? = nil,
+        draws: Bool = false,
+        runFrames: RunFrames? = nil
     ) {
         self.id = id
         self.role = role
@@ -53,6 +63,8 @@ public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
         self.runCursor = runCursor
         self.images = images
         self.originID = originID
+        self.draws = draws
+        self.runFrames = runFrames
     }
 
     /// Whether a hub is still writing this reply, away from this device.

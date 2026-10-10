@@ -10,8 +10,13 @@ extension AppModel {
     /// error would be.
     ///
     /// `keepsRun` is a reply walking away from its run: whatever has arrived,
-    /// nothing at all included, is written with the run's id and cursor, so
-    /// the hub can be read on from there. See `AppModel+Runs`.
+    /// nothing at all included, is written with the run's id and cursor, and
+    /// how the run writes its events, so the hub can be read on from there.
+    /// See `AppModel+Runs`.
+    ///
+    /// The images the reply's tools made are named on its message, after
+    /// any it already names. A reply of images alone is kept, as one of
+    /// text is.
     func finish(
         _ live: LiveReply, finished: Bool, cancelled: Bool, refusal: Failure? = nil, keepsRun: Bool = false
     ) {
@@ -36,18 +41,21 @@ extension AppModel {
         // A run whose start was never answered keeps no cursor, which is what
         // tells the next reach to send its `PUT` again.
         let run = keepsRun ? live.runID.map { (id: $0, cursor: live.started ? live.cursor : nil) } : nil
+        let frames = run != nil && live.frames == .agent ? RunFrames.agent : nil
         if let continuingID = live.continuingMessageID,
             let index = conversation.messages.firstIndex(where: { $0.id == continuingID })
         {
             let ending = Ending(
-                content: content, reasoning: live.reasoning, finished: finished, failure: failure, run: run)
+                content: content, reasoning: live.reasoning, images: live.made, finished: finished,
+                failure: failure, run: run, frames: frames)
             write(ending, at: index, in: &conversation)
-        } else if run != nil || !content.isEmpty || !live.reasoning.isEmpty || finished {
+        } else if run != nil || !content.isEmpty || !live.reasoning.isEmpty || !live.made.isEmpty || finished {
             conversation.messages.append(
                 Message(
                     role: .assistant, content: content,
                     reasoning: live.reasoning.isEmpty ? nil : live.reasoning,
-                    isPartial: !finished, failure: failure, createdAt: stamp, runID: run?.id, runCursor: run?.cursor))
+                    isPartial: !finished, failure: failure, createdAt: stamp, runID: run?.id, runCursor: run?.cursor,
+                    images: live.made, runFrames: frames))
         } else if let failure {
             // Nothing arrived and something said why. With no reply to put
             // the sentence under, it goes on the question.
@@ -58,6 +66,13 @@ extension AppModel {
         // leaves none: an older reply's is not shown in its place.
         if finished {
             conversation.context = ContextReading(live.usage, reason: live.finishReason, model: live.model)
+        }
+        // A hub that refused to draw for the question will refuse again, so
+        // the question stops asking: Retry sends it without a picture.
+        if error?.code == ProviderError.Code.drawingUnavailable.rawValue,
+            let asked = conversation.messages.lastIndex(where: { $0.role == .user })
+        {
+            conversation.messages[asked].draws = false
         }
         if !keepsRun { markUnreadUnlessRead(&conversation, stoppedHere: live.stoppedHere) }
         conversation.updatedAt = stamp
@@ -84,7 +99,10 @@ extension AppModel {
         message.failure = ending.failure
         message.runID = ending.run?.id
         message.runCursor = ending.run?.cursor
-        guard ending.run == nil, !ending.finished, message.content.isEmpty, message.reasoning?.isEmpty ?? true
+        message.runFrames = ending.frames
+        message.images += ending.images.filter { image in !message.images.contains { $0.id == image.id } }
+        guard ending.run == nil, !ending.finished, message.content.isEmpty, message.reasoning?.isEmpty ?? true,
+            message.images.isEmpty
         else {
             conversation.messages[index] = message
             return
@@ -124,7 +142,9 @@ extension AppModel {
 private struct Ending {
     var content: String
     var reasoning: String
+    var images: [ImageRef]
     var finished: Bool
     var failure: Failure?
     var run: (id: String, cursor: UInt32?)?
+    var frames: RunFrames?
 }

@@ -449,8 +449,19 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # held, gone with its own tool; a Mac's reply showing it with its cursor
 # where it was; and a run that ends mid-picture leaving none. They are the
 # whole of that guard, and the README claim names all five.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 677
+#
+# 2026-10-10: 677 -> 694 and 594 -> 611. Seventeen tests pin drawing from a
+# conversation kept here: the run's query with its body unchanged, the
+# report's `frames` and the decoder it picks, a reply's images kept off the
+# wire; the run asked to draw only with the switch on and a hub that can, the
+# switch off after a send, the answer picking the decoder, Retry and Continue;
+# the picture read once and kept under its id, asked for again when lost,
+# named and not kept when the hub lacks it, a reply read on with its decoder,
+# a reply of a picture alone; and the two columns kept, and opened across the
+# change. They are the whole of that guard, and the README claims name all
+# seventeen.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 694
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 594
+floor "README test markers" "${markers:-0}" 611
 
 exit $status

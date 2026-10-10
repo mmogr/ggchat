@@ -117,6 +117,14 @@ public final class MessageRecord {
     /// The message this one copies as first written, when a branch copied
     /// it, or nil (ADR 0010). Optional, for `failureData`'s reason.
     public var originID: UUID?
+    /// Whether the turn is a question sent with Draw pressed, or nil, which
+    /// reads as no and is what a turn that does not draw writes. Optional,
+    /// for `failureData`'s reason.
+    public var draws: Bool?
+    /// How the run named by `runID` writes its events, as `RunFrames`'s raw
+    /// value, when not as the chat route's chunks; nil otherwise, and with
+    /// `runID`. Optional, for `failureData`'s reason.
+    public var runFrames: String?
     public var createdAt: Date
     public var order: Int
     public var conversation: ConversationRecord?
@@ -124,7 +132,7 @@ public final class MessageRecord {
     public init(
         id: UUID, role: String, content: String, reasoning: String?, isPartial: Bool, createdAt: Date, order: Int,
         failureData: Data? = nil, runID: String? = nil, runCursor: Int? = nil, imagesData: Data? = nil,
-        originID: UUID? = nil
+        originID: UUID? = nil, draws: Bool? = nil, runFrames: String? = nil
     ) {
         self.uuid = id
         self.role = role
@@ -136,6 +144,8 @@ public final class MessageRecord {
         self.runCursor = runCursor
         self.imagesData = imagesData
         self.originID = originID
+        self.draws = draws
+        self.runFrames = runFrames
         self.createdAt = createdAt
         self.order = order
     }

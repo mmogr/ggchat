@@ -16,6 +16,17 @@ public final class LiveReply {
     /// only: `finish` never reads it, so it is never stored.
     public var progress: PromptProgress?
     public var error: ProviderError?
+    /// How far a picture being drawn has got, the latest look at it, and
+    /// what the reply waits for: shown while it is so, and never kept
+    /// (`ToolWork`).
+    var work = ToolWork()
+    /// The images the reply's tools made, in order, by reference. Their
+    /// bytes are in this device's store by the time one is named here, and
+    /// `finish` names them on the reply's message.
+    public internal(set) var made: [ImageRef] = []
+    /// How the run writes its events, as its `PUT` was answered or, for a
+    /// reply read on, as its message kept it.
+    var frames = RunFrames.openai
     /// What the last finished model call counted and why it ended, and the
     /// model the reply was asked of. `finish` makes the conversation's
     /// reading of them, and only for a reply that finished.

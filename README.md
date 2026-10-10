@@ -241,6 +241,59 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingPreviewTests.testOnlyTheLatestLookIsHeldAndItGoesWithItsTool -->
   <!-- test: DrawingPreviewTests.testAMacsReplyShowsTheLookAndItsCursorDoesNotMove -->
   <!-- test: DrawingPreviewTests.testARunThatEndsMidPictureLeavesNoLook -->
+- A conversation kept on this device draws too. A message sent with Draw on,
+  to a hub that said it can draw, is put as
+  `PUT /v1/runs/{id}?kind=chat&tools=builtin&draw=true`, its body the OpenAI
+  request it always was; any other message has no query at all, and a hub
+  that cannot draw, is too old or was never heard from is sent a plain run.
+  The switch is off again in the draft a taken send leaves, and a refused
+  draft keeps it. The run's answer says how its events are written, `frames`,
+  and that picks the decoder: `agent` is read as a Mac's chat's run is, and
+  absent is the chat route's chunks, as every run before. The question is
+  kept as one that drew, so Retry asks for the picture again while the hub
+  can draw and goes without once it cannot; Continue never asks for one. A
+  run that ends with one of drawing's codes leaves it on the question with
+  the code's own line, and a question the hub refused to draw for, with
+  `drawing_unavailable` on the `PUT` or at the run's end, stops asking. A
+  run whose answer names a way of writing its events this build does not
+  know still reads as a run, is stopped, and is given up with a sentence;
+  a list that holds one still reads the others. What a Mac said of drawing
+  is forgotten when its provider is moved to another Mac.
+  <!-- test: DrawingRunWireTests.testARunThatDrawsIsPutWithItsQueryAndTheBodyUnchanged -->
+  <!-- test: DrawingRunWireTests.testARunsReportSaysHowItsFramesAreWritten -->
+  <!-- test: DrawingRunWireTests.testTheFramesPickTheDecoder -->
+  <!-- test: DrawingRunTests.testAMessageSentWithDrawStartsARunThatDraws -->
+  <!-- test: DrawingRunTests.testAHubThatCannotDrawIsSentAPlainRun -->
+  <!-- test: DrawingRunTests.testTheSwitchIsOffAgainOnceTheMessageIsSent -->
+  <!-- test: DrawingRunTests.testTheRunsAnswerSaysHowItsEventsAreRead -->
+  <!-- test: DrawingRunTests.testRetryAsksForThePictureAgainWhileTheHubCanDraw -->
+  <!-- test: DrawingRunTests.testContinueNeverAsksForAPicture -->
+  <!-- test: DrawingRunTests.testAQuestionAHubRefusedToDrawForStopsAsking -->
+  <!-- test: DrawingRunTests.testAProviderMovedToAnotherMacForgetsWhetherItCanDraw -->
+  <!-- test: DrawingRunTests.testARunWrittenAWayThisBuildCannotReadIsGivenUp -->
+  <!-- test: DrawingRunWireTests.testAnUnknownWordForTheFramesStillReads -->
+- The picture such a run draws is this device's to keep, since the
+  conversation is: its bytes are read from the hub by id as soon as the tool
+  finishes, before its frame is applied, checked against the id, kept in
+  this device's store under the same SHA-256 a question's image has, and
+  named by the reply's message, with words or without. One already kept is
+  not read again. One lost on the way is not passed over: the reply walks
+  away with its cursor at the frame before, and the next reading asks again.
+  One the hub no longer has, or whose bytes are not its id's, is named and
+  not kept. A reply's picture is never sent back to the model, so the next
+  request neither carries it nor needs its bytes. While it is drawn the
+  reply shows its step and the latest look, and keeps neither. The
+  background walks away with the run's id, its cursor and how it writes its
+  events, kept with the message in two optional columns that a store opens
+  across both ways, and coming back reads on with the same decoder.
+  <!-- test: DrawingRunWireTests.testAReplysImagesAreNotSentBackToTheModel -->
+  <!-- test: DrawingRunImageTests.testAPictureIsReadOnceAndKeptUnderItsID -->
+  <!-- test: DrawingRunImageTests.testAPictureLostOnTheWayIsAskedForAgain -->
+  <!-- test: DrawingRunImageTests.testAPictureTheHubDoesNotHaveIsNamedAndNotKept -->
+  <!-- test: DrawingRunImageTests.testAReplyReadOnIsReadAsItsRunWritesIt -->
+  <!-- test: DrawingRunImageTests.testAReplyOfAPictureAloneIsKept -->
+  <!-- test: DrawingStoreTests.testThatAQuestionDrewAndHowItsRunWritesOutliveAReopening -->
+  <!-- test: DrawingStoreTests.testAStoreOpensAcrossTheDrawingColumnsInBothDirections -->
 - A pairing string is read by modelpipe as it is typed and as it is scanned,
   against `docs/pairing-v0.md`'s normative vectors: the ticket comes back in
   its canonical lower-case form, so a QR scan and a paste of the same machine
