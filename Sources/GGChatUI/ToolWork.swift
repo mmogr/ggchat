@@ -2,23 +2,32 @@ import Foundation
 import GGChatCore
 
 /// What a reply being written shows of work that takes a while: how far a
-/// tool it called has got, which today is a picture being drawn, and what
-/// the reply is waiting for when something else has the machine. It is read
-/// from the run's events into memory, shown, and never kept: a reply that
-/// is read again from its cursor is told again.
+/// tool it called has got, which today is a picture being drawn, the latest
+/// look at that picture, and what the reply is waiting for when something
+/// else has the machine. It is read from the run's events into memory,
+/// shown, and never kept: a reply that is read again from its cursor is
+/// told again, and sent the current look once.
 struct ToolWork: Equatable {
     /// The latest word from a tool still at work.
     private(set) var progress: ToolProgress?
     /// What the reply is waiting for, until anything else arrives.
     private(set) var waiting: RunWait?
+    /// The latest look at the picture being drawn, and only the latest.
+    private(set) var preview: PreviewFrame?
 
     /// Whether there is anything to show.
     var isEmpty: Bool {
-        progress == nil && waiting == nil
+        progress == nil && waiting == nil && preview == nil
+    }
+
+    /// Takes a look at the picture, over the one before.
+    mutating func show(_ frame: PreviewFrame) {
+        preview = frame
     }
 
     /// Takes one event of the run. A tool's progress is the latest one, and
-    /// goes when that tool's call ends, not another's. A wait lasts until
+    /// goes with the look at its picture when that tool's call ends, not
+    /// another's. A wait lasts until
     /// the next event that is not a wait: nothing says a wait is over but
     /// the reply going on.
     mutating func apply(_ event: ChatEvent) {
@@ -30,6 +39,7 @@ struct ToolWork: Equatable {
             waiting = nil
         case .toolEnded(let callID):
             if progress?.callID == callID { progress = nil }
+            if preview?.callID == callID { preview = nil }
             waiting = nil
         case .delta, .reasoning, .progress, .tool, .images, .usage, .finished, .error:
             waiting = nil

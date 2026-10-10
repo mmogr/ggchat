@@ -62,6 +62,10 @@ extension OpenAICompatibleProvider: RunProvider {
     /// An event numbered at or below the last one passed on is dropped, so a
     /// hub that sends one twice, or from further back than it was asked, has
     /// no event applied twice.
+    ///
+    /// A `preview` is read by its name, ahead of the numbering: it is not
+    /// one of the run's numbered events, and whatever id came with it or
+    /// before it, it moves no cursor. One that does not read is passed over.
     private func readRun(
         _ id: String, after: UInt32, as frames: RunFrames, into continuation: AsyncStream<RunEvent>.Continuation
     ) async -> RunEvent? {
@@ -77,6 +81,12 @@ extension OpenAICompatibleProvider: RunProvider {
                 guard case .event(let event) = item else { continue }
                 if event.event == "run" {
                     return .ended(try decode(RunInfo.self, from: Data(event.data.utf8)))
+                }
+                if event.event == "preview" {
+                    if let frame = try? JSONDecoder().decode(PreviewFrame.self, from: Data(event.data.utf8)) {
+                        continuation.yield(.preview(frame))
+                    }
+                    continue
                 }
                 guard let seq = event.id.flatMap(UInt32.init), seq > cursor else { continue }
                 cursor = seq

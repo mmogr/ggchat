@@ -227,6 +227,20 @@ Each claim names the test that keeps it true.
   <!-- test: ToolWorkTests.testAWaitSaysWhatIsInTheWay -->
   <!-- test: ToolWorkTests.testTheLatestWordIsShownUntilItsToolEnds -->
   <!-- test: ToolWorkTests.testAMacsReplyShowsTheWorkItsRunReportsUntilTheRunEnds -->
+- The look at a picture being drawn travels beside its run's numbered events
+  and is not one of them: gglib's `event: preview`, a small PNG with no
+  `id:`. A run's reader reads it by its name, ahead of the numbering, so one
+  with no id is not dropped as a frame already read, and one with an id
+  moves no cursor past the frames that follow; one whose bytes are not
+  base64, or whose frame is missing, is passed over. A Mac's reply holds
+  only the latest look, in memory: its cursor stays at the last frame, so
+  reading on asks from there, and the look goes when its own tool's call
+  ends, not another's, and when the run ends.
+  <!-- test: PreviewWireTests.testAPreviewIsReadAheadOfTheNumberingAndMovesNoCursor -->
+  <!-- test: PreviewWireTests.testAPreviewThatDoesNotReadIsPassedOver -->
+  <!-- test: DrawingPreviewTests.testOnlyTheLatestLookIsHeldAndItGoesWithItsTool -->
+  <!-- test: DrawingPreviewTests.testAMacsReplyShowsTheLookAndItsCursorDoesNotMove -->
+  <!-- test: DrawingPreviewTests.testARunThatEndsMidPictureLeavesNoLook -->
 - A pairing string is read by modelpipe as it is typed and as it is scanned,
   against `docs/pairing-v0.md`'s normative vectors: the ticket comes back in
   its canonical lower-case form, so a QR scan and a paste of the same machine

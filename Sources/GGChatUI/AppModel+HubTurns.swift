@@ -73,11 +73,16 @@ extension AppModel {
     }
 
     /// Reads the run's events after the reply's cursor, each frame applied
-    /// whole and never twice, then ends the reply as the run ended.
+    /// whole and never twice, then ends the reply as the run ended. A look
+    /// at a picture being drawn is shown and moves no cursor.
     func readTurn(_ reply: HubLiveReply, on hub: any HubChatsProvider, _ config: ProviderConfig) async {
         var end: RunEvent?
         var readAny = false
         for await event in hub.turnEvents(runID: reply.runID, after: reply.cursor) {
+            if case .preview(let frame) = event {
+                reply.work.show(frame)
+                continue
+            }
             guard case .frame(let seq, let events) = event else {
                 end = event
                 continue

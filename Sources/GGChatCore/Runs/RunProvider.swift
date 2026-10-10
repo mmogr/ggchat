@@ -10,12 +10,17 @@ public enum RunStart: Sendable, Equatable {
 /// What reading a run's events yields.
 ///
 /// Every stream that is not cancelled ends with exactly one of `.ended`,
-/// `.notFound`, `.refused` and `.dropped`, after any number of `.frame`s.
+/// `.notFound`, `.refused` and `.dropped`, after any number of `.frame`s
+/// with any number of `.preview`s among them.
 public enum RunEvent: Sendable, Equatable {
     /// One event of the run, numbered `seq`, and what it means for the reply.
     /// A frame is applied whole, and the cursor moves to its `seq` with it, so
     /// a reply is never left holding half of one.
     case frame(seq: UInt32, events: [ChatEvent])
+    /// The latest look at a picture a tool of the run is drawing. Not one of
+    /// the run's numbered events: it has no `seq`, moves no cursor, and is
+    /// shown and never kept.
+    case preview(PreviewFrame)
     /// The run ended, and this is its last report.
     case ended(RunInfo)
     /// The hub does not have this run: it never did, it has dropped it, or it

@@ -442,8 +442,15 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # nothing; the line for each stage and for each wait; the latest word shown
 # until its own tool ends; and a Mac's reply holding it until its run ends.
 # They are the whole of that guard, and the README claim names all six.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 672
+#
+# 2026-10-10: 672 -> 677 and 589 -> 594. Five tests pin the look at a picture
+# being drawn: a `preview` read ahead of the numbering, with and without an
+# id, moving no cursor; one that does not read passed over; only the latest
+# held, gone with its own tool; a Mac's reply showing it with its cursor
+# where it was; and a run that ends mid-picture leaving none. They are the
+# whole of that guard, and the README claim names all five.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 677
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 589
+floor "README test markers" "${markers:-0}" 594
 
 exit $status

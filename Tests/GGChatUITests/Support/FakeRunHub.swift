@@ -43,6 +43,9 @@ final class FakeRunHub: RunProvider, DrawingProvider {
         /// how often it was asked. As it stands, a gglib from before drawing.
         var drawing: Result<Drawing, ProviderError> = .success(Drawing(available: false))
         var drawingAsked = 0
+        /// The look at a picture a read sends after the frame numbered so,
+        /// once the frame itself has been passed on.
+        var previews: [UInt32: PreviewFrame] = [:]
         /// The reads holding their streams open, to end with `release()`.
         var held: [(id: String, continuation: AsyncStream<RunEvent>.Continuation)] = []
     }
@@ -108,6 +111,7 @@ final class FakeRunHub: RunProvider, DrawingProvider {
                 let seq = UInt32(index + 1)
                 guard seq <= limit, state.ignoresAfter || seq > after else { continue }
                 events.append(.frame(seq: seq, events: frame))
+                if let preview = state.previews[seq] { events.append(.preview(preview)) }
             }
             if state.dropAt != nil {
                 state.dropAt = nil

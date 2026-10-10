@@ -63,6 +63,8 @@ extension AppModel {
         var end: RunEvent?
         var readAny = false
         for await event in hub.runEvents(id: id, after: live.cursor) {
+            // A look at a picture is no end and moves no cursor.
+            if case .preview = event { continue }
             guard case .frame(let seq, let events) = event else {
                 end = event
                 continue
