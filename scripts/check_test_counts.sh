@@ -358,8 +358,16 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # on opening, quietly, and again when the pipe comes up; and the switch walked
 # on a simulator. They are the whole of that guard, and the two README claims
 # name all thirty.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 599
+#
+# 2026-10-10: 599 -> 609 and 515 -> 524. Ten tests pin the branching rules
+# (ADR 0010): gglib's recorded cases replayed, every change's plan or refusal
+# and every family's branch points, and that there are cases to replay; the
+# line an option is shown by, cut at 80 characters, ended at either line
+# ending, for images alone and for a reply; a reply saved as it was; a tie in
+# time; and the rules over this device's own ids and times. They are the
+# whole of that guard, and the README claim names nine of them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 609
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 27
-floor "README test markers" "${markers:-0}" 515
+floor "README test markers" "${markers:-0}" 524
 
 exit $status
