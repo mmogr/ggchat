@@ -191,6 +191,14 @@ public final class AppModel {
         return conversation
     }
 
+    /// Adds a branch a change made (ADR 0010) at the top of the list, and
+    /// opens it.
+    func add(branch conversation: Conversation) {
+        conversations.insert(conversation, at: 0)
+        selection = .local(conversation.id)
+        persist(conversation)
+    }
+
     public func deleteConversation(_ id: UUID) {
         // Its reply in flight is put down as Stop puts it down. A waiting one
         // would otherwise wait on, with no Stop left on screen to end it. A

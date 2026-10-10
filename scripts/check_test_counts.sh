@@ -366,8 +366,18 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # ending, for images alone and for a reply; a reply saved as it was; a tie in
 # time; and the rules over this device's own ids and times. They are the
 # whole of that guard, and the README claim names nine of them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 609
+#
+# 2026-10-10: 609 -> 621 and 524 -> 536. Twelve tests pin a local branch:
+# an answered question's edit, a regenerate and an edited reply each on a
+# new branch, answered or not as gglib's rules say, and the original left as
+# it was, its options oldest first; Branch from here sending nothing; an
+# unanswered question edited in place, as a new message, but on a branch
+# while its reply streams; a reply saved as it was, refused; a refused
+# regenerate; a copy's settings, origin and no run; a branch of a branch in
+# the first family; and the lineage through the store. The README claim
+# names all twelve.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 621
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 27
-floor "README test markers" "${markers:-0}" 524
+floor "README test markers" "${markers:-0}" 536
 
 exit $status

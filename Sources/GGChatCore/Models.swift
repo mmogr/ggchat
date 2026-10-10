@@ -13,7 +13,9 @@ public enum Role: String, Codable, Sendable, Equatable, Hashable {
 /// `runID` names the run on the hub still writing this reply, and
 /// `runCursor` the last of its events this message holds; both are nil once
 /// the reply is no longer being written there. `images` names the images the
-/// turn carries, in order; their bytes are kept apart, by id.
+/// turn carries, in order; their bytes are kept apart, by id. `originID` is
+/// the message this one copies as first written, when a branch copied it
+/// (ADR 0010), and nil for a message written here.
 public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
     public var id: UUID
     public var role: Role
@@ -25,6 +27,7 @@ public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
     public var runID: String?
     public var runCursor: UInt32?
     public var images: [ImageRef]
+    public var originID: UUID?
 
     public init(
         id: UUID = UUID(),
@@ -36,7 +39,8 @@ public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
         createdAt: Date,
         runID: String? = nil,
         runCursor: UInt32? = nil,
-        images: [ImageRef] = []
+        images: [ImageRef] = [],
+        originID: UUID? = nil
     ) {
         self.id = id
         self.role = role
@@ -48,6 +52,7 @@ public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
         self.runID = runID
         self.runCursor = runCursor
         self.images = images
+        self.originID = originID
     }
 
     /// Whether a hub is still writing this reply, away from this device.
@@ -130,6 +135,11 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
     /// request to gglib alone, and not for a model its list names as not
     /// thinking (ADR 0009).
     public var thinkingOff: Bool
+    /// The conversation this one was branched from, and the first of its
+    /// family, when it is a branch (ADR 0010); both nil for one started here.
+    /// They are kept even when those conversations are deleted.
+    public var branchOf: UUID?
+    public var family: UUID?
 
     /// The id the system turn carries in `requestMessages`. Fixed rather than
     /// a fresh `UUID()`, so two requests built from the same conversation are
@@ -147,7 +157,9 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
         updatedAt: Date,
         hasUnreadReply: Bool = false,
         context: ContextReading? = nil,
-        thinkingOff: Bool = false
+        thinkingOff: Bool = false,
+        branchOf: UUID? = nil,
+        family: UUID? = nil
     ) {
         self.id = id
         self.title = title
@@ -160,6 +172,14 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
         self.hasUnreadReply = hasUnreadReply
         self.context = context
         self.thinkingOff = thinkingOff
+        self.branchOf = branchOf
+        self.family = family
+    }
+
+    /// The family the conversation is one of: the first conversation's id,
+    /// its own when it is that one.
+    public var familyID: UUID {
+        family ?? id
     }
 
     /// Whether there is a system prompt to send. Blank counts as none, so a
