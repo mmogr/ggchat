@@ -77,4 +77,38 @@ final class DrawingWireTests: XCTestCase {
         XCTAssertEqual(models.map(\.generatesImages), [true, false, false, false])
         XCTAssertEqual(models.map(\.chats), [false, false, true, true])
     }
+
+    /// `GET images/drawing` answers whether the hub can draw: the image
+    /// model when it can, and gglib's code and reason when it cannot. A
+    /// gglib from before drawing has no such route, and its 404 reads as a
+    /// hub that cannot draw; any other failure is the error it is.
+    func testAHubSaysWhetherItCanDrawAndAnOlderOneCannot() async throws {
+        let path = "/v1/images/drawing"
+        ChatsHub.serve(.init(body: #"{"available":true,"model":"flux-dev"}"#), at: path, on: "can.drawing.test")
+        let can = try await ChatsHub.provider(at: "can.drawing.test").drawing()
+        XCTAssertEqual(can, Drawing(available: true, model: "flux-dev"))
+        let asked = try XCTUnwrap(ChatsHub.requests(at: "can.drawing.test").first)
+        XCTAssertEqual(asked.httpMethod, "GET")
+        XCTAssertEqual(asked.url?.path(), path)
+        XCTAssertEqual(asked.value(forHTTPHeaderField: "Authorization"), "Bearer hub-key")
+
+        let refusal = #"{"available":false,"code":"drawing_unavailable","reason":"there is no image model"}"#
+        ChatsHub.serve(.init(body: refusal), at: path, on: "cannot.drawing.test")
+        let cannot = try await ChatsHub.provider(at: "cannot.drawing.test").drawing()
+        XCTAssertEqual(
+            cannot, Drawing(available: false, code: "drawing_unavailable", reason: "there is no image model"))
+
+        // Some other path is served, so this host answers, and 404s this one.
+        ChatsHub.serve(.init(body: "{}"), at: "/v1/models", on: "older.drawing.test")
+        let older = try await ChatsHub.provider(at: "older.drawing.test").drawing()
+        XCTAssertEqual(older, Drawing(available: false))
+
+        ChatsHub.serve(.init(status: 503, body: "busy", type: "text/plain"), at: path, on: "busy.drawing.test")
+        do {
+            _ = try await ChatsHub.provider(at: "busy.drawing.test").drawing()
+            XCTFail("a 503 read as an answer")
+        } catch {
+            XCTAssertEqual(error, .server(status: 503, code: nil, message: "busy"))
+        }
+    }
 }

@@ -84,6 +84,9 @@ public final class AppModel {
     /// text and images, given back when the chat is next opened; see
     /// `AppModel+HubTurnsReadingOn`.
     var refusedHubSends: [UUID: [Int64: (notice: String, draft: Draft?)]] = [:]
+    /// What each gglib provider last said about drawing, in memory for as
+    /// long as the app runs; see `AppModel+Drawing`.
+    var drawings: [UUID: Drawing] = [:]
     /// Changes once each time a pipe first reaches a connected state; the
     /// one haptic in the app fires on it.
     public internal(set) var connectedPulse = 0

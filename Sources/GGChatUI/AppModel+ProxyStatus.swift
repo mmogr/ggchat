@@ -23,6 +23,7 @@ extension AppModel {
         guard previous.kind != config.kind else { return }
         proxyStatusAvailability[config.id] = nil
         providersWithoutRuns.remove(config.id)
+        drawings[config.id] = nil
         probeGeneration[config.id] = (probeGeneration[config.id] ?? 0) + 1
     }
 

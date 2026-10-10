@@ -181,6 +181,21 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingWireTests.testTheModelListSaysWhichModelDrawsAndWhichCanChat -->
   <!-- test: DrawingModelListTests.testTheModelListOffersOnlyModelsThatCanChat -->
   <!-- test: DrawingModelListTests.testTheDefaultModelIsTheFirstThatCanChat -->
+- Whether a hub can draw is asked of it, `GET /v1/images/drawing`, and never
+  guessed: when a chat opens on it and each time its pipe comes up, for a
+  paired Mac and for no other server. gglib draws only for a device it has
+  paired, so a gglib reached by its address is not asked, and a conversation
+  on it has the switch dimmed, saying "Drawing needs a paired Mac." What it says is kept in memory: the image model when it can,
+  and when it cannot, gglib's own reason, said as "home cannot draw: ...". A
+  gglib from before drawing has no such route, and its 404 reads as a hub
+  that cannot draw and needs updating. A hub not asked yet is not known to
+  draw, an ask that fails keeps the answer before, and a removed provider
+  takes its answer with it.
+  <!-- test: DrawingWireTests.testAHubSaysWhetherItCanDrawAndAnOlderOneCannot -->
+  <!-- test: DrawingAvailabilityTests.testAHubIsAskedWhetherItCanDrawAndItsAnswerIsTheReason -->
+  <!-- test: DrawingAvailabilityTests.testAnAskThatFailsKeepsTheAnswerBefore -->
+  <!-- test: DrawingAvailabilityTests.testOnlyGGLibIsAskedAndOfferedTheSwitch -->
+  <!-- test: DrawingAvailabilityTests.testAMacsChatSaysWhyItsMacCannotDraw -->
 - A pairing string is read by modelpipe as it is typed and as it is scanned,
   against `docs/pairing-v0.md`'s normative vectors: the ticket comes back in
   its canonical lower-case form, so a QR scan and a paste of the same machine

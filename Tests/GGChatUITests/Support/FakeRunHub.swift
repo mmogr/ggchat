@@ -4,7 +4,7 @@ import Synchronization
 /// A gglib hub with runs, in process: one reply, recorded as frames numbered
 /// from 1, that every run it starts writes. Reads can be told to hold, as a
 /// reply still being written does, or to drop once, as a connection does.
-final class FakeRunHub: RunProvider {
+final class FakeRunHub: RunProvider, DrawingProvider {
     enum Start: Sendable {
         case runs
         /// A 404 or 405 with no run code: an older gglib.
@@ -39,6 +39,10 @@ final class FakeRunHub: RunProvider {
         var reads: [(id: String, after: UInt32)] = []
         var cancels: [String] = []
         var chats: [ChatRequest] = []
+        /// What the hub says of drawing, or the error it answers with, and
+        /// how often it was asked. As it stands, a gglib from before drawing.
+        var drawing: Result<Drawing, ProviderError> = .success(Drawing(available: false))
+        var drawingAsked = 0
         /// The reads holding their streams open, to end with `release()`.
         var held: [(id: String, continuation: AsyncStream<RunEvent>.Continuation)] = []
     }
@@ -60,6 +64,13 @@ final class FakeRunHub: RunProvider {
 
     func models() async throws -> [ModelInfo] {
         MockProvider.sampleModels
+    }
+
+    func drawing() async throws(ProviderError) -> Drawing {
+        try with { state in
+            state.drawingAsked += 1
+            return state.drawing
+        }.get()
     }
 
     /// The old way, for a hub that said it has no runs.

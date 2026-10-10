@@ -420,8 +420,16 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # that cannot chat; the model list offering only those that can; and a
 # provider with no model chosen taking the first that can. They are the whole
 # of that guard, and the README claim names all four.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 656
+#
+# 2026-10-10: 656 -> 661 and 573 -> 578. Five tests pin how a hub is asked
+# whether it can draw: the route's two answers, a 404 read as a hub that
+# cannot, and any other failure as the error it is; the ask on catch-up and
+# the sentence for each answer; a failed ask keeping the answer before and a
+# removed provider taking its own; only gglib asked and offered the switch;
+# and a Mac's chat saying its Mac's sentence. They are the whole of that
+# guard, and the README claim names all five.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 661
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 573
+floor "README test markers" "${markers:-0}" 578
 
 exit $status
