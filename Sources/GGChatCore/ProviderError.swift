@@ -158,6 +158,7 @@ extension ProviderError {
         case imageRuntimeNotInstalled = "image_runtime_not_installed"
         case imageModelIncomplete = "image_model_incomplete"
         case imageModelDoesNotFit = "image_model_does_not_fit"
+        case notAnImageModel = "not_an_image_model"
         case modelUnavailable = "model_unavailable"
         case unavailable
     }
@@ -207,7 +208,7 @@ extension ProviderError.Code {
             .loopDetected, .modelNotFound, .notAnEmbeddingModel, .pinnedModelMismatch,
             .profileNotFound, .stagnationDetected, .modelCannotReadImages, .requestTooLarge,
             .imageTooLarge, .unsupportedImage, .attachmentNotFound, .requestImagesTooLarge,
-            .imageModelCannotChat, .invalidImageSize:
+            .imageModelCannotChat, .invalidImageSize, .notAnImageModel:
             .request
 
         // Nothing is wrong yet: a model still loading, a queue that did not
@@ -270,7 +271,8 @@ extension ProviderError.Code {
             "The images in this conversation are over the 16 MiB one request to a model may carry. Start a "
                 + "new conversation to send more."
         case .imageModelCannotChat, .drawingUnavailable, .invalidImageSize, .imageGenerationFailed,
-            .imageRenderStalled, .imageRuntimeNotInstalled, .imageModelIncomplete, .imageModelDoesNotFit:
+            .imageRenderStalled, .imageRuntimeNotInstalled, .imageModelIncomplete, .imageModelDoesNotFit,
+            .notAnImageModel:
             drawingHint
         case .badRequest, .badGateway, .backendUnreachable, .incompleteRequest,
             .admissionTimeout, .contextLengthExceeded, .deviceNotPaired, .embeddingModelCannotChat,

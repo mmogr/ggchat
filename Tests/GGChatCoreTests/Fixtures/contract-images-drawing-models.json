@@ -1,0 +1,11 @@
+{
+  "available": true,
+  "model": "flux1-schnell-q8_0",
+  "model_id": 3,
+  "models": [
+    { "id": 3, "name": "flux1-schnell-q8_0", "family": "flux1",
+      "complete": true, "missing": [], "default": true, "resident": true },
+    { "id": 7, "name": "qwen_image_2.1-Q8_0", "family": "qwen-image-2.1",
+      "complete": false, "missing": ["llm"], "default": false, "resident": false }
+  ]
+}

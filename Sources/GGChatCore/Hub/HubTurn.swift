@@ -4,8 +4,9 @@
 // Written by hand to mirror `gglib_core::domain::hub_chats::HubTurn` in
 // gglib. The bodies gglib records under `turn`, `image_turn` and
 // `thinking_turn` in `contracts/chats/recorded.json` are replayed against it
-// by `HubChatsWireTests`. It records none with `draw`, which
-// `DrawingWireTests` reads as this build writes it.
+// by `HubChatsWireTests`. It records none with `draw` or `image_model`,
+// which `DrawingWireTests` and `ImageModelWireTests` read as this build
+// writes them.
 
 /// The user's new message on one of the hub's chats, and nothing else: the
 /// hub rebuilds the history from its own record, and refuses a body with a
@@ -34,10 +35,16 @@ public struct HubTurn: Codable, Sendable, Equatable {
     /// it always was, and a hub from before drawing, which would refuse the
     /// key, is never sent it.
     public let draw: Bool
+    /// The image model the picture is drawn with, by its id on the hub, or
+    /// nil for the one the hub's own rule picks. Written only on a turn
+    /// that draws, which gglib requires, and left out of the body when nil.
+    /// Set only for a hub whose answer about drawing listed its image
+    /// models: one from before the list refuses the key.
+    public let imageModel: UInt64?
 
     public init(
         conversationID: Int64, content: String, images: [String] = [], thinking: HubThinking? = nil,
-        answerSaved: Bool = false, draw: Bool = false
+        answerSaved: Bool = false, draw: Bool = false, imageModel: UInt64? = nil
     ) {
         self.conversationID = conversationID
         self.content = content
@@ -45,6 +52,7 @@ public struct HubTurn: Codable, Sendable, Equatable {
         self.thinking = thinking
         self.answerSaved = answerSaved
         self.draw = draw
+        self.imageModel = imageModel
     }
 
     enum CodingKeys: String, CodingKey {
@@ -54,6 +62,7 @@ public struct HubTurn: Codable, Sendable, Equatable {
         case thinking
         case answerSaved = "answer_saved"
         case draw
+        case imageModel = "image_model"
     }
 
     public init(from decoder: any Decoder) throws {
@@ -64,6 +73,7 @@ public struct HubTurn: Codable, Sendable, Equatable {
         thinking = try container.decodeIfPresent(HubThinking.self, forKey: .thinking)
         answerSaved = try container.decodeIfPresent(Bool.self, forKey: .answerSaved) ?? false
         draw = try container.decodeIfPresent(Bool.self, forKey: .draw) ?? false
+        imageModel = try container.decodeIfPresent(UInt64.self, forKey: .imageModel)
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -74,6 +84,7 @@ public struct HubTurn: Codable, Sendable, Equatable {
         try container.encodeIfPresent(thinking, forKey: .thinking)
         if answerSaved { try container.encode(true, forKey: .answerSaved) }
         if draw { try container.encode(true, forKey: .draw) }
+        if draw { try container.encodeIfPresent(imageModel, forKey: .imageModel) }
     }
 }
 

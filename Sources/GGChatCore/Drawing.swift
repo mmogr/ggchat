@@ -15,18 +15,35 @@ import Foundation
 /// words that say what would fix it.
 public struct Drawing: Decodable, Sendable, Equatable {
     public var available: Bool
-    /// Why not, as a code: `drawing_unavailable`.
+    /// Why not, as a code: `drawing_unavailable`, or one of the three a
+    /// named image model is refused with.
     public var code: String?
     /// Why not, in gglib's words.
     public var reason: String?
     /// The image model that would draw.
     public var model: String?
+    /// That model's id on the hub.
+    public var modelID: UInt64?
+    /// The hub's image models, in the order it gave them. Nil from a gglib
+    /// from before the list, which is never sent `image_model`; empty from
+    /// one that has the list and no image model.
+    public var models: [ImageModelRow]?
 
-    public init(available: Bool, code: String? = nil, reason: String? = nil, model: String? = nil) {
+    public init(
+        available: Bool, code: String? = nil, reason: String? = nil, model: String? = nil, modelID: UInt64? = nil,
+        models: [ImageModelRow]? = nil
+    ) {
         self.available = available
         self.code = code
         self.reason = reason
         self.model = model
+        self.modelID = modelID
+        self.models = models
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case available, code, reason, model, models
+        case modelID = "model_id"
     }
 }
 
@@ -42,7 +59,21 @@ extension OpenAICompatibleProvider: DrawingProvider {
     /// cannot draw and would refuse a turn's `draw` as a key it does not
     /// know, so it is never sent one.
     public func drawing() async throws(ProviderError) -> Drawing {
-        let request = makeRequest(path: "images/drawing", method: "GET", body: nil)
+        try await drawing(judging: nil)
+    }
+
+    /// `GET images/drawing?image_model=<id>`: the same question about a
+    /// message that names `imageModel`, which gglib judges as it would the
+    /// message. The answer is then about that model alone: it says
+    /// `model_not_found`, `not_an_image_model` or `image_model_incomplete`
+    /// when that is why not. With nil the query is left off.
+    public func drawing(judging imageModel: UInt64?) async throws(ProviderError) -> Drawing {
+        var request = makeRequest(path: "images/drawing", method: "GET", body: nil)
+        if let imageModel {
+            request.url = request.url?.appending(queryItems: [
+                URLQueryItem(name: "image_model", value: String(imageModel))
+            ])
+        }
         let (data, response) = try await perform(request)
         if response.statusCode == 404 { return Drawing(available: false) }
         try checkStatus(response, data: data)
@@ -68,7 +99,9 @@ extension ModelInfo {
 }
 
 extension ProviderError.Code {
-    /// The second line under each drawing code, and nil for any other. Each
+    /// The second line under each drawing code, and nil for any other:
+    /// `model_not_found` has none, since it is also a chat model's, and
+    /// gglib's own sentence names the model that is gone. Each
     /// says what happened to the picture and what to do next; the server's
     /// own sentence, drawn above it, names the model, the file or the size.
     var drawingHint: String? {
@@ -93,6 +126,8 @@ extension ProviderError.Code {
         case .imageModelDoesNotFit:
             "The image model needs more memory than is free while another reply is being written there. Ask "
                 + "again when that reply has ended."
+        case .notAnImageModel:
+            "The model chosen to draw with is not an image model. Pick another from the Draw menu."
         default:
             nil
         }

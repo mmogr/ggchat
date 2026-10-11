@@ -20,10 +20,17 @@ public struct ChatRequest: Sendable, Equatable {
     /// its query, and the chat route, which cannot draw, never hears it.
     /// Set only for a gglib that said it can draw.
     public var draws: Bool
+    /// The image model the picture is drawn with, by its id on the hub, or
+    /// nil for the one the hub's own rule picks. No part of the body
+    /// either: a run that draws says it in its query, beside `draw`, and
+    /// one that does not draw never says it. Set only for a gglib whose
+    /// answer about drawing listed its image models.
+    public var imageModelID: UInt64?
 
     public init(
         model: String, messages: [Message], images: [String: Data] = [:], maxTokens: Int? = nil,
-        returnProgress: Bool = false, reasoningBudgetTokens: Int? = nil, draws: Bool = false
+        returnProgress: Bool = false, reasoningBudgetTokens: Int? = nil, draws: Bool = false,
+        imageModelID: UInt64? = nil
     ) {
         self.model = model
         self.messages = messages
@@ -32,6 +39,7 @@ public struct ChatRequest: Sendable, Equatable {
         self.returnProgress = returnProgress
         self.reasoningBudgetTokens = reasoningBudgetTokens
         self.draws = draws
+        self.imageModelID = imageModelID
     }
 }
 

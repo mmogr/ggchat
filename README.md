@@ -172,7 +172,8 @@ Each claim names the test that keeps it true.
   with `image_generation`. Such a model cannot chat, and neither can one
   listed with `embeddings`: the model list offers neither, and a provider
   with no model chosen takes the first that can chat, not the first listed.
-  Each of the eight codes gglib's drawing refuses with has a line of its own
+  Each of the eight codes gglib's drawing refuses with, and the one for a
+  model chosen to draw with that is no image model, has a line of its own
   that says what happened to the picture and what to do, on a saved failure
   too; a picture that stalled, and an image model with no room while another
   reply is written, say to ask again and name no machine. The two codes a
@@ -196,6 +197,26 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingAvailabilityTests.testAnAskThatFailsKeepsTheAnswerBefore -->
   <!-- test: DrawingAvailabilityTests.testOnlyGGLibIsAskedAndOfferedTheSwitch -->
   <!-- test: DrawingAvailabilityTests.testAMacsChatSaysWhyItsMacCannotDraw -->
+- A newer gglib's answer about drawing lists its image models, `models`:
+  each with its id on that machine, its name, its family, whether it has all
+  its files and which it lacks, whether it is the default and whether it is
+  loaded, in gglib's order. A family or a role this build has not heard of
+  is kept as the string it came as, and the answer still reads. An answer
+  with no `models` is a gglib from before the list, which is never sent
+  `image_model`; an empty list is a newer one with no image model. The
+  question can name a model to be judged, `?image_model=<id>`. A message
+  that draws names its image model beside `draw`: `image_model` in a Mac's
+  turn, and `&image_model=<id>` in the query of a run for a conversation
+  kept here. Neither says it without drawing, and with none chosen each is
+  the request it was. gglib has recorded no such answer yet, so the fixture
+  these read, `contract-images-drawing-models.json`, is the example in the
+  contract both sides are built to and not a capture.
+  <!-- test: ImageModelWireTests.testTheContractsAnswerListsTheImageModelsInOrder -->
+  <!-- test: ImageModelWireTests.testAnAnswerWithoutTheListIsAnOlderGGLibAndAnEmptyListIsNot -->
+  <!-- test: ImageModelWireTests.testAFamilyOrARoleThisBuildDoesNotKnowStillReads -->
+  <!-- test: ImageModelWireTests.testTheQuestionCanNameAnImageModelToBeJudged -->
+  <!-- test: ImageModelWireTests.testATurnNamesItsImageModelOnlyWhenItDraws -->
+  <!-- test: ImageModelWireTests.testARunNamesItsImageModelInItsQueryOnlyWhenItDraws -->
 - A picture is asked for with a switch, never detected: Draw is pressed for
   one message, and it is the draft's, so the draft a send leaves has it off
   again. A turn to a Mac's chat says `draw: true` only for a message sent
@@ -1491,7 +1512,7 @@ Sources/GGChatCore/   no SwiftUI; the provider protocol, wire types, SSE, the pi
 Sources/GGChatPipe/   the only target that links modelpipe-ffi; no UI framework either
 Sources/GGChatUI/     SwiftUI; the app model, views, and SwiftData persistence
 App/                  the xcodegen spec, the generated project, and a @main struct with assets
-Tests/GGChatCoreTests XCTest; fixtures are real captures from gglib
+Tests/GGChatCoreTests XCTest; fixtures are real captures from gglib, but for the one named contract-*
 Tests/GGChatPipeTests that the binding is linked and its statuses cross unchanged
 Tests/GGChatUITests   the app model, streaming, the pipe, and the SwiftData store
 App/ggchatUITests     XCUITest that drives the first-run flow on a simulator

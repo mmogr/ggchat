@@ -13,7 +13,9 @@ extension OpenAICompatibleProvider: RunProvider {
     /// A request that draws is put as `?kind=chat&tools=builtin&draw=true`,
     /// its body the same: the query, not the body, is what gives the run
     /// gglib's own tools and lets this message's reply ask for a picture.
-    /// Any other request has no query at all, as before.
+    /// Any other request has no query at all, as before. A request that
+    /// draws with a chosen image model adds `&image_model=<id>`; gglib
+    /// refuses the word without `draw=true`, so no other request says it.
     public func startRun(id: String, _ chatRequest: ChatRequest) async throws(ProviderError) -> RunStart {
         let body: Data
         do {
@@ -23,10 +25,14 @@ extension OpenAICompatibleProvider: RunProvider {
         }
         var request = makeRequest(path: "runs/\(id)", method: "PUT", body: body)
         if chatRequest.draws {
-            request.url = request.url?.appending(queryItems: [
+            var query = [
                 URLQueryItem(name: "kind", value: "chat"), URLQueryItem(name: "tools", value: "builtin"),
                 URLQueryItem(name: "draw", value: "true"),
-            ])
+            ]
+            if let chosen = chatRequest.imageModelID {
+                query.append(URLQueryItem(name: "image_model", value: String(chosen)))
+            }
+            request.url = request.url?.appending(queryItems: query)
         }
         let (data, response) = try await perform(request)
         if [404, 405].contains(response.statusCode), !Self.carriesARunCode(data) { return .unsupported }

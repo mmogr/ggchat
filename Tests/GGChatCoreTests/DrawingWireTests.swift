@@ -23,9 +23,11 @@ final class DrawingWireTests: XCTestCase {
         .imageModelDoesNotFit:
             "The image model needs more memory than is free while another reply is being written there. Ask again "
             + "when that reply has ended.",
+        .notAnImageModel: "The model chosen to draw with is not an image model. Pick another from the Draw menu.",
     ]
 
-    /// The eight codes gglib's drawing writes, spelt as `docs/error-codes.json`
+    /// The eight codes gglib's drawing writes, and the one it refuses a
+    /// chosen model that does not draw with, spelt as `docs/error-codes.json`
     /// spells them, each with a line of its own that a saved failure draws
     /// too, and the two a run can now end with, which name a side. Where
     /// each says to look is pinned, so a picture that stalled says to ask
@@ -36,7 +38,7 @@ final class DrawingWireTests: XCTestCase {
             [
                 "image_model_cannot_chat", "drawing_unavailable", "invalid_image_size", "image_generation_failed",
                 "image_render_stalled", "image_runtime_not_installed", "image_model_incomplete",
-                "image_model_does_not_fit",
+                "image_model_does_not_fit", "not_an_image_model",
             ])
         for (code, hint) in Self.hints {
             XCTAssertEqual(code.hint, hint, code.rawValue)
@@ -44,7 +46,7 @@ final class DrawingWireTests: XCTestCase {
             XCTAssertEqual(saved.hint, hint, code.rawValue)
         }
         let sides: [ProviderError.Code: WhereToLook] = [
-            .imageModelCannotChat: .request, .invalidImageSize: .request,
+            .imageModelCannotChat: .request, .invalidImageSize: .request, .notAnImageModel: .request,
             .drawingUnavailable: .servingSide, .imageGenerationFailed: .servingSide,
             .imageRuntimeNotInstalled: .servingSide, .imageModelIncomplete: .servingSide,
             .imageRenderStalled: .waitAndRetry, .imageModelDoesNotFit: .waitAndRetry,
