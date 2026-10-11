@@ -88,8 +88,8 @@ final class RunsWireTests: XCTestCase {
         XCTAssertEqual(keys, ["created_at_ms", "id", "kind", "last_seq", "status"])
     }
 
-    /// The recorded reply whose tool made one image reads as its tool line,
-    /// the end of that call, that image with its id, type and size, and its
+    /// The recorded reply whose tool made one image reads as its tool line
+    /// and its call, the end of that call and its answer, that image with its id, type and size, and its
     /// text.
     func testARecordedToolReplyReadsAsItsToolLineItsImageAndItsText() throws {
         let object = try JSONSerialization.jsonObject(with: try Fixtures.data("gglib-runs-recorded.json"))
@@ -102,7 +102,13 @@ final class RunsWireTests: XCTestCase {
             id: "ece5c33be7ce69ce71231b9d81671f4de1c35ee51fc684b014da4eb244e9a8ae", mime: "image/png", width: 1024,
             height: 1024)
         XCTAssertEqual(
-            events, [.tool("Draw"), .toolEnded("call-draw-1"), .images([image]), .delta("Here is a red dot.")])
+            events,
+            [
+                .tool("Draw"),
+                .toolCalled(ToolExchange(callID: "call-draw-1", name: "draw", arguments: #"{"prompt":"a red dot"}"#)),
+                .toolEnded("call-draw-1"), .toolAnswered(callID: "call-draw-1", text: "[image 1024x1024 PNG stored]"),
+                .images([image]), .delta("Here is a red dot."),
+            ])
     }
 
     func testOnlyCompletedFailedAndCancelledAreTerminal() {

@@ -161,7 +161,8 @@ extension AppModel {
     /// chat route says it as it finishes, and a run in a frame of its own.
     /// A run that draws also says how far its picture has got (`ToolWork`)
     /// and names the images it made, whose bytes `keepImages` has stored by
-    /// the time they are named here.
+    /// the time they are named here, and what each tool was called with and
+    /// answered, which `finish` keeps with the reply.
     func apply(_ event: ChatEvent, to live: LiveReply) {
         live.work.apply(event)
         switch event {
@@ -178,6 +179,7 @@ extension AppModel {
         case .images(let images):
             live.made += images.filter { image in !live.made.contains { $0.id == image.id } }
         case .tool(let line): live.tools.append(line)
+        case .toolCalled, .toolAnswered: live.exchanges.take(event)
         case .toolProgress, .toolEnded, .waiting: break
         }
     }

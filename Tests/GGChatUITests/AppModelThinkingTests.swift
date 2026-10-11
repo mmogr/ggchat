@@ -85,7 +85,9 @@ final class AppModelThinkingTests: XCTestCase {
         XCTAssertEqual(recorder.requests.count, 2)
         for sent in recorder.requests {
             XCTAssertNil(sent.reasoningBudgetTokens)
-            XCTAssertEqual(sent, ChatRequest(model: "mock-27b", messages: sent.messages, returnProgress: true))
+            XCTAssertEqual(
+                sent,
+                ChatRequest(model: "mock-27b", messages: sent.messages, returnProgress: true, replaysToolCalls: true))
         }
 
         let other = RecordingProvider(wrapping: answering())

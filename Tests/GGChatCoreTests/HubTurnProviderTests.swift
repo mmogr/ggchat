@@ -133,7 +133,8 @@ final class HubTurnProviderTests: XCTestCase {
     }
 
     /// The run's events are read as an agent's: text, reasoning, a line per
-    /// tool call, the images a finished tool made and what a finished model
+    /// tool call and the call itself, what a finished tool answered and the
+    /// images it made and what a finished model
     /// call counted, every event a frame whether or not it means anything
     /// here, then the run's report.
     func testAnAgentRunsEventsAreItsTextReasoningAndToolLines() async throws {
@@ -151,8 +152,15 @@ final class HubTurnProviderTests: XCTestCase {
         XCTAssertEqual(
             chat,
             [
-                .reasoning("The lock file"), .reasoning(" moved."), .tool("Read File: Cargo.lock"), .toolEnded("c1"),
-                .tool("List Dir"), .tool("Plot Chart: build times"), .toolEnded("c3"), .images([Self.chart]),
+                .reasoning("The lock file"), .reasoning(" moved."), .tool("Read File: Cargo.lock"),
+                .toolCalled(
+                    ToolExchange(callID: "c1", name: "builtin_read_file", arguments: #"{"path":"Cargo.lock"}"#)),
+                .toolEnded("c1"), .toolAnswered(callID: "c1", text: "version = 3"), .tool("List Dir"),
+                .toolCalled(ToolExchange(callID: "c2", name: "builtin_list_dir", arguments: "{}")),
+                .tool("Plot Chart: build times"),
+                .toolCalled(ToolExchange(callID: "c3", name: "plot_chart", arguments: #"{"title":"build times"}"#)),
+                .toolEnded("c3"), .toolAnswered(callID: "c3", text: "[image 640x480 PNG stored]"),
+                .images([Self.chart]),
                 .delta("Pin "), .delta("the version."),
                 .usage(Usage(promptTokens: 812, completionTokens: 12, contextSize: 8_192), reason: "stop"),
             ])
@@ -172,9 +180,9 @@ final class HubTurnProviderTests: XCTestCase {
         height: 480)
 
     /// A finished tool's `result.images` are the images it made, each with
-    /// its id, type and size, in order, after the word that its call ended.
-    /// A result without them, with none, or with images that cannot be read
-    /// is the call's end alone.
+    /// its id, type and size, in order, after the word that its call ended
+    /// and what it answered. A result without them, with none, or with
+    /// images that cannot be read is the call's end and its answer alone.
     func testAFinishedToolsImagesAreReadAndOneWithoutMeansNothing() {
         func complete(_ images: String) -> [ChatEvent] {
             OpenAICompatibleProvider.agentEvents(
@@ -183,6 +191,7 @@ final class HubTurnProviderTests: XCTestCase {
                         + #""content":"two charts","success":true\#(images)},"wait_ms":0,"execute_duration_ms":4,"#
                         + #""display_name":"Plot","duration_display":"4ms"}"#))
         }
+        let ended: [ChatEvent] = [.toolEnded("c3"), .toolAnswered(callID: "c3", text: "two charts")]
         let second = ImageRef(
             id: "84df8f6cc2c63ce08ab21ab29b20c0c6ef572839945f54cf708ba8dab69c2357", mime: "image/jpeg", width: 1024,
             height: 768)
@@ -190,12 +199,12 @@ final class HubTurnProviderTests: XCTestCase {
             complete(
                 #","images":[{"id":"\#(Self.chart.id)","mime":"image/png","width":640,"height":480},"#
                     + #"{"id":"\#(second.id)","mime":"image/jpeg","width":1024,"height":768}]"#),
-            [.toolEnded("c3"), .images([Self.chart, second])])
-        XCTAssertEqual(complete(""), [.toolEnded("c3")])
-        XCTAssertEqual(complete(#","images":[]"#), [.toolEnded("c3")])
-        XCTAssertEqual(complete(#","images":null"#), [.toolEnded("c3")])
-        XCTAssertEqual(complete(#","images":[{"id":"\#(Self.chart.id)","mime":"image/png"}]"#), [.toolEnded("c3")])
-        XCTAssertEqual(complete(#","images":"\#(Self.chart.id)""#), [.toolEnded("c3")])
+            ended + [.images([Self.chart, second])])
+        XCTAssertEqual(complete(""), ended)
+        XCTAssertEqual(complete(#","images":[]"#), ended)
+        XCTAssertEqual(complete(#","images":null"#), ended)
+        XCTAssertEqual(complete(#","images":[{"id":"\#(Self.chart.id)","mime":"image/png"}]"#), ended)
+        XCTAssertEqual(complete(#","images":"\#(Self.chart.id)""#), ended)
     }
 
     /// A turn naming an image the hub does not hold is refused as such, and

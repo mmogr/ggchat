@@ -347,6 +347,40 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingRunTests.testAProviderMovedToAnotherMacForgetsWhetherItCanDraw -->
   <!-- test: DrawingRunTests.testARunWrittenAWayThisBuildCannotReadIsGivenUp -->
   <!-- test: DrawingRunWireTests.testAnUnknownWordForTheFramesStillReads -->
+- A conversation kept here remembers how its picture was made. The reply a
+  run drew for keeps, with its words and its picture, each tool the run
+  called and what the tool answered: the call's id, the tool's name, the
+  arguments the model wrote as JSON text, and the answer word for word, read
+  from the run's `tool_call_start` and `tool_call_complete` events and kept
+  in one optional column. None of it is drawn, and the transcript holds the
+  rows it always did. Every later request says it again ahead of the reply's
+  words, in OpenAI's shape: an assistant message with the call in
+  `tool_calls` and no content, then a `tool` message with the call's id and
+  the answer. gglib reads that as a chat that holds a drawn picture and
+  tells the model so, which is what stops the next reply saying it cannot
+  make images (gglib issue 1387). Only gglib is sent them, a paired Mac or
+  one reached by an address that answered as gglib; any other server is
+  sent the reply's words alone, as before, since some refuse a tool message
+  in a request that offers no tools. A call nothing answered is left out, a
+  reply of a picture alone sends no empty words, and a draw that failed is
+  sent with the tool's own error when its reply was kept. The picture
+  itself is still not sent to the model. A reply from before this keeps no
+  call and is sent as it was, a branch's copy keeps its calls, an answer
+  read by a later reading of the run finds its call, and a store opens
+  across the column in both directions.
+  <!-- test: DrawnHistoryWireTests.testTheRecordedFramesOfAPictureLeaveItsCallAndItsAnswer -->
+  <!-- test: DrawnHistoryWireTests.testTheMessageAfterAPictureCarriesTheCallItsAnswerThenTheWords -->
+  <!-- test: DrawnHistoryWireTests.testAnotherServerAndAReplyFromBeforeAreSentTheWordsAlone -->
+  <!-- test: DrawnHistoryWireTests.testTwoPicturesAreTwoCallsEachAnsweredUnderItsOwnID -->
+  <!-- test: DrawnHistoryWireTests.testACallNothingAnsweredIsLeftOutAndAPictureAloneSendsNoEmptyWords -->
+  <!-- test: DrawnHistoryWireTests.testACallsArgumentsAreJSONTextAndAnAnswerGoesOnItsOwnCall -->
+  <!-- test: DrawnHistoryWireTests.testABranchKeepsAReplysCallsAndTheRowsAreUnchanged -->
+  <!-- test: DrawnHistoryTests.testAReplyKeepsHowItsPictureWasMadeAndTheNextRequestCarriesIt -->
+  <!-- test: DrawnHistoryTests.testOnlyGglibIsSentTheCalls -->
+  <!-- test: DrawnHistoryTests.testTwoPicturesKeepTwoCallsUnderTheirOwnIDs -->
+  <!-- test: DrawnHistoryTests.testAnAnswerReadOnALaterReadingFindsItsCall -->
+  <!-- test: DrawnHistoryTests.testTheCallsOutliveAReopening -->
+  <!-- test: DrawnHistoryTests.testAStoreOpensAcrossTheCallsColumnInBothDirections -->
 - The picture such a run draws is this device's to keep, since the
   conversation is: its bytes are read from the hub by id as soon as the tool
   finishes, before its frame is applied, checked against the id, kept in

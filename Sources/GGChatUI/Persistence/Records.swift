@@ -130,6 +130,10 @@ public final class MessageRecord {
     /// value, when not as the chat route's chunks; nil otherwise, and with
     /// `runID`. Optional, for `failureData`'s reason.
     public var runFrames: String?
+    /// The tools the reply called and what each answered, in order, as JSON
+    /// of `[ToolExchange]`; nil for a turn with none. Optional, for
+    /// `failureData`'s reason.
+    public var exchangesData: Data?
     public var createdAt: Date
     public var order: Int
     public var conversation: ConversationRecord?
@@ -137,7 +141,7 @@ public final class MessageRecord {
     public init(
         id: UUID, role: String, content: String, reasoning: String?, isPartial: Bool, createdAt: Date, order: Int,
         failureData: Data? = nil, runID: String? = nil, runCursor: Int? = nil, imagesData: Data? = nil,
-        originID: UUID? = nil, draws: Bool? = nil, runFrames: String? = nil
+        originID: UUID? = nil, draws: Bool? = nil, runFrames: String? = nil, exchangesData: Data? = nil
     ) {
         self.uuid = id
         self.role = role
@@ -151,6 +155,7 @@ public final class MessageRecord {
         self.originID = originID
         self.draws = draws
         self.runFrames = runFrames
+        self.exchangesData = exchangesData
         self.createdAt = createdAt
         self.order = order
     }

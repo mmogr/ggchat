@@ -513,8 +513,20 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # choice said and never swapped, a refused run or turn keeping its question
 # and its choice, and the Mac asked about the model chosen. They are the
 # whole of that guard, and the README claims name all fifteen.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 728
+#
+# 2026-10-11: 728 -> 741 and 645 -> 658. Thirteen tests pin a conversation
+# kept here remembering how its picture was made: the recorded frames of a
+# picture read as its call and its answer; the request after it carrying
+# the call, the answer and then the words, as gglib's rule for a drawn
+# picture reads them; another server, and a reply from before, sent the
+# words alone; two pictures under their own ids; a call nothing answered
+# left out; a branch keeping the calls and the rows unchanged; an answer
+# read on a later reading finding its call; and the column kept, and opened
+# across the change. A reply that stops carrying its calls fails nothing
+# else: the request still goes and the model says it cannot draw. They are
+# the whole of that guard, and the README claim names all thirteen.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 741
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 645
+floor "README test markers" "${markers:-0}" 658
 
 exit $status

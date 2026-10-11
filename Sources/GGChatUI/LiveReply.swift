@@ -26,6 +26,11 @@ public final class LiveReply {
     /// bytes are in this device's store by the time one is named here, and
     /// `finish` names them on the reply's message.
     public internal(set) var made: [ImageRef] = []
+    /// The tools the reply called and what each answered, in order. Never
+    /// drawn; `finish` keeps them on the reply's message, and a reply read
+    /// on starts with the ones its message holds, so an answer that arrives
+    /// then finds its call.
+    var exchanges: [ToolExchange] = []
     /// How the run writes its events, as its `PUT` was answered or, for a
     /// reply read on, as its message kept it.
     var frames = RunFrames.openai

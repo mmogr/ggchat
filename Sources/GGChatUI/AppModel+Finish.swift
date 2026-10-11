@@ -16,7 +16,8 @@ extension AppModel {
     ///
     /// The images the reply's tools made are named on its message, after
     /// any it already names. A reply of images alone is kept, as one of
-    /// text is.
+    /// text is. What its tools were called with and answered is kept on the
+    /// message too, whenever the message is.
     func finish(
         _ live: LiveReply, finished: Bool, cancelled: Bool, refusal: Failure? = nil, keepsRun: Bool = false
     ) {
@@ -46,8 +47,8 @@ extension AppModel {
             let index = conversation.messages.firstIndex(where: { $0.id == continuingID })
         {
             let ending = Ending(
-                content: content, reasoning: live.reasoning, images: live.made, finished: finished,
-                failure: failure, run: run, frames: frames)
+                content: content, reasoning: live.reasoning, images: live.made, exchanges: live.exchanges,
+                finished: finished, failure: failure, run: run, frames: frames)
             write(ending, at: index, in: &conversation)
         } else if run != nil || !content.isEmpty || !live.reasoning.isEmpty || !live.made.isEmpty || finished {
             conversation.messages.append(
@@ -55,7 +56,7 @@ extension AppModel {
                     role: .assistant, content: content,
                     reasoning: live.reasoning.isEmpty ? nil : live.reasoning,
                     isPartial: !finished, failure: failure, createdAt: stamp, runID: run?.id, runCursor: run?.cursor,
-                    images: live.made, runFrames: frames))
+                    images: live.made, runFrames: frames, exchanges: live.exchanges))
         } else if let failure {
             // Nothing arrived and something said why. With no reply to put
             // the sentence under, it goes on the question.
@@ -107,6 +108,7 @@ extension AppModel {
         message.runCursor = ending.run?.cursor
         message.runFrames = ending.frames
         message.images += ending.images.filter { image in !message.images.contains { $0.id == image.id } }
+        message.exchanges.merge(ending.exchanges)
         guard ending.run == nil, !ending.finished, message.content.isEmpty, message.reasoning?.isEmpty ?? true,
             message.images.isEmpty
         else {
@@ -149,6 +151,7 @@ private struct Ending {
     var content: String
     var reasoning: String
     var images: [ImageRef]
+    var exchanges: [ToolExchange]
     var finished: Bool
     var failure: Failure?
     var run: (id: String, cursor: UInt32?)?

@@ -118,7 +118,7 @@ public final class HubLiveReply {
         case .usage(let counted, let reason):
             usage = counted
             finishReason = reason
-        case .progress, .error, .finished, .toolProgress, .toolEnded, .waiting: break
+        case .progress, .error, .finished, .toolProgress, .toolEnded, .waiting, .toolCalled, .toolAnswered: break
         }
     }
 }
