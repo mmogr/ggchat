@@ -119,7 +119,7 @@ struct HubComposer: View {
         .frame(maxWidth: .infinity)
         .dropsImages(take)
         .onChange(of: unsent, initial: true) { _, back in
-            guard back != nil, draft == Draft(), let back = model.takeUnsentHubDraft() else { return }
+            guard back != nil, draft.isEmpty, let back = model.takeUnsentHubDraft() else { return }
             draft = back
         }
     }
