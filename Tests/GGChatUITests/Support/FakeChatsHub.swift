@@ -129,8 +129,8 @@ final class FakeChatsHub: HubChatsProvider, DrawingProvider {
     }
 
     /// What `runs` is told to say of drawing.
-    func drawing() async throws(ProviderError) -> Drawing {
-        try await runs.drawing()
+    func drawing(judging imageModel: UInt64?) async throws(ProviderError) -> Drawing {
+        try await runs.drawing(judging: imageModel)
     }
 
     func listChats() async throws(HubChatsFailure) -> HubChatList {

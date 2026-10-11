@@ -49,24 +49,29 @@ public struct Drawing: Decodable, Sendable, Equatable {
 
 /// A provider whose hub can be asked whether it draws.
 public protocol DrawingProvider: Provider {
-    /// Whether the hub can draw for a message now. A hub from before
+    /// Whether the hub can draw for a message now: one that names
+    /// `imageModel`, or with nil one that names none. A hub from before
     /// drawing has no such route, and cannot.
-    func drawing() async throws(ProviderError) -> Drawing
+    func drawing(judging imageModel: UInt64?) async throws(ProviderError) -> Drawing
+}
+
+extension DrawingProvider {
+    /// Whether the hub can draw for a message that names no image model.
+    public func drawing() async throws(ProviderError) -> Drawing {
+        try await drawing(judging: nil)
+    }
 }
 
 extension OpenAICompatibleProvider: DrawingProvider {
     /// `GET images/drawing`. A 404 is a gglib from before drawing, which
     /// cannot draw and would refuse a turn's `draw` as a key it does not
     /// know, so it is never sent one.
-    public func drawing() async throws(ProviderError) -> Drawing {
-        try await drawing(judging: nil)
-    }
-
-    /// `GET images/drawing?image_model=<id>`: the same question about a
-    /// message that names `imageModel`, which gglib judges as it would the
-    /// message. The answer is then about that model alone: it says
-    /// `model_not_found`, `not_an_image_model` or `image_model_incomplete`
-    /// when that is why not. With nil the query is left off.
+    ///
+    /// With `imageModel` it is `GET images/drawing?image_model=<id>`: the
+    /// same question about a message that names that model, which gglib
+    /// judges as it would the message. The answer is then about that model
+    /// alone, and says `model_not_found`, `not_an_image_model` or
+    /// `image_model_incomplete` when that is why not.
     public func drawing(judging imageModel: UInt64?) async throws(ProviderError) -> Drawing {
         var request = makeRequest(path: "images/drawing", method: "GET", body: nil)
         if let imageModel {

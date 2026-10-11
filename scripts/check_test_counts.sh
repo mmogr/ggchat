@@ -502,8 +502,19 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # and in a run's query, only when it draws. The fixture is written from the
 # contract, gglib having recorded none. They are the whole of that guard,
 # and the README claim names all six.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 713
+#
+# 2026-10-11: 713 -> 728 and 630 -> 645. Fifteen tests pin a chat's choice
+# of image model: the menu's rows and when there is one, and what the
+# control says; a Mac from before the list given no menu and never sent the
+# word, from either kind of chat; the choice said with each message that
+# draws and no other, kept with a conversation and held only with a Mac's
+# chat open; a model without its files not chosen; a moved provider
+# forgetting it; the column kept, and opened across the change; and a stale
+# choice said and never swapped, a refused run or turn keeping its question
+# and its choice, and the Mac asked about the model chosen. They are the
+# whole of that guard, and the README claims name all fifteen.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 728
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 630
+floor "README test markers" "${markers:-0}" 645
 
 exit $status

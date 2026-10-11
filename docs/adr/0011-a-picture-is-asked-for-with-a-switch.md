@@ -1,7 +1,8 @@
 # ADR 0011 — A picture is asked for with a switch, and a kept conversation keeps its own
 
 - **Status:** Accepted
-- **Date:** 2026-10-10
+- **Date:** 2026-10-10 (amended 2026-10-11 — a chat chooses the image model
+  its pictures are drawn with; see the note at the end of the decision)
 - **Supersedes:** nothing
 - **Superseded by:** nothing
 
@@ -125,7 +126,62 @@ is read. A provider whose saved default is an image model keeps it
 until another is picked. And a run that draws for a conversation kept here
 is read as agent events, which carry no "Reading N of M tokens" line.
 
+> **Amended 2026-10-11 — a chat chooses its image model, and says it with
+> every message that draws.** gglib's answer about drawing now lists the
+> machine's image models (`models`: id, name, family, whether complete and
+> what is missing, the default, the one loaded), and a message that draws
+> can name one: `image_model` beside `draw` in a Mac's turn, and
+> `&image_model=<id>` in the query of a run for a conversation kept here.
+> Absent means gglib's own rule, its default or else its only complete
+> model. gglib keeps no such choice for a chat, on purpose, so the surface
+> that sends the message remembers it.
+>
+> Pressing Draw is still per message. Which model draws is a setting of the
+> chat, as Thinking is, because a chat is usually about one kind of picture
+> and picking again for every one would be a chore. Where the Mac lists two
+> image models or more, holding the Draw control opens them: "Default",
+> naming the model the Mac's rule picks, then each in the Mac's order with
+> its family, "loaded" for the one loaded now, and one that lacks a file
+> dimmed with what it lacks. Picking one also presses Draw for the message
+> being written, since that is what was just asked for, and sends nothing.
+> With one image model or none the control is the switch it was.
+>
+> A conversation kept here stores the choice in one optional column
+> (`imageModelID`) and a branch keeps it, as it keeps the Thinking choice.
+> An id names a model on one machine, so a provider moved to another Mac
+> takes the choice of each of its conversations with it. A Mac's chat holds
+> the choice in memory with the chat open and nowhere else (ADR 0007), so a
+> chat opened again has none: the Mac does not remember it for the phone, as
+> it does Thinking.
+>
+> The word is sent only to a gglib whose answer carried `models`. One from
+> before the list has no menu and is never sent it, since it refuses a turn
+> with a key it does not know; a choice held from before is then not said,
+> and its own rule draws.
+>
+> A chosen model the Mac cannot draw with is never swapped for another. The
+> Mac is asked about a message that names the model chosen
+> (`?image_model=<id>`), when it is picked and each time the Mac is asked
+> about drawing, for the chat on screen; until it answers, its list is read.
+> When either says no, the control is dimmed with the reason and the menu
+> stays, the choice as it was. When the Mac refuses the message itself, with
+> `model_not_found`, `not_an_image_model` or `image_model_incomplete`, the
+> question keeps the refusal and stays one that draws, the draft of a Mac's
+> chat comes back with Draw as it was, the choice is kept, and the Mac is
+> asked again what it lists. Retry then names the same model. This is the
+> one place a question marked as drawing is sent to a Mac this phone thinks
+> will refuse: the other way is a picture from a model nobody chose.
+>
+> Known costs. The answer about a chosen model is as old as the last ask, as
+> the list is. A Mac's chat forgets its choice when it is closed. A choice
+> the list no longer has ticks no row in the menu. The menu is opened by
+> holding the control, which nothing on screen says; VoiceOver is told.
+
 ## What would undo it
+
+- gglib remembering a chat's image model, as it does Thinking: then a Mac's
+  chat reads the choice from the opened chat and says it only on the turn
+  that changes it, and the phone holds nothing between openings.
 
 - The owner wanting pictures without a press: then gglib's rule changes
   first, and the switch becomes a setting of the chat, as Thinking is.

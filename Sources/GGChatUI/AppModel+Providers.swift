@@ -127,6 +127,7 @@ extension AppModel {
         forgetLastHeard(id)
         forgetHubChats(id)
         drawings[id] = nil
+        imageChoiceAnswers[id] = nil
         // Replies its hub is still writing away from here are given up, and
         // the one being read is put down as Stop puts it down.
         giveUpRuns(through: removed)

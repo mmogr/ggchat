@@ -88,10 +88,14 @@ struct HubComposer: View {
             HStack(alignment: .bottom, spacing: 8) {
                 AddImageButtons(
                     disabled: writing, refusal: canSee ? nil : "This model cannot read images.", take: take)
-                DrawToggle(isOn: draft.draws, refusal: model.hubDrawRefusal, disabled: writing) {
+                DrawToggle(
+                    isOn: draft.draws, refusal: model.hubDrawRefusal, disabled: writing, menu: model.hubDrawMenu
+                ) {
                     draft.draws = $0
                 } say: {
                     model.lastError = $0
+                } pick: {
+                    model.setHubImageModel($0)
                 }
                 TextField("Message", text: $draft.text, axis: .vertical)
                     .lineLimit(1...8)

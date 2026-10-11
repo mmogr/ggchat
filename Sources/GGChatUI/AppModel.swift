@@ -87,6 +87,10 @@ public final class AppModel {
     /// What each gglib provider last said about drawing, in memory for as
     /// long as the app runs; see `AppModel+Drawing`.
     var drawings: [UUID: Drawing] = [:]
+    /// What each of them said of a message that names one image model, by
+    /// that model's id there, since it was last asked; see
+    /// `AppModel+ImageModel`.
+    var imageChoiceAnswers: [UUID: [UInt64: Drawing]] = [:]
     /// Changes once each time a pipe first reaches a connected state; the
     /// one haptic in the app fires on it.
     public internal(set) var connectedPulse = 0

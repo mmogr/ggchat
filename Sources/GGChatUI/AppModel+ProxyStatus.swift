@@ -18,12 +18,14 @@ extension AppModel {
     /// Forgets the probe's answer when an edit moves a provider to another
     /// address or machine, as `setPipeStatus` does when a pipe comes up. The
     /// answer was about the old one, and a server that is not gglib must not
-    /// be asked for progress. The generation drops a probe still in flight.
+    /// be asked for progress. The image model each of its conversations
+    /// chose goes too: an id names a model on the old machine alone. The generation drops a probe still in flight.
     func forgetProxyStatus(ifMovedFrom previous: ProviderConfig, to config: ProviderConfig) {
         guard previous.kind != config.kind else { return }
         proxyStatusAvailability[config.id] = nil
         providersWithoutRuns.remove(config.id)
         drawings[config.id] = nil
+        forgetImageModels(on: config.id)
         probeGeneration[config.id] = (probeGeneration[config.id] ?? 0) + 1
     }
 

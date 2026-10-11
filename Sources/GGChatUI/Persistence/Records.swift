@@ -71,13 +71,17 @@ public final class ConversationRecord {
     /// `systemPrompt`'s reason.
     public var branchOf: UUID?
     public var family: UUID?
+    /// The id, on the conversation's hub, of the image model its pictures
+    /// are drawn with, or nil for the hub's own pick. Optional, for
+    /// `systemPrompt`'s reason.
+    public var imageModelID: Int?
     @Relationship(deleteRule: .cascade, inverse: \MessageRecord.conversation)
     public var messages: [MessageRecord] = []
 
     public init(
         id: UUID, title: String, providerID: UUID?, model: String?, createdAt: Date, updatedAt: Date,
         systemPrompt: String? = nil, hasUnreadReply: Bool? = nil, contextData: Data? = nil,
-        thinkingOff: Bool? = nil, branchOf: UUID? = nil, family: UUID? = nil
+        thinkingOff: Bool? = nil, branchOf: UUID? = nil, family: UUID? = nil, imageModelID: Int? = nil
     ) {
         self.uuid = id
         self.title = title
@@ -89,6 +93,7 @@ public final class ConversationRecord {
         self.thinkingOff = thinkingOff
         self.branchOf = branchOf
         self.family = family
+        self.imageModelID = imageModelID
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }

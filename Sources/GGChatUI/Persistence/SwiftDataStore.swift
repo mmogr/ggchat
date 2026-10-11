@@ -133,7 +133,8 @@ public final class SwiftDataStore: Store {
                 },
                 systemPrompt: record.systemPrompt, createdAt: record.createdAt, updatedAt: record.updatedAt,
                 hasUnreadReply: record.hasUnreadReply ?? false, context: Self.reading(from: record.contextData),
-                thinkingOff: record.thinkingOff ?? false, branchOf: record.branchOf, family: record.family)
+                thinkingOff: record.thinkingOff ?? false, branchOf: record.branchOf, family: record.family,
+                imageModelID: record.imageModelID.flatMap(UInt64.init(exactly:)))
         }
     }
 
@@ -167,6 +168,7 @@ public final class SwiftDataStore: Store {
             Self.assign(\.thinkingOff, of: record, to: conversation.thinkingOff)
             Self.assign(\.branchOf, of: record, to: conversation.branchOf)
             Self.assign(\.family, of: record, to: conversation.family)
+            Self.assign(\.imageModelID, of: record, to: conversation.imageModelID.flatMap(Int.init(exactly:)))
             Self.assign(\.updatedAt, of: record, to: conversation.updatedAt)
             if Self.reading(from: record.contextData) != conversation.context {
                 record.contextData = try conversation.context.map { try JSONEncoder().encode($0) }
@@ -177,7 +179,8 @@ public final class SwiftDataStore: Store {
                 model: conversation.model, createdAt: conversation.createdAt, updatedAt: conversation.updatedAt,
                 systemPrompt: conversation.systemPrompt, hasUnreadReply: conversation.hasUnreadReply,
                 contextData: try conversation.context.map { try JSONEncoder().encode($0) },
-                thinkingOff: conversation.thinkingOff, branchOf: conversation.branchOf, family: conversation.family)
+                thinkingOff: conversation.thinkingOff, branchOf: conversation.branchOf, family: conversation.family,
+                imageModelID: conversation.imageModelID.flatMap(Int.init(exactly:)))
             context.insert(record)
         }
         var existing = Dictionary(record.messages.map { ($0.uuid, $0) }, uniquingKeysWith: { first, _ in first })

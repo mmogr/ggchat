@@ -44,6 +44,11 @@ final class FakeRunHub: RunProvider, DrawingProvider {
         /// how often it was asked. As it stands, a gglib from before drawing.
         var drawing: Result<Drawing, ProviderError> = .success(Drawing(available: false))
         var drawingAsked = 0
+        /// What it says of a message that names an image model, by the
+        /// model's id, and each id it was asked to judge, in order. One it
+        /// has no answer for is answered as a message that names none.
+        var judgements: [UInt64: Drawing] = [:]
+        var judged: [UInt64] = []
         /// The look at a picture a read sends after the frame numbered so,
         /// once the frame itself has been passed on.
         var previews: [UInt32: PreviewFrame] = [:]
@@ -82,10 +87,14 @@ final class FakeRunHub: RunProvider, DrawingProvider {
         MockProvider.sampleModels
     }
 
-    func drawing() async throws(ProviderError) -> Drawing {
+    func drawing(judging imageModel: UInt64?) async throws(ProviderError) -> Drawing {
         try with { state in
-            state.drawingAsked += 1
-            return state.drawing
+            guard let imageModel else {
+                state.drawingAsked += 1
+                return state.drawing
+            }
+            state.judged.append(imageModel)
+            return state.judgements[imageModel].map { .success($0) } ?? state.drawing
         }.get()
     }
 

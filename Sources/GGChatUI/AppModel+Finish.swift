@@ -74,6 +74,12 @@ extension AppModel {
         {
             conversation.messages[asked].draws = false
         }
+        // A hub that refused the image model chosen has a list this phone
+        // has not read. The question keeps its mark and the conversation
+        // its choice: neither is swapped for another here.
+        if Self.choiceRefusals.contains(error?.code ?? ""), let config = provider(for: conversation) {
+            Task { [weak self] in await self?.askAboutDrawing(config) }
+        }
         if !keepsRun { markUnreadUnlessRead(&conversation, stoppedHere: live.stoppedHere) }
         conversation.updatedAt = stamp
         if let providerID = conversation.providerID {

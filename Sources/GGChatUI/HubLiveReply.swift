@@ -29,6 +29,8 @@ public final class HubLiveReply {
     /// Whether the turn asks to draw: Draw was pressed for it and its Mac
     /// could draw then. Fixed when it is sent, as `thinking` is.
     let draws: Bool
+    /// The image model the turn names, fixed when it is sent, as `draws` is.
+    let imageModel: UInt64?
     public internal(set) var content = ""
     public internal(set) var reasoning = ""
     /// A line for each tool the reply called.
@@ -76,7 +78,7 @@ public final class HubLiveReply {
 
     init(
         providerID: UUID, chatID: Int64, runID: String, question: String?, images: [DraftImage] = [],
-        thinking: HubThinking? = nil, answersSaved: Bool = false, draws: Bool = false
+        thinking: HubThinking? = nil, answersSaved: Bool = false, draws: Bool = false, imageModel: UInt64? = nil
     ) {
         self.providerID = providerID
         self.chatID = chatID
@@ -86,6 +88,7 @@ public final class HubLiveReply {
         self.images = images
         self.thinking = thinking
         self.draws = draws
+        self.imageModel = imageModel
     }
 
     /// Whether the reply shows the spinner: it has no words, its run has not

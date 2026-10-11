@@ -147,6 +147,11 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
     /// request to gglib alone, and not for a model its list names as not
     /// thinking (ADR 0009).
     public var thinkingOff: Bool
+    /// The image model its pictures are drawn with, by its id on the
+    /// conversation's hub, or nil for the one the hub's own rule picks. A
+    /// setting of the conversation, sent with each message that draws; the
+    /// id names nothing on another machine (ADR 0011).
+    public var imageModelID: UInt64?
     /// The conversation this one was branched from, and the first of its
     /// family, when it is a branch (ADR 0010); both nil for one started here.
     /// They are kept even when those conversations are deleted.
@@ -171,7 +176,8 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
         context: ContextReading? = nil,
         thinkingOff: Bool = false,
         branchOf: UUID? = nil,
-        family: UUID? = nil
+        family: UUID? = nil,
+        imageModelID: UInt64? = nil
     ) {
         self.id = id
         self.title = title
@@ -186,6 +192,7 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
         self.thinkingOff = thinkingOff
         self.branchOf = branchOf
         self.family = family
+        self.imageModelID = imageModelID
     }
 
     /// The family the conversation is one of: the first conversation's id,

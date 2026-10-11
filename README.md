@@ -217,6 +217,45 @@ Each claim names the test that keeps it true.
   <!-- test: ImageModelWireTests.testTheQuestionCanNameAnImageModelToBeJudged -->
   <!-- test: ImageModelWireTests.testATurnNamesItsImageModelOnlyWhenItDraws -->
   <!-- test: ImageModelWireTests.testARunNamesItsImageModelInItsQueryOnlyWhenItDraws -->
+- A chat chooses the image model its pictures are drawn with, where its
+  Mac lists two or more: holding the Draw control opens them, "Default
+  (name)" first and then each in the Mac's order with its family, "loaded"
+  for the one loaded now, and one that lacks a file dimmed with what it
+  lacks. Picking one presses Draw for the message being written and sends
+  nothing, and VoiceOver hears which model draws. With one image model or
+  none, and for a Mac from before the list, the control is the plain switch.
+  The choice is the chat's and is said with every message that draws, never
+  with one that does not, and never to a Mac from before the list, which
+  would refuse the word. A conversation kept here stores it in one optional
+  column, a branch keeps it, and a provider moved to another Mac forgets it,
+  since an id names a model on one machine. A Mac's chat holds it in memory
+  with the chat open, and a chat opened again has none.
+  <!-- test: ImageModelMenuTests.testTheMenuListsTheDefaultThenEachModelInTheOrderGiven -->
+  <!-- test: ImageModelMenuTests.testThereIsAMenuOnlyWhereThereIsAChoice -->
+  <!-- test: ImageModelMenuTests.testTheControlSaysWhichModelDraws -->
+  <!-- test: ImageModelChoiceTests.testAnOlderMacHasNoMenuAndIsNeverSentAnImageModel -->
+  <!-- test: ImageModelChoiceTests.testAChoiceIsSaidWithEachMessageThatDrawsAndNoOther -->
+  <!-- test: ImageModelChoiceTests.testAModelWithoutItsFilesCannotBeChosen -->
+  <!-- test: ImageModelChoiceTests.testAProviderMovedToAnotherMacForgetsTheChoice -->
+  <!-- test: HubChatImageModelTests.testAnOlderMacHasNoMenuAndItsTurnNeverNamesAnImageModel -->
+  <!-- test: HubChatImageModelTests.testAChoiceIsSaidWithEachTurnThatDrawsAndHeldOnlyWithTheChatOpen -->
+  <!-- test: ImageModelStoreTests.testTheChoiceOutlivesAReopening -->
+  <!-- test: ImageModelStoreTests.testAStoreOpensAcrossTheImageModelColumnInBothDirections -->
+- A chosen image model the Mac cannot draw with is never swapped for
+  another. The Mac is asked about a message that names the model chosen,
+  when it is picked and each time it is asked about drawing, so a Mac with
+  several image models and no default can draw once one is picked. A model
+  the list no longer has, or has without a file, dims the control with a
+  sentence that says so and leaves the menu to pick another from. A message
+  the Mac refuses with `model_not_found`, `not_an_image_model` or
+  `image_model_incomplete` keeps its refusal with the Mac's reason: a
+  question kept here stays one that draws and Retry names the same model, a
+  Mac's chat gets its draft back with Draw as it was, the choice is kept,
+  and the Mac is asked again what it lists.
+  <!-- test: ImageModelStaleTests.testAChoiceTheListNoLongerHasIsSaidAndNotSwapped -->
+  <!-- test: ImageModelStaleTests.testARunRefusedForItsImageModelKeepsTheQuestionAndTheChoice -->
+  <!-- test: ImageModelStaleTests.testTheMacIsAskedAboutTheModelChosen -->
+  <!-- test: HubChatImageModelTests.testATurnRefusedForItsImageModelGivesTheDraftBackAndKeepsTheChoice -->
 - A picture is asked for with a switch, never detected: Draw is pressed for
   one message, and it is the draft's, so the draft a send leaves has it off
   again. A turn to a Mac's chat says `draw: true` only for a message sent
