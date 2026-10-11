@@ -12,6 +12,12 @@ import SwiftUI
 /// reason. The state is never colour alone: the brush is filled while on
 /// and an outline while off, and VoiceOver hears "On", "Off" or
 /// "Unavailable" and the reason.
+///
+/// Where the hub lists image models to choose from (`DrawMenu`), holding
+/// the switch opens them, and a press still turns it over. Picking one sets
+/// the chat's choice and presses Draw for the message being written, since
+/// that is what was just asked for; nothing is sent. VoiceOver then also
+/// hears which model draws.
 struct DrawToggle: View {
     /// Whether Draw is pressed for the draft.
     let isOn: Bool
@@ -19,10 +25,14 @@ struct DrawToggle: View {
     let refusal: String?
     /// Off while a reply is being written.
     let disabled: Bool
+    /// The image models to choose from, when there are any.
+    var menu = DrawMenu.none
     /// Called with the new state when the switch is pressed.
     let set: (Bool) -> Void
     /// Called with the reason when it is pressed and cannot draw.
     let say: (String) -> Void
+    /// Called with the model picked from the menu, nil for the hub's own.
+    var pick: (UInt64?) -> Void = { _ in }
 
     /// What a press does.
     enum Press: Equatable {
@@ -32,30 +42,55 @@ struct DrawToggle: View {
 
     var body: some View {
         let shown = Self.shows(on: isOn, refusal: refusal)
-        Button {
-            switch Self.press(isOn: isOn, refusal: refusal) {
-            case .set(let on):
-                set(on)
-            case .say(let why):
-                // One left on for a hub that has since stopped drawing.
-                set(false)
-                say(why)
+        control
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.circle)
+            .tint(shown ? .accentColor : .gray)
+            .opacity(refusal == nil ? 1 : 0.5)
+            .disabled(disabled)
+            .help(refusal ?? "Draw a picture for this message")
+            .accessibilityLabel("Draw")
+            .accessibilityValue(Self.value(isOn: isOn, refusal: refusal, drawsWith: menu.drawsWith))
+            .accessibilityHint(Self.hint(refusal: refusal, hasMenu: menu.isOffered))
+            .accessibilityIdentifier("draw")
+    }
+
+    /// The switch alone, or with its menu where there is a choice to make.
+    @ViewBuilder
+    private var control: some View {
+        if menu.isOffered {
+            Menu {
+                DrawMenuRows(menu: menu) { model in
+                    pick(model)
+                    set(true)
+                }
+            } label: {
+                brush
+            } primaryAction: {
+                press()
             }
-        } label: {
-            Image(systemName: Self.symbol(isOn: shown))
-                .font(.body)
-                .frame(minWidth: 28, minHeight: 28)
+            .menuStyle(.button)
+            .menuIndicator(.hidden)
+        } else {
+            Button(action: press) { brush }
         }
-        .buttonStyle(.borderedProminent)
-        .buttonBorderShape(.circle)
-        .tint(shown ? .accentColor : .gray)
-        .opacity(refusal == nil ? 1 : 0.5)
-        .disabled(disabled)
-        .help(refusal ?? "Draw a picture for this message")
-        .accessibilityLabel("Draw")
-        .accessibilityValue(Self.value(isOn: isOn, refusal: refusal))
-        .accessibilityHint(refusal ?? "Asks for a picture with this message")
-        .accessibilityIdentifier("draw")
+    }
+
+    private var brush: some View {
+        Image(systemName: Self.symbol(isOn: Self.shows(on: isOn, refusal: refusal)))
+            .font(.body)
+            .frame(minWidth: 28, minHeight: 28)
+    }
+
+    private func press() {
+        switch Self.press(isOn: isOn, refusal: refusal) {
+        case .set(let on):
+            set(on)
+        case .say(let why):
+            // One left on for a hub that has since stopped drawing.
+            set(false)
+            say(why)
+        }
     }
 
     /// Whether the switch shows on: pressed, for a hub that can draw.
@@ -73,10 +108,19 @@ struct DrawToggle: View {
         isOn ? "paintbrush.pointed.fill" : "paintbrush.pointed"
     }
 
-    /// What VoiceOver says after the label.
-    static func value(isOn: Bool, refusal: String?) -> String {
-        if refusal != nil { return "Unavailable" }
-        return isOn ? "On" : "Off"
+    /// What VoiceOver says after the label: the state, and the image
+    /// model that draws where the hub lists some to choose from.
+    static func value(isOn: Bool, refusal: String?, drawsWith: String? = nil) -> String {
+        let state = refusal != nil ? "Unavailable" : isOn ? "On" : "Off"
+        return drawsWith.map { "\(state), draws with \($0)" } ?? state
+    }
+
+    /// What VoiceOver says the control does: the reason while it cannot
+    /// draw, and where there is a menu, that there is one.
+    static func hint(refusal: String?, hasMenu: Bool) -> String {
+        let does = refusal ?? "Asks for a picture with this message"
+        guard hasMenu else { return does }
+        return "\(does.hasSuffix(".") ? String(does.dropLast()) : does). Hold to choose the image model."
     }
 }
 

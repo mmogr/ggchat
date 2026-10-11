@@ -7,14 +7,18 @@ extension AppModel {
     /// again, so every one carries the same images and the same flags, the
     /// conversation's Thinking choice (`thinkingBudget`), and whether it
     /// draws: it does when the turn it ends on is a question sent with Draw
-    /// pressed, which a Continue's partial reply never is.
+    /// pressed, which a Continue's partial reply never is. `imageModel` is
+    /// the conversation's choice of image model, which the request names
+    /// when it draws, for a hub that lists its image models
+    /// (`imageModelToSend`).
     func chatRequest(
-        model: String, messages: [Message], thinkingOff: Bool, for config: ProviderConfig
+        model: String, messages: [Message], thinkingOff: Bool, imageModel: UInt64?, for config: ProviderConfig
     ) throws(ImageUnavailable) -> ChatRequest {
         var request = try ChatRequest(
             model: model, messages: messages, returnProgress: asksForProgress(config), imagesFrom: store)
         request.reasoningBudgetTokens = thinkingBudget(off: thinkingOff, model: model, for: config)
         request.draws = messages.last.map { $0.role == .user && $0.draws } ?? false
+        request.imageModelID = request.draws ? imageModelToSend(imageModel, to: config) : nil
         return request
     }
 }

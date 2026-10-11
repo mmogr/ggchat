@@ -117,7 +117,8 @@ extension AppModel {
         var sent = conversation
         sent.messages = Array(conversation.messages[..<index]) + (message.content.isEmpty ? [] : [message])
         return try chatRequest(
-            model: modelID, messages: sent.requestMessages, thinkingOff: conversation.thinkingOff, for: config)
+            model: modelID, messages: sent.requestMessages, thinkingOff: conversation.thinkingOff,
+            imageModel: conversation.imageModelID, for: config)
     }
 
     /// The provider as a run hub, when it can be reached without dialling.

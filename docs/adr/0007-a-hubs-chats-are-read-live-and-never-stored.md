@@ -71,6 +71,12 @@ opened. Coming back to the foreground dials each of them again once, as
 > the run ends; the picture itself is read from the Mac by id, as the chat's
 > other images are. None of it is written to this phone (ADR 0011).
 
+> **Amended 2026-10-11 — a Mac's chat chooses its image model, held in
+> memory.** A turn that draws can also say `image_model`, to a Mac that
+> lists its image models. The choice is held with the open chat, never
+> written to this phone, and gone when the chat is closed: the Mac keeps no
+> such choice (ADR 0011).
+
 ## What would undo it
 
 - The owner asking to read a Mac's chats while it is asleep: then the rows

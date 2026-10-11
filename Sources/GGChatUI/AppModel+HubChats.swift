@@ -48,6 +48,8 @@ public struct OpenHubChat: Equatable, Sendable {
     /// Its Thinking choice, as the Mac remembers it and as set here, and the
     /// model it runs on. In memory with the rows, and gone with the chat.
     var thinking = HubChatThinking()
+    /// The image model chosen here, in memory with the chat (`AppModel+ImageModel`).
+    var imageModel: UInt64?
     /// Why the last send went nowhere, or how the last reply ended badly.
     public internal(set) var notice: String?
     /// The text and images of a send that went nowhere, for the composer to

@@ -75,14 +75,17 @@ extension AppModel {
     ///
     /// A question sent with Draw asks for a picture again, while its hub
     /// can still draw; once it cannot, the question goes without, and is
-    /// no longer marked as one that draws.
+    /// no longer marked as one that draws. A hub that can draw, but not
+    /// with the image model the conversation chose, is asked all the same,
+    /// naming that model: it refuses with its reason, and the picture is
+    /// never drawn with another.
     @discardableResult
     public func retry() -> Task<Void, Never>? {
         guard var conversation = selectedConversation, !isStreaming,
             let last = conversation.messages.indices.last, conversation.messages[last].role == .user
         else { return nil }
         conversation.messages[last].failure = nil
-        if conversation.messages[last].draws, drawRefusal(for: conversation) != nil {
+        if conversation.messages[last].draws, hubCannotDraw(for: conversation) {
             conversation.messages[last].draws = false
         }
         guard let task = stream(conversation, continuing: nil) else { return nil }
@@ -112,7 +115,7 @@ extension AppModel {
         do {
             request = try chatRequest(
                 model: modelID, messages: conversation.requestMessages, thinkingOff: conversation.thinkingOff,
-                for: config)
+                imageModel: conversation.imageModelID, for: config)
         } catch {
             lastError = error.errorDescription
             return nil

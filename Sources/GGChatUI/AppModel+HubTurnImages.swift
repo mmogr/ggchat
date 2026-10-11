@@ -15,7 +15,9 @@ extension AppModel {
     ///
     /// `draws` is the composer's Draw switch. The turn says `draw` only
     /// when it is on and the Mac said it can draw (`hubDrawRefusal`): a Mac
-    /// that cannot, or was never asked, is sent the message without it.
+    /// that cannot, or was never asked, is sent the message without it. It
+    /// names the chat's image model too, when one is chosen and the Mac
+    /// lists its image models (`imageModelToSend`).
     @discardableResult
     func sendToHubChat(_ text: String, images: [DraftImage] = [], draws: Bool = false) -> Task<Void, Never>? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -33,9 +35,11 @@ extension AppModel {
         hubReplies.removeAll { $0.chatID == open.chatID && $0.providerID == open.providerID }
         for image in images { hubImages.hold(image.data, for: image.id) }
         // The choice is said only while it is not what the Mac remembers.
+        let drawn = draws && hubDrawRefusal == nil
         let reply = HubLiveReply(
             providerID: config.id, chatID: open.chatID, runID: UUID().uuidString, question: trimmed,
-            images: images, thinking: open.thinking.change, draws: draws && hubDrawRefusal == nil)
+            images: images, thinking: open.thinking.change, draws: drawn,
+            imageModel: drawn ? imageModelToSend(open.imageModel, to: config) : nil)
         hubReplies.append(reply)
         let task = Task { [weak self] in
             guard let self else { return }
@@ -87,12 +91,13 @@ extension AppModel {
     }
 
     /// The reply's turn as it is put, each time it is: its text, the ids of
-    /// its images, what it says of the Thinking choice, and whether it
-    /// draws.
+    /// its images, what it says of the Thinking choice, whether it draws,
+    /// and with which image model.
     private func turn(of reply: HubLiveReply, _ hub: any HubChatsProvider) async throws(HubTurnFailure) -> HubTurn {
         HubTurn(
             conversationID: reply.chatID, content: reply.question ?? "", images: try await imageIDs(reply, hub),
-            thinking: reply.thinking, answerSaved: reply.answersSaved, draw: reply.draws)
+            thinking: reply.thinking, answerSaved: reply.answersSaved, draw: reply.draws,
+            imageModel: reply.imageModel)
     }
 
     /// The ids the Mac holds the reply's images under, each sent to it the

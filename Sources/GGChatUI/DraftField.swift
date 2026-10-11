@@ -7,7 +7,8 @@ import SwiftUI
 ///
 /// An image comes from the photo picker, a paste or a drop, and every one
 /// goes through `ImageDownscale` before it joins the draft. Draw is pressed
-/// for one message, where the provider is gglib (`DrawToggle`). A draft refused
+/// for one message, where the provider is gglib (`DrawToggle`), and held to
+/// choose the image model where its Mac lists some. A draft refused
 /// on its way out keeps its text and its images.
 struct DraftField: View {
     @Environment(AppModel.self) private var model
@@ -31,11 +32,14 @@ struct DraftField: View {
                 // Only for gglib, which is the one server that draws.
                 if model.offersDrawing(for: conversation) {
                     DrawToggle(
-                        isOn: draft.draws, refusal: model.drawRefusal(for: conversation), disabled: streaming
+                        isOn: draft.draws, refusal: model.drawRefusal(for: conversation), disabled: streaming,
+                        menu: model.drawMenu(for: conversation)
                     ) {
                         draft.draws = $0
                     } say: {
                         model.lastError = $0
+                    } pick: {
+                        model.setImageModel($0, for: conversation.id)
                     }
                 }
                 field

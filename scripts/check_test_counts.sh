@@ -493,8 +493,28 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # its steps and looks. The first fails when a draft's equality stops
 # comparing the switch, and is the whole of that guard; the README claim
 # names all three.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 707
+#
+# 2026-10-11: 707 -> 713 and 624 -> 630. Six tests pin the image models a
+# hub lists and the choice a message that draws carries: the contract's
+# answer read in order; an answer with no list reading as an older gglib and
+# an empty list not; a family or a role this build does not know; the
+# question naming a model to be judged; and `image_model` in a turn's body
+# and in a run's query, only when it draws. The fixture is written from the
+# contract, gglib having recorded none. They are the whole of that guard,
+# and the README claim names all six.
+#
+# 2026-10-11: 713 -> 728 and 630 -> 645. Fifteen tests pin a chat's choice
+# of image model: the menu's rows and when there is one, and what the
+# control says; a Mac from before the list given no menu and never sent the
+# word, from either kind of chat; the choice said with each message that
+# draws and no other, kept with a conversation and held only with a Mac's
+# chat open; a model without its files not chosen; a moved provider
+# forgetting it; the column kept, and opened across the change; and a stale
+# choice said and never swapped, a refused run or turn keeping its question
+# and its choice, and the Mac asked about the model chosen. They are the
+# whole of that guard, and the README claims name all fifteen.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 728
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 624
+floor "README test markers" "${markers:-0}" 645
 
 exit $status

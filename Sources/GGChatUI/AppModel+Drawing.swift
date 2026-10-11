@@ -10,7 +10,9 @@ extension AppModel {
     /// Asks a paired Mac whether it can draw, and keeps what it says in
     /// memory. A server added by address is not asked: gglib draws only for
     /// a device it has paired, which a caller by address is not. An answer
-    /// that fails keeps the one before, and is logged by its code.
+    /// that fails keeps the one before, and is logged by its code. A hub
+    /// that lists its image models is then asked about each one a chat on
+    /// screen chose (`judgeImageChoices`).
     func askAboutDrawing(_ config: ProviderConfig) async {
         guard config.isPipe, let hub = makeProvider(for: config) as? any DrawingProvider else { return }
         do throws(ProviderError) {
@@ -18,13 +20,14 @@ extension AppModel {
             // An edit may have moved the provider while this waited.
             guard providers.first(where: { $0.id == config.id })?.kind == config.kind else { return }
             drawings[config.id] = answer
+            await judgeImageChoices(on: config, by: hub, listed: answer)
         } catch {
             log.log(.info, "\(config.name) did not say whether it can draw: \(error.code ?? "no code")")
         }
     }
 
-    /// Why a message cannot be drawn on `config`'s machine now, or nil when
-    /// it can: gglib's own reason, a sentence for a gglib from before
+    /// Why a message that names no image model cannot be drawn on
+    /// `config`'s machine now, or nil when it can: gglib's own reason, a sentence for a gglib from before
     /// drawing, which answers nothing, and one for a hub not asked yet.
     func drawRefusal(on config: ProviderConfig) -> String? {
         guard let answer = drawings[config.id] else {
@@ -49,19 +52,21 @@ extension AppModel {
     static let needsAPairedMac = "Drawing needs a paired Mac."
 
     /// Why the conversation's next message cannot be drawn, or nil when it
-    /// can, which only a paired Mac's can.
+    /// can, which only a paired Mac's can: with the image model it chose,
+    /// when it chose one (`drawVerdict`).
     public func drawRefusal(for conversation: Conversation) -> String? {
         guard let config = provider(for: conversation) else { return "This conversation has no provider." }
-        return config.isPipe ? drawRefusal(on: config) : Self.needsAPairedMac
+        guard config.isPipe else { return Self.needsAPairedMac }
+        return drawVerdict(on: config, choosing: conversation.imageModelID)?.sentence
     }
 
     /// Why the next message to the Mac's chat open cannot be drawn, or nil
-    /// when it can.
+    /// when it can, with the image model chosen for it when one is.
     public var hubDrawRefusal: String? {
         guard let open = openedHubChat, let config = providers.first(where: { $0.id == open.providerID }) else {
             return "No chat is open."
         }
-        return drawRefusal(on: config)
+        return drawVerdict(on: config, choosing: open.imageModel)?.sentence
     }
 
     /// Keeps the bytes of the images a run's frame names, before the frame

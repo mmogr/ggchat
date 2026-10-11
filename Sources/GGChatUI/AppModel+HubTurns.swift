@@ -51,6 +51,10 @@ extension AppModel {
             // Lost on the way, and it may have arrived: the id is kept, and
             // the next read puts it again.
             if case .lost = error { return walkAway(reply, readAny: false) }
+            // Its list of image models was out of date: it is asked again.
+            if case .refused(let why) = error, Self.choiceRefusals.contains(why.code ?? "") {
+                await askAboutDrawing(config)
+            }
             return refuse(reply, Self.refusalLine(error, config), config)
         }
         // A gglib that does not know turns takes one for a chat run, which

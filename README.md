@@ -172,7 +172,8 @@ Each claim names the test that keeps it true.
   with `image_generation`. Such a model cannot chat, and neither can one
   listed with `embeddings`: the model list offers neither, and a provider
   with no model chosen takes the first that can chat, not the first listed.
-  Each of the eight codes gglib's drawing refuses with has a line of its own
+  Each of the eight codes gglib's drawing refuses with, and the one for a
+  model chosen to draw with that is no image model, has a line of its own
   that says what happened to the picture and what to do, on a saved failure
   too; a picture that stalled, and an image model with no room while another
   reply is written, say to ask again and name no machine. The two codes a
@@ -196,6 +197,65 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingAvailabilityTests.testAnAskThatFailsKeepsTheAnswerBefore -->
   <!-- test: DrawingAvailabilityTests.testOnlyGGLibIsAskedAndOfferedTheSwitch -->
   <!-- test: DrawingAvailabilityTests.testAMacsChatSaysWhyItsMacCannotDraw -->
+- A newer gglib's answer about drawing lists its image models, `models`:
+  each with its id on that machine, its name, its family, whether it has all
+  its files and which it lacks, whether it is the default and whether it is
+  loaded, in gglib's order. A family or a role this build has not heard of
+  is kept as the string it came as, and the answer still reads. An answer
+  with no `models` is a gglib from before the list, which is never sent
+  `image_model`; an empty list is a newer one with no image model. The
+  question can name a model to be judged, `?image_model=<id>`. A message
+  that draws names its image model beside `draw`: `image_model` in a Mac's
+  turn, and `&image_model=<id>` in the query of a run for a conversation
+  kept here. Neither says it without drawing, and with none chosen each is
+  the request it was. gglib has recorded no such answer yet, so the fixture
+  these read, `contract-images-drawing-models.json`, is the example in the
+  contract both sides are built to and not a capture.
+  <!-- test: ImageModelWireTests.testTheContractsAnswerListsTheImageModelsInOrder -->
+  <!-- test: ImageModelWireTests.testAnAnswerWithoutTheListIsAnOlderGGLibAndAnEmptyListIsNot -->
+  <!-- test: ImageModelWireTests.testAFamilyOrARoleThisBuildDoesNotKnowStillReads -->
+  <!-- test: ImageModelWireTests.testTheQuestionCanNameAnImageModelToBeJudged -->
+  <!-- test: ImageModelWireTests.testATurnNamesItsImageModelOnlyWhenItDraws -->
+  <!-- test: ImageModelWireTests.testARunNamesItsImageModelInItsQueryOnlyWhenItDraws -->
+- A chat chooses the image model its pictures are drawn with, where its
+  Mac lists two or more: holding the Draw control opens them, "Default
+  (name)" first and then each in the Mac's order with its family, "loaded"
+  for the one loaded now, and one that lacks a file dimmed with what it
+  lacks. Picking one presses Draw for the message being written and sends
+  nothing, and VoiceOver hears which model draws. With one image model or
+  none, and for a Mac from before the list, the control is the plain switch.
+  The choice is the chat's and is said with every message that draws, never
+  with one that does not, and never to a Mac from before the list, which
+  would refuse the word. A conversation kept here stores it in one optional
+  column, a branch keeps it, and a provider moved to another Mac forgets it,
+  since an id names a model on one machine. A Mac's chat holds it in memory
+  with the chat open, and a chat opened again has none.
+  <!-- test: ImageModelMenuTests.testTheMenuListsTheDefaultThenEachModelInTheOrderGiven -->
+  <!-- test: ImageModelMenuTests.testThereIsAMenuOnlyWhereThereIsAChoice -->
+  <!-- test: ImageModelMenuTests.testTheControlSaysWhichModelDraws -->
+  <!-- test: ImageModelChoiceTests.testAnOlderMacHasNoMenuAndIsNeverSentAnImageModel -->
+  <!-- test: ImageModelChoiceTests.testAChoiceIsSaidWithEachMessageThatDrawsAndNoOther -->
+  <!-- test: ImageModelChoiceTests.testAModelWithoutItsFilesCannotBeChosen -->
+  <!-- test: ImageModelChoiceTests.testAProviderMovedToAnotherMacForgetsTheChoice -->
+  <!-- test: HubChatImageModelTests.testAnOlderMacHasNoMenuAndItsTurnNeverNamesAnImageModel -->
+  <!-- test: HubChatImageModelTests.testAChoiceIsSaidWithEachTurnThatDrawsAndHeldOnlyWithTheChatOpen -->
+  <!-- test: ImageModelStoreTests.testTheChoiceOutlivesAReopening -->
+  <!-- test: ImageModelStoreTests.testAStoreOpensAcrossTheImageModelColumnInBothDirections -->
+- A chosen image model the Mac cannot draw with is never swapped for
+  another. The Mac is asked about a message that names the model chosen,
+  when it is picked and each time it is asked about drawing, so a Mac with
+  several image models and no default can draw once one is picked. A model
+  the list no longer has, or has without a file, dims the control with a
+  sentence that says so and leaves the menu to pick another from. A message
+  the Mac refuses with `model_not_found`, `not_an_image_model` or
+  `image_model_incomplete` keeps its refusal with the Mac's reason: a
+  question kept here stays one that draws and Retry names the same model, a
+  Mac's chat gets its draft back with Draw as it was, the choice is kept,
+  and the Mac is asked again what it lists.
+  <!-- test: ImageModelStaleTests.testAChoiceTheListNoLongerHasIsSaidAndNotSwapped -->
+  <!-- test: ImageModelStaleTests.testARunRefusedForItsImageModelKeepsTheQuestionAndTheChoice -->
+  <!-- test: ImageModelStaleTests.testTheMacIsAskedAboutTheModelChosen -->
+  <!-- test: HubChatImageModelTests.testATurnRefusedForItsImageModelGivesTheDraftBackAndKeepsTheChoice -->
 - A picture is asked for with a switch, never detected: Draw is pressed for
   one message, and it is the draft's, so the draft a send leaves has it off
   again. A turn to a Mac's chat says `draw: true` only for a message sent
@@ -1491,7 +1551,7 @@ Sources/GGChatCore/   no SwiftUI; the provider protocol, wire types, SSE, the pi
 Sources/GGChatPipe/   the only target that links modelpipe-ffi; no UI framework either
 Sources/GGChatUI/     SwiftUI; the app model, views, and SwiftData persistence
 App/                  the xcodegen spec, the generated project, and a @main struct with assets
-Tests/GGChatCoreTests XCTest; fixtures are real captures from gglib
+Tests/GGChatCoreTests XCTest; fixtures are real captures from gglib, but for the one named contract-*
 Tests/GGChatPipeTests that the binding is linked and its statuses cross unchanged
 Tests/GGChatUITests   the app model, streaming, the pipe, and the SwiftData store
 App/ggchatUITests     XCUITest that drives the first-run flow on a simulator

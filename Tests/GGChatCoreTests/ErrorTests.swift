@@ -69,7 +69,7 @@ final class ErrorTests: XCTestCase {
             .upstreamTimeout, .modelCannotReadImages, .requestTooLarge, .imageTooLarge, .unsupportedImage,
             .attachmentNotFound, .requestImagesTooLarge, .imageModelCannotChat, .drawingUnavailable,
             .invalidImageSize, .imageGenerationFailed, .imageRenderStalled, .imageRuntimeNotInstalled,
-            .imageModelIncomplete, .imageModelDoesNotFit, .modelUnavailable, .unavailable,
+            .imageModelIncomplete, .imageModelDoesNotFit, .modelUnavailable, .unavailable, .notAnImageModel,
         ]
         XCTAssertEqual(
             Set(published.map(\.rawValue)), publishedCodes,
