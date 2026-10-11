@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/mmogr/ggchat/compare/v0.8.0...v0.9.0) (2026-10-11)
+
+
+### What the app now does
+
+* **chat:** a change that would rewrite a saved reply opens a new branch of the conversation ([#179](https://github.com/mmogr/ggchat/issues/179)) ([3cabcfc](https://github.com/mmogr/ggchat/commit/3cabcfcedf04df5dbb2036d509cf80346164edeb))
+* **chat:** any message can be edited from its menu, and a conversation shows its branches where they part ([#180](https://github.com/mmogr/ggchat/issues/180)) ([551bb58](https://github.com/mmogr/ggchat/commit/551bb58b1b03363482f64b7246e9eb50e2068c9b))
+* **chat:** the rules that branch a chat are gglib's, held to its recorded cases ([#178](https://github.com/mmogr/ggchat/issues/178)) ([8283051](https://github.com/mmogr/ggchat/commit/8283051bfd657339ff874ad6d398b3ec4f0e2c42))
+* **hub:** a Draw button, and a picture coming into focus as the Mac draws it ([#184](https://github.com/mmogr/ggchat/issues/184)) ([cdf83ca](https://github.com/mmogr/ggchat/commit/cdf83cad8e5d8b5108223c328101948d681980dc))
+* **hub:** a Mac chat shows the images its tools made ([#177](https://github.com/mmogr/ggchat/issues/177)) ([25ed666](https://github.com/mmogr/ggchat/commit/25ed666f21f036884e5b7d763128c5653c8acc3a))
+* **hub:** a Mac's chat can be edited, regenerated and branched from this phone ([#181](https://github.com/mmogr/ggchat/issues/181)) ([68230da](https://github.com/mmogr/ggchat/commit/68230da2cf70d0cc4ed46eb4b7b526d2ec5e3356))
+
 ## [0.8.0](https://github.com/mmogr/ggchat/compare/v0.7.0...v0.8.0) (2026-10-05)
 
 
