@@ -177,6 +177,35 @@ is read as agent events, which carry no "Reading N of M tokens" line.
 > the list no longer has ticks no row in the menu. The menu is opened by
 > holding the control, which nothing on screen says; VoiceOver is told.
 
+> **Amended 2026-10-11 — a conversation kept here remembers how its picture
+> was made.** The reply a run drew for was kept as its closing words and its
+> picture, and sent back as the words alone, so on the next message the
+> model read a chat in which nothing had been drawn and was apt to say it
+> cannot make images (gglib issue 1387). The reply now also keeps each tool
+> the run called and what it answered (the call's id, the tool's name, the
+> arguments as JSON text, the answer word for word) in one optional column,
+> `exchangesData`, and every later request says them ahead of the reply's
+> words as an assistant `tool_calls` message and a `tool` message. gglib
+> reads a call of `builtin:generate_image` answered "Drew …" as a chat that
+> holds a drawn picture and adds its own note for the model; this phone
+> writes no such note and only says what happened.
+>
+> They are sent to gglib alone, by the test that already decides what only
+> gglib is sent (a paired Mac, or an address that answered the status
+> probe). Any other server is sent the words alone, as before. Nothing new
+> is drawn: the calls are a field of the reply, not messages of their own,
+> so the transcript, the branching rules and the branch points read the
+> rows they always did, and a branch's copy carries them as it carries the
+> picture. The picture is still never sent to the model.
+>
+> Known costs. A reply drawn before this keeps no call, so its chat is sent
+> as it was and the model may still deny the picture there. Words the model
+> wrote before its call and after it are one text here, and all of it is
+> sent after the tool's answer. The arguments are written again from the
+> event's JSON with their keys sorted, so they are the model's values and
+> not its bytes. A run that draws offers gglib's other tools too, and any
+> it called is kept and sent the same way, however long its answer.
+
 ## What would undo it
 
 - gglib remembering a chat's image model, as it does Thinking: then a Mac's
