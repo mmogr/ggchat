@@ -8,7 +8,10 @@ import XCTest
 /// bodies are `HubChatBranchesWireTests`')
 /// against the Swift hub chat types, its `turn`, `image_turn` and
 /// `thinking_turn` against the bodies this build sends to carry a chat on,
-/// and its `upload` against how an image sent to the hub is named.
+/// and its `upload` against how an image sent to the hub is named. Its
+/// `tool_reply`, the rows of a reply whose tool made an image, is from
+/// gglib's `test(contracts): a tool result with images is recorded`, copied
+/// the same way.
 ///
 /// The opened chat remembers its thinking switched off, and ends with a turn
 /// sent from a device whose reply did not finish: its finished reply's row
@@ -213,6 +216,20 @@ final class HubChatsWireTests: XCTestCase {
         XCTAssertEqual(
             try recorded().upload, ImageRef(id: Self.imageID, mime: "image/png", width: 1280, height: 720))
         XCTAssertEqual(try recordedObject("upload")["image_tokens"] as? Int, 920)
+    }
+
+    /// The recorded tool reply's rows: the tool's row names its image by id,
+    /// type and size, and no other row carries one.
+    func testARecordedToolRowCarriesTheImageItsToolMade() throws {
+        let object = try JSONSerialization.jsonObject(with: try Fixtures.data("gglib-chats-recorded.json"))
+        let rows = try XCTUnwrap((object as? [String: Any])?["tool_reply"] as? [Any])
+        let data = try JSONSerialization.data(withJSONObject: rows)
+        let decoded = try JSONDecoder().decode([HubMessage].self, from: data)
+        XCTAssertEqual(decoded.map(\.role), ["assistant", "tool", "assistant"])
+        let image = ImageRef(
+            id: "ece5c33be7ce69ce71231b9d81671f4de1c35ee51fc684b014da4eb244e9a8ae", mime: "image/png", width: 1024,
+            height: 1024)
+        XCTAssertEqual(decoded.map(\.images), [nil, [image], nil])
     }
 
     /// gglib writes a conversation's model and prompt as `null` when it has

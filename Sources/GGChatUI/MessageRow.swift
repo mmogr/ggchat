@@ -1,12 +1,14 @@
 import GGChatCore
 import SwiftUI
 
-/// One stored turn. Flat: a role label, reasoning collapsed, the images it
-/// carries, then the content as markdown blocks. The last one, once nothing
-/// is streaming after it, says how its turn ended: under a partial reply,
-/// with Continue, and under a question with no reply, with Retry and the
-/// reason when something gave one. A reply a hub is still writing away from this device offers
-/// neither, says where it is being written, and offers Stop. A turn offers
+/// One stored turn. Flat: a role label, reasoning collapsed, then the
+/// content as markdown blocks, with the images it carries above a question's
+/// words and under a reply's, where a reply being written draws the images
+/// its tools made. The last one, once nothing is streaming after it, says
+/// how its turn ended: under a partial reply, with Continue, and under a
+/// question with no reply, with Retry and the reason when something gave
+/// one. A reply a hub is still writing away from this device offers neither,
+/// says where it is being written, and offers Stop. A turn offers
 /// Edit, Regenerate and Branch from here in its menu, and where the chat's
 /// family parts at it, the switcher (ADR 0010).
 struct MessageRow: View {
@@ -42,10 +44,13 @@ struct MessageRow: View {
             if let reasoning = message.reasoning, !reasoning.isEmpty {
                 ReasoningRow(text: reasoning, isThinking: false)
             }
-            if !message.images.isEmpty {
+            if message.role != .assistant, !message.images.isEmpty {
                 MessageImages(images: message.images, fromHub: imagesFromHub)
             }
             MarkdownBlocksView(blocks: MarkdownBlocks.parse(message.content))
+            if message.role == .assistant, !message.images.isEmpty {
+                MessageImages(images: message.images, fromHub: imagesFromHub)
+            }
             if showsEnding {
                 if let writingLine {
                     writingFooter(writingLine)

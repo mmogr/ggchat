@@ -3,7 +3,9 @@ import SwiftUI
 
 /// The reply a Mac is writing to its chat open, under the chat's rows: the
 /// question this phone sent, with its images, until the rows read from the
-/// Mac hold it, then the reply as it arrives, a line for each tool it calls.
+/// Mac hold it, then the reply as it arrives, a line for each tool it calls,
+/// and under the reply's text the images its tools made, as the Mac's own
+/// page draws them.
 struct HubLiveReplyRows: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let reply: HubLiveReply
@@ -30,6 +32,9 @@ struct HubLiveReplyRows: View {
                     .accessibilityLabel("Waiting for the first token")
             } else {
                 MarkdownBlocksView(blocks: reply.blocks)
+            }
+            if !reply.made.isEmpty {
+                MessageImages(images: reply.made, fromHub: true)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

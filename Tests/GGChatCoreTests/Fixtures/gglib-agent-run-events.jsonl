@@ -5,6 +5,8 @@
 {"type":"tool_call_complete","tool_name":"builtin_read_file","result":{"tool_call_id":"c1","content":"version = 3","success":true},"wait_ms":0,"execute_duration_ms":3,"display_name":"Read File","duration_display":"3ms"}
 {"type":"iteration_complete","iteration":1,"tool_calls":1}
 {"type":"tool_call_start","tool_call":{"id":"c2","name":"builtin_list_dir","arguments":{}},"display_name":"List Dir","args_summary":null}
+{"type":"tool_call_start","tool_call":{"id":"c3","name":"plot_chart","arguments":{"title":"build times"}},"display_name":"Plot Chart","args_summary":"build times"}
+{"type":"tool_call_complete","tool_name":"plot_chart","result":{"tool_call_id":"c3","content":"[image 640x480 PNG stored]","success":true,"images":[{"id":"0a7441cf32e72812c1c5010b095a68b98c2384d127a42c4158c805032a47b6fe","mime":"image/png","width":640,"height":480}]},"wait_ms":0,"execute_duration_ms":40,"display_name":"Plot Chart","duration_display":"40ms"}
 {"type":"text_delta","content":"Pin "}
 {"type":"text_delta","content":"the version."}
 {"type":"turn_usage","prompt_tokens":812,"completion_tokens":12,"duration_ms":900,"finish_reason":"stop","context_size":8192}

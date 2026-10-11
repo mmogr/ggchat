@@ -392,8 +392,29 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # of reach; nothing opened for a chat left; a change in place read again;
 # an editor across a read; and the branching bodies gglib records, the turn
 # a row is in, and gglib's refusals. The README claim names all eighteen.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 643
+#
+# 2026-10-09: 643 -> 646 and 559 -> 563. Three tests pin the images a tool
+# makes on a Mac's reply: gglib's `result.images` read in order and a result
+# without them meaning nothing; each tool's images joining the reply in order;
+# and the reply drawing them as the Mac's, with words or before any. They are
+# the whole of that guard, and the README claim names all three and the run's
+# events test that now carries one.
+#
+# 2026-10-09: 646 -> 650 and 563 -> 567. Four tests pin a tool's saved row:
+# its images under the text of the reply that follows, in order across two
+# tool rows, and one without images still passed over; a reply that ended
+# after its tool drawn as those images alone; a saved reply's images drawn
+# under its text and a question's above; and an image a tool made read from
+# the Mac by id once, while the reply is written, and not again for its row.
+# They are the whole of that guard, and the README claim names all four.
+#
+# 2026-10-09: 650 -> 652 and 567 -> 569. Two tests replay gglib's recorded
+# tool reply: its frames read as the tool's line, its image and its text, and
+# its rows put the image on the tool's row alone. They are the only check
+# that the shape gglib records is the shape read here, and the README claim
+# names both.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 652
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 559
+floor "README test markers" "${markers:-0}" 569
 
 exit $status

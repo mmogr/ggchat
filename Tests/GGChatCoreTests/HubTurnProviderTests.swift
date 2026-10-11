@@ -15,6 +15,11 @@ import XCTest
 /// has is a key of that frame with the same type (`prompt_tokens`,
 /// `completion_tokens`, `duration_ms`, `finish_reason`, `context_size`), and
 /// the line keeps fewer keys than the frame.
+///
+/// The `Plot Chart` result's `images` follow gglib's `ToolResult.images`
+/// (ADR 0016, "A tool's image is an attachment on its tool row"): an
+/// `AttachmentInfo` each, after `success`, and no key at all when a tool
+/// made none, as on the `Read File` result.
 final class HubTurnProviderTests: XCTestCase {
     private let turn = HubTurn(conversationID: 12, content: "And how do I fix it?")
     private let id = "5B1E0C2A-7D11-4F0E-9C3B-2E8A1D6F4B90"
@@ -128,8 +133,9 @@ final class HubTurnProviderTests: XCTestCase {
     }
 
     /// The run's events are read as an agent's: text, reasoning, a line per
-    /// tool call and what a finished model call counted, every event a frame
-    /// whether or not it means anything here, then the run's report.
+    /// tool call, the images a finished tool made and what a finished model
+    /// call counted, every event a frame whether or not it means anything
+    /// here, then the run's report.
     func testAnAgentRunsEventsAreItsTextReasoningAndToolLines() async throws {
         let host = "turn-events.test"
         RunHub.serve(try script(put: (201, "")), at: host)
@@ -146,7 +152,7 @@ final class HubTurnProviderTests: XCTestCase {
             chat,
             [
                 .reasoning("The lock file"), .reasoning(" moved."), .tool("Read File: Cargo.lock"), .tool("List Dir"),
-                .delta("Pin "), .delta("the version."),
+                .tool("Plot Chart: build times"), .images([Self.chart]), .delta("Pin "), .delta("the version."),
                 .usage(Usage(promptTokens: 812, completionTokens: 12, contextSize: 8_192), reason: "stop"),
             ])
         XCTAssertEqual(
@@ -157,6 +163,37 @@ final class HubTurnProviderTests: XCTestCase {
         let asked = try XCTUnwrap(RunHub.requests(at: host).first?.url)
         XCTAssertEqual(asked.path(), "/v1/runs/\(id)/events")
         XCTAssertEqual(asked.query(), "after=0")
+    }
+
+    /// The image the fixture's `Plot Chart` made.
+    private static let chart = ImageRef(
+        id: "0a7441cf32e72812c1c5010b095a68b98c2384d127a42c4158c805032a47b6fe", mime: "image/png", width: 640,
+        height: 480)
+
+    /// A finished tool's `result.images` are the images it made, each with
+    /// its id, type and size, in order. A result without them, with none, or
+    /// with images that cannot be read means nothing, as before.
+    func testAFinishedToolsImagesAreReadAndOneWithoutMeansNothing() {
+        func complete(_ images: String) -> [ChatEvent] {
+            OpenAICompatibleProvider.agentEvents(
+                SSEEvent(
+                    data: #"{"type":"tool_call_complete","tool_name":"plot","result":{"tool_call_id":"c3","#
+                        + #""content":"two charts","success":true\#(images)},"wait_ms":0,"execute_duration_ms":4,"#
+                        + #""display_name":"Plot","duration_display":"4ms"}"#))
+        }
+        let second = ImageRef(
+            id: "84df8f6cc2c63ce08ab21ab29b20c0c6ef572839945f54cf708ba8dab69c2357", mime: "image/jpeg", width: 1024,
+            height: 768)
+        XCTAssertEqual(
+            complete(
+                #","images":[{"id":"\#(Self.chart.id)","mime":"image/png","width":640,"height":480},"#
+                    + #"{"id":"\#(second.id)","mime":"image/jpeg","width":1024,"height":768}]"#),
+            [.images([Self.chart, second])])
+        XCTAssertEqual(complete(""), [])
+        XCTAssertEqual(complete(#","images":[]"#), [])
+        XCTAssertEqual(complete(#","images":null"#), [])
+        XCTAssertEqual(complete(#","images":[{"id":"\#(Self.chart.id)","mime":"image/png"}]"#), [])
+        XCTAssertEqual(complete(#","images":"\#(Self.chart.id)""#), [])
     }
 
     /// A turn naming an image the hub does not hold is refused as such, and

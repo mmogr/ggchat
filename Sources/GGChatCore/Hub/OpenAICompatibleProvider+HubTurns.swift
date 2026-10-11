@@ -71,10 +71,10 @@ extension OpenAICompatibleProvider {
     }
 
     /// What one of an agent run's events means for the reply: its text, its
-    /// reasoning, a line for a tool it calls, what a finished model call
-    /// counted, and an error it reports. The rest, and an event this build
-    /// cannot read, mean nothing here: the run's last report says how it
-    /// ended, and the hub saves the reply.
+    /// reasoning, a line for a tool it calls, the images a finished tool
+    /// made, what a finished model call counted, and an error it reports. The
+    /// rest, and an event this build cannot read, mean nothing here: the
+    /// run's last report says how it ended, and the hub saves the reply.
     ///
     /// `turn_usage` carries its counts flat, under the names a chat stream's
     /// `usage` gives them, so it is read as one.
@@ -90,10 +90,31 @@ extension OpenAICompatibleProvider {
         case "tool_call_start":
             guard let name = agent.displayName else { return [] }
             return [.tool(agent.argsSummary.map { "\(name): \($0)" } ?? name)]
+        case "tool_call_complete": return madeImages(data)
         case "error": return [.error(.stream(code: nil, message: agent.message ?? "the reply failed"))]
         default: return []
         }
     }
+
+    /// The images a finished tool made: `result.images`, gglib's
+    /// `AttachmentInfo` each, which gglib leaves out when there are none. A
+    /// result without them, or with images that cannot be read, means
+    /// nothing here, as every finished tool did before.
+    private static func madeImages(_ data: Data) -> [ChatEvent] {
+        guard let complete = try? JSONDecoder().decode(ToolCallComplete.self, from: data),
+            let images = complete.result.images, !images.isEmpty
+        else { return [] }
+        return [.images(images)]
+    }
+}
+
+/// The part of gglib's `tool_call_complete` this device reads.
+private struct ToolCallComplete: Decodable {
+    struct Result: Decodable {
+        let images: [ImageRef]?
+    }
+
+    let result: Result
 }
 
 /// The parts of gglib's `AgentEvent` this device reads.
