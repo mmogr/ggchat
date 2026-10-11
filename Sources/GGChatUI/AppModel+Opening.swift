@@ -45,7 +45,8 @@ extension AppModel {
     }
 
     /// Lists the provider's models if it has none, or again when `relisting`,
-    /// and asks about its status pane, for a provider that can answer now.
+    /// asks about its status pane, and asks a gglib whether it can draw
+    /// (`AppModel+Drawing`), for a provider that can answer now.
     ///
     /// A pipe that is not connected is left alone, and its pulse catches it up
     /// instead. `connect` returns once the local port is bound, before the far
@@ -81,5 +82,6 @@ extension AppModel {
             await refreshModels(for: config, quietly: quietly)
         }
         await probeProxyStatus(for: config)
+        await askAboutDrawing(config)
     }
 }

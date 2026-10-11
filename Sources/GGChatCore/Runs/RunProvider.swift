@@ -1,3 +1,5 @@
+import Foundation
+
 /// How a hub answered a request to start a run.
 public enum RunStart: Sendable, Equatable {
     /// The run exists, new or already there under this id.
@@ -10,12 +12,17 @@ public enum RunStart: Sendable, Equatable {
 /// What reading a run's events yields.
 ///
 /// Every stream that is not cancelled ends with exactly one of `.ended`,
-/// `.notFound`, `.refused` and `.dropped`, after any number of `.frame`s.
+/// `.notFound`, `.refused` and `.dropped`, after any number of `.frame`s
+/// with any number of `.preview`s among them.
 public enum RunEvent: Sendable, Equatable {
     /// One event of the run, numbered `seq`, and what it means for the reply.
     /// A frame is applied whole, and the cursor moves to its `seq` with it, so
     /// a reply is never left holding half of one.
     case frame(seq: UInt32, events: [ChatEvent])
+    /// The latest look at a picture a tool of the run is drawing. Not one of
+    /// the run's numbered events: it has no `seq`, moves no cursor, and is
+    /// shown and never kept.
+    case preview(PreviewFrame)
     /// The run ended, and this is its last report.
     case ended(RunInfo)
     /// The hub does not have this run: it never did, it has dropped it, or it
@@ -37,11 +44,24 @@ public enum RunEvent: Sendable, Equatable {
 public protocol RunProvider: Provider {
     /// Starts the run `id` with the request `send` would stream. The id is
     /// this device's: 1 to 64 of `[A-Za-z0-9_-]`, a UUID string fitting.
+    /// A request that draws (`ChatRequest.draws`) starts a chat run that
+    /// carries gglib's own tools, whose events are an agent's.
     func startRun(id: String, _ request: ChatRequest) async throws(ProviderError) -> RunStart
-    /// The events of the run `id` numbered above `after`, then its end.
-    func runEvents(id: String, after: UInt32) -> AsyncStream<RunEvent>
+    /// The events of the run `id` numbered above `after`, each read as
+    /// `frames` says the run writes them, then its end.
+    func runEvents(id: String, after: UInt32, frames: RunFrames) -> AsyncStream<RunEvent>
     /// Stops the run `id`. Idempotent.
     func cancelRun(id: String) async throws(ProviderError) -> RunInfo
+    /// The bytes of an image a tool of a run made, by the id the run named
+    /// it with: gglib's `attachments` route.
+    func fetchImage(id: String) async throws(HubChatsFailure) -> Data
+}
+
+extension RunProvider {
+    /// The events of a run that records the chat route's chunks.
+    public func runEvents(id: String, after: UInt32) -> AsyncStream<RunEvent> {
+        runEvents(id: id, after: after, frames: .openai)
+    }
 }
 
 /// The codes a hub that has runs answers its runs routes with.

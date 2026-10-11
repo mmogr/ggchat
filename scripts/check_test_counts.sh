@@ -413,8 +413,81 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # its rows put the image on the tool's row alone. They are the only check
 # that the shape gglib records is the shape read here, and the README claim
 # names both.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 652
+#
+# 2026-10-10: 652 -> 656 and 569 -> 573. Four tests pin what gglib's drawing
+# adds to its list and its refusals: each drawing code's own line and side,
+# on a saved failure too; `image_generation` and `embeddings` read as models
+# that cannot chat; the model list offering only those that can; and a
+# provider with no model chosen taking the first that can. They are the whole
+# of that guard, and the README claim names all four.
+#
+# 2026-10-10: 656 -> 661 and 573 -> 578. Five tests pin how a hub is asked
+# whether it can draw: the route's two answers, a 404 read as a hub that
+# cannot, and any other failure as the error it is; the ask on catch-up and
+# the sentence for each answer; a failed ask keeping the answer before and a
+# removed provider taking its own; only gglib asked and offered the switch;
+# and a Mac's chat saying its Mac's sentence. They are the whole of that
+# guard, and the README claim names all five.
+#
+# 2026-10-10: 661 -> 666 and 578 -> 583. Five tests pin Draw on a Mac's chat:
+# the turn's body with and without `draw`; the word said only with the switch
+# on; never to a Mac that cannot draw, is too old or was never heard from;
+# the switch off again in the draft a send leaves; and a refused draft and a
+# turn put again keeping it. They are the whole of that guard, and the README
+# claim names all five.
+#
+# 2026-10-10: 666 -> 672 and 583 -> 589. Six tests pin a picture's progress:
+# gglib's recorded `tool_progress` and `waiting` frames read stage by stage,
+# with the call's end ahead of its image; frames that do not read meaning
+# nothing; the line for each stage and for each wait; the latest word shown
+# until its own tool ends; and a Mac's reply holding it until its run ends.
+# They are the whole of that guard, and the README claim names all six.
+#
+# 2026-10-10: 672 -> 677 and 589 -> 594. Five tests pin the look at a picture
+# being drawn: a `preview` read ahead of the numbering, with and without an
+# id, moving no cursor; one that does not read passed over; only the latest
+# held, gone with its own tool; a Mac's reply showing it with its cursor
+# where it was; and a run that ends mid-picture leaving none. They are the
+# whole of that guard, and the README claim names all five.
+#
+# 2026-10-10: 677 -> 694 and 594 -> 611. Seventeen tests pin drawing from a
+# conversation kept here: the run's query with its body unchanged, the
+# report's `frames` and the decoder it picks, a reply's images kept off the
+# wire; the run asked to draw only with the switch on and a hub that can, the
+# switch off after a send, the answer picking the decoder, Retry and Continue;
+# the picture read once and kept under its id, asked for again when lost,
+# named and not kept when the hub lacks it, a reply read on with its decoder,
+# a reply of a picture alone; and the two columns kept, and opened across the
+# change. They are the whole of that guard, and the README claims name all
+# seventeen.
+#
+# 2026-10-10: 694 -> 695 and 611 -> 612. One test pins a turn a Mac refuses
+# by ending its run: the draft given back with Draw as it was and the code's
+# own line, and a run that failed otherwise, or after its reply began, ending
+# as a reply that stopped. It is the whole of that guard, and the README
+# claim names it.
+#
+# 2026-10-10: 695 -> 699 and 612 -> 616. Four tests pin what is drawn of
+# drawing: the switch's symbol, spoken value and what a press does; a Mac's
+# reply drawing the work in the spinner's place; the work's bar and latest
+# look; and a reply kept here with its tool lines, its spinner and what is
+# drawn under it. No UI walk covers the switch in a composer, so they are the
+# whole of that guard, and the README claim names all four.
+#
+# 2026-10-10: 699 -> 703 and 616 -> 620. Four more tests pin drawing from a
+# conversation kept here: a question a hub refused to draw for no longer
+# asking; a provider moved to another Mac forgetting what was said of
+# drawing; a run written a way this build cannot read stopped and given up;
+# and its report, and a list holding it, still read. The README claim for a
+# kept conversation names all four.
+#
+# 2026-10-11: 703 -> 704 and 620 -> 621. One test pins a run that draws
+# reporting an error of its own before it ends failed: that sentence is what
+# the question shows, with no code, and Retry asks for the picture again. It
+# is what gglib does when the model never asks for the picture, and the
+# README claim for a kept conversation names it.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 704
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 569
+floor "README test markers" "${markers:-0}" 621
 
 exit $status

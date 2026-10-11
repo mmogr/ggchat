@@ -168,6 +168,163 @@ Each claim names the test that keeps it true.
   <!-- test: ImageStoreTests.testAStoreOpensAcrossTheImagesChangeInBothDirections -->
   <!-- test: ImageStoreTests.testTheResetLeavesNoImageFileBehind -->
   <!-- test: FirstRunUITests.testAPastedImageIsSentAloneAndDrawnInTheTranscript -->
+- gglib draws pictures with an image model, and its model list names one
+  with `image_generation`. Such a model cannot chat, and neither can one
+  listed with `embeddings`: the model list offers neither, and a provider
+  with no model chosen takes the first that can chat, not the first listed.
+  Each of the eight codes gglib's drawing refuses with has a line of its own
+  that says what happened to the picture and what to do, on a saved failure
+  too; a picture that stalled, and an image model with no room while another
+  reply is written, say to ask again and name no machine. The two codes a
+  run can now end with, `model_unavailable` and `unavailable`, name a side.
+  <!-- test: DrawingWireTests.testEachDrawingCodeSaysWhatToDo -->
+  <!-- test: DrawingWireTests.testTheModelListSaysWhichModelDrawsAndWhichCanChat -->
+  <!-- test: DrawingModelListTests.testTheModelListOffersOnlyModelsThatCanChat -->
+  <!-- test: DrawingModelListTests.testTheDefaultModelIsTheFirstThatCanChat -->
+- Whether a hub can draw is asked of it, `GET /v1/images/drawing`, and never
+  guessed: when a chat opens on it and each time its pipe comes up, for a
+  paired Mac and for no other server. gglib draws only for a device it has
+  paired, so a gglib reached by its address is not asked, and a conversation
+  on it has the switch dimmed, saying "Drawing needs a paired Mac." What it says is kept in memory: the image model when it can,
+  and when it cannot, gglib's own reason, said as "home cannot draw: ...". A
+  gglib from before drawing has no such route, and its 404 reads as a hub
+  that cannot draw and needs updating. A hub not asked yet is not known to
+  draw, an ask that fails keeps the answer before, and a removed provider
+  takes its answer with it.
+  <!-- test: DrawingWireTests.testAHubSaysWhetherItCanDrawAndAnOlderOneCannot -->
+  <!-- test: DrawingAvailabilityTests.testAHubIsAskedWhetherItCanDrawAndItsAnswerIsTheReason -->
+  <!-- test: DrawingAvailabilityTests.testAnAskThatFailsKeepsTheAnswerBefore -->
+  <!-- test: DrawingAvailabilityTests.testOnlyGGLibIsAskedAndOfferedTheSwitch -->
+  <!-- test: DrawingAvailabilityTests.testAMacsChatSaysWhyItsMacCannotDraw -->
+- A picture is asked for with a switch, never detected: Draw is pressed for
+  one message, and it is the draft's, so the draft a send leaves has it off
+  again. A turn to a Mac's chat says `draw: true` only for a message sent
+  with it on to a Mac that said it can draw; any other turn is the body it
+  always was, with no such key. A Mac that cannot draw, one from before
+  drawing and one never heard from are sent the message without the word,
+  since an older gglib refuses a key it does not know. A turn the Mac
+  refuses gives its draft back with the switch as it was, and one put again
+  says the same as the first time.
+  <!-- test: DrawingWireTests.testATurnSaysDrawOnlyWhenItDraws -->
+  <!-- test: HubChatDrawTests.testATurnSaysDrawOnlyWhenTheSwitchIsOn -->
+  <!-- test: HubChatDrawTests.testAMacThatCannotDrawIsNeverSentTheWord -->
+  <!-- test: HubChatDrawTests.testTheSwitchIsOffAgainOnceTheMessageIsSent -->
+  <!-- test: HubChatDrawTests.testARefusedTurnKeepsItsSwitchAndALostOneIsPutAgainWithIt -->
+- A Mac can refuse a turn after it has started the turn's run, since it now
+  starts the run before it loads the model: the run ends failed with
+  `model_unavailable`, `unavailable` or `conflict`, and no row saved. With
+  nothing of a reply read, each is said as a refused turn is, with the
+  code's own line when it has one, the run is no longer kept as one to read
+  on, the Mac's rows are not read again, and the text and images go back
+  into the composer, Draw as it was. `drawing_unavailable` and
+  `image_model_cannot_chat` are answers to the `PUT`, before any run, and
+  are taken the same way should a run ever end with one. A run that
+  fails any other way, or after something of its reply came, ends as a
+  reply that stopped.
+  <!-- test: HubChatDrawTests.testARunThatEndsAsARefusalGivesTheDraftBack -->
+- While a picture is drawn its run says how far it has got, and a reply held
+  up behind one says what it waits for: gglib's `tool_progress` and `waiting`
+  events, read as gglib records them, with the counts it reported and no
+  others. A tool's end is read by its call's id, ahead of the images it
+  made, and an image list that does not read still ends the call. A stage or
+  a reason this build does not know means nothing, and the reply reads on.
+  The reply holds the latest word in memory and nothing of it is kept: one
+  line for it, "Drawing: step 12 of 20" in the locale's digits, with the
+  picture's number from the second on and the place in line when it is not
+  next; a tool's progress goes when its own call ends and not another's, a
+  wait gives way to whatever comes next, and a run that ends leaves none.
+  <!-- test: ToolProgressWireTests.testTheRecordedFramesOfAPictureReadAsItsWaitItsStagesAndItsEnd -->
+  <!-- test: ToolProgressWireTests.testAWaitForAModelAndFramesThatDoNotReadMeanNothing -->
+  <!-- test: ToolWorkTests.testEachStageOfAPictureHasItsLine -->
+  <!-- test: ToolWorkTests.testAWaitSaysWhatIsInTheWay -->
+  <!-- test: ToolWorkTests.testTheLatestWordIsShownUntilItsToolEnds -->
+  <!-- test: ToolWorkTests.testAMacsReplyShowsTheWorkItsRunReportsUntilTheRunEnds -->
+- The look at a picture being drawn travels beside its run's numbered events
+  and is not one of them: gglib's `event: preview`, a small PNG with no
+  `id:`. A run's reader reads it by its name, ahead of the numbering, so one
+  with no id is not dropped as a frame already read, and one with an id
+  moves no cursor past the frames that follow; one whose bytes are not
+  base64, or whose frame is missing, is passed over. A Mac's reply holds
+  only the latest look, in memory: its cursor stays at the last frame, so
+  reading on asks from there, and the look goes when its own tool's call
+  ends, not another's, and when the run ends.
+  <!-- test: PreviewWireTests.testAPreviewIsReadAheadOfTheNumberingAndMovesNoCursor -->
+  <!-- test: PreviewWireTests.testAPreviewThatDoesNotReadIsPassedOver -->
+  <!-- test: DrawingPreviewTests.testOnlyTheLatestLookIsHeldAndItGoesWithItsTool -->
+  <!-- test: DrawingPreviewTests.testAMacsReplyShowsTheLookAndItsCursorDoesNotMove -->
+  <!-- test: DrawingPreviewTests.testARunThatEndsMidPictureLeavesNoLook -->
+- A conversation kept on this device draws too. A message sent with Draw on,
+  to a hub that said it can draw, is put as
+  `PUT /v1/runs/{id}?kind=chat&tools=builtin&draw=true`, its body the OpenAI
+  request it always was; any other message has no query at all, and a hub
+  that cannot draw, is too old or was never heard from is sent a plain run.
+  The switch is off again in the draft a taken send leaves, and a refused
+  draft keeps it. The run's answer says how its events are written, `frames`,
+  and that picks the decoder: `agent` is read as a Mac's chat's run is, and
+  absent is the chat route's chunks, as every run before. The question is
+  kept as one that drew, so Retry asks for the picture again while the hub
+  can draw and goes without once it cannot; Continue never asks for one. A
+  run that ends with one of drawing's codes leaves it on the question with
+  the code's own line, unless the run reported an error of its own first:
+  then that sentence is what the question shows, with no code and no line
+  under it. A question the hub refused to draw for, with
+  `drawing_unavailable` on the `PUT` or at the run's end, stops asking. A
+  run whose answer names a way of writing its events this build does not
+  know still reads as a run, is stopped, and is given up with a sentence;
+  a list that holds one still reads the others. What a Mac said of drawing
+  is forgotten when its provider is moved to another Mac.
+  <!-- test: DrawingRunWireTests.testARunThatDrawsIsPutWithItsQueryAndTheBodyUnchanged -->
+  <!-- test: DrawingRunWireTests.testARunsReportSaysHowItsFramesAreWritten -->
+  <!-- test: DrawingRunWireTests.testTheFramesPickTheDecoder -->
+  <!-- test: DrawingRunTests.testAMessageSentWithDrawStartsARunThatDraws -->
+  <!-- test: DrawingRunTests.testAHubThatCannotDrawIsSentAPlainRun -->
+  <!-- test: DrawingRunTests.testTheSwitchIsOffAgainOnceTheMessageIsSent -->
+  <!-- test: DrawingRunTests.testTheRunsAnswerSaysHowItsEventsAreRead -->
+  <!-- test: DrawingRunTests.testRetryAsksForThePictureAgainWhileTheHubCanDraw -->
+  <!-- test: DrawingRunTests.testARunsOwnErrorIsWhatTheQuestionShows -->
+  <!-- test: DrawingRunTests.testContinueNeverAsksForAPicture -->
+  <!-- test: DrawingRunTests.testAQuestionAHubRefusedToDrawForStopsAsking -->
+  <!-- test: DrawingRunTests.testAProviderMovedToAnotherMacForgetsWhetherItCanDraw -->
+  <!-- test: DrawingRunTests.testARunWrittenAWayThisBuildCannotReadIsGivenUp -->
+  <!-- test: DrawingRunWireTests.testAnUnknownWordForTheFramesStillReads -->
+- The picture such a run draws is this device's to keep, since the
+  conversation is: its bytes are read from the hub by id as soon as the tool
+  finishes, before its frame is applied, checked against the id, kept in
+  this device's store under the same SHA-256 a question's image has, and
+  named by the reply's message, with words or without. One already kept is
+  not read again. One lost on the way is not passed over: the reply walks
+  away with its cursor at the frame before, and the next reading asks again.
+  One the hub no longer has, or whose bytes are not its id's, is named and
+  not kept. A reply's picture is never sent back to the model, so the next
+  request neither carries it nor needs its bytes. While it is drawn the
+  reply shows its step and the latest look, and keeps neither. The
+  background walks away with the run's id, its cursor and how it writes its
+  events, kept with the message in two optional columns that a store opens
+  across both ways, and coming back reads on with the same decoder.
+  <!-- test: DrawingRunWireTests.testAReplysImagesAreNotSentBackToTheModel -->
+  <!-- test: DrawingRunImageTests.testAPictureIsReadOnceAndKeptUnderItsID -->
+  <!-- test: DrawingRunImageTests.testAPictureLostOnTheWayIsAskedForAgain -->
+  <!-- test: DrawingRunImageTests.testAPictureTheHubDoesNotHaveIsNamedAndNotKept -->
+  <!-- test: DrawingRunImageTests.testAReplyReadOnIsReadAsItsRunWritesIt -->
+  <!-- test: DrawingRunImageTests.testAReplyOfAPictureAloneIsKept -->
+  <!-- test: DrawingStoreTests.testThatAQuestionDrewAndHowItsRunWritesOutliveAReopening -->
+  <!-- test: DrawingStoreTests.testAStoreOpensAcrossTheDrawingColumnsInBothDirections -->
+- Both composers have a Draw switch beside the field, the local one only
+  where the provider is gglib, and dimmed there unless it is a paired Mac. Its state is never colour alone: the brush is
+  filled while on and an outline while off, with "On" or "Off" to hear. A
+  hub that cannot draw dims it and keeps it showing off, VoiceOver hears
+  "Unavailable" and the reason, and a press says the reason and turns
+  nothing on. While a picture is drawn or waited for, a reply shows the
+  line for it in the spinner's place, or under its words when it has some,
+  with a bar while the steps are counted and the latest look at the
+  picture, drawn from the frame as it came and scaled up smoothly; bytes
+  that are not a picture draw nothing. A reply kept on this device also
+  shows a line for each tool it calls, and under it the pictures made, read
+  from this device's store.
+  <!-- test: DrawingViewTests.testTheDrawSwitchSaysItsStateAndAPressSaysWhyItCannotDraw -->
+  <!-- test: DrawingViewTests.testAMacsReplyDrawsTheWorkInPlaceOfTheSpinner -->
+  <!-- test: DrawingViewTests.testTheWorkIsItsLineItsBarAndTheLatestLook -->
+  <!-- test: DrawingViewTests.testAReplyKeptHereShowsItsToolsAndNoSpinnerWhileAPictureIsDrawn -->
 - A pairing string is read by modelpipe as it is typed and as it is scanned,
   against `docs/pairing-v0.md`'s normative vectors: the ticket comes back in
   its canonical lower-case form, so a QR scan and a paste of the same machine
@@ -1369,6 +1526,11 @@ against the mock.
   as far as the change, into a new conversation of its family, by gglib's
   rules; a Mac's chat is changed by the Mac, and nothing of it is copied
   here.
+- [ADR 0011](docs/adr/0011-a-picture-is-asked-for-with-a-switch.md): a
+  picture is asked for with a Draw switch, one message at a time, of a hub
+  that said it can draw; what is shown while it is drawn is never kept, and
+  the picture a conversation kept here asked for is kept in this device's
+  store.
 
 ## Releases
 

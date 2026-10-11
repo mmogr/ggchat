@@ -123,6 +123,7 @@ extension Message {
         copy.originID = originID ?? id
         copy.runID = nil
         copy.runCursor = nil
+        copy.runFrames = nil
         return copy
     }
 }

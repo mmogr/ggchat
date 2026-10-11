@@ -12,13 +12,17 @@ extension AppModel {
     /// the chat has a reply being written, when its Mac cannot be reached,
     /// and with images when this phone knows the chat's model cannot see,
     /// each with a sentence in the view and the draft given back.
+    ///
+    /// `draws` is the composer's Draw switch. The turn says `draw` only
+    /// when it is on and the Mac said it can draw (`hubDrawRefusal`): a Mac
+    /// that cannot, or was never asked, is sent the message without it.
     @discardableResult
-    func sendToHubChat(_ text: String, images: [DraftImage] = []) -> Task<Void, Never>? {
+    func sendToHubChat(_ text: String, images: [DraftImage] = [], draws: Bool = false) -> Task<Void, Never>? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty || !images.isEmpty, let open = openedHubChat,
             let config = providers.first(where: { $0.id == open.providerID })
         else { return nil }
-        let draft = Draft(text: trimmed, images: images)
+        let draft = Draft(text: trimmed, images: images, draws: draws)
         if !images.isEmpty, !canSeeHubChat(open) { return giveBack(draft, Self.cannotSee) }
         if openHubChatIsWriting || open.changing { return giveBack(draft, Self.busyLine(config)) }
         guard let hub = reachableHubChats(for: config) else {
@@ -31,7 +35,7 @@ extension AppModel {
         // The choice is said only while it is not what the Mac remembers.
         let reply = HubLiveReply(
             providerID: config.id, chatID: open.chatID, runID: UUID().uuidString, question: trimmed,
-            images: images, thinking: open.thinking.change)
+            images: images, thinking: open.thinking.change, draws: draws && hubDrawRefusal == nil)
         hubReplies.append(reply)
         let task = Task { [weak self] in
             guard let self else { return }
@@ -83,11 +87,12 @@ extension AppModel {
     }
 
     /// The reply's turn as it is put, each time it is: its text, the ids of
-    /// its images, and what it says of the Thinking choice.
+    /// its images, what it says of the Thinking choice, and whether it
+    /// draws.
     private func turn(of reply: HubLiveReply, _ hub: any HubChatsProvider) async throws(HubTurnFailure) -> HubTurn {
         HubTurn(
             conversationID: reply.chatID, content: reply.question ?? "", images: try await imageIDs(reply, hub),
-            thinking: reply.thinking, answerSaved: reply.answersSaved)
+            thinking: reply.thinking, answerSaved: reply.answersSaved, draw: reply.draws)
     }
 
     /// The ids the Mac holds the reply's images under, each sent to it the
@@ -198,9 +203,9 @@ extension HubLiveReply {
     }
 
     /// What this phone sent, as a draft to give back when the Mac refuses
-    /// it: the text and the images, bytes and all. A turn that answers a
-    /// saved question sent none.
+    /// it: the text and the images, bytes and all, with Draw as the turn
+    /// had it. A turn that answers a saved question sent none.
     var unsent: Draft? {
-        answersSaved ? nil : question.map { Draft(text: $0, images: images) }
+        answersSaved ? nil : question.map { Draft(text: $0, images: images, draws: draws) }
     }
 }

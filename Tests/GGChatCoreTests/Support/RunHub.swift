@@ -23,6 +23,9 @@ final class RunHub: URLProtocol, @unchecked Sendable {
         var refusal: (status: Int, body: String)?
         /// The `Content-Type` an events body is sent with.
         var eventsType = "text/event-stream"
+        /// What is sent after the event numbered so, as written: a side
+        /// event with a name and no `id:` line, or anything else.
+        var beside: [Int: String] = [:]
     }
 
     private static let scripts = Mutex<[String: Script]>([:])
@@ -55,6 +58,7 @@ final class RunHub: URLProtocol, @unchecked Sendable {
         var text = ""
         for (index, frame) in script.frames.enumerated() where script.ignoresAfter || index + 1 > after {
             text += "id: \(index + 1)\ndata: \(frame)\n\n"
+            text += script.beside[index + 1] ?? ""
         }
         text += "event: run\ndata: \(script.ending)\n\n"
         return Data(text.utf8)

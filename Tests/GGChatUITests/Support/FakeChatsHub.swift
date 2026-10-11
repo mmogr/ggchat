@@ -4,7 +4,7 @@ import Synchronization
 
 /// A gglib hub's chats, in process: a list, and the chats it opens. Every
 /// list and open is recorded.
-final class FakeChatsHub: HubChatsProvider {
+final class FakeChatsHub: HubChatsProvider, DrawingProvider {
     struct State {
         var list: Result<HubChatList, HubChatsFailure>
         var chats: [Int64: HubChatOpen] = [:]
@@ -126,6 +126,11 @@ final class FakeChatsHub: HubChatsProvider {
 
     func stream(_ request: ChatRequest) -> AsyncStream<ChatEvent> {
         AsyncStream { $0.finish() }
+    }
+
+    /// What `runs` is told to say of drawing.
+    func drawing() async throws(ProviderError) -> Drawing {
+        try await runs.drawing()
     }
 
     func listChats() async throws(HubChatsFailure) -> HubChatList {

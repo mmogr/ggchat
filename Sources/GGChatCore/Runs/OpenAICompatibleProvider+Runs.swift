@@ -4,18 +4,16 @@ import Foundation
     import FoundationNetworking
 #endif
 
-/// How the data of a run's numbered events is written: as the chat route's
-/// chunks, or as gglib's agent events.
-enum RunFrames: Sendable {
-    case chat
-    case agent
-}
-
 // gglib's runs routes, beside the chat route they replace for a hub that has
 // them. Same base URL, same key.
 extension OpenAICompatibleProvider: RunProvider {
     /// `PUT runs/{id}` with the body `chat/completions` would be sent.
     /// A 404 or a 405 with no run code is a hub without the route.
+    ///
+    /// A request that draws is put as `?kind=chat&tools=builtin&draw=true`,
+    /// its body the same: the query, not the body, is what gives the run
+    /// gglib's own tools and lets this message's reply ask for a picture.
+    /// Any other request has no query at all, as before.
     public func startRun(id: String, _ chatRequest: ChatRequest) async throws(ProviderError) -> RunStart {
         let body: Data
         do {
@@ -23,7 +21,13 @@ extension OpenAICompatibleProvider: RunProvider {
         } catch {
             throw .decoding("could not encode the request: \(error)")
         }
-        let request = makeRequest(path: "runs/\(id)", method: "PUT", body: body)
+        var request = makeRequest(path: "runs/\(id)", method: "PUT", body: body)
+        if chatRequest.draws {
+            request.url = request.url?.appending(queryItems: [
+                URLQueryItem(name: "kind", value: "chat"), URLQueryItem(name: "tools", value: "builtin"),
+                URLQueryItem(name: "draw", value: "true"),
+            ])
+        }
         let (data, response) = try await perform(request)
         if [404, 405].contains(response.statusCode), !Self.carriesARunCode(data) { return .unsupported }
         try checkStatus(response, data: data)
@@ -31,8 +35,8 @@ extension OpenAICompatibleProvider: RunProvider {
     }
 
     /// `GET runs/{id}/events?after=N`, read until `event: run` or the end.
-    public func runEvents(id: String, after: UInt32) -> AsyncStream<RunEvent> {
-        events(ofRun: id, after: after, as: .chat)
+    public func runEvents(id: String, after: UInt32, frames: RunFrames) -> AsyncStream<RunEvent> {
+        events(ofRun: id, after: after, as: frames)
     }
 
     /// A run's events, each read as `frames` says its data is written.
@@ -62,6 +66,10 @@ extension OpenAICompatibleProvider: RunProvider {
     /// An event numbered at or below the last one passed on is dropped, so a
     /// hub that sends one twice, or from further back than it was asked, has
     /// no event applied twice.
+    ///
+    /// A `preview` is read by its name, ahead of the numbering: it is not
+    /// one of the run's numbered events, and whatever id came with it or
+    /// before it, it moves no cursor. One that does not read is passed over.
     private func readRun(
         _ id: String, after: UInt32, as frames: RunFrames, into continuation: AsyncStream<RunEvent>.Continuation
     ) async -> RunEvent? {
@@ -78,9 +86,20 @@ extension OpenAICompatibleProvider: RunProvider {
                 if event.event == "run" {
                     return .ended(try decode(RunInfo.self, from: Data(event.data.utf8)))
                 }
+                if event.event == "preview" {
+                    if let frame = try? JSONDecoder().decode(PreviewFrame.self, from: Data(event.data.utf8)) {
+                        continuation.yield(.preview(frame))
+                    }
+                    continue
+                }
                 guard let seq = event.id.flatMap(UInt32.init), seq > cursor else { continue }
                 cursor = seq
-                let events = frames == .chat ? frame(event, into: &reply) : Self.agentEvents(event)
+                let events: [ChatEvent] =
+                    switch frames {
+                    case .openai: frame(event, into: &reply)
+                    case .agent: Self.agentEvents(event)
+                    case .unknown: []
+                    }
                 continuation.yield(.frame(seq: seq, events: events))
             }
             return .dropped(nil)

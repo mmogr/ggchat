@@ -151,8 +151,9 @@ final class HubTurnProviderTests: XCTestCase {
         XCTAssertEqual(
             chat,
             [
-                .reasoning("The lock file"), .reasoning(" moved."), .tool("Read File: Cargo.lock"), .tool("List Dir"),
-                .tool("Plot Chart: build times"), .images([Self.chart]), .delta("Pin "), .delta("the version."),
+                .reasoning("The lock file"), .reasoning(" moved."), .tool("Read File: Cargo.lock"), .toolEnded("c1"),
+                .tool("List Dir"), .tool("Plot Chart: build times"), .toolEnded("c3"), .images([Self.chart]),
+                .delta("Pin "), .delta("the version."),
                 .usage(Usage(promptTokens: 812, completionTokens: 12, contextSize: 8_192), reason: "stop"),
             ])
         XCTAssertEqual(
@@ -171,8 +172,9 @@ final class HubTurnProviderTests: XCTestCase {
         height: 480)
 
     /// A finished tool's `result.images` are the images it made, each with
-    /// its id, type and size, in order. A result without them, with none, or
-    /// with images that cannot be read means nothing, as before.
+    /// its id, type and size, in order, after the word that its call ended.
+    /// A result without them, with none, or with images that cannot be read
+    /// is the call's end alone.
     func testAFinishedToolsImagesAreReadAndOneWithoutMeansNothing() {
         func complete(_ images: String) -> [ChatEvent] {
             OpenAICompatibleProvider.agentEvents(
@@ -188,12 +190,12 @@ final class HubTurnProviderTests: XCTestCase {
             complete(
                 #","images":[{"id":"\#(Self.chart.id)","mime":"image/png","width":640,"height":480},"#
                     + #"{"id":"\#(second.id)","mime":"image/jpeg","width":1024,"height":768}]"#),
-            [.images([Self.chart, second])])
-        XCTAssertEqual(complete(""), [])
-        XCTAssertEqual(complete(#","images":[]"#), [])
-        XCTAssertEqual(complete(#","images":null"#), [])
-        XCTAssertEqual(complete(#","images":[{"id":"\#(Self.chart.id)","mime":"image/png"}]"#), [])
-        XCTAssertEqual(complete(#","images":"\#(Self.chart.id)""#), [])
+            [.toolEnded("c3"), .images([Self.chart, second])])
+        XCTAssertEqual(complete(""), [.toolEnded("c3")])
+        XCTAssertEqual(complete(#","images":[]"#), [.toolEnded("c3")])
+        XCTAssertEqual(complete(#","images":null"#), [.toolEnded("c3")])
+        XCTAssertEqual(complete(#","images":[{"id":"\#(Self.chart.id)","mime":"image/png"}]"#), [.toolEnded("c3")])
+        XCTAssertEqual(complete(#","images":"\#(Self.chart.id)""#), [.toolEnded("c3")])
     }
 
     /// A turn naming an image the hub does not hold is refused as such, and

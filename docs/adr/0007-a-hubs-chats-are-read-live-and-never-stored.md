@@ -63,6 +63,14 @@ opened. Coming back to the foreground dials each of them again once, as
 > phone (ADR 0009). Opening a Mac's chat lists that Mac's models when this
 > phone has none.
 
+> **Amended 2026-10-10 — a Mac's chat can ask for a picture, and what is
+> shown of one being drawn is held in memory.** A turn sent with Draw pressed
+> also says `draw: true`, to a Mac that said it can draw. While the picture is
+> drawn the reply holds how far it has got, what it waits for and the latest
+> look at it, in memory with the rest of the reply and gone when the tool or
+> the run ends; the picture itself is read from the Mac by id, as the chat's
+> other images are. None of it is written to this phone (ADR 0011).
+
 ## What would undo it
 
 - The owner asking to read a Mac's chats while it is asleep: then the rows

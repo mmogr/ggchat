@@ -1,10 +1,11 @@
+import Foundation
 import GGChatCore
 import Synchronization
 
 /// A gglib hub with runs, in process: one reply, recorded as frames numbered
 /// from 1, that every run it starts writes. Reads can be told to hold, as a
 /// reply still being written does, or to drop once, as a connection does.
-final class FakeRunHub: RunProvider {
+final class FakeRunHub: RunProvider, DrawingProvider {
     enum Start: Sendable {
         case runs
         /// A 404 or 405 with no run code: an older gglib.
@@ -39,6 +40,25 @@ final class FakeRunHub: RunProvider {
         var reads: [(id: String, after: UInt32)] = []
         var cancels: [String] = []
         var chats: [ChatRequest] = []
+        /// What the hub says of drawing, or the error it answers with, and
+        /// how often it was asked. As it stands, a gglib from before drawing.
+        var drawing: Result<Drawing, ProviderError> = .success(Drawing(available: false))
+        var drawingAsked = 0
+        /// The look at a picture a read sends after the frame numbered so,
+        /// once the frame itself has been passed on.
+        var previews: [UInt32: PreviewFrame] = [:]
+        /// How each read was asked to read its frames, in order.
+        var readFrames: [RunFrames] = []
+        /// Answers a run that draws as a gglib from before `frames` would:
+        /// with no word on how its events are written.
+        var saysNoFrames = false
+        /// What a run that draws says of its frames, in place of `agent`.
+        var saysFrames: RunFrames?
+        /// The images the hub holds, by id, the id of every one read, and
+        /// what the next reads are answered with, one failure each.
+        var images: [String: Data] = [:]
+        var fetches: [String] = []
+        var fetchFailures: [HubChatsFailure] = []
         /// The reads holding their streams open, to end with `release()`.
         var held: [(id: String, continuation: AsyncStream<RunEvent>.Continuation)] = []
     }
@@ -62,6 +82,13 @@ final class FakeRunHub: RunProvider {
         MockProvider.sampleModels
     }
 
+    func drawing() async throws(ProviderError) -> Drawing {
+        try with { state in
+            state.drawingAsked += 1
+            return state.drawing
+        }.get()
+    }
+
     /// The old way, for a hub that said it has no runs.
     func stream(_ request: ChatRequest) -> AsyncStream<ChatEvent> {
         with { $0.chats.append(request) }
@@ -80,15 +107,18 @@ final class FakeRunHub: RunProvider {
         }
         if lost { throw .transport("the answer was lost") }
         switch start {
-        case .runs: return .started(info(id, .queued, lastSeq: 0))
+        case .runs:
+            let frames: RunFrames? = request.draws && !with(\.saysNoFrames) ? with(\.saysFrames) ?? .agent : nil
+            return .started(info(id, .queued, lastSeq: 0, frames: frames))
         case .unsupported: return .unsupported
         case .refused(let error): throw error
         }
     }
 
-    func runEvents(id: String, after: UInt32) -> AsyncStream<RunEvent> {
+    func runEvents(id: String, after: UInt32, frames: RunFrames) -> AsyncStream<RunEvent> {
         let (events, holds) = with { state -> ([RunEvent], Bool) in
             state.reads.append((id, after))
+            state.readFrames.append(frames)
             if state.forgotten { return ([.notFound], false) }
             if let answer = state.readAnswer { return ([answer], false) }
             let limit = state.dropAt ?? state.holdAt ?? UInt32(state.frames.count)
@@ -97,6 +127,7 @@ final class FakeRunHub: RunProvider {
                 let seq = UInt32(index + 1)
                 guard seq <= limit, state.ignoresAfter || seq > after else { continue }
                 events.append(.frame(seq: seq, events: frame))
+                if let preview = state.previews[seq] { events.append(.preview(preview)) }
             }
             if state.dropAt != nil {
                 state.dropAt = nil
@@ -146,11 +177,22 @@ final class FakeRunHub: RunProvider {
         return info(id, .cancelled, lastSeq: 0)
     }
 
+    func fetchImage(id: String) async throws(HubChatsFailure) -> Data {
+        let (data, failure) = with { state -> (Data?, HubChatsFailure?) in
+            state.fetches.append(id)
+            return (state.images[id], state.fetchFailures.isEmpty ? nil : state.fetchFailures.removeFirst())
+        }
+        if let failure { throw failure }
+        guard let data else { throw .notFound }
+        return data
+    }
+
     private func info(
-        _ id: String, _ status: RunStatus, lastSeq: UInt32, error: RunError? = nil, model: String? = nil
+        _ id: String, _ status: RunStatus, lastSeq: UInt32, error: RunError? = nil, model: String? = nil,
+        frames: RunFrames? = nil
     ) -> RunInfo {
         RunInfo(
             id: id, kind: .chat, status: status, model: model, createdAtMs: 1_790_000_000_000, lastSeq: lastSeq,
-            error: error)
+            error: error, frames: frames)
     }
 }

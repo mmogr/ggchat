@@ -26,6 +26,9 @@ public final class HubLiveReply {
     /// Whether the turn answers the question the chat already ends in, as a
     /// change on the Mac leaves it (ADR 0010), rather than asking one.
     let answersSaved: Bool
+    /// Whether the turn asks to draw: Draw was pressed for it and its Mac
+    /// could draw then. Fixed when it is sent, as `thinking` is.
+    let draws: Bool
     public internal(set) var content = ""
     public internal(set) var reasoning = ""
     /// A line for each tool the reply called.
@@ -34,6 +37,9 @@ public final class HubLiveReply {
     /// read from the Mac by id as it is drawn, into memory like the chat's
     /// other images.
     public internal(set) var made: [ImageRef] = []
+    /// How far a tool at work has got, and what the reply waits for: shown
+    /// while it is so, and never kept (`ToolWork`).
+    var work = ToolWork()
     /// What the run's last finished model call counted and why it ended, once
     /// one has: the chat's reading while this reply is on screen, in memory
     /// like the rest of it.
@@ -70,7 +76,7 @@ public final class HubLiveReply {
 
     init(
         providerID: UUID, chatID: Int64, runID: String, question: String?, images: [DraftImage] = [],
-        thinking: HubThinking? = nil, answersSaved: Bool = false
+        thinking: HubThinking? = nil, answersSaved: Bool = false, draws: Bool = false
     ) {
         self.providerID = providerID
         self.chatID = chatID
@@ -79,13 +85,28 @@ public final class HubLiveReply {
         self.question = question
         self.images = images
         self.thinking = thinking
+        self.draws = draws
+    }
+
+    /// Whether the reply shows the spinner: it has no words, its run has not
+    /// ended, and no picture is being drawn or waited for in their place.
+    var awaitsFirstToken: Bool {
+        content.isEmpty && !ended && work.isEmpty
+    }
+
+    /// Whether nothing of a reply has arrived: no word, no thought, no tool
+    /// called and no image made.
+    var isEmpty: Bool {
+        content.isEmpty && reasoning.isEmpty && tools.isEmpty && made.isEmpty
     }
 
     /// Adds one event of the run to the reply. Its text, its reasoning, its
-    /// tool calls and the images they made are drawn, and what a finished
-    /// call counted is kept, the last one over any before it; the run's last
-    /// report says how it ended.
+    /// tool calls and the images they made are drawn, with how far a tool at
+    /// work has got and what the reply waits for (`ToolWork`), and what a
+    /// finished call counted is kept, the last one over any before it; the
+    /// run's last report says how it ended.
     func apply(_ event: ChatEvent) {
+        work.apply(event)
         switch event {
         case .delta(let text): content += text
         case .reasoning(let text): reasoning += text
@@ -94,7 +115,7 @@ public final class HubLiveReply {
         case .usage(let counted, let reason):
             usage = counted
             finishReason = reason
-        case .progress, .error, .finished: break
+        case .progress, .error, .finished, .toolProgress, .toolEnded, .waiting: break
         }
     }
 }

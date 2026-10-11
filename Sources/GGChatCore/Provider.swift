@@ -15,10 +15,15 @@ public struct ChatRequest: Sendable, Equatable {
     /// ``noThinking`` turns thinking off for this request. Set only for
     /// gglib, as `returnProgress` is.
     public var reasoningBudgetTokens: Int?
+    /// Whether the message was sent with Draw pressed, so its reply may ask
+    /// gglib for a picture. No part of the body: a run's `PUT` says it in
+    /// its query, and the chat route, which cannot draw, never hears it.
+    /// Set only for a gglib that said it can draw.
+    public var draws: Bool
 
     public init(
         model: String, messages: [Message], images: [String: Data] = [:], maxTokens: Int? = nil,
-        returnProgress: Bool = false, reasoningBudgetTokens: Int? = nil
+        returnProgress: Bool = false, reasoningBudgetTokens: Int? = nil, draws: Bool = false
     ) {
         self.model = model
         self.messages = messages
@@ -26,6 +31,7 @@ public struct ChatRequest: Sendable, Equatable {
         self.maxTokens = maxTokens
         self.returnProgress = returnProgress
         self.reasoningBudgetTokens = reasoningBudgetTokens
+        self.draws = draws
     }
 }
 

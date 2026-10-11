@@ -21,19 +21,23 @@ extension AppModel {
     /// Appends the user's message and streams the reply.
     @discardableResult
     public func send(_ text: String) -> Task<Void, Never>? {
-        guard let conversation = appendTurn(text, images: []) else { return nil }
+        guard let conversation = appendTurn(text, images: [], draws: false) else { return nil }
         return stream(conversation, continuing: nil)
     }
 
     /// Appends the user's turn to the open conversation and answers it, or
     /// nil when the turn has neither text nor an image, or the conversation
-    /// cannot take one now.
-    func appendTurn(_ text: String, images: [ImageRef]) -> Conversation? {
+    /// cannot take one now. `draws` is kept on the turn only when its hub
+    /// said it can draw (`drawRefusal`): a question marked so is one whose
+    /// run was asked to draw.
+    func appendTurn(_ text: String, images: [ImageRef], draws: Bool) -> Conversation? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty || !images.isEmpty, var conversation = selectedConversation, takesTurn(conversation)
         else { return nil }
         let stamp = now()
-        conversation.messages.append(Message(role: .user, content: trimmed, createdAt: stamp, images: images))
+        let marked = draws && drawRefusal(for: conversation) == nil
+        conversation.messages.append(
+            Message(role: .user, content: trimmed, createdAt: stamp, images: images, draws: marked))
         conversation.updatedAt = stamp
         update(conversation)
         return conversation
@@ -68,12 +72,19 @@ extension AppModel {
     /// way, or waiting for its pipe, so a conversation whose provider has
     /// gone, or that has no model, keeps its sentence and says why nothing
     /// was sent.
+    ///
+    /// A question sent with Draw asks for a picture again, while its hub
+    /// can still draw; once it cannot, the question goes without, and is
+    /// no longer marked as one that draws.
     @discardableResult
     public func retry() -> Task<Void, Never>? {
         guard var conversation = selectedConversation, !isStreaming,
             let last = conversation.messages.indices.last, conversation.messages[last].role == .user
         else { return nil }
         conversation.messages[last].failure = nil
+        if conversation.messages[last].draws, drawRefusal(for: conversation) != nil {
+            conversation.messages[last].draws = false
+        }
         guard let task = stream(conversation, continuing: nil) else { return nil }
         update(conversation)
         return task
@@ -145,7 +156,11 @@ extension AppModel {
     /// them: the chat route and a run each say it in their own way. What a
     /// finished call counted is kept, the last one over any before it: the
     /// chat route says it as it finishes, and a run in a frame of its own.
+    /// A run that draws also says how far its picture has got (`ToolWork`)
+    /// and names the images it made, whose bytes `keepImages` has stored by
+    /// the time they are named here.
     func apply(_ event: ChatEvent, to live: LiveReply) {
+        live.work.apply(event)
         switch event {
         case .delta(let text): live.content += text
         case .reasoning(let text): live.reasoning += text
@@ -157,7 +172,10 @@ extension AppModel {
         case .finished(let reason, let usage):
             live.usage = usage
             live.finishReason = reason
-        case .tool, .images: break
+        case .images(let images):
+            live.made += images.filter { image in !live.made.contains { $0.id == image.id } }
+        case .tool(let line): live.tools.append(line)
+        case .toolProgress, .toolEnded, .waiting: break
         }
     }
 

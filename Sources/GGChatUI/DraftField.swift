@@ -6,7 +6,8 @@ import SwiftUI
 /// glass around it.
 ///
 /// An image comes from the photo picker, a paste or a drop, and every one
-/// goes through `ImageDownscale` before it joins the draft. A draft refused
+/// goes through `ImageDownscale` before it joins the draft. Draw is pressed
+/// for one message, where the provider is gglib (`DrawToggle`). A draft refused
 /// on its way out keeps its text and its images.
 struct DraftField: View {
     @Environment(AppModel.self) private var model
@@ -27,6 +28,16 @@ struct DraftField: View {
             HStack(alignment: .bottom, spacing: 8) {
                 AddImageButtons(
                     disabled: streaming, refusal: canSee ? nil : "This model cannot read images.", take: take)
+                // Only for gglib, which is the one server that draws.
+                if model.offersDrawing(for: conversation) {
+                    DrawToggle(
+                        isOn: draft.draws, refusal: model.drawRefusal(for: conversation), disabled: streaming
+                    ) {
+                        draft.draws = $0
+                    } say: {
+                        model.lastError = $0
+                    }
+                }
                 field
                 sendButton
             }
