@@ -486,8 +486,15 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # the question shows, with no code, and Retry asks for the picture again. It
 # is what gglib does when the model never asks for the picture, and the
 # README claim for a kept conversation names it.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 704
+#
+# 2026-10-11: 704 -> 707 and 621 -> 624. Three tests pin drawing a second
+# time in one chat: a press of Draw alone being a change to the draft, and a
+# conversation kept here and a Mac's chat each taking a second picture with
+# its steps and looks. The first fails when a draft's equality stops
+# comparing the switch, and is the whole of that guard; the README claim
+# names all three.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 707
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 621
+floor "README test markers" "${markers:-0}" 624
 
 exit $status

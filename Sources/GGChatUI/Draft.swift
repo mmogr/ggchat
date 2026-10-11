@@ -19,11 +19,20 @@ struct Draft: Equatable {
         for image in images { add(image) }
     }
 
-    /// The same text and the same images in the same order. An image's id is
-    /// the hash of its bytes, so the same id is the same bytes. Draw is not
-    /// compared: a composer with nothing in it but the switch is empty.
+    /// The same text, the same images in the same order, and the same
+    /// switch. An image's id is the hash of its bytes, so the same id is the
+    /// same bytes. Draw is compared: SwiftUI asks this of a composer's state
+    /// to decide whether to draw it again, and a press that changed only
+    /// the switch was kept and not drawn, so Draw looked off and stuck
+    /// until something else redrew the composer.
     static func == (lhs: Draft, rhs: Draft) -> Bool {
-        lhs.text == rhs.text && lhs.images.map(\.id) == rhs.images.map(\.id)
+        lhs.text == rhs.text && lhs.images.map(\.id) == rhs.images.map(\.id) && lhs.draws == rhs.draws
+    }
+
+    /// Whether the composer holds nothing: no text and no image. One with
+    /// nothing in it but the switch is empty.
+    var isEmpty: Bool {
+        text.isEmpty && images.isEmpty
     }
 
     /// Whether there is anything to send: text that is not only spaces, or

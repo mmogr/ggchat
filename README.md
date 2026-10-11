@@ -325,6 +325,17 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingViewTests.testAMacsReplyDrawsTheWorkInPlaceOfTheSpinner -->
   <!-- test: DrawingViewTests.testTheWorkIsItsLineItsBarAndTheLatestLook -->
   <!-- test: DrawingViewTests.testAReplyKeptHereShowsItsToolsAndNoSpinnerWhileAPictureIsDrawn -->
+- Draw can be pressed for a second message in the same chat. A press that
+  changes nothing of a draft but the switch is a change to it, which is
+  what SwiftUI asks of a composer's draft before it draws the composer
+  again; a composer holding only the switch is still an empty one. Once a
+  reply with a picture has ended nothing refuses Draw, and the second
+  picture's steps and the looks at it reach its reply as the first's did,
+  read from the start of its own run, in a conversation kept here and in a
+  Mac's chat.
+  <!-- test: DrawAgainTests.testAPressOfDrawAloneIsAChangeToTheDraft -->
+  <!-- test: DrawAgainTests.testAConversationHereDrawsASecondTime -->
+  <!-- test: DrawAgainTests.testAMacsChatDrawsASecondTime -->
 - A pairing string is read by modelpipe as it is typed and as it is scanned,
   against `docs/pairing-v0.md`'s normative vectors: the ticket comes back in
   its canonical lower-case form, so a QR scan and a paste of the same machine
