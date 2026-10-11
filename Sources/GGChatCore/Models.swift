@@ -22,6 +22,9 @@ public enum Role: String, Codable, Sendable, Equatable, Hashable {
 /// `runFrames` is how the run named by `runID` writes its events, when not
 /// as the chat route's chunks, so a reply read on is read with the decoder
 /// its run needs; nil with `runID`, and for a run of chunks.
+/// `exchanges` is the tools a reply called and what each answered, in
+/// order, as a run that drew said them: never drawn, and sent back to a
+/// gglib with the reply so the model reads how its picture was made.
 public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
     public var id: UUID
     public var role: Role
@@ -36,6 +39,7 @@ public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
     public var originID: UUID?
     public var draws: Bool
     public var runFrames: RunFrames?
+    public var exchanges: [ToolExchange]
 
     public init(
         id: UUID = UUID(),
@@ -50,7 +54,8 @@ public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
         images: [ImageRef] = [],
         originID: UUID? = nil,
         draws: Bool = false,
-        runFrames: RunFrames? = nil
+        runFrames: RunFrames? = nil,
+        exchanges: [ToolExchange] = []
     ) {
         self.id = id
         self.role = role
@@ -65,6 +70,7 @@ public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
         self.originID = originID
         self.draws = draws
         self.runFrames = runFrames
+        self.exchanges = exchanges
     }
 
     /// Whether a hub is still writing this reply, away from this device.

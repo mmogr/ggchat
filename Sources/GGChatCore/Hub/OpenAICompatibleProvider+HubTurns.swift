@@ -71,8 +71,9 @@ extension OpenAICompatibleProvider {
     }
 
     /// What one of an agent run's events means for the reply: its text, its
-    /// reasoning, a line for a tool it calls, how far that tool has got, that
-    /// it finished and the images it made, a wait for something else, what a
+    /// reasoning, a line for a tool it calls and the call itself, how far that
+    /// tool has got, that it finished, what it answered and the images it
+    /// made, a wait for something else, what a
     /// finished model call counted, and an error it reports. The rest, and an
     /// event this build cannot read, mean nothing here: the run's last
     /// report says how it ended, and the hub saves the reply.
@@ -89,8 +90,8 @@ extension OpenAICompatibleProvider {
         case "text_delta": return agent.content.map { [.delta($0)] } ?? []
         case "reasoning_delta": return agent.content.map { [.reasoning($0)] } ?? []
         case "tool_call_start":
-            guard let name = agent.displayName else { return [] }
-            return [.tool(agent.argsSummary.map { "\(name): \($0)" } ?? name)]
+            let line = agent.displayName.map { name in agent.argsSummary.map { "\(name): \($0)" } ?? name }
+            return (line.map { [.tool($0)] } ?? []) + (ToolFrames.call(in: data).map { [.toolCalled($0)] } ?? [])
         case "tool_call_complete": return finishedTool(data)
         case "tool_progress": return read(ToolProgress.self, data).map { [.toolProgress($0)] } ?? []
         case "waiting": return read(RunWait.self, data).map { [.waiting($0)] } ?? []
@@ -105,15 +106,18 @@ extension OpenAICompatibleProvider {
         try? JSONDecoder().decode(type, from: data)
     }
 
-    /// A finished tool: that its call ended, by `result.tool_call_id`, and
-    /// then the images it made, `result.images`, gglib's `AttachmentInfo`
+    /// A finished tool: that its call ended, by `result.tool_call_id`, what
+    /// it answered, `result.content`, as it came, and then the images it
+    /// made, `result.images`, gglib's `AttachmentInfo`
     /// each, which gglib leaves out when there are none. Images that cannot
     /// be read are passed over and the call has still ended; a result with
     /// no call id means nothing here.
     private static func finishedTool(_ data: Data) -> [ChatEvent] {
         guard let complete = try? JSONDecoder().decode(ToolCallComplete.self, from: data) else { return [] }
         let images = complete.result.images ?? []
-        return [.toolEnded(complete.result.callID)] + (images.isEmpty ? [] : [.images(images)])
+        let id = complete.result.callID
+        let answer = complete.result.content.map { [ChatEvent.toolAnswered(callID: id, text: $0)] } ?? []
+        return [.toolEnded(id)] + answer + (images.isEmpty ? [] : [.images(images)])
     }
 }
 
@@ -121,17 +125,19 @@ extension OpenAICompatibleProvider {
 private struct ToolCallComplete: Decodable {
     struct Result: Decodable {
         let callID: String
+        let content: String?
         let images: [ImageRef]?
 
         enum CodingKeys: String, CodingKey {
             case callID = "tool_call_id"
-            case images
+            case content, images
         }
 
         /// Images that do not read are none, not a result that does not.
         init(from decoder: any Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             callID = try container.decode(String.self, forKey: .callID)
+            content = try? container.decodeIfPresent(String.self, forKey: .content)
             images = try? container.decodeIfPresent([ImageRef].self, forKey: .images)
         }
     }

@@ -129,7 +129,8 @@ public final class SwiftDataStore: Store {
                         runID: message.runID, runCursor: message.runCursor.flatMap(UInt32.init(exactly:)),
                         images: Self.images(from: message.imagesData), originID: message.originID,
                         draws: message.draws ?? false,
-                        runFrames: message.runFrames.flatMap(RunFrames.init(rawValue:)))
+                        runFrames: message.runFrames.flatMap(RunFrames.init(rawValue:)),
+                        exchanges: Self.exchanges(from: message.exchangesData))
                 },
                 systemPrompt: record.systemPrompt, createdAt: record.createdAt, updatedAt: record.updatedAt,
                 hasUnreadReply: record.hasUnreadReply ?? false, context: Self.reading(from: record.contextData),
@@ -202,6 +203,9 @@ public final class SwiftDataStore: Store {
                 }
                 Self.assign(\.draws, of: row, to: message.draws ? true : nil)
                 Self.assign(\.runFrames, of: row, to: message.runFrames?.rawValue)
+                if Self.exchanges(from: row.exchangesData) != message.exchanges {
+                    row.exchangesData = try Self.data(of: message.exchanges)
+                }
                 Self.assign(\.order, of: row, to: order)
             } else {
                 let row = try Self.row(for: message, at: order)
@@ -224,7 +228,8 @@ public final class SwiftDataStore: Store {
             order: order, failureData: try message.failure.map { try JSONEncoder().encode($0) },
             runID: message.runID, runCursor: message.runCursor.map(Int.init),
             imagesData: try Self.data(of: message.images), originID: message.originID,
-            draws: message.draws ? true : nil, runFrames: message.runFrames?.rawValue)
+            draws: message.draws ? true : nil, runFrames: message.runFrames?.rawValue,
+            exchangesData: try Self.data(of: message.exchanges))
     }
 
     /// With its images that no other conversation names.
@@ -257,6 +262,17 @@ public final class SwiftDataStore: Store {
     /// only when the reading has changed.
     private static func reading(from data: Data?) -> ContextReading? {
         data.flatMap { try? JSONDecoder().decode(ContextReading.self, from: $0) }
+    }
+
+    /// The tools a reply called. A list this build cannot read reads as
+    /// none, as a failure does, and none is written as nil, so a turn with
+    /// none writes the row it always did.
+    private static func exchanges(from data: Data?) -> [ToolExchange] {
+        data.flatMap { try? JSONDecoder().decode([ToolExchange].self, from: $0) } ?? []
+    }
+
+    private static func data(of exchanges: [ToolExchange]) throws -> Data? {
+        exchanges.isEmpty ? nil : try JSONEncoder().encode(exchanges)
     }
 
     /// Sets a row's field only when the value is not already there.

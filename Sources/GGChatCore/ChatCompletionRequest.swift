@@ -15,9 +15,35 @@ struct ChatCompletionRequest: Encodable {
     /// sets one, so the body is what it always was.
     var reasoningBudgetTokens: Int?
 
+    /// One message. A turn is its role and content, as it always was. A
+    /// tool a reply called is two more: an assistant message with no
+    /// content and the call in `tool_calls`, then a `tool` message with the
+    /// call's id and the tool's answer. A key with nothing to say is left
+    /// out, as gglib leaves it out of the history it writes itself.
     struct WireMessage: Encodable {
         var role: String
-        var content: Content
+        var content: Content?
+        var toolCalls: [WireToolCall]?
+        var toolCallID: String?
+
+        enum CodingKeys: String, CodingKey {
+            case role, content
+            case toolCalls = "tool_calls"
+            case toolCallID = "tool_call_id"
+        }
+    }
+
+    /// `{"id":…,"type":"function","function":{"name":…,"arguments":…}}`,
+    /// the arguments a string of JSON, as OpenAI writes them.
+    struct WireToolCall: Encodable {
+        struct Function: Encodable {
+            var name: String
+            var arguments: String
+        }
+
+        var id: String
+        var type = "function"
+        var function: Function
     }
 
     /// A turn's content, as the OpenAI wire has it: the text alone for a
@@ -81,12 +107,38 @@ struct ChatCompletionRequest: Encodable {
     /// request does not hold, rather than sending the turn without it.
     init(_ request: ChatRequest) throws(MissingImage) {
         model = request.model
-        messages = try request.messages.map { message throws(MissingImage) in
-            WireMessage(role: message.role.rawValue, content: try Self.content(of: message, images: request.images))
+        var wire: [WireMessage] = []
+        for message in request.messages {
+            let calls = request.replaysToolCalls ? Self.toolMessages(of: message) : []
+            wire += calls
+            // A reply of a picture alone has no words to send after it.
+            if !calls.isEmpty, message.content.isEmpty { continue }
+            wire.append(
+                WireMessage(role: message.role.rawValue, content: try Self.content(of: message, images: request.images))
+            )
         }
+        messages = wire
         maxTokens = request.maxTokens
         returnProgress = request.returnProgress ? true : nil
         reasoningBudgetTokens = request.reasoningBudgetTokens
+    }
+
+    /// What goes ahead of a reply's words for the tools it called: for each
+    /// one that answered, in order, the call and then its answer. A call
+    /// with no answer is left out, since a history may not hold a call
+    /// nothing answers. Each call is a message of its own, so the answer
+    /// always follows the call it answers.
+    private static func toolMessages(of message: Message) -> [WireMessage] {
+        guard message.role == .assistant else { return [] }
+        return message.exchanges.flatMap { exchange -> [WireMessage] in
+            guard let result = exchange.result else { return [] }
+            let call = WireToolCall(
+                id: exchange.callID, function: .init(name: exchange.name, arguments: exchange.arguments))
+            return [
+                WireMessage(role: Role.assistant.rawValue, toolCalls: [call]),
+                WireMessage(role: "tool", content: .text(result), toolCallID: exchange.callID),
+            ]
+        }
     }
 
     /// A reply's images are ones a tool made for the person to look at.

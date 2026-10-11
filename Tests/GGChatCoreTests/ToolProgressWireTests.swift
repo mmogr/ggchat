@@ -23,9 +23,9 @@ final class ToolProgressWireTests: XCTestCase {
     }
 
     /// A reply that waits behind another picture, then draws one: the wait
-    /// with its step and place, the tool's line, each stage of the picture
-    /// with the counts it reported and no others, and the call's end ahead
-    /// of the image it made.
+    /// with its step and place, the tool's line and its call, each stage of
+    /// the picture with the counts it reported and no others, and the call's
+    /// end and its answer ahead of the image it made.
     func testTheRecordedFramesOfAPictureReadAsItsWaitItsStagesAndItsEnd() throws {
         func stage(
             _ stage: ToolProgress.Stage, pass: Int? = nil, done: Int? = nil, total: Int? = nil, position: Int? = nil
@@ -43,14 +43,17 @@ final class ToolProgressWireTests: XCTestCase {
             try recorded(),
             [
                 [.waiting(RunWait(reason: .imageRender, step: 12, total: 20, position: 1))],
-                [.tool("Generate Image")],
+                [.tool("Generate Image"), .toolCalled(DrawnHistoryWireTests.call)],
                 stage(.queued, position: 1),
                 stage(.loading),
                 stage(.sampling, pass: 1, done: 1, total: 20),
                 stage(.sampling, pass: 1, done: 20, total: 20),
                 stage(.decoding),
                 stage(.finishing),
-                [.toolEnded(Self.call), .images([image])],
+                [
+                    .toolEnded(Self.call), .toolAnswered(callID: Self.call, text: DrawnHistoryWireTests.drew),
+                    .images([image]),
+                ],
             ])
     }
 

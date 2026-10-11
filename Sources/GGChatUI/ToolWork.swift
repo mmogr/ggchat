@@ -41,7 +41,7 @@ struct ToolWork: Equatable {
             if progress?.callID == callID { progress = nil }
             if preview?.callID == callID { preview = nil }
             waiting = nil
-        case .delta, .reasoning, .progress, .tool, .images, .usage, .finished, .error:
+        case .delta, .reasoning, .progress, .tool, .toolCalled, .toolAnswered, .images, .usage, .finished, .error:
             waiting = nil
         }
     }
