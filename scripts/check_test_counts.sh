@@ -556,7 +556,13 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # and a picture left open closed. The press on the icon and the camera
 # opening are seen only on a phone, so these four are the whole of what a
 # gate holds of it.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 785
+#
+# 785 -> 790 for a picture opened whole: how far it is enlarged, where it
+# sits, what a double tap shows, and the bytes it offers to share or save
+# from a Mac's chat and from this device's store. The pinch itself and the
+# save to Photos are seen only on a phone, so these five are the whole of
+# what a gate holds of it.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 790
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
 floor "README test markers" "${markers:-0}" 698
 
