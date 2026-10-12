@@ -20,7 +20,7 @@ struct ComposerStart: Equatable {
 extension AppModel {
     /// The quick actions to offer now. None before there is a provider to
     /// talk to; the camera only where there is one; Draw only with a paired
-    /// Mac, the one kind of provider that draws.
+    /// Mac that can draw or has not been asked yet.
     func quickActions(hasCamera: Bool) -> [QuickAction] {
         guard !providers.isEmpty else { return [] }
         return QuickAction.allCases.filter { action in
@@ -53,9 +53,10 @@ extension AppModel {
     }
 
     /// The paired Mac a drawing starts with: the first known to be able to
-    /// draw, else the first paired, which is asked when its pipe comes up.
+    /// draw, else the first not asked yet, which is asked when its pipe
+    /// comes up. One that said it cannot draw is never it.
     private var drawingProvider: ProviderConfig? {
         let paired = providers.filter(\.isPipe)
-        return paired.first { drawRefusal(on: $0) == nil } ?? paired.first
+        return paired.first { drawRefusal(on: $0) == nil } ?? paired.first { drawings[$0.id] == nil }
     }
 }

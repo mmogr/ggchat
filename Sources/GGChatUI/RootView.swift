@@ -75,6 +75,7 @@ public struct RootView: View {
             .task {
                 model.load()
                 actOnQuickAction()
+                QuickActionInbox.offer(model.quickActions(hasCamera: CameraCapture.isOffered))
             }
             .onChange(of: QuickActionInbox.shared.pending) { actOnQuickAction() }
         #else

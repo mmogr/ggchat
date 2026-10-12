@@ -20,13 +20,19 @@ final class QuickActionTests: XCTestCase {
 
     /// Nothing is offered with no provider; a server added by address
     /// offers a new chat, and the camera only where there is one; Draw is
-    /// offered only with a paired Mac.
+    /// offered only with a paired Mac that can draw or has not been asked,
+    /// and never for one that said it cannot.
     func testTheIconOffersOnlyWhatCanBeStarted() async throws {
         XCTAssertEqual(bare([]).quickActions(hasCamera: true), [])
         XCTAssertEqual(bare([addressed()]).quickActions(hasCamera: false), [.newChat])
         XCTAssertEqual(bare([addressed()]).quickActions(hasCamera: true), [.newChat, .camera])
         let (paired, _) = try await DrawingRunTests.makeModel(behind: FakeRunHub(frames: []))
         XCTAssertEqual(paired.quickActions(hasCamera: true), [.newChat, .camera, .draw])
+        let (unasked, _) = try await DrawingRunTests.makeModel(behind: FakeRunHub(frames: []), drawing: nil)
+        XCTAssertEqual(unasked.quickActions(hasCamera: false), [.newChat, .draw])
+        let cannot = Drawing(available: false, reason: "no image model")
+        let (refused, _) = try await DrawingRunTests.makeModel(behind: FakeRunHub(frames: []), drawing: cannot)
+        XCTAssertEqual(refused.quickActions(hasCamera: false), [.newChat], "Draw offered for a Mac that cannot draw")
     }
 
     /// A new chat is with the first provider and leaves its composer no
