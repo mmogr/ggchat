@@ -40,6 +40,10 @@ public protocol HubChatsProvider: Provider {
     /// The bytes of an image one of the hub's chats names, for this device
     /// to hold in memory and nowhere else.
     func fetchImage(id: String) async throws(HubChatsFailure) -> Data
+    /// Keeps a stored picture in one of the hub's chats, beside the picture
+    /// it was made from, and answers the images of the row that now carries
+    /// both, oldest first.
+    func keepPicture(chatID: Int64, _ kept: KeptPicture) async throws(ProviderError) -> [ImageRef]
 }
 
 /// The codes the hub's chats routes answer with.

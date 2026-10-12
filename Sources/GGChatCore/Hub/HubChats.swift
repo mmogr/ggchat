@@ -141,10 +141,15 @@ public struct HubMessageMetadata: Codable, Sendable, Equatable {
     public let finishReason: String?
     /// The hub's mark on a reply that did not finish.
     public let incomplete: Bool?
+    /// The tools a reply's row called, and on a tool's row the call it
+    /// answers (`HubChatPictures`).
+    public let toolCalls: [HubToolCall]?
+    public let toolCallID: String?
 
     public init(
         device: String? = nil, modelName: String? = nil, promptTokens: Int? = nil, completionTokens: Int? = nil,
-        contextSize: Int? = nil, trimmedMessages: Int? = nil, finishReason: String? = nil, incomplete: Bool? = nil
+        contextSize: Int? = nil, trimmedMessages: Int? = nil, finishReason: String? = nil, incomplete: Bool? = nil,
+        toolCalls: [HubToolCall]? = nil, toolCallID: String? = nil
     ) {
         self.device = device
         self.modelName = modelName
@@ -154,6 +159,15 @@ public struct HubMessageMetadata: Codable, Sendable, Equatable {
         self.trimmedMessages = trimmedMessages
         self.finishReason = finishReason
         self.incomplete = incomplete
+        self.toolCalls = toolCalls
+        self.toolCallID = toolCallID
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case device, modelName, promptTokens, completionTokens, contextSize, trimmedMessages, finishReason
+        case incomplete
+        case toolCalls = "tool_calls"
+        case toolCallID = "tool_call_id"
     }
 
     /// A count, a reason or a mark that does not read costs only itself, so
@@ -168,6 +182,8 @@ public struct HubMessageMetadata: Codable, Sendable, Equatable {
         trimmedMessages = try? container.decodeIfPresent(Int.self, forKey: .trimmedMessages)
         finishReason = try? container.decodeIfPresent(String.self, forKey: .finishReason)
         incomplete = try? container.decodeIfPresent(Bool.self, forKey: .incomplete)
+        toolCalls = try? container.decodeIfPresent([HubToolCall].self, forKey: .toolCalls)
+        toolCallID = try? container.decodeIfPresent(String.self, forKey: .toolCallID)
     }
 }
 
