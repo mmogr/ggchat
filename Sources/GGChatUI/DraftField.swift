@@ -26,6 +26,9 @@ struct DraftField: View {
             if !draft.images.isEmpty || preparing > 0 {
                 AttachmentStrip(images: draft.images, preparing: preparing > 0) { draft.remove($0) }
             }
+            DrawsWithLine(
+                shown: DrawToggle.shows(on: draft.draws, refusal: model.drawRefusal(for: conversation)),
+                model: model.drawsWith(for: conversation))
             HStack(alignment: .bottom, spacing: 8) {
                 AddImageButtons(
                     disabled: streaming, refusal: canSee ? nil : "This model cannot read images.", take: take)
@@ -33,7 +36,7 @@ struct DraftField: View {
                 if model.offersDrawing(for: conversation) {
                     DrawToggle(
                         isOn: draft.draws, refusal: model.drawRefusal(for: conversation), disabled: streaming,
-                        menu: model.drawMenu(for: conversation)
+                        menu: model.drawMenu(for: conversation), choosing: model.drawAwaitsChoice(for: conversation)
                     ) {
                         draft.draws = $0
                     } say: {

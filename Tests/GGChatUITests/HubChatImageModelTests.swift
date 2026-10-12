@@ -84,6 +84,35 @@ final class HubChatImageModelTests: XCTestCase {
         XCTAssertNil(model.openedHubChat?.imageModel)
     }
 
+    /// A Mac with several image models and no default: the open chat's
+    /// Draw control waits for a choice and names no model. Once one is
+    /// picked and the Mac says it can draw with it, the control is the
+    /// switch again and the line over the field names the model. With a
+    /// default and nothing chosen, the line names the default.
+    func testAMacsChatWaitsForAChoiceThenNamesTheModelThatDraws() async throws {
+        let flux = ImageModelRow(id: 3, name: "flux1-schnell-q8_0", family: "flux1")
+        let unpicked = Drawing(
+            available: false, code: "drawing_unavailable", reason: "several and no default",
+            models: [flux, Choice.qwen])
+        let (model, hub) = try await opened(unpicked)
+        XCTAssertEqual(model.hubDrawRefusal, "home cannot draw: several and no default")
+        XCTAssertTrue(model.hubDrawAwaitsChoice)
+        XCTAssertNil(model.hubDrawsWith)
+
+        hub.runs.with { $0.judgements[7] = Drawing(available: true, model: Choice.qwen.name, modelID: 7, models: []) }
+        let asking = model.setHubImageModel(7)
+        XCTAssertNil(model.hubDrawRefusal, "a model picked was refused for want of a pick")
+        XCTAssertFalse(model.hubDrawAwaitsChoice, "the menu opened over a choice made")
+        await asking?.value
+        XCTAssertNil(model.hubDrawRefusal)
+        XCTAssertFalse(model.hubDrawAwaitsChoice)
+        XCTAssertEqual(model.hubDrawsWith, Choice.qwen.name)
+
+        let (listed, _) = try await opened(Choice.lists)
+        XCTAssertFalse(listed.hubDrawAwaitsChoice)
+        XCTAssertEqual(listed.hubDrawsWith, Choice.flux.name)
+    }
+
     /// The Mac refuses a turn that names a model it cannot draw with. The
     /// view says so with the Mac's reason, the draft comes back with Draw as
     /// it was, the chat keeps its choice, and the Mac is asked again what

@@ -41,7 +41,8 @@ public struct DrawMenu: Equatable, Sendable {
 
     /// The menu for a hub that answered `drawing`, for a chat that chose
     /// `chosen`. "Default", naming the model the hub's own rule picks, is
-    /// first; then each model in the order the hub gave.
+    /// first, where the hub has one or the chat a choice to undo; then
+    /// each model in the order the hub gave.
     init(_ drawing: Drawing?, chosen: UInt64?) {
         guard let models = drawing?.models, models.count >= 2 || chosen != nil else {
             self = .none
@@ -51,8 +52,10 @@ public struct DrawMenu: Equatable, Sendable {
         let first = Row(
             model: nil, title: byDefault.map { "Default (\($0.name))" } ?? "Default", detail: nil, enabled: true,
             checked: chosen == nil)
+        // With no default and nothing chosen, "Default" would name nothing
+        // and undo nothing.
         rows =
-            [first]
+            (byDefault == nil && chosen == nil ? [] : [first])
             + models.map { model in
                 Row(
                     model: model.id, title: model.name, detail: Self.detail(of: model), enabled: model.complete,

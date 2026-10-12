@@ -206,6 +206,28 @@ is read as agent events, which carry no "Reading N of M tokens" line.
 > not its bytes. A run that draws offers gglib's other tools too, and any
 > it called is kept and sent the same way, however long its answer.
 
+> **Amended 2026-10-12 — a Mac with no default asks which model, and the
+> composer names the one that draws.** A Mac with several image models and no
+> default refuses a message that names none. The control was dimmed, a
+> press showed gglib's sentence with a command to type on the Mac, and the
+> models were behind a hold nothing on screen mentioned.
+>
+> The control now asks. Where the Mac cannot draw, marks no default, lists
+> two or more image models with all their files and the chat has chosen
+> none, the control is not dimmed and a press opens the menu; the menu has
+> no "Default" row, which would name nothing. Everywhere else a press is
+> the switch and a hold the menu, as before. While Draw is on, a line over
+> the field says "Drawing with" and the model's name: the one chosen, or
+> the one the Mac said draws.
+>
+> A model picked on such a Mac can draw at once: until the Mac answers
+> about it the list is read, and the list has it with all its files. The Mac's refusal was for want of a choice, which it now has.
+>
+> Known costs. gglib gives this refusal the code of every other, so it is
+> read from the list. A Mac that lacks something else as well, an image
+> runtime say, still opens the menu, and says what it lacks once it is
+> asked about the model picked, or refuses the message. Not run on a device or a simulator.
+
 ## What would undo it
 
 - gglib remembering a chat's image model, as it does Thinking: then a Mac's

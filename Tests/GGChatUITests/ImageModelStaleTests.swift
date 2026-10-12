@@ -125,11 +125,22 @@ final class ImageModelStaleTests: XCTestCase {
             "home cannot draw: there are several image models and no default")
         XCTAssertEqual(hub.with(\.judged), [])
         XCTAssertTrue(model.drawMenu(for: try conversation(model)).isOffered)
+        XCTAssertEqual(
+            model.drawVerdict(on: config, choosing: nil),
+            .undecided("home cannot draw: there are several image models and no default"))
+        XCTAssertTrue(model.drawAwaitsChoice(for: try conversation(model)), "a press would not offer the models")
+        XCTAssertNil(model.drawsWith(for: try conversation(model)))
 
         hub.with { $0.judgements[7] = Drawing(available: true, model: Choice.qwen.name, modelID: 7, models: []) }
-        await model.setImageModel(7, for: id)?.value
+        let asking = model.setImageModel(7, for: id)
+        XCTAssertNil(model.imageChoiceAnswers[config.id]?[7], "the Mac had answered before it was asked")
+        XCTAssertNil(model.drawRefusal(for: try conversation(model)), "a model picked was refused for want of a pick")
+        XCTAssertFalse(model.drawAwaitsChoice(for: try conversation(model)), "the menu opened over a choice made")
+        await asking?.value
         XCTAssertEqual(hub.with(\.judged), [7])
         XCTAssertNil(model.drawRefusal(for: try conversation(model)), "a model that can draw was refused")
+        XCTAssertFalse(model.drawAwaitsChoice(for: try conversation(model)))
+        XCTAssertEqual(model.drawsWith(for: try conversation(model)), Choice.qwen.name)
         XCTAssertEqual(model.drawRefusal(on: config), "home cannot draw: there are several image models and no default")
 
         hub.with {
@@ -149,5 +160,22 @@ final class ImageModelStaleTests: XCTestCase {
         await model.open(config).value
         XCTAssertEqual(model.drawVerdict(on: config, choosing: 7), .hub("home cannot draw: there is no image runtime"))
         XCTAssertTrue(model.hubCannotDraw(for: try conversation(model)))
+        XCTAssertFalse(model.drawAwaitsChoice(for: try conversation(model)), "a refused choice opened the menu over it")
+    }
+
+    /// A model picked can draw by the list alone only where the Mac
+    /// refused for want of a choice. A Mac with a default that cannot draw
+    /// lacks something else, and a model picked there is still refused
+    /// with the Mac's reason until the Mac says otherwise.
+    func testAModelPickedIsNotTakenToDrawWhereTheMacLacksSomethingElse() async throws {
+        let hub = FakeRunHub(frames: [])
+        let refused = Drawing(
+            available: false, code: "drawing_unavailable", reason: "there is no image runtime",
+            models: [Choice.flux, Choice.qwen])
+        let (model, config) = try await opened(hub, refused)
+        let why = DrawVerdict.hub("home cannot draw: there is no image runtime")
+        XCTAssertEqual(model.drawVerdict(on: config, choosing: nil), why)
+        model.imageChoiceAnswers = [:]
+        XCTAssertEqual(model.drawVerdict(on: config, choosing: 7), why)
     }
 }

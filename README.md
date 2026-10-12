@@ -233,6 +233,17 @@ Each claim names the test that keeps it true.
   <!-- test: ImageModelMenuTests.testTheMenuListsTheDefaultThenEachModelInTheOrderGiven -->
   <!-- test: ImageModelMenuTests.testThereIsAMenuOnlyWhereThereIsAChoice -->
   <!-- test: ImageModelMenuTests.testTheControlSaysWhichModelDraws -->
+- A Mac that lists several image models that can draw and no default draws
+  nothing until one is chosen, and its Draw control then asks which: it is
+  not dimmed, a press opens the models in place of saying why, and the list
+  has no "Default" row, which would name nothing. Whether a Mac waits for a
+  choice is read from its list, not from the words of its refusal. A model
+  picked there can draw at once, by the list, before the Mac has answered
+  about it. While Draw is on, a line over the field names the image model
+  the picture is drawn with, where one is known, in either kind of chat.
+  <!-- test: ImageModelWireTests.testAHubAwaitsAChoiceWithSeveralCompleteModelsAndNoDefault -->
+  <!-- test: ImageModelMenuTests.testWithNoDefaultTheMenuListsOnlyTheModelsAndTheControlOpensIt -->
+  <!-- test: HubChatImageModelTests.testAMacsChatWaitsForAChoiceThenNamesTheModelThatDraws -->
   <!-- test: ImageModelChoiceTests.testAnOlderMacHasNoMenuAndIsNeverSentAnImageModel -->
   <!-- test: ImageModelChoiceTests.testAChoiceIsSaidWithEachMessageThatDrawsAndNoOther -->
   <!-- test: ImageModelChoiceTests.testAModelWithoutItsFilesCannotBeChosen -->
