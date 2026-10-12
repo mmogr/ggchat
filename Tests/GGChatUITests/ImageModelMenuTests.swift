@@ -76,6 +76,35 @@ final class ImageModelMenuTests: XCTestCase {
         XCTAssertEqual(DrawMenu.detail(of: ImageModelRow(id: 5, name: "odd", family: "wan-3")), "wan-3")
     }
 
+    /// A Mac with several image models and no default has no "Default"
+    /// row while nothing is chosen, since it would name no model; with a
+    /// choice made the row is back, to undo it. The control then waits for
+    /// a choice: it is off and not unavailable, and a press opens the
+    /// models. Over the field, a line names the model while Draw is on.
+    func testWithNoDefaultTheMenuListsOnlyTheModelsAndTheControlOpensIt() {
+        let flux = ImageModelRow(id: 3, name: "flux1-schnell-q8_0", family: "flux1")
+        let unpicked = Drawing(
+            available: false, code: "drawing_unavailable", reason: "several and no default",
+            models: [flux, Choice.qwen])
+        XCTAssertEqual(
+            DrawMenu(unpicked, chosen: nil).rows,
+            [row(3, "flux1-schnell-q8_0", "Flux.1"), row(7, "qwen_image_2.1-Q8_0", "Qwen-Image 2.1")])
+        XCTAssertNil(DrawMenu(unpicked, chosen: nil).drawsWith)
+        XCTAssertEqual(DrawMenu(unpicked, chosen: 7).rows.map(\.title).first, "Default")
+        XCTAssertEqual(DrawMenu(unpicked, chosen: 7).rows.map(\.checked), [false, false, true])
+
+        XCTAssertEqual(DrawToggle.value(isOn: false, refusal: "no", choosing: true), "Off, no image model chosen")
+        XCTAssertEqual(DrawToggle.value(isOn: true, refusal: "no", choosing: true), "Off, no image model chosen")
+        XCTAssertEqual(
+            DrawToggle.hint(refusal: "no", hasMenu: true, choosing: true), "Opens the image models to choose from")
+        XCTAssertEqual(DrawToggle.hint(refusal: "no", hasMenu: true), "no. Hold to choose the image model.")
+
+        XCTAssertEqual(DrawsWithLine.line(shown: true, model: "flux"), "Drawing with flux")
+        XCTAssertNil(DrawsWithLine.line(shown: false, model: "flux"), "a line was shown with Draw off")
+        XCTAssertNil(DrawsWithLine.line(shown: true, model: nil))
+        XCTAssertNil(DrawsWithLine.line(shown: true, model: ""))
+    }
+
     /// With a menu, VoiceOver hears the image model that draws after the
     /// state, and that holding the control opens the choice; without one
     /// the control says what it always said.

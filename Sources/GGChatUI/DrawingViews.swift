@@ -18,6 +18,10 @@ import SwiftUI
 /// the chat's choice and presses Draw for the message being written, since
 /// that is what was just asked for; nothing is sent. VoiceOver then also
 /// hears which model draws.
+///
+/// A hub that lists several image models and no default draws nothing
+/// until one is chosen (`choosing`). The switch is then not dimmed, and a
+/// press opens the same menu in place of saying why.
 struct DrawToggle: View {
     /// Whether Draw is pressed for the draft.
     let isOn: Bool
@@ -27,6 +31,9 @@ struct DrawToggle: View {
     let disabled: Bool
     /// The image models to choose from, when there are any.
     var menu = DrawMenu.none
+    /// Whether the refusal is only that no image model is chosen, so that
+    /// a press opens the menu.
+    var choosing = false
     /// Called with the new state when the switch is pressed.
     let set: (Bool) -> Void
     /// Called with the reason when it is pressed and cannot draw.
@@ -46,24 +53,46 @@ struct DrawToggle: View {
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.circle)
             .tint(shown ? .accentColor : .gray)
-            .opacity(refusal == nil ? 1 : 0.5)
+            .opacity(refusal == nil || opensMenu ? 1 : 0.5)
             .disabled(disabled)
-            .help(refusal ?? "Draw a picture for this message")
+            .help(opensMenu ? "Choose the image model to draw with" : refusal ?? "Draw a picture for this message")
             .accessibilityLabel("Draw")
-            .accessibilityValue(Self.value(isOn: isOn, refusal: refusal, drawsWith: menu.drawsWith))
-            .accessibilityHint(Self.hint(refusal: refusal, hasMenu: menu.isOffered))
+            .accessibilityValue(
+                Self.value(isOn: isOn, refusal: refusal, drawsWith: menu.drawsWith, choosing: opensMenu)
+            )
+            .accessibilityHint(Self.hint(refusal: refusal, hasMenu: menu.isOffered, choosing: opensMenu))
             .accessibilityIdentifier("draw")
     }
 
+    /// Whether a press opens the menu: nothing is chosen to draw with,
+    /// and there is a menu to choose from.
+    private var opensMenu: Bool {
+        choosing && menu.isOffered
+    }
+
+    private var rows: some View {
+        DrawMenuRows(menu: menu) { model in
+            pick(model)
+            set(true)
+        }
+    }
+
     /// The switch alone, or with its menu where there is a choice to make.
+    /// A menu with a primary action opens only when held, so the one a
+    /// press opens has none.
     @ViewBuilder
     private var control: some View {
-        if menu.isOffered {
+        if opensMenu {
             Menu {
-                DrawMenuRows(menu: menu) { model in
-                    pick(model)
-                    set(true)
-                }
+                rows
+            } label: {
+                brush
+            }
+            .menuStyle(.button)
+            .menuIndicator(.hidden)
+        } else if menu.isOffered {
+            Menu {
+                rows
             } label: {
                 brush
             } primaryAction: {
@@ -109,18 +138,46 @@ struct DrawToggle: View {
     }
 
     /// What VoiceOver says after the label: the state, and the image
-    /// model that draws where the hub lists some to choose from.
-    static func value(isOn: Bool, refusal: String?, drawsWith: String? = nil) -> String {
+    /// model that draws where the hub lists some to choose from. One that
+    /// waits for a choice is off, not unavailable.
+    static func value(isOn: Bool, refusal: String?, drawsWith: String? = nil, choosing: Bool = false) -> String {
+        if choosing { return "Off, no image model chosen" }
         let state = refusal != nil ? "Unavailable" : isOn ? "On" : "Off"
         return drawsWith.map { "\(state), draws with \($0)" } ?? state
     }
 
     /// What VoiceOver says the control does: the reason while it cannot
-    /// draw, and where there is a menu, that there is one.
-    static func hint(refusal: String?, hasMenu: Bool) -> String {
+    /// draw, and where there is a menu, that there is one. One that waits
+    /// for a choice opens the menu.
+    static func hint(refusal: String?, hasMenu: Bool, choosing: Bool = false) -> String {
+        if choosing { return "Opens the image models to choose from" }
         let does = refusal ?? "Asks for a picture with this message"
         guard hasMenu else { return does }
         return "\(does.hasSuffix(".") ? String(does.dropLast()) : does). Hold to choose the image model."
+    }
+}
+
+/// The line over a composer's field while Draw is on, naming the image
+/// model the picture is drawn with. Nothing when the hub named none.
+struct DrawsWithLine: View {
+    /// Whether Draw shows on (`DrawToggle.shows`).
+    let shown: Bool
+    let model: String?
+
+    var body: some View {
+        if let line = Self.line(shown: shown, model: model) {
+            Label(line, systemImage: "paintbrush.pointed")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .padding(.horizontal, 6)
+                .accessibilityIdentifier("draws-with")
+        }
+    }
+
+    static func line(shown: Bool, model: String?) -> String? {
+        guard shown, let model, !model.isEmpty else { return nil }
+        return "Drawing with \(model)"
     }
 }
 

@@ -105,6 +105,17 @@ extension Drawing {
         models?.first(where: \.isDefault)
     }
 
+    /// Whether the hub cannot draw for want of a choice alone, as far as
+    /// its list says: it has no default and two or more image models with
+    /// all their files, which is when gglib's rule picks none. gglib codes
+    /// this `drawing_unavailable` like any other refusal, so it is read
+    /// from the list and not from the reason's words. A hub that cannot
+    /// draw for another reason as well says so once a model is named.
+    public var awaitsImageChoice: Bool {
+        guard let models, !available, defaultImageModel == nil else { return false }
+        return models.count(where: \.complete) >= 2
+    }
+
     /// The row a chosen id names, or nil when the list has none such.
     public func imageModel(_ id: UInt64) -> ImageModelRow? {
         models?.first { $0.id == id }

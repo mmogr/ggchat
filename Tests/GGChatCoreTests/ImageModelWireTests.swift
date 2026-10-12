@@ -57,6 +57,27 @@ final class ImageModelWireTests: XCTestCase {
         XCTAssertEqual(none.fault(ofChoice: 3), .gone)
     }
 
+    /// A hub waits for a choice when it cannot draw, marks no default and
+    /// lists two or more image models with all their files. One that can
+    /// draw, one with a default, one with a single complete model and one
+    /// from before the list do not: a choice is not what they lack.
+    func testAHubAwaitsAChoiceWithSeveralCompleteModelsAndNoDefault() {
+        let flux = ImageModelRow(id: 3, name: "flux", family: "flux1")
+        let zimage = ImageModelRow(id: 4, name: "z-image", family: "z-image")
+        let broken = ImageModelRow(id: 9, name: "sdxl", family: "sdxl", complete: false, missing: ["vae"])
+        let marked = ImageModelRow(id: 3, name: "flux", family: "flux1", isDefault: true)
+        func refused(_ models: [ImageModelRow]?) -> Drawing {
+            Drawing(available: false, code: "drawing_unavailable", reason: "no", models: models)
+        }
+        XCTAssertTrue(refused([flux, zimage]).awaitsImageChoice)
+        XCTAssertTrue(refused([flux, broken, zimage]).awaitsImageChoice)
+        XCTAssertFalse(refused([flux, broken]).awaitsImageChoice, "one complete model is no choice")
+        XCTAssertFalse(refused([marked, zimage]).awaitsImageChoice, "a hub with a default lacks something else")
+        XCTAssertFalse(refused([]).awaitsImageChoice)
+        XCTAssertFalse(refused(nil).awaitsImageChoice, "a hub from before the list takes no choice")
+        XCTAssertFalse(Drawing(available: true, model: "flux", modelID: 3, models: [flux, zimage]).awaitsImageChoice)
+    }
+
     /// A family or a role this build has not heard of reads as the string
     /// it came as and is shown so; the whole answer still reads. A row with
     /// only what it must have reads too, with nothing missing, not the

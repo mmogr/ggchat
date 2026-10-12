@@ -525,8 +525,15 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # across the change. A reply that stops carrying its calls fails nothing
 # else: the request still goes and the model says it cannot draw. They are
 # the whole of that guard, and the README claim names all thirteen.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 741
+#
+# 2026-10-12: 741 -> 744 and 658 -> 661. Three tests pin the Draw control
+# asking which image model where a Mac has several and no default: when a
+# hub waits for a choice, the menu without its "Default" row and what the
+# control then says, and a Mac's chat waiting, then naming the model that
+# draws. They are the whole of that guard, and the README claim names all
+# three.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 744
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 658
+floor "README test markers" "${markers:-0}" 661
 
 exit $status

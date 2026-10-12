@@ -85,11 +85,14 @@ struct HubComposer: View {
             if !draft.images.isEmpty || preparing > 0 {
                 AttachmentStrip(images: draft.images, preparing: preparing > 0) { draft.remove($0) }
             }
+            DrawsWithLine(
+                shown: DrawToggle.shows(on: draft.draws, refusal: model.hubDrawRefusal), model: model.hubDrawsWith)
             HStack(alignment: .bottom, spacing: 8) {
                 AddImageButtons(
                     disabled: writing, refusal: canSee ? nil : "This model cannot read images.", take: take)
                 DrawToggle(
-                    isOn: draft.draws, refusal: model.hubDrawRefusal, disabled: writing, menu: model.hubDrawMenu
+                    isOn: draft.draws, refusal: model.hubDrawRefusal, disabled: writing, menu: model.hubDrawMenu,
+                    choosing: model.hubDrawAwaitsChoice
                 ) {
                     draft.draws = $0
                 } say: {
