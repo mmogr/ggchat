@@ -75,10 +75,14 @@ nonisolated enum PictureZoom {
 
         required init?(coder: NSCoder) { nil }
 
+        /// Shows `picture`, and fits it again only when its size is another:
+        /// the sheet reads the same picture afresh each time it is drawn, and
+        /// a picture fitted again at each would lose how close it was.
         func show(_ picture: CGImage) {
-            guard pictureView.image?.cgImage !== picture else { return }
             pictureView.image = UIImage(cgImage: picture)
-            natural = CGSize(width: picture.width, height: picture.height)
+            let size = CGSize(width: picture.width, height: picture.height)
+            guard size != natural else { return }
+            natural = size
             fittedTo = .zero
             setNeedsLayout()
         }
