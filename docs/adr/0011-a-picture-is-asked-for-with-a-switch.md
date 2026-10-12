@@ -2,7 +2,8 @@
 
 - **Status:** Accepted
 - **Date:** 2026-10-10 (amended 2026-10-11 — a chat chooses the image model
-  its pictures are drawn with; see the note at the end of the decision)
+  its pictures are drawn with; amended 2026-10-12 — a drawn picture is fixed
+  or drawn again; see the notes at the end of the decision)
 - **Supersedes:** nothing
 - **Superseded by:** nothing
 
@@ -227,6 +228,66 @@ is read as agent events, which carry no "Reading N of M tokens" line.
 > read from the list. A Mac that lacks something else as well, an image
 > runtime say, still opens the menu, and says what it lacks once it is
 > asked about the model picked, or refuses the message. Not run on a device or a simulator.
+
+> **Amended 2026-10-12 — a drawn picture is fixed or drawn again from
+> itself, and joins its chat only on Keep.** gglib's `POST
+> /v1/images/generations` now reads a picture to start from, a mask and a
+> strength (gglib's ADR 0018, decision 20), and keeps a stored picture beside
+> the one it was made from, on the same tool row (decision 21). A picture the
+> drawing tool made, opened whole, has Fix or redo under it. Fix sends the
+> picture and a mask of what was brushed, and Redo the picture alone; both
+> send the words the picture was drawn from, as edited, and a strength.
+>
+> The phone draws, then keeps, as gglib's chat page does. The request knows
+> nothing of chats. The result is held by the editor, in memory, until a
+> person presses Keep; Discard, Try again and Stop store nothing anywhere. A
+> Mac's chat then sends the picture to the Mac's store, as a turn's image is
+> sent, and names it and its source to `POST /v1/chats/{id}/pictures`; the
+> chat is read again, and nothing of it is written here (ADR 0007). A
+> conversation kept here keeps the bytes in this device's store and names
+> the picture on the same reply, after the pictures the reply has, with no
+> new column: a reply's pictures were already a list.
+>
+> The mask is made from strokes kept in the picture's own pixels, painted on
+> opaque black at the picture's own size, since gglib reads a mask's colour
+> and not its alpha. The same strokes are what a person sees over the
+> picture.
+>
+> Which picture the drawing tool made is read, not guessed. A Mac's chat
+> reads it from its rows: a tool's row names the call it answers, and the
+> reply's row before it the call's name and `prompt`. A conversation kept
+> here reads it from the calls its reply keeps, and offers Fix or redo only
+> where the reply holds exactly one call that drew. Only a PNG is offered
+> it, in either chat, since gglib refuses any other picture.
+>
+> The editor is held by the app and shown from its root, not by the row
+> that opened it, and it holds the picture's bytes from the moment it opens.
+> The Mac is looked up each time it is asked to draw, store or link, never
+> once at opening: the background hangs every pipe up, and the pipe dialled
+> again answers at another address. While a render is under way an iPhone
+> or iPad is kept from locking, since a lock sends the app to the
+> background and the render's reader with it.
+>
+> Where this parts from gglib's chat page as first written: a Keep that
+> fails leaves the drawn picture in the editor to be kept again, and the
+> sheet cannot be dismissed while a render, a result or a Keep is in hand.
+> A render takes minutes, and neither a lost answer nor a swipe should cost
+> one. The image model starts at the chat's own choice; on a Mac with
+> several image models and no default the editor asks for one first, as the
+> Draw control does.
+>
+> Known costs. A conversation kept here does not record which call made
+> which picture, so a reply with two calls that drew offers no Fix or redo,
+> and a reply with one call that drew offers it on every PNG the reply
+> holds, another tool's included. A reply drawn before the phone kept its
+> calls offers none. A kept picture carries its source's words, not the
+> words it was itself drawn from. The picture travels to the Mac as base64
+> inside the request, whole, each time it is drawn again. A Mac whose gglib
+> is from before this refuses the request in its own words, and nothing
+> says so before it is asked. A render under way when the app goes to the
+> background is not read on: the editor says the Mac is unreachable, and
+> the picture is asked for again. A drawn picture not yet kept is held in
+> memory and is gone if the app is.
 
 ## What would undo it
 

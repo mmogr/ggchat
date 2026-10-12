@@ -74,3 +74,20 @@ enum ToolFrames {
         return String(decoding: data, as: UTF8.self)
     }
 }
+
+extension Message {
+    /// What a reply's picture was drawn from: the `prompt` of the one call
+    /// of gglib's drawing tool the reply holds that drew, which is one
+    /// answered "Drew …", as gglib reads it. Nil for a reply that holds no
+    /// such call, or several: which call made which picture is not kept, so
+    /// with several a picture's own words are not known.
+    public var drawnPrompt: String? {
+        let drew = exchanges.filter { $0.name == HubToolCall.drawingTool && $0.result?.hasPrefix("Drew ") == true }
+        guard drew.count == 1,
+            let given = try? JSONSerialization.jsonObject(with: Data(drew[0].arguments.utf8)) as? [String: Any],
+            let prompt = (given["prompt"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
+            !prompt.isEmpty
+        else { return nil }
+        return prompt
+    }
+}

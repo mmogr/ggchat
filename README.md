@@ -441,6 +441,112 @@ Each claim names the test that keeps it true.
   <!-- test: DrawAgainTests.testAPressOfDrawAloneIsAChangeToTheDraft -->
   <!-- test: DrawAgainTests.testAConversationHereDrawsASecondTime -->
   <!-- test: DrawAgainTests.testAMacsChatDrawsASecondTime -->
+- A picture the drawing tool made can be drawn again from itself. gglib's
+  `POST /v1/images/generations` is sent the picture's own bytes as base64, the
+  words without the space around them, a strength, `stream`, a `mask` only
+  when a part is to change, and the image model's id as text only when one is
+  chosen. A mask is a PNG the picture's exact size in pixels with no alpha:
+  black wherever nothing was brushed, white under a stroke, black again under
+  a later stroke that rubs out, a dot for a touch that never moved, and the
+  strokes placed from the picture's top left. A pointer on screen is a point
+  in the picture's own pixels, held inside the picture. The stream is read as
+  its progress (the stage, the step, the place in line and the latest look),
+  then the first picture, where the reading stops; an `error` event and an
+  answer that is not a 2xx are said in the Mac's own words, and a stream that
+  ends with neither says "The render ended without a picture." Each stage has
+  its sentence, in the locale's digits. A reader that leaves closes the
+  request, which is what stops the render. A picture is kept in a Mac's chat with
+  `POST /v1/chats/{id}/pictures` and the two ids, `from` and `image`. gglib
+  has recorded none of these bodies, so the tests are written from the
+  contract both sides are built to.
+  <!-- test: PictureRedrawWireTests.testAFixSendsThePictureItsMaskItsStrengthAndItsModelAsText -->
+  <!-- test: PictureRedrawWireTests.testARedoSendsNoMaskAndTheMacsOwnChoiceNoModel -->
+  <!-- test: PictureRedrawWireTests.testTheStreamIsReadAsItsProgressThenTheFirstPicture -->
+  <!-- test: PictureRedrawWireTests.testAnErrorEventAndARefusalAreSaidInTheMacsWords -->
+  <!-- test: PictureRedrawWireTests.testAStreamThatEndsWithoutAPictureFails -->
+  <!-- test: PictureRedrawWireTests.testEachStageOfARedrawHasItsSentence -->
+  <!-- test: PictureRedrawWireTests.testAReaderThatLeavesClosesTheRequest -->
+  <!-- test: PictureRedrawWireTests.testAPictureIsKeptByItsTwoIDsAndARefusalIsTheMacsError -->
+  <!-- test: PictureRedrawWireTests.testAPointerIsPlacedInThePicturesPixelsAndHeldInside -->
+  <!-- test: PictureRedrawWireTests.testOnlyAStrokeThatPaintsMarksSomething -->
+  <!-- test: PictureMaskTests.testTheMaskIsThePicturesSizeAndOpaqueBlackWhereNothingWasBrushed -->
+  <!-- test: PictureMaskTests.testAStrokeIsWhiteWhereItWentFromTheTopLeft -->
+  <!-- test: PictureMaskTests.testALaterRubOutIsBlackAgainAndAnEarlierOneIsNot -->
+  <!-- test: PictureMaskTests.testASinglePointPaintsADot -->
+  <!-- test: PictureMaskTests.testThePictureIsFittedToItsSpaceInTheMiddle -->
+- Opened whole, a picture the drawing tool made has Fix or redo under it.
+  Fix a part: the part brushed over is drawn again, with a brush size, Rub
+  out, Undo and Clear. Redo the whole picture: all of it is drawn again from
+  itself. Both start from the words the picture was drawn from, with a
+  strength from "Change it a little" to "a lot" that starts at 0.75 for a fix
+  and 0.4 for a redo. The button is dimmed, with the reason written beside
+  it, until a fix has a stroke that paints and either has words. While the
+  Mac draws, the stage is said, the latest look lies over the picture, a
+  report with no look keeps the one before, and Stop ends the render, as
+  leaving the editor does; what a stopped render or one another replaced
+  says afterwards changes nothing. A failure says the Mac's words and can be
+  asked again. The result is shown with a control that shows the original
+  while held, which VoiceOver turns over with a press, and Keep, Try again
+  and Discard; until Keep nothing is sent to the Mac's store or its chat and
+  nothing is written here. While a render, a result or a Keep is in hand the
+  sheet cannot be swiped away and has no way back. The original is no longer
+  held up once the redraw moves on, and an iPhone or iPad is kept from
+  locking for as long as a render is under way, however it ends. The editor
+  holds the picture's bytes from the moment it opens, and the mask is the
+  size those bytes decode to, whatever the picture's reference says. The Mac
+  is looked up each time it is asked, so an editor left open across a pipe
+  hung up and dialled again draws and keeps through the new one, and says
+  the Mac is unreachable in between without losing the picture. The image
+  opened whole and its editor are held by the app and shown from its root,
+  so a chat whose rows are drawn again under the sheet takes nothing with
+  them.
+  <!-- test: PictureEditingTests.testFixWaitsForABrushStrokeAndBothWaitForWords -->
+  <!-- test: PictureEditingTests.testAFixSendsThePictureWithAMaskItsSizeAndARedoSendsNoMask -->
+  <!-- test: PictureEditingTests.testARenderIsFollowedToItsPictureAndAFrameIsKeptAcrossAReportWithoutOne -->
+  <!-- test: PictureEditingTests.testAFailureSaysTheMacsWordsAndCanBeAskedAgain -->
+  <!-- test: PictureEditingTests.testStopAndLeavingEndTheRenderAndALateEventChangesNothing -->
+  <!-- test: PictureEditingTests.testARenderAnotherReplacedIsIgnored -->
+  <!-- test: PictureEditingTests.testNothingIsStoredOrLinkedByDrawingDiscardTryAgainOrStop -->
+  <!-- test: PictureEditorLifeTests.testTheMacIsLookedUpWhenItIsAskedNotWhenTheEditorOpens -->
+  <!-- test: PictureEditorLifeTests.testAPipeHungUpAndDialledAgainLosesNoPicture -->
+  <!-- test: PictureEditorLifeTests.testTheMaskIsTheSizeOfThePicturesBytesWhichAreHeldFromOpening -->
+  <!-- test: PictureEditorLifeTests.testTheEditorIsTheModelsAndOutlivesTheRowThatOpenedIt -->
+- Keep puts the newer picture in the chat after the one it came from, and
+  the editor closes. In a Mac's chat it is sent to the Mac as a turn's image
+  is, `POST /v1/attachments`, then named with the picture it came from to
+  `POST /v1/chats/{id}/pictures`; the chat is read again and shows it last
+  on that reply, drawn from the bytes this phone already holds, and nothing
+  of it is written here (ADR 0007). A read that fails after the Mac kept it
+  is not a failed Keep. In a conversation kept here its bytes go into this
+  device's store and its name onto the same reply, after the pictures the
+  reply has. A Keep that fails leaves the drawn picture where it was, under
+  "The picture was drawn but could not be kept: ..." with the reason, and
+  Keep can be pressed again; a picture the Mac already stored is not sent a
+  second time. The image model starts at the one the chat already draws
+  with, and at the Mac's own when the chat chose none or the Mac lists the
+  choice without its files, with a menu only where the Mac lists two or more
+  that can draw; a Mac that cannot draw until a model is named, and lists
+  exactly one that can, starts at that one; one that lists several and has
+  no default is asked for a model before anything is drawn. Fix or redo is
+  offered only on a
+  PNG. In a Mac's chat it is one on the row of a `builtin:generate_image`
+  call that has a `prompt`, so a person's own image and another tool's have
+  none. In a conversation kept here it is any PNG on a reply that holds
+  exactly one such call that drew: which call made which picture is not
+  kept, so a reply with two has none, and a question's image has none. No
+  picture has it while its Mac is out of reach, is reached by its address,
+  or has nothing to draw with.
+  <!-- test: PictureKeepingTests.testKeepStoresThePictureThenLinksItAndTheChatShowsItLast -->
+  <!-- test: PictureKeepingTests.testAFailedKeepLeavesThePictureAndKeepWorksASecondTime -->
+  <!-- test: PictureKeepingTests.testAReadThatFailsAfterAKeepIsNotAFailedKeep -->
+  <!-- test: PictureKeepingTests.testTheImageModelStartsAtTheChatsOwnChoice -->
+  <!-- test: PictureKeepingTests.testAMacWithNoDefaultIsAskedWhichImageModelFirst -->
+  <!-- test: PictureKeepingTests.testOnlyAPictureTheDrawingToolMadeOnAMacThatCanDrawIsOffered -->
+  <!-- test: PictureKeptHereTests.testAConversationHereKeepsTheNewerPictureOnItsReply -->
+  <!-- test: PictureKeptHereTests.testAConversationHereStartsAtItsOwnImageModel -->
+  <!-- test: PictureKeptHereTests.testOnlyAReplysDrawnPictureIsOfferedInAConversationKeptHere -->
+  <!-- test: PictureRedrawWireTests.testADrawnPicturesWordsAreItsToolCallsPrompt -->
+  <!-- test: PictureRedrawWireTests.testAKeptReplyKnowsItsPicturesWordsFromTheOneCallThatDrew -->
 - A pairing string is read by modelpipe as it is typed and as it is scanned,
   against `docs/pairing-v0.md`'s normative vectors: the ticket comes back in
   its canonical lower-case form, so a QR scan and a paste of the same machine
@@ -1646,7 +1752,8 @@ against the mock.
   picture is asked for with a Draw switch, one message at a time, of a hub
   that said it can draw; what is shown while it is drawn is never kept, and
   the picture a conversation kept here asked for is kept in this device's
-  store.
+  store. Amended: a drawn picture is fixed or drawn again from itself, and
+  joins its chat only on Keep.
 
 ## Releases
 

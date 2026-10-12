@@ -532,8 +532,26 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # control then says, and a Mac's chat waiting, then naming the model that
 # draws. They are the whole of that guard, and the README claim names all
 # three.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 744
+#
+# 2026-10-12: 744 -> 781 and 661 -> 698. Thirty-seven tests pin a drawn picture
+# fixed or drawn again: where a pointer lands in the picture and which
+# strokes paint; the request's body for a fix and a redo; the stream read to
+# its picture, its error or its empty end, and each stage's sentence; the
+# keep route; which pictures the drawing tool made, in a Mac's rows and in a
+# reply kept here; the mask, its size, its opaque black, its strokes from the
+# top left, a rub-out and a dot, and the box the picture is fitted to; what
+# must be chosen first, what a fix and a redo send, a render followed, failed,
+# stopped, left and replaced, and that nothing is kept before Keep; Keep on a
+# Mac's chat and on a conversation kept here, a failed Keep keeping the
+# picture, a failed read after it, the image model the editor starts at or
+# asks for on a Mac with no default, and
+# where the button is offered; a reader that leaves closing the request; the
+# Mac looked up when asked, a pipe hung up and dialled again, the mask the
+# size of the bytes held since opening, and the editor outliving its row. No
+# UI walk reaches the editor, so they are the whole of that guard, and the
+# README claims name all thirty-seven.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 781
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 661
+floor "README test markers" "${markers:-0}" 698
 
 exit $status

@@ -91,6 +91,13 @@ public final class AppModel {
     /// that model's id there, since it was last asked; see
     /// `AppModel+ImageModel`.
     var imageChoiceAnswers: [UUID: [UInt64: Drawing]] = [:]
+    /// The image opened whole, and the editor fixing or redoing it, if one
+    /// is. Held here and shown from the root, so no row that goes away takes
+    /// a drawn picture with it; see `AppModel+Pictures`.
+    var enlarged: EnlargedPicture?
+    var pictureEditor: PictureEditing?
+    /// What keeps the device awake under a render; see `IdleTimer`.
+    @ObservationIgnored var keepsAwake: @MainActor (Bool) -> Void = { IdleTimer.hold($0) }
     /// Changes once each time a pipe first reaches a connected state; the
     /// one haptic in the app fires on it.
     public internal(set) var connectedPulse = 0

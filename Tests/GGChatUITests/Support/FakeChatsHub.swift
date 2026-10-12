@@ -58,6 +58,9 @@ final class FakeChatsHub: HubChatsProvider, DrawingProvider {
         var fetchFailure: HubChatsFailure?
         /// Holds every read of an image, once counted, until it is set false.
         var holdsFetches = false
+        /// Every picture asked to be kept, and what the next are refused with.
+        var kept: [(chatID: Int64, picture: KeptPicture)] = []
+        var keepFailure: ProviderError?
         /// The models the Mac lists, how often it was asked, and whether the
         /// lists from now on are lost on the way.
         var models = MockProvider.sampleModels

@@ -69,6 +69,8 @@ final class FakeRunHub: RunProvider, DrawingProvider {
     }
 
     let state: Mutex<State>
+    /// The pictures it is asked to draw again (`FakePictures`).
+    let pictures = FakePictures()
 
     init(frames: [[ChatEvent]]) {
         state = Mutex(State(frames: frames))

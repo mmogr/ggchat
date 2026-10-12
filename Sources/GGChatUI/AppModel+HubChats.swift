@@ -63,6 +63,9 @@ public struct OpenHubChat: Equatable, Sendable {
     var points: [BranchPoint<Int64, Int64>] = []
     var pointAt: [UUID: BranchPoint<Int64, Int64>] = [:]
     var answerable = false
+    /// What each picture the drawing tool made was drawn from, by the
+    /// picture's id (`HubChatOpen.drawnPrompts`). In memory with the rows.
+    var drawnPrompts: [String: String] = [:]
     /// Whether a change to it is on its way to the Mac: it is answered by
     /// the change, so nothing else is sent meanwhile.
     var changing = false
@@ -80,6 +83,7 @@ public struct OpenHubChat: Equatable, Sendable {
         rowIDs = Dictionary(drawn.map { ($0.message.id, $0.rowID) }) { first, _ in first }
         points = chat.points
         answerable = chat.answerable
+        drawnPrompts = chat.drawnPrompts
         // A turn's point goes on the first of its rows that is drawn: its
         // first row may be a reply that only called a tool.
         let starts = chat.turnStarts
@@ -286,15 +290,5 @@ extension AppModel {
     func reachableHubChats(for config: ProviderConfig) -> (any HubChatsProvider)? {
         guard config.isPipe, hubIsReachable(config.id) else { return nil }
         return makeProvider(for: config) as? any HubChatsProvider
-    }
-
-    /// A failure's kind for a log line, which names nothing the Mac sent.
-    static func kind(of failure: HubChatsFailure) -> String {
-        switch failure {
-        case .notShared: "not shared"
-        case .notFound: "not found"
-        case .refused(let error): "refused, \(error.code ?? "no code")"
-        case .dropped(let error): "dropped, \(error?.code ?? "no code")"
-        }
     }
 }
