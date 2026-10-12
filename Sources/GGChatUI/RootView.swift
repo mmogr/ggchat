@@ -57,6 +57,12 @@ public struct RootView: View {
         .sheet(isPresented: $showingSettings) {
             SettingsView()
         }
+        // Here and not on the row that opened it: a row is torn down when
+        // its chat is read again or it scrolls away, and a sheet on it would
+        // take a picture drawn in the editor with it.
+        .sheet(item: $model.enlarged, onDismiss: model.closePictureEditor) { shown in
+            EnlargedImage(shown: shown)
+        }
         .alert(
             "Something did not work",
             isPresented: Binding(get: { model.lastError != nil }, set: { if !$0 { model.lastError = nil } })

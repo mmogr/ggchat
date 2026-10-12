@@ -77,6 +77,13 @@ opened. Coming back to the foreground dials each of them again once, as
 > written to this phone, and gone when the chat is closed: the Mac keeps no
 > such choice (ADR 0011).
 
+> **Amended 2026-10-12 — a picture of a Mac's chat can be fixed or drawn
+> again, and the Mac keeps the result.** The picture's bytes, held in memory
+> since its row was drawn, are sent back to the Mac to draw from; the result
+> is held by the editor, in memory, and on Keep is sent to the Mac's store
+> and linked to the chat there, beside the picture it came from. The chat is
+> then read again. Neither picture is written to this phone (ADR 0011).
+
 ## What would undo it
 
 - The owner asking to read a Mac's chats while it is asleep: then the rows

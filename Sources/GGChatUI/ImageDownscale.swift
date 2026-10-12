@@ -83,7 +83,7 @@ nonisolated struct ImageDownscale: Sendable {
     }
 
     /// The image alone: a `CGImage` carries no metadata, and none is added.
-    private static func encode(_ image: CGImage, as type: UTType) -> Data? {
+    static func encode(_ image: CGImage, as type: UTType) -> Data? {
         let data = NSMutableData()
         guard
             let destination = CGImageDestinationCreateWithData(

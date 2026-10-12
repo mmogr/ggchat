@@ -101,4 +101,14 @@ extension AppModel {
             log.log(.error, "could not keep \(config.name)'s chat titles (\(StoreDirectory.describe(error)))")
         }
     }
+
+    /// A failure's kind for a log line, which names nothing the Mac sent.
+    static func kind(of failure: HubChatsFailure) -> String {
+        switch failure {
+        case .notShared: "not shared"
+        case .notFound: "not found"
+        case .refused(let error): "refused, \(error.code ?? "no code")"
+        case .dropped(let error): "dropped, \(error?.code ?? "no code")"
+        }
+    }
 }

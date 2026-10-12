@@ -49,7 +49,7 @@ struct MessageRow: View {
             }
             MarkdownBlocksView(blocks: MarkdownBlocks.parse(message.content))
             if message.role == .assistant, !message.images.isEmpty {
-                MessageImages(images: message.images, fromHub: imagesFromHub)
+                MessageImages(images: message.images, fromHub: imagesFromHub, owner: message.id)
             }
             if showsEnding {
                 if let writingLine {
