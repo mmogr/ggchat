@@ -14,6 +14,10 @@ struct DraftField: View {
     @Environment(AppModel.self) private var model
     @State private var draft = Draft()
     @State private var preparing = 0
+    #if os(iOS)
+        /// Set for a conversation a quick action started on the camera.
+        @State private var opensCamera = false
+    #endif
     let conversation: Conversation
 
     private var streaming: Bool {
@@ -30,8 +34,14 @@ struct DraftField: View {
                 shown: DrawToggle.shows(on: draft.draws, refusal: model.drawRefusal(for: conversation)),
                 model: model.drawsWith(for: conversation))
             HStack(alignment: .bottom, spacing: 8) {
-                AddImageButtons(
-                    disabled: streaming, refusal: canSee ? nil : "This model cannot read images.", take: take)
+                #if os(iOS)
+                    AddImageButtons(
+                        disabled: streaming, refusal: canSee ? nil : "This model cannot read images.", take: take,
+                        opensCamera: $opensCamera)
+                #else
+                    AddImageButtons(
+                        disabled: streaming, refusal: canSee ? nil : "This model cannot read images.", take: take)
+                #endif
                 // Only for gglib, which is the one server that draws.
                 if model.offersDrawing(for: conversation) {
                     DrawToggle(
@@ -50,6 +60,22 @@ struct DraftField: View {
             }
         }
         .dropsImages(take)
+        .onChange(of: model.composerStart, initial: true) { begin() }
+    }
+
+    /// Begins as the quick action that started this conversation asked:
+    /// with Draw pressed, or on the camera.
+    private func begin() {
+        switch model.takeComposerStart(for: conversation.id) {
+        case .draw:
+            draft.draws = true
+        case .camera:
+            #if os(iOS)
+                opensCamera = true
+            #endif
+        case .newChat, nil:
+            break
+        }
     }
 
     private var field: some View {

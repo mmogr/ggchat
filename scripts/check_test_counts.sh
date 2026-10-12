@@ -550,7 +550,13 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # size of the bytes held since opening, and the editor outliving its row. No
 # UI walk reaches the editor, so they are the whole of that guard, and the
 # README claims name all thirty-seven.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 781
+#
+# 781 -> 785 for the quick actions on the app's icon: which are offered, the
+# provider each starts with, the note a started chat's composer reads once,
+# and a picture left open closed. The press on the icon and the camera
+# opening are seen only on a phone, so these four are the whole of what a
+# gate holds of it.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 785
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
 floor "README test markers" "${markers:-0}" 698
 

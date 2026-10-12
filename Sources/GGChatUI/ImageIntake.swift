@@ -20,6 +20,9 @@ struct AddImageButtons: View {
     let take: ([Data]) -> Void
     @State private var picked: [PhotosPickerItem] = []
     #if os(iOS)
+        /// Set by a composer that is to begin on the camera, and put back
+        /// once it has been opened or could not be.
+        var opensCamera: Binding<Bool> = .constant(false)
         @State private var pickingFromLibrary = false
         @State private var takingPhoto = false
     #endif
@@ -43,6 +46,11 @@ struct AddImageButtons: View {
             }
             #if os(iOS)
                 .photosPicker(isPresented: $pickingFromLibrary, selection: $picked, matching: .images)
+                .onChange(of: opensCamera.wrappedValue, initial: true) { _, asked in
+                    guard asked else { return }
+                    opensCamera.wrappedValue = false
+                    takingPhoto = CameraCapture.isOffered && !disabled && refusal == nil
+                }
                 .fullScreenCover(isPresented: $takingPhoto) {
                     CameraCapture { take([$0]) }
                     .ignoresSafeArea()
