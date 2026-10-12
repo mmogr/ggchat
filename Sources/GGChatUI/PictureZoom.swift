@@ -1,5 +1,4 @@
 import CoreGraphics
-import SwiftUI
 
 /// The sums behind a picture opened whole and looked at closer: how far it
 /// may be enlarged, where it sits while it is smaller than the sheet, and
@@ -40,6 +39,7 @@ nonisolated enum PictureZoom {
 }
 
 #if os(iOS)
+    import SwiftUI
     import UIKit
 
     /// A picture fitted to the space it is given, that a pinch enlarges, a
