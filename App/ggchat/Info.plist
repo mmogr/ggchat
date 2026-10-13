@@ -33,6 +33,8 @@
 	<string>ggchat uses the camera to scan a modelpipe ticket, and to take a photo you attach to a message.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>ggchat talks to model servers on your local network when you add one by address.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>ggchat adds a picture to your Photos when you choose Save to Photos. It never reads your library.</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>

@@ -36,7 +36,10 @@ struct MessageImages: View {
     }
 }
 
-/// One image at its own size, fitted to the sheet. Under a picture the
+/// One image at its own size, fitted to the sheet. On iOS a pinch or a
+/// double tap brings it closer (`ZoomablePicture`). Held down, or
+/// right-clicked, it offers its own bytes to share, and on iOS to save to
+/// Photos; what came of a save is said under it. Under a picture the
 /// drawing tool made, where its chat's Mac can draw, Fix or redo opens its
 /// editor in the same sheet (`PictureEditor`). Which image, and the editor,
 /// are the model's: nothing here is lost with a row.
@@ -44,6 +47,8 @@ struct EnlargedImage: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     let shown: EnlargedPicture
+    /// What came of saving it to Photos, once that was asked.
+    @State private var saveOutcome: String?
 
     var body: some View {
         let (image, fromHub, owner) = (shown.image, shown.fromHub, shown.owner)
@@ -51,9 +56,17 @@ struct EnlargedImage: View {
         NavigationStack {
             VStack(spacing: 12) {
                 if let picture {
-                    Image(decorative: picture, scale: 1)
-                        .resizable()
-                        .scaledToFit()
+                    whole(picture)
+                        .contextMenu { offers(for: picture) }
+                        .accessibilityElement()
+                        .accessibilityLabel("Image")
+                        .accessibilityIdentifier("enlarged-image")
+                    if let saveOutcome {
+                        Text(saveOutcome)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("save-outcome")
+                    }
                     if model.drawnPrompt(of: image, in: owner, fromHub: fromHub) != nil {
                         Button("Fix or redo", systemImage: "paintbrush.pointed") { model.editEnlargedPicture() }
                             .buttonStyle(.bordered)
@@ -83,5 +96,30 @@ struct EnlargedImage: View {
             }
         }
         .frame(minWidth: 320, minHeight: 320)
+    }
+
+    @ViewBuilder
+    private func whole(_ picture: CGImage) -> some View {
+        #if os(iOS)
+            ZoomablePicture(picture: picture)
+        #else
+            Image(decorative: picture, scale: 1)
+                .resizable()
+                .scaledToFit()
+        #endif
+    }
+
+    /// What the picture offers when held down: its own bytes, shared or
+    /// saved, and nothing while they are not to hand.
+    @ViewBuilder
+    private func offers(for picture: CGImage) -> some View {
+        if let file = model.file(of: shown) {
+            #if os(iOS)
+                Button("Save to Photos", systemImage: "square.and.arrow.down") {
+                    Task { saveOutcome = await PhotoLibrary.add(file) }
+                }
+            #endif
+            ShareLink(item: file, preview: SharePreview("Image", image: Image(decorative: picture, scale: 1)))
+        }
     }
 }

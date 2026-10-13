@@ -53,6 +53,7 @@ targets:
         UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         NSCameraUsageDescription: ggchat uses the camera to scan a modelpipe ticket, and to take a photo you attach to a message.
         NSLocalNetworkUsageDescription: ggchat talks to model servers on your local network when you add one by address.
+        NSPhotoLibraryAddUsageDescription: ggchat adds a picture to your Photos when you choose Save to Photos. It never reads your library.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
     settings:
