@@ -30,7 +30,7 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>ggchat uses the camera to scan a modelpipe ticket. Nothing is stored or sent.</string>
+	<string>ggchat uses the camera to scan a modelpipe ticket, and to take a photo you attach to a message.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>ggchat talks to model servers on your local network when you add one by address.</string>
 	<key>UILaunchScreen</key>

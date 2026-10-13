@@ -4,9 +4,14 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// The ways an image reaches a draft, for either composer: the photo picker
-/// and, on iOS, a paste button here; a paste into the field on macOS and a
-/// drop with `pastesImages` and `dropsImages`. Each hands on the bytes it
-/// got, and `ImageIntake.prepare` makes every one ready the one way.
+/// and, on iOS, the camera and a paste button here; a paste into the field
+/// on macOS and a drop with `pastesImages` and `dropsImages`. Each hands on
+/// the bytes it got, and `ImageIntake.prepare` makes every one ready the
+/// one way.
+///
+/// On a device with a camera the one button opens a menu, the library or a
+/// new photo, so the composer's row is no wider for it; anywhere else it
+/// opens the photo picker as it always did.
 struct AddImageButtons: View {
     /// Off while a reply is being written.
     let disabled: Bool
@@ -14,28 +19,35 @@ struct AddImageButtons: View {
     let refusal: String?
     let take: ([Data]) -> Void
     @State private var picked: [PhotosPickerItem] = []
+    #if os(iOS)
+        @State private var pickingFromLibrary = false
+        @State private var takingPhoto = false
+    #endif
 
     var body: some View {
         // Both are grey circles: the same kind of control, plainly on, and
         // dimmed by the system when off. Send stays the one prominent action.
-        PhotosPicker(selection: $picked, matching: .images) {
-            Image(systemName: "photo.badge.plus")
-                .font(.body)
-                .frame(minWidth: 28, minHeight: 28)
-        }
-        .buttonStyle(.borderedProminent)
-        .buttonBorderShape(.circle)
-        .tint(.gray)
-        .disabled(disabled || refusal != nil)
-        .help(refusal ?? "Add an image")
-        .accessibilityLabel("Add an image")
-        .accessibilityHint(refusal ?? "")
-        .accessibilityIdentifier("add-image")
-        .onChange(of: picked) { _, items in
-            guard !items.isEmpty else { return }
-            picked = []
-            Task { take(await Self.load(items)) }
-        }
+        add
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.circle)
+            .tint(.gray)
+            .disabled(disabled || refusal != nil)
+            .help(refusal ?? "Add an image")
+            .accessibilityLabel("Add an image")
+            .accessibilityHint(refusal ?? "")
+            .accessibilityIdentifier("add-image")
+            .onChange(of: picked) { _, items in
+                guard !items.isEmpty else { return }
+                picked = []
+                Task { take(await Self.load(items)) }
+            }
+            #if os(iOS)
+                .photosPicker(isPresented: $pickingFromLibrary, selection: $picked, matching: .images)
+                .fullScreenCover(isPresented: $takingPhoto) {
+                    CameraCapture { take([$0]) }
+                    .ignoresSafeArea()
+                }
+            #endif
         #if os(iOS)
             // iOS 26 has no paste destination for a view, and a text field
             // pastes text alone, so an image is pasted here.
@@ -46,6 +58,32 @@ struct AddImageButtons: View {
                 .disabled(disabled || refusal != nil)
                 .accessibilityIdentifier("paste-image")
         #endif
+    }
+
+    @ViewBuilder
+    private var add: some View {
+        #if os(iOS)
+            if CameraCapture.isOffered {
+                Menu {
+                    Button("Photo Library", systemImage: "photo.on.rectangle") { pickingFromLibrary = true }
+                    Button("Take Photo", systemImage: "camera") { takingPhoto = true }
+                } label: {
+                    symbol
+                }
+                .menuStyle(.button)
+                .menuIndicator(.hidden)
+            } else {
+                PhotosPicker(selection: $picked, matching: .images) { symbol }
+            }
+        #else
+            PhotosPicker(selection: $picked, matching: .images) { symbol }
+        #endif
+    }
+
+    nonisolated private var symbol: some View {
+        Image(systemName: "photo.badge.plus")
+            .font(.body)
+            .frame(minWidth: 28, minHeight: 28)
     }
 
     private static func load(_ items: [PhotosPickerItem]) async -> [Data] {
