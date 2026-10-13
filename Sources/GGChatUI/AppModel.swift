@@ -95,6 +95,9 @@ public final class AppModel {
     /// is. Held here and shown from the root, so no row that goes away takes
     /// a drawn picture with it; see `AppModel+Pictures`.
     var enlarged: EnlargedPicture?
+    /// How the composer of a conversation a quick action started is to
+    /// begin, until that composer reads it; see `AppModel+QuickActions`.
+    var composerStart: ComposerStart?
     var pictureEditor: PictureEditing?
     /// What keeps the device awake under a render; see `IdleTimer`.
     @ObservationIgnored var keepsAwake: @MainActor (Bool) -> Void = { IdleTimer.hold($0) }
@@ -195,7 +198,12 @@ public final class AppModel {
 
     @discardableResult
     public func newConversation() -> Conversation {
-        let provider = providers.first
+        newConversation(with: providers.first)
+    }
+
+    /// A new conversation with `provider`, at the top of the list and open.
+    @discardableResult
+    func newConversation(with provider: ProviderConfig?) -> Conversation {
         let stamp = now()
         let conversation = Conversation(
             providerID: provider?.id, model: provider?.defaultModel, createdAt: stamp, updatedAt: stamp)

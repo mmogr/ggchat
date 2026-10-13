@@ -71,11 +71,24 @@ public struct RootView: View {
         } message: {
             Text(model.lastError ?? "")
         }
-        .task { model.load() }
+        #if os(iOS)
+            .task {
+                model.load()
+                actOnQuickAction()
+                QuickActionInbox.offer(model.quickActions(hasCamera: CameraCapture.isOffered))
+            }
+            .onChange(of: QuickActionInbox.shared.pending) { actOnQuickAction() }
+        #else
+            .task { model.load() }
+        #endif
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active: model.scene(.foreground)
-            case .background: model.scene(.background)
+            case .background:
+                model.scene(.background)
+                #if os(iOS)
+                    QuickActionInbox.offer(model.quickActions(hasCamera: CameraCapture.isOffered))
+                #endif
             // `.inactive` is a transient — the notification shade, a call
             // banner, a window losing focus — and a pipe is worth holding
             // through one. Only `.background` means the process is about to
@@ -85,6 +98,16 @@ public struct RootView: View {
         }
     }
 }
+
+#if os(iOS)
+    extension RootView {
+        /// Does what a quick action waiting asks, once the model has read
+        /// its providers: before that there is none to start a chat with.
+        fileprivate func actOnQuickAction() {
+            if let action = QuickActionInbox.shared.take() { model.perform(action) }
+        }
+    }
+#endif
 
 struct ConversationSidebar: View {
     @Environment(AppModel.self) private var model
