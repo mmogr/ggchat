@@ -52,10 +52,12 @@ final class FirstRunUITests: XCTestCase {
         app.buttons["Cancel"].firstMatch.tap()
     }
 
-    /// A picture on the pasteboard joins the draft through the paste button,
-    /// with what gglib estimates it costs, and goes alone as the first turn:
-    /// the transcript draws it and the mock answers. iOS only, where the
-    /// paste button is the way a picture is pasted.
+    /// A picture on the pasteboard joins the draft through the add-image
+    /// menu's Paste Image row, with what gglib estimates it costs, and goes
+    /// alone as the first turn: the transcript draws it and the mock answers.
+    /// iOS only, where the menu is the way a picture is pasted, and where
+    /// the system asks before an app reads what another put on the
+    /// pasteboard.
     @MainActor
     func testAPastedImageIsSentAloneAndDrawnInTheTranscript() throws {
         #if os(iOS)
@@ -80,9 +82,13 @@ final class FirstRunUITests: XCTestCase {
                 UIColor.systemOrange.setFill()
                 context.fill(CGRect(x: 0, y: 0, width: 64, height: 32))
             }
+            let add = app.buttons["add-image"].firstMatch
+            XCTAssertTrue(waitUntilHittable(add, timeout: 15), "there is no way to add an image")
+            add.tap()
             let paste = app.buttons["paste-image"].firstMatch
-            XCTAssertTrue(waitUntilHittable(paste, timeout: 15), "there is no way to paste an image")
+            XCTAssertTrue(waitUntilHittable(paste, timeout: 15, sweeping: false), "the menu offers no paste")
             paste.tap()
+            allowPaste()
             XCTAssertTrue(
                 app.buttons["Remove image"].firstMatch.waitForExistence(timeout: 15),
                 "the pasted image never joined the draft")

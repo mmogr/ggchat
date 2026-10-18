@@ -4,14 +4,15 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// The ways an image reaches a draft, for either composer: the photo picker
-/// and, on iOS, the camera and a paste button here; a paste into the field
-/// on macOS and a drop with `pastesImages` and `dropsImages`. Each hands on
-/// the bytes it got, and `ImageIntake.prepare` makes every one ready the
-/// one way.
+/// and, on iOS, the camera and the pasteboard, all behind the one button
+/// here; a paste into the field on macOS and a drop with `pastesImages` and
+/// `dropsImages`. Each hands on the bytes it got, and `ImageIntake.prepare`
+/// makes every one ready the one way.
 ///
-/// On a device with a camera the one button opens a menu, the library or a
-/// new photo, so the composer's row is no wider for it; anywhere else it
-/// opens the photo picker as it always did.
+/// On iOS the one button opens a menu: the library, a new photo where there
+/// is a camera, and a paste of the image on the pasteboard, so the
+/// composer's row is no wider for any of them. On macOS it opens the photo
+/// picker as it always did.
 struct AddImageButtons: View {
     /// Off while a reply is being written.
     let disabled: Bool
@@ -28,8 +29,8 @@ struct AddImageButtons: View {
     #endif
 
     var body: some View {
-        // Both are grey circles: the same kind of control, plainly on, and
-        // dimmed by the system when off. Send stays the one prominent action.
+        // A grey circle: plainly on, and dimmed by the system when off. Send
+        // stays the one prominent action.
         add
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.circle)
@@ -56,33 +57,27 @@ struct AddImageButtons: View {
                     .ignoresSafeArea()
                 }
             #endif
-        #if os(iOS)
-            // iOS 26 has no paste destination for a view, and a text field
-            // pastes text alone, so an image is pasted here.
-            PasteButton(payloadType: ImageFile.self) { files in take(files.map(\.data)) }
-                .labelStyle(.iconOnly)
-                .buttonBorderShape(.circle)
-                .tint(.gray)
-                .disabled(disabled || refusal != nil)
-                .accessibilityIdentifier("paste-image")
-        #endif
     }
 
+    /// On iOS, the menu. iOS 26 has no paste destination for a view, and a
+    /// text field pastes text alone, so the pasteboard's image is a row of
+    /// it; one with no image on the pasteboard does nothing, and asks for
+    /// nothing. On macOS, the photo picker.
     @ViewBuilder
     private var add: some View {
         #if os(iOS)
-            if CameraCapture.isOffered {
-                Menu {
-                    Button("Photo Library", systemImage: "photo.on.rectangle") { pickingFromLibrary = true }
+            Menu {
+                Button("Photo Library", systemImage: "photo.on.rectangle") { pickingFromLibrary = true }
+                if CameraCapture.isOffered {
                     Button("Take Photo", systemImage: "camera") { takingPhoto = true }
-                } label: {
-                    symbol
                 }
-                .menuStyle(.button)
-                .menuIndicator(.hidden)
-            } else {
-                PhotosPicker(selection: $picked, matching: .images) { symbol }
+                Button("Paste Image", systemImage: "doc.on.clipboard") { Task { take(await ImageFile.pasted()) } }
+                    .accessibilityIdentifier("paste-image")
+            } label: {
+                symbol
             }
+            .menuStyle(.button)
+            .menuIndicator(.hidden)
         #else
             PhotosPicker(selection: $picked, matching: .images) { symbol }
         #endif
@@ -105,7 +100,7 @@ struct AddImageButtons: View {
 
 extension View {
     /// On macOS, an image pasted while this view has focus is handed to
-    /// `take`; on iOS, `AddImageButtons` pastes.
+    /// `take`; on iOS, `AddImageButtons` pastes from its menu.
     func pastesImages(_ take: @escaping ([Data]) -> Void) -> some View {
         #if os(macOS)
             onPasteCommand(of: ImageFile.pasted) { providers in
@@ -154,15 +149,28 @@ nonisolated struct ImageFile: Transferable {
     #if os(macOS)
         /// What a paste is read for.
         static let pasted: [UTType] = [.image]
-
-        /// The first image the provider holds, as bytes.
-        @MainActor static func data(from provider: NSItemProvider) async -> Data? {
-            guard let type = provider.registeredContentTypes.first(where: { $0.conforms(to: .image) }) else {
-                return nil
+    #else
+        /// The images on the pasteboard, as the bytes they were put there
+        /// as. The pasteboard is read only once it says it holds an image,
+        /// so a paste of nothing asks the system for nothing.
+        @MainActor static func pasted() async -> [Data] {
+            let pasteboard = UIPasteboard.general
+            guard pasteboard.hasImages else { return [] }
+            var files: [Data] = []
+            for provider in pasteboard.itemProviders {
+                if let bytes = await ImageFile.data(from: provider) { files.append(bytes) }
             }
-            return await withCheckedContinuation { continuation in
-                _ = provider.loadDataRepresentation(for: type) { data, _ in continuation.resume(returning: data) }
-            }
+            return files
         }
     #endif
+
+    /// The first image the provider holds, as bytes.
+    @MainActor static func data(from provider: NSItemProvider) async -> Data? {
+        guard let type = provider.registeredContentTypes.first(where: { $0.conforms(to: .image) }) else {
+            return nil
+        }
+        return await withCheckedContinuation { continuation in
+            _ = provider.loadDataRepresentation(for: type) { data, _ in continuation.resume(returning: data) }
+        }
+    }
 }

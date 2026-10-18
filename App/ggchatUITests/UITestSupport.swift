@@ -44,6 +44,16 @@ extension XCTestCase {
         return false
     }
 
+    /// Taps "Allow Paste" on the system's question about reading what
+    /// another process put on the pasteboard, when it is asked. SpringBoard
+    /// draws it, once per app and pasteboard change, so a walk that pastes
+    /// waits a moment for it and goes on when it does not come.
+    @MainActor
+    func allowPaste() {
+        let allow = XCUIApplication(bundleIdentifier: "com.apple.springboard").buttons["Allow Paste"]
+        if allow.waitForExistence(timeout: 5) { allow.tap() }
+    }
+
     /// Taps the dismissive button of any system prompt currently up. Cheap
     /// enough to call in a loop, and silent when there is nothing there.
     @MainActor

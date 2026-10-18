@@ -133,8 +133,9 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelImageRequestTests.testATurnsImageIsSentAndOneThatCannotBeReadSendsNothing -->
   <!-- test: AppModelImageRequestTests.testARunPutAgainCarriesItsImageOrIsGivenUpWithoutIt -->
   <!-- test: AppModelImageRequestTests.testARunToAModelThatCannotSeeEndsWithTheCodeAndWhatToDo -->
-- An image joins a draft through the photo picker, a paste or a drop, and
-  every one goes through one downscale: turned upright by its orientation,
+- An image joins a draft through the photo picker, a paste or a drop, on
+  iOS the paste as a row of the add-image menu, and every one goes through
+  one downscale: turned upright by its orientation,
   2560 pixels on its long edge at most and never made larger, none of the
   original's metadata (its location included), a PNG while one fits in
   8 MiB and a JPEG otherwise, refused with a sentence when even that does not
