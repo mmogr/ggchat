@@ -133,10 +133,10 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelImageRequestTests.testATurnsImageIsSentAndOneThatCannotBeReadSendsNothing -->
   <!-- test: AppModelImageRequestTests.testARunPutAgainCarriesItsImageOrIsGivenUpWithoutIt -->
   <!-- test: AppModelImageRequestTests.testARunToAModelThatCannotSeeEndsWithTheCodeAndWhatToDo -->
-- The local composer's field has a row of its own across the glass, with
-  the add-image control and Draw in a toolbar under it and Send at the
-  toolbar's trailing end, so the field is as wide as the composer however
-  many controls the toolbar holds.
+- In both composers the field has a row of its own, the local one's across
+  the glass, with the add-image control and Draw in a toolbar under it and
+  Send at the toolbar's trailing end, so the field is as wide as the
+  composer however many controls the toolbar holds.
   <!-- test: ContextRingUITests.testAReplyRaisesTheRingAndItsSheetSaysTheCounts -->
 - An image joins a draft through the photo picker, a paste or a drop, on
   iOS the paste as a row of the add-image menu, and every one goes through
