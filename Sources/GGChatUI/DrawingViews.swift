@@ -2,10 +2,10 @@ import CoreGraphics
 import GGChatCore
 import SwiftUI
 
-/// The Draw switch beside a composer's field: pressed, the next message
-/// asks its hub for a picture, and it is off again once that message is
-/// sent, since it is the draft's and no setting of the chat. One view for
-/// both kinds of chat.
+/// The Draw switch in the toolbar under a composer's field: pressed, the
+/// next message asks its hub for a picture, and it is off again once that
+/// message is sent, since it is the draft's and no setting of the chat. One
+/// view for both kinds of chat.
 ///
 /// A hub that cannot draw dims it and keeps it off, and a press then says
 /// why, in the hub's own words: a phone has no pointer to hover for the
@@ -170,7 +170,7 @@ struct DrawsWithLine: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-                .padding(.horizontal, 6)
+                .padding(.horizontal, ComposerLayout.inset)
                 .accessibilityIdentifier("draws-with")
         }
     }
