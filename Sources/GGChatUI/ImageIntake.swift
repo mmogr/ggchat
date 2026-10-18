@@ -11,8 +11,8 @@ import UniformTypeIdentifiers
 ///
 /// On iOS the one button opens a menu: the library, a new photo where there
 /// is a camera, and a paste of the image on the pasteboard, so the
-/// composer's row is no wider for any of them. On macOS it opens the photo
-/// picker as it always did.
+/// composer's toolbar is no wider for any of them. On macOS it opens the
+/// photo picker as it always did.
 struct AddImageButtons: View {
     /// Off while a reply is being written.
     let disabled: Bool

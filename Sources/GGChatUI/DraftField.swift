@@ -33,7 +33,9 @@ struct DraftField: View {
             DrawsWithLine(
                 shown: DrawToggle.shows(on: draft.draws, refusal: model.drawRefusal(for: conversation)),
                 model: model.drawsWith(for: conversation))
-            HStack(alignment: .bottom, spacing: 8) {
+            ComposerRows {
+                field
+            } leading: {
                 #if os(iOS)
                     AddImageButtons(
                         disabled: streaming, refusal: canSee ? nil : "This model cannot read images.", take: take,
@@ -55,7 +57,7 @@ struct DraftField: View {
                         model.setImageModel($0, for: conversation.id)
                     }
                 }
-                field
+            } send: {
                 sendButton
             }
         }
@@ -83,8 +85,6 @@ struct DraftField: View {
             .lineLimit(1...8)
             .textFieldStyle(.plain)
             .accessibilityIdentifier("composer")
-            .padding(.vertical, 8)
-            .padding(.leading, 6)
             .onSubmit(sendIfPossible)
             .disabled(streaming)
             .pastesImages(take)
