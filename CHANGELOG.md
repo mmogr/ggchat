@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.10.0](https://github.com/mmogr/ggchat/compare/v0.9.0...v0.10.0) (2026-10-19)
+
+
+### What the app now does
+
+* **app:** quick actions on the app's icon start a chat, a photo or a drawing ([#197](https://github.com/mmogr/ggchat/issues/197)) ([0ccd28b](https://github.com/mmogr/ggchat/commit/0ccd28be209a55a616adb96724e61c1d4ce9fff1))
+* **chat:** a drawn picture is fixed or redone, and joins the chat on Keep ([#193](https://github.com/mmogr/ggchat/issues/193)) ([421f59f](https://github.com/mmogr/ggchat/commit/421f59ffe0c60d7f7d5b8fab38108f57bc5dece2))
+* **chat:** a message can be sent in one chat while another is still replying ([#206](https://github.com/mmogr/ggchat/issues/206)) ([2d591b0](https://github.com/mmogr/ggchat/commit/2d591b04b8087acf9cf3e6723bbbba7f5c549606)), closes [#205](https://github.com/mmogr/ggchat/issues/205)
+* **chat:** a picture opened whole is zoomed, shared and saved to Photos ([#195](https://github.com/mmogr/ggchat/issues/195)) ([099e654](https://github.com/mmogr/ggchat/commit/099e65497e0e6e1493bf253e0676be9edaf05600))
+* **chat:** Draw asks which image model where a Mac has no default ([#192](https://github.com/mmogr/ggchat/issues/192)) ([d13592c](https://github.com/mmogr/ggchat/commit/d13592c39be3833924da4e4c0636e75bbe8918e9))
+* **chat:** Paste Image is a row of the add-image menu ([#199](https://github.com/mmogr/ggchat/issues/199)) ([a4b866e](https://github.com/mmogr/ggchat/commit/a4b866e026e543911407cf32adc8c89deb467169))
+* **chat:** the add-image button can take a photo ([#196](https://github.com/mmogr/ggchat/issues/196)) ([05c4568](https://github.com/mmogr/ggchat/commit/05c4568f26e3eb1ca0bfe385f39a7f7b779ad4e7))
+* **ui:** both composers' field has a row of its own, with the controls in a toolbar under it ([#202](https://github.com/mmogr/ggchat/issues/202)) ([80d4103](https://github.com/mmogr/ggchat/commit/80d41038c24ed0142ff1f7735f41d83791a7296c))
+* **ui:** the image model is chosen on the "Drawing with" line, not by holding Draw ([#203](https://github.com/mmogr/ggchat/issues/203)) ([ddef377](https://github.com/mmogr/ggchat/commit/ddef37700aaf5357315312aff5758e194efb7326))
+
 ## [0.9.0](https://github.com/mmogr/ggchat/compare/v0.8.0...v0.9.0) (2026-10-11)
 
 
