@@ -178,9 +178,9 @@ struct DrawsWithLine: View {
     /// draw with is said whatever Draw shows; the rest only while Draw is
     /// on, and "Drawing with" only where the hub can draw and named the
     /// model.
-    static func line(on isOn: Bool, refusal: String?, model: String?, choosing: Bool = false, refused: Bool = false)
-        -> String?
-    {
+    static func line(
+        on isOn: Bool, refusal: String?, model: String?, choosing: Bool = false, refused: Bool = false
+    ) -> String? {
         if refused { return model.map { "Cannot draw with \($0)" } ?? "Pick another image model" }
         guard isOn else { return nil }
         if choosing { return "Choose an image model" }
