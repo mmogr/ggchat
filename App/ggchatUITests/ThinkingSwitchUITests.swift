@@ -13,9 +13,7 @@ final class ThinkingSwitchUITests: XCTestCase {
     @MainActor
     func testTurningThinkingOffDropsTheReasoningRow() {
         let app = launchFreshApp()
-        let addProvider = app.buttons["Add a provider"].firstMatch
-        XCTAssertTrue(addProvider.waitForExistence(timeout: 30), "first run offers no way to add a provider")
-        addProvider.tap()
+        openProviderForm(in: app)
         let ticket = choosePipe(in: app)
         // modelpipe's normative vector 1; the form refuses anything shorter.
         enter("pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na", into: ticket)

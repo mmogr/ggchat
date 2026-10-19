@@ -191,6 +191,7 @@ jobs:
             skip: ggchatUITests/ReduceTransparencyUITests
             option: ""
             value: ""
+            warm: ""
           - name: iPhone dark
             slug: iphone-dark
             device: iPhone
@@ -198,6 +199,7 @@ jobs:
             skip: ""
             option: appearance
             value: dark
+            warm: ""
           - name: iPhone contrast
             slug: iphone-contrast
             device: iPhone
@@ -205,6 +207,7 @@ jobs:
             skip: ""
             option: increase_contrast
             value: enabled
+            warm: ""
           - name: iPhone reduce transparency
             slug: iphone-reduce-transparency
             device: iPhone
@@ -212,6 +215,7 @@ jobs:
             skip: ""
             option: ""
             value: ""
+            warm: com.apple.Preferences
           # The walk again on the other device family this app ships for.
           # TARGETED_DEVICE_FAMILY is "1,2" and the root is a
           # NavigationSplitView, which is a stack on an iPhone and two
@@ -234,6 +238,7 @@ jobs:
             skip: ggchatUITests/ReduceTransparencyUITests
             option: ""
             value: ""
+            warm: ""
     env:
       BUNDLE: uitest-${{ matrix.slug }}.xcresult
     steps:
@@ -317,6 +322,20 @@ jobs:
             echo "::error::$OPTION did not take: the simulator reads $got"
             exit 1
           fi
+      # Settings' first launch on a simulator that has just booted can take
+      # longer than the half minute XCUIApplication.launch() waits for it,
+      # and the reduce transparency leg's first act is to open it: on
+      # 7faa31b it failed twice running, both times on that first launch,
+      # before the app was ever opened. Opened once here, through simctl,
+      # which waits for as long as it takes, the test's launch is a warm one.
+      - name: Open the app the test drives first, so its launch is warm
+        if: matrix.warm != ''
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+          WARM: ${{ matrix.warm }}
+        run: |
+          xcrun simctl launch "$UDID" "$WARM"
+          xcrun simctl terminate "$UDID" "$WARM"
       - name: Drive the first-run flow on a simulator
         env:
           UDID: ${{ steps.sim.outputs.udid }}

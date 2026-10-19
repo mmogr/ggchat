@@ -19,15 +19,13 @@ final class ScreenGalleryUITests: XCTestCase {
     private func launch() {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["-ggchat-reset", "YES"]
+        app.launchArguments = ["-ggchat-reset", "YES", "-ggchat-still", "YES"]
         app.launch()
     }
 
     @MainActor
     private func openAddProvider() {
-        let add = app.buttons["Add a provider"].firstMatch
-        XCTAssertTrue(add.waitForExistence(timeout: 30), "first run offers no way to add a provider")
-        add.tap()
+        openProviderForm(in: app)
     }
 
     /// The form, and the sentence it shows for an address that is not one.
@@ -96,7 +94,7 @@ final class ScreenGalleryUITests: XCTestCase {
 
         XCTAssertTrue(
             app.staticTexts["A ticket and a code. The code is redeemed once, for a key of this device's own."]
-                .waitForExistence(timeout: 5),
+                .waitForExistence(timeout: 15),
             "the form never said it had recognised a code")
         XCTAssertFalse(
             app.secureTextFields["provider-token"].firstMatch.exists,
@@ -259,7 +257,6 @@ final class ScreenGalleryUITests: XCTestCase {
         XCTAssertTrue(tap(row, untilExists: name), "a provider row is not a way into its settings")
         attach(name: "provider-edit")
 
-        name.tap()
         // Deleting by holding the key for a fixed 1.5s is a race against the
         // runner: the field is cleared by however many repeats the keyboard
         // manages in that window, and on a loaded machine that is fewer than
@@ -267,10 +264,16 @@ final class ScreenGalleryUITests: XCTestCase {
         // next, and the assertion below fails saying the edit never arrived —
         // which reads as a broken edit rather than a slow keyboard.
         //
-        // One delete per character that is actually there, and then a check
-        // that the field really is empty before anything is typed into it.
-        let existing = (name.value as? String) ?? ""
-        name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: existing.count))
+        // One delete per character there, once the field has the keyboard
+        // and is still, and again for what a loaded keyboard dropped (CI once
+        // left "Mo" of "Mock"); then a check that the field really is empty.
+        XCTAssertTrue(focus(name), "the name field never took the keyboard")
+        settle(name)
+        for _ in 0..<3 {
+            let existing = (name.value as? String) ?? ""
+            if existing.isEmpty { break }
+            name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: existing.count))
+        }
         XCTAssertEqual(
             (name.value as? String).flatMap { $0.isEmpty ? nil : $0 }, nil,
             "the name field still held text before the new name was typed")

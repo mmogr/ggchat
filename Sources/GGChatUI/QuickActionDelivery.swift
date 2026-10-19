@@ -50,9 +50,26 @@
         }
     }
 
-    /// The app delegate, there for one thing: to name the scene delegate a
-    /// quick action is handed to. SwiftUI still makes the window.
+    /// The app delegate, there to name the scene delegate a quick action is
+    /// handed to; SwiftUI still makes the window. In a DEBUG build it also
+    /// turns UIKit's animations off when launched with `-ggchat-still YES`.
     public final class GGChatAppDelegate: NSObject, UIApplicationDelegate {
+        /// The UI walks launch with `-ggchat-still YES`. On a loaded CI
+        /// simulator a sheet still presenting, a form still scrolling a field
+        /// clear of the keyboard, or a context menu still opening takes the
+        /// tap or the keys meant for what will be there, and the walks failed
+        /// a different way most runs. With animations off nothing on screen is
+        /// in between. Never read in a release build.
+        public func application(
+            _ application: UIApplication,
+            didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+        ) -> Bool {
+            #if DEBUG
+                if UserDefaults.standard.bool(forKey: "ggchat-still") { UIView.setAnimationsEnabled(false) }
+            #endif
+            return true
+        }
+
         public func application(
             _ application: UIApplication, configurationForConnecting session: UISceneSession,
             options: UIScene.ConnectionOptions

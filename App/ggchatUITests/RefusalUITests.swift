@@ -14,9 +14,7 @@ final class RefusalUITests: XCTestCase {
     @MainActor
     func testARefusalIsDrawnUnderTheQuestionAndSurvivesARelaunch() {
         app = launchFreshApp()
-        let addProvider = app.buttons["Add a provider"].firstMatch
-        XCTAssertTrue(addProvider.waitForExistence(timeout: 30), "first run offers no way to add a provider")
-        addProvider.tap()
+        openProviderForm(in: app)
         // The mocks live on the providers list, one hop away.
         app.buttons["Cancel"].firstMatch.tap()
         app.buttons["Providers"].firstMatch.tap()
@@ -42,7 +40,7 @@ final class RefusalUITests: XCTestCase {
 
         // Kept with the question, so a relaunch finds it where it was left.
         app.terminate()
-        app.launchArguments = []
+        app.launchArguments = ["-ggchat-still", "YES"]
         app.launch()
         if !sentence.waitForExistence(timeout: 10) {
             // A phone can open on the list instead. The conversation is its

@@ -39,9 +39,7 @@ final class FirstRunUITests: XCTestCase {
     @MainActor
     func testTheKeyIsPastedIntoTheFormAndLeftOffThePasteboard() {
         app = launchFreshApp()
-        let addProvider = app.buttons["Add a provider"].firstMatch
-        XCTAssertTrue(addProvider.waitForExistence(timeout: 30), "first run offers no way to add a provider")
-        addProvider.tap()
+        openProviderForm(in: app)
         let key = "sk-pasted-not-typed-7c3e91a4"
         pasteAPIKey(key, in: app)
         let field = app.secureTextFields["provider-key"].firstMatch
@@ -62,9 +60,7 @@ final class FirstRunUITests: XCTestCase {
     func testAPastedImageIsSentAloneAndDrawnInTheTranscript() throws {
         #if os(iOS)
             app = launchFreshApp()
-            let addProvider = app.buttons["Add a provider"].firstMatch
-            XCTAssertTrue(addProvider.waitForExistence(timeout: 30), "first run offers no way to add a provider")
-            addProvider.tap()
+            openProviderForm(in: app)
             app.buttons["Cancel"].firstMatch.tap()
             app.buttons["Providers"].firstMatch.tap()
             let mock = app.buttons["Add mock provider"].firstMatch
@@ -117,15 +113,13 @@ final class FirstRunUITests: XCTestCase {
     private func runFirstRun(live: LiveServer?) throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["-ggchat-reset", "YES"]
+        app.launchArguments = ["-ggchat-reset", "YES", "-ggchat-still", "YES"]
         app.launch()
         XCTContext.runActivity(named: "provider: \(live?.baseURL ?? "the DEBUG mock")") { _ in }
         let suffix = live == nil ? "mock" : "live"
 
         // 1. The first screen offers a way in.
-        let addProvider = app.buttons["Add a provider"].firstMatch
-        XCTAssertTrue(addProvider.waitForExistence(timeout: 30), "first run offers no way to add a provider")
-        addProvider.tap()
+        openProviderForm(in: app)
         attach(name: "01-add-provider-\(suffix)")
 
         // 2. Add the provider.

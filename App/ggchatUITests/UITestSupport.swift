@@ -13,7 +13,7 @@ extension XCTestCase {
     func launchFreshApp(typeSize: String? = nil) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-ggchat-reset", "YES"]
+        app.launchArguments = ["-ggchat-reset", "YES", "-ggchat-still", "YES"]
         if let typeSize {
             app.launchArguments += ["-UIPreferredContentSizeCategoryName", typeSize]
         }
@@ -72,19 +72,10 @@ extension XCTestCase {
         }
     }
 
-    /// Scrolls a scrollable screen until an element is there to be tapped.
-    ///
-    /// Not the same problem as `waitUntilHittable`, which waits for something
-    /// on top to go away. This one is for something that has never been on
-    /// screen at all: SwiftUI does not put every row of a long `Form` into
-    /// the accessibility tree at once, so a control below the fold can report
-    /// `exists == false` — indistinguishable, from a test, from a control
-    /// that was never built. Settings crossed that line when it gained a
-    /// section of readings, and the failure read as "the DEBUG build has no
-    /// Force button" rather than "scroll down".
-    ///
-    /// Swipes rather than using `scrollToElement`, which needs a frame the
-    /// element does not have while it is outside the tree.
+    /// Scrolls a screen until an element is there to be tapped. SwiftUI
+    /// leaves the rows of a long `Form` below the fold out of the tree, so
+    /// such a control reports `exists == false`, which reads as one never
+    /// built. Swipes, as `scrollToElement` needs a frame it has not got.
     @MainActor
     @discardableResult
     func scrollUntilHittable(_ element: XCUIElement, in app: XCUIApplication, swipes: Int = 6) -> Bool {
@@ -144,6 +135,9 @@ extension XCTestCase {
     /// waited for. Without a sweep, for the reason
     /// ``waitUntilHittable(_:timeout:sweeping:)`` gives.
     ///
+    /// Focus is not the end of it: a form still scrolling the field clear of
+    /// the keyboard misses keys the same way, so that is waited out too.
+    ///
     /// Not called `type`, which would hide `Swift.type(of:)` in every test
     /// case in the target.
     @MainActor
@@ -151,7 +145,21 @@ extension XCTestCase {
         _ text: String, into field: XCUIElement, attempts: Int = 3,
         file: StaticString = #filePath, line: UInt = #line
     ) {
-        if focus(field, attempts: attempts, file: file, line: line) { field.typeText(text) }
+        guard focus(field, attempts: attempts, file: file, line: line) else { return }
+        settle(field)
+        field.typeText(text)
+    }
+
+    /// Waits, up to `timeout`, until `element` holds still between two reads.
+    @MainActor
+    func settle(_ element: XCUIElement, timeout: TimeInterval = 5) {
+        let deadline = Date().addingTimeInterval(timeout)
+        var last = element.frame
+        while Date() < deadline {
+            _ = XCTWaiter().wait(for: [XCTestExpectation(description: "a beat")], timeout: 0.3)
+            if element.frame == last { return }
+            last = element.frame
+        }
     }
 
     /// Taps a field of the provider sheet until it has the keyboard; see
@@ -220,19 +228,25 @@ extension XCTestCase {
         return textView.exists ? textView : app.textFields["composer"].firstMatch
     }
 
-    /// Opens a conversation and does not return until one is open.
-    ///
-    /// Every walk starts here, so every walk confirms the tap in the same
-    /// way rather than each remembering to. The witness is the model pill,
-    /// which is the first thing the conversation screen puts up and is
-    /// present whatever the provider did: its label is
-    /// `"Model, " + (the model ?? "Choose a model")`, so a server that
-    /// listed nothing — or is not there at all — still raises it. That is
-    /// what lets one witness serve all of these walks instead of each
-    /// needing its own.
-    ///
-    /// Returns the pill, for the walks that go on to read the model's name
-    /// off it.
+    /// Opens the provider sheet from the first screen, and does not return
+    /// until it is up. A tap there can come to nothing: on dff36d0 the
+    /// sheet never opened and the walk spent a minute looking for its Pipe
+    /// half. Its Cancel is the witness, and nothing sweeps, since a sweep
+    /// would tap that Cancel.
+    @MainActor
+    func openProviderForm(in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        let add = app.buttons["Add a provider"].firstMatch
+        XCTAssertTrue(
+            add.waitForExistence(timeout: 30), "first run offers no way to add a provider", file: file, line: line)
+        XCTAssertTrue(
+            tap(add, untilExists: app.buttons["Cancel"].firstMatch, sweeping: false),
+            "the provider sheet never opened", file: file, line: line)
+    }
+
+    /// Opens a conversation and does not return until one is open. The
+    /// witness is the model pill, the first thing the screen puts up,
+    /// whatever the provider did: its label is `"Model, " + (the model ??
+    /// "Choose a model")`. Returned, for the walks that read the model off it.
     @MainActor
     @discardableResult
     func openConversation(in app: XCUIApplication) -> XCUIElement {
