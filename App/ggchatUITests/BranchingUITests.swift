@@ -27,9 +27,8 @@ final class BranchingUITests: XCTestCase {
         XCTAssertTrue(reply.waitForExistence(timeout: 60), "no reply arrived")
         XCTAssertTrue(app.buttons["Send"].firstMatch.waitForExistence(timeout: 60), "the reply never finished")
 
-        reply.press(forDuration: 1.2)
         let edit = app.buttons["Edit"].firstMatch
-        XCTAssertTrue(edit.waitForExistence(timeout: 10), "the reply's menu has no Edit")
+        XCTAssertTrue(press(reply, untilExists: edit), "the reply's menu has no Edit")
         edit.tap()
         let editor = app.textViews["Reply"].firstMatch
         XCTAssertTrue(editor.waitForExistence(timeout: 10), "Edit opened no editor")
