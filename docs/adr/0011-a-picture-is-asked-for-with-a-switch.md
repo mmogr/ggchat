@@ -303,3 +303,26 @@ is read as agent events, which carry no "Reading N of M tokens" line.
 - A look that needs to outlive the reply being written, say to show a
   picture that failed part-way: then a frame is kept, and gglib's rule that
   a preview is never stored is reopened with it.
+
+> **Amended 2026-10-19 — the image model is chosen on the line over the
+> field, not by holding Draw.** The menu of image models was behind a hold
+> on the Draw control, which nothing on screen said, and which VoiceOver
+> and Switch Control reach badly. Holding also made one control do two
+> jobs with two lifetimes: a press was the message's, a hold the chat's.
+>
+> Draw is now the switch and nothing more. The line over the field, which
+> already named the model while Draw was on, is the menu: "Drawing with
+> flux" with a chevron, and the rows as before. Picking one sets the chat's
+> choice and sends nothing; it no longer presses Draw, since the line is
+> there only while Draw is on. Where the Mac lists several models and no
+> default, pressing Draw turns it on as ever and the line reads "Choose an
+> image model" until one is picked; a message sent before then is refused
+> as it was. Where the chat's choice is one the Mac cannot draw with, the
+> line says "Cannot draw with" and the model's name whatever Draw shows,
+> so the menu is still there to pick another from, and the switch is
+> dimmed with the reason as before. The picture editor's "Drawn with" menu
+> was already this shape; the composer now matches it.
+>
+> Kill criterion: a chat whose Mac lists several image models and whose
+> composer shows no way to pick one while Draw is on, read from the
+> `draws-with` element in a UI walk.

@@ -23,7 +23,7 @@ final class DrawingWireTests: XCTestCase {
         .imageModelDoesNotFit:
             "The image model needs more memory than is free while another reply is being written there. Ask again "
             + "when that reply has ended.",
-        .notAnImageModel: "The model chosen to draw with is not an image model. Pick another from the Draw menu.",
+        .notAnImageModel: "The model chosen to draw with is not an image model. Pick another image model.",
     ]
 
     /// The eight codes gglib's drawing writes, and the one it refuses a

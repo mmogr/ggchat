@@ -3,8 +3,8 @@ import XCTest
 
 @testable import GGChatUI
 
-/// What the Draw control's menu lists, and what the control says of the
-/// image model that draws.
+/// What the image-model menu lists, and what the line over the field and
+/// the Draw switch say of the image model that draws.
 @MainActor
 final class ImageModelMenuTests: XCTestCase {
     private typealias Choice = ImageModelChoiceTests
@@ -78,10 +78,11 @@ final class ImageModelMenuTests: XCTestCase {
 
     /// A Mac with several image models and no default has no "Default"
     /// row while nothing is chosen, since it would name no model; with a
-    /// choice made the row is back, to undo it. The control then waits for
-    /// a choice: it is off and not unavailable, and a press opens the
-    /// models. Over the field, a line names the model while Draw is on.
-    func testWithNoDefaultTheMenuListsOnlyTheModelsAndTheControlOpensIt() {
+    /// choice made the row is back, to undo it. The switch then waits for a
+    /// choice: it turns over as ever, shows on when pressed, and is off or
+    /// on and not unavailable. Over the field, the line asks for the choice
+    /// while Draw is on, and names the model once there is one.
+    func testWithNoDefaultTheMenuListsOnlyTheModelsAndTheLineAsksForOne() {
         let flux = ImageModelRow(id: 3, name: "flux1-schnell-q8_0", family: "flux1")
         let unpicked = Drawing(
             available: false, code: "drawing_unavailable", reason: "several and no default",
@@ -93,33 +94,42 @@ final class ImageModelMenuTests: XCTestCase {
         XCTAssertEqual(DrawMenu(unpicked, chosen: 7).rows.map(\.title).first, "Default")
         XCTAssertEqual(DrawMenu(unpicked, chosen: 7).rows.map(\.checked), [false, false, true])
 
+        XCTAssertEqual(DrawToggle.press(isOn: false, refusal: "no", choosing: true), .set(true))
+        XCTAssertEqual(DrawToggle.press(isOn: true, refusal: "no", choosing: true), .set(false))
+        XCTAssertTrue(DrawToggle.shows(on: true, refusal: "no", choosing: true))
+        XCTAssertFalse(DrawToggle.shows(on: false, refusal: "no", choosing: true))
         XCTAssertEqual(DrawToggle.value(isOn: false, refusal: "no", choosing: true), "Off, no image model chosen")
-        XCTAssertEqual(DrawToggle.value(isOn: true, refusal: "no", choosing: true), "Off, no image model chosen")
+        XCTAssertEqual(DrawToggle.value(isOn: true, refusal: "no", choosing: true), "On, no image model chosen")
         XCTAssertEqual(
-            DrawToggle.hint(refusal: "no", hasMenu: true, choosing: true), "Opens the image models to choose from")
-        XCTAssertEqual(DrawToggle.hint(refusal: "no", hasMenu: true), "no. Hold to choose the image model.")
+            DrawToggle.hint(refusal: "no", choosing: true),
+            "Asks for a picture with this message. The image model is chosen over the field.")
 
-        XCTAssertEqual(DrawsWithLine.line(shown: true, model: "flux"), "Drawing with flux")
-        XCTAssertNil(DrawsWithLine.line(shown: false, model: "flux"), "a line was shown with Draw off")
-        XCTAssertNil(DrawsWithLine.line(shown: true, model: nil))
-        XCTAssertNil(DrawsWithLine.line(shown: true, model: ""))
+        XCTAssertEqual(DrawsWithLine.line(on: true, refusal: "no", model: nil, choosing: true), "Choose an image model")
+        XCTAssertNil(DrawsWithLine.line(on: false, refusal: "no", model: nil, choosing: true), "asked with Draw off")
+        XCTAssertEqual(DrawsWithLine.line(on: true, refusal: nil, model: "flux"), "Drawing with flux")
+        XCTAssertNil(DrawsWithLine.line(on: false, refusal: nil, model: "flux"), "a line was shown with Draw off")
+        XCTAssertNil(DrawsWithLine.line(on: true, refusal: "no", model: "flux"), "named a model the Mac refused")
+        XCTAssertNil(DrawsWithLine.line(on: true, refusal: nil, model: nil))
+        XCTAssertNil(DrawsWithLine.line(on: true, refusal: nil, model: ""))
     }
 
-    /// With a menu, VoiceOver hears the image model that draws after the
-    /// state, and that holding the control opens the choice; without one
-    /// the control says what it always said.
-    func testTheControlSaysWhichModelDraws() {
-        XCTAssertEqual(DrawToggle.value(isOn: true, refusal: nil, drawsWith: "flux"), "On, draws with flux")
-        XCTAssertEqual(DrawToggle.value(isOn: false, refusal: nil, drawsWith: "flux"), "Off, draws with flux")
-        XCTAssertEqual(DrawToggle.value(isOn: true, refusal: "no", drawsWith: nil), "Unavailable")
+    /// The line over the field says which model draws, and when the chat's
+    /// choice is one the Mac cannot draw with it says so whatever Draw
+    /// shows, naming the model where the list still has it. The switch
+    /// says its state alone, and the reason while it cannot draw.
+    func testTheLineSaysWhichModelDrawsAndTheSwitchItsState() {
+        XCTAssertEqual(
+            DrawsWithLine.line(on: true, refusal: "no", model: "qwen", refused: true), "Cannot draw with qwen")
+        XCTAssertEqual(
+            DrawsWithLine.line(on: false, refusal: "no", model: "qwen", refused: true), "Cannot draw with qwen")
+        XCTAssertEqual(
+            DrawsWithLine.line(on: false, refusal: "no", model: nil, refused: true), "Pick another image model")
+
+        XCTAssertEqual(DrawToggle.value(isOn: true, refusal: nil), "On")
+        XCTAssertEqual(DrawToggle.value(isOn: true, refusal: "no"), "Unavailable")
         XCTAssertEqual(DrawToggle.value(isOn: false, refusal: nil), "Off")
-        XCTAssertEqual(DrawToggle.hint(refusal: nil, hasMenu: false), "Asks for a picture with this message")
-        XCTAssertEqual(
-            DrawToggle.hint(refusal: nil, hasMenu: true),
-            "Asks for a picture with this message. Hold to choose the image model.")
-        XCTAssertEqual(DrawToggle.hint(refusal: "home cannot draw: no", hasMenu: false), "home cannot draw: no")
-        XCTAssertEqual(
-            DrawToggle.hint(refusal: "Pick another from the Draw menu.", hasMenu: true),
-            "Pick another from the Draw menu. Hold to choose the image model.")
+        XCTAssertEqual(DrawToggle.hint(refusal: nil), "Asks for a picture with this message")
+        XCTAssertEqual(DrawToggle.hint(refusal: "home cannot draw: no"), "home cannot draw: no")
+        XCTAssertEqual(DrawToggle.press(isOn: true, refusal: "no"), .say("no"))
     }
 }

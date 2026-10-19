@@ -224,12 +224,14 @@ Each claim names the test that keeps it true.
   <!-- test: ImageModelWireTests.testATurnNamesItsImageModelOnlyWhenItDraws -->
   <!-- test: ImageModelWireTests.testARunNamesItsImageModelInItsQueryOnlyWhenItDraws -->
 - A chat chooses the image model its pictures are drawn with, where its
-  Mac lists two or more: holding the Draw control opens them, "Default
-  (name)" first and then each in the Mac's order with its family, "loaded"
-  for the one loaded now, and one that lacks a file dimmed with what it
-  lacks. Picking one presses Draw for the message being written and sends
-  nothing, and VoiceOver hears which model draws. With one image model or
-  none, and for a Mac from before the list, the control is the plain switch.
+  Mac lists two or more: the "Drawing with" line over the field, shown
+  while Draw is on, is a menu of them, "Default (name)" first and then each
+  in the Mac's order with its family, "loaded" for the one loaded now, and
+  one that lacks a file dimmed with what it lacks. Picking one sets the
+  choice and sends nothing; Draw itself is the switch and nothing more,
+  and VoiceOver hears the line as "Image model" and the model's name. With
+  one image model or none, and for a Mac from before the list, the line is
+  plain and names the model.
   The choice is the chat's and is said with every message that draws, never
   with one that does not, and never to a Mac from before the list, which
   would refuse the word. A conversation kept here stores it in one optional
@@ -238,17 +240,20 @@ Each claim names the test that keeps it true.
   with the chat open, and a chat opened again has none.
   <!-- test: ImageModelMenuTests.testTheMenuListsTheDefaultThenEachModelInTheOrderGiven -->
   <!-- test: ImageModelMenuTests.testThereIsAMenuOnlyWhereThereIsAChoice -->
-  <!-- test: ImageModelMenuTests.testTheControlSaysWhichModelDraws -->
+  <!-- test: ImageModelMenuTests.testTheLineSaysWhichModelDrawsAndTheSwitchItsState -->
 - A Mac that lists several image models that can draw and no default draws
-  nothing until one is chosen, and its Draw control then asks which: it is
-  not dimmed, a press opens the models in place of saying why, and the list
-  has no "Default" row, which would name nothing. Whether a Mac waits for a
-  choice is read from its list, not from the words of its refusal. A model
-  picked there can draw at once, by the list, before the Mac has answered
-  about it. While Draw is on, a line over the field names the image model
-  the picture is drawn with, where one is known, in either kind of chat.
+  nothing until one is chosen, and the line over the field then asks which:
+  Draw is not dimmed and turns over as ever, the line reads "Choose an
+  image model" while it is on, and the list has no "Default" row, which
+  would name nothing. Whether a Mac waits for a choice is read from its
+  list, not from the words of its refusal. A model picked there can draw at
+  once, by the list, before the Mac has answered about it. While Draw is
+  on, the line names the image model the picture is drawn with, where one
+  is known, in either kind of chat; and when the chat's choice is one the
+  Mac cannot draw with, the line says "Cannot draw with" and the name
+  whatever Draw shows, so another can be picked from it.
   <!-- test: ImageModelWireTests.testAHubAwaitsAChoiceWithSeveralCompleteModelsAndNoDefault -->
-  <!-- test: ImageModelMenuTests.testWithNoDefaultTheMenuListsOnlyTheModelsAndTheControlOpensIt -->
+  <!-- test: ImageModelMenuTests.testWithNoDefaultTheMenuListsOnlyTheModelsAndTheLineAsksForOne -->
   <!-- test: HubChatImageModelTests.testAMacsChatWaitsForAChoiceThenNamesTheModelThatDraws -->
   <!-- test: ImageModelChoiceTests.testAnOlderMacHasNoMenuAndIsNeverSentAnImageModel -->
   <!-- test: ImageModelChoiceTests.testAChoiceIsSaidWithEachMessageThatDrawsAndNoOther -->
@@ -262,8 +267,9 @@ Each claim names the test that keeps it true.
   another. The Mac is asked about a message that names the model chosen,
   when it is picked and each time it is asked about drawing, so a Mac with
   several image models and no default can draw once one is picked. A model
-  the list no longer has, or has without a file, dims the control with a
-  sentence that says so and leaves the menu to pick another from. A message
+  the list no longer has, or has without a file, dims the switch with a
+  sentence that says so, and the line over the field says so too and is
+  still the menu to pick another from. A message
   the Mac refuses with `model_not_found`, `not_an_image_model` or
   `image_model_incomplete` keeps its refusal with the Mac's reason: a
   question kept here stays one that draws and Retry names the same model, a

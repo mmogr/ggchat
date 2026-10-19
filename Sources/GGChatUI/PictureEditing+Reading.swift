@@ -22,7 +22,7 @@ extension PictureEditing {
         if words.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return "Say what the picture should show." }
         if mode == .fix, !strokes.marksSomething { return "Brush over the part to fix first." }
         // A Mac with several image models and no default draws for none
-        // until one is named, so the editor asks, as the Draw control does.
+        // until one is named, so the editor asks, as the line over the composer's field does.
         if model == nil, drawing?.awaitsImageChoice == true { return "Choose an image model first." }
         return nil
     }

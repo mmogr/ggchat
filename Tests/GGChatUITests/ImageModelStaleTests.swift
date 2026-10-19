@@ -43,8 +43,8 @@ final class ImageModelStaleTests: XCTestCase {
         let gone = Drawing(available: true, model: Choice.flux.name, modelID: 3, models: [Choice.flux])
         let lacking = Drawing(available: true, model: Choice.flux.name, modelID: 3, models: [Choice.flux, broken])
         let sentences = [
-            "home no longer has the image model this chat draws with. Pick another from the Draw menu.",
-            "qwen_image_2.1-Q8_0 is missing LLM and VAE on home. Pick another from the Draw menu.",
+            "home no longer has the image model this chat draws with. Pick another image model.",
+            "qwen_image_2.1-Q8_0 is missing LLM and VAE on home. Pick another image model.",
         ]
         for (listed, sentence) in zip([gone, lacking], sentences) {
             model.drawings[config.id] = listed
@@ -52,6 +52,7 @@ final class ImageModelStaleTests: XCTestCase {
             XCTAssertEqual(model.drawRefusal(for: try conversation(model)), sentence)
             XCTAssertEqual(model.drawVerdict(on: config, choosing: 7), .choice(sentence))
             XCTAssertFalse(model.hubCannotDraw(for: try conversation(model)))
+            XCTAssertTrue(model.drawChoiceRefused(for: try conversation(model)), "the line offers no other model")
             XCTAssertEqual(try conversation(model).imageModelID, 7, "a stale choice was swapped for another")
             let menu = model.drawMenu(for: try conversation(model))
             XCTAssertTrue(menu.isOffered, "nothing to pick another model from")

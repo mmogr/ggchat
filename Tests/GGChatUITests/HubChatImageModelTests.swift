@@ -85,10 +85,9 @@ final class HubChatImageModelTests: XCTestCase {
     }
 
     /// A Mac with several image models and no default: the open chat's
-    /// Draw control waits for a choice and names no model. Once one is
-    /// picked and the Mac says it can draw with it, the control is the
-    /// switch again and the line over the field names the model. With a
-    /// default and nothing chosen, the line names the default.
+    /// line over the field asks for a choice and names no model. Once one is
+    /// picked and the Mac says it can draw with it, the line names the
+    /// model. With a default and nothing chosen, the line names the default.
     func testAMacsChatWaitsForAChoiceThenNamesTheModelThatDraws() async throws {
         let flux = ImageModelRow(id: 3, name: "flux1-schnell-q8_0", family: "flux1")
         let unpicked = Drawing(
@@ -146,7 +145,8 @@ final class HubChatImageModelTests: XCTestCase {
             model.imageChoiceAnswers = [:]
             XCTAssertEqual(
                 model.hubDrawRefusal,
-                "home no longer has the image model this chat draws with. Pick another from the Draw menu.", code)
+                "home no longer has the image model this chat draws with. Pick another image model.", code)
+            XCTAssertTrue(model.hubDrawChoiceRefused, "\(code): the line offers no other model")
         }
     }
 }
