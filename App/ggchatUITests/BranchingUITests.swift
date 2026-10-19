@@ -29,7 +29,7 @@ final class BranchingUITests: XCTestCase {
         // and a hold on them selects. The transcript sits at its bottom with
         // the keyboard still up under the two-row composer, and the mock's
         // reply is taller than what is left, so its label can be above the
-        // top: it is brought down into view first.
+        // top, under the navigation bar: it is brought down clear of it first.
         XCTAssertTrue(revealDownward(reply, in: app), "the reply's label never came into view")
         let edit = app.buttons["Edit"].firstMatch
         XCTAssertTrue(press(reply, untilExists: edit), "the reply's menu has no Edit")
@@ -61,18 +61,26 @@ final class BranchingUITests: XCTestCase {
 
 extension XCTestCase {
     /// Scrolls a transcript down, by swiping on whichever of its reply's last
-    /// line or the question is on screen, until `element` above them can be
-    /// touched. False when neither is there to swipe on, or it never can.
+    /// line or the question is on screen, until `element` above them lies
+    /// wholly between the navigation bar and the model pill. Not
+    /// `isHittable`: on 2cfa99e that said yes for a label under the bar,
+    /// whose middle was inside the Back button, and the hold went there.
+    /// False when neither handle is there to swipe on, or it never clears.
     @MainActor
     fileprivate func revealDownward(_ element: XCUIElement, in app: XCUIApplication, swipes: Int = 4) -> Bool {
         let last = app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'That is all there is to it'"))
         let handles = [last.firstMatch, app.staticTexts["Plan a trip"].firstMatch]
+        let pill = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Model, '")).firstMatch
+        let clear = {
+            element.exists && element.frame.minY >= app.navigationBars.firstMatch.frame.maxY
+                && element.frame.maxY <= pill.frame.minY
+        }
         for _ in 0..<swipes {
-            if element.exists, element.isHittable { return true }
+            if clear() { return true }
             guard let handle = handles.first(where: { $0.exists && $0.isHittable }) else { return false }
             handle.swipeDown()
         }
-        return element.exists && element.isHittable
+        return clear()
     }
 
     /// Holds, then checks the hold opened what it should, and holds again if
