@@ -27,6 +27,12 @@ final class BranchingUITests: XCTestCase {
         XCTAssertTrue(reply.waitForExistence(timeout: 60), "no reply arrived")
         XCTAssertTrue(app.buttons["Send"].firstMatch.waitForExistence(timeout: 60), "the reply never finished")
 
+        // The label is what is held, since the reply's words are selectable
+        // and a hold on them selects. The transcript sits at its bottom with
+        // the keyboard still up under the two-row composer, and the mock's
+        // reply is taller than what is left, so its label can be above the
+        // top: it is brought down into view first.
+        XCTAssertTrue(revealDownward(reply, in: app), "the reply's label never came into view")
         let edit = app.buttons["Edit"].firstMatch
         XCTAssertTrue(press(reply, untilExists: edit), "the reply's menu has no Edit")
         edit.tap()
@@ -56,6 +62,21 @@ final class BranchingUITests: XCTestCase {
 }
 
 extension XCTestCase {
+    /// Scrolls a transcript down, by swiping on whichever of its reply's last
+    /// line or the question is on screen, until `element` above them can be
+    /// touched. False when neither is there to swipe on, or it never can.
+    @MainActor
+    fileprivate func revealDownward(_ element: XCUIElement, in app: XCUIApplication, swipes: Int = 4) -> Bool {
+        let last = app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'That is all there is to it'"))
+        let handles = [last.firstMatch, app.staticTexts["Plan a trip"].firstMatch]
+        for _ in 0..<swipes {
+            if element.exists, element.isHittable { return true }
+            guard let handle = handles.first(where: { $0.exists && $0.isHittable }) else { return false }
+            handle.swipeDown()
+        }
+        return element.exists && element.isHittable
+    }
+
     /// Holds, then checks the hold opened what it should, and holds again if
     /// it did not. A context menu is the system's to present, and on a loaded
     /// simulator a hold can end before the menu is armed, or land while the
