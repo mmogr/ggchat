@@ -4,8 +4,8 @@ import GGChatCore
 /// A send through a pipe that is not connected, waiting until it is
 /// (ADR 0006).
 ///
-/// There is one at most, because a wait is the reply in flight and there is
-/// one of those. It keeps no copy of the state it waits on: every change that
+/// There is one at most per conversation, because a wait is that
+/// conversation's reply in flight. It keeps no copy of the state it waits on: every change that
 /// could end it wakes it, and it looks again. A status written, a dial ended
 /// and a dial refused all wake it; Stop, the background and the provider's
 /// removal cancel the reply, which ends it. There is no timer.
@@ -16,7 +16,8 @@ final class PipeWait {
     var refusal: String?
     /// Whether this wait has dialled the pipe itself. It does so once at
     /// most, so a pipe that closes on its own afterwards is left to
-    /// Reconnect or Stop rather than dialled again and again.
+    /// Reconnect or Stop rather than dialled again and again; and never while
+    /// another wait's dial for the same pipe is out (`waitDials`).
     var dialled = false
     let changes: AsyncStream<Void>
     private let continuation: AsyncStream<Void>.Continuation
@@ -49,10 +50,10 @@ extension AppModel {
     /// A dial already in flight for it — a resume, an opening, a reconnect or
     /// a pairing — is joined. A pipe that is installed and still looking is
     /// waited on. A pipe that is closed or was never dialled is dialled, once.
-    func waitForPipe(_ config: ProviderConfig) async -> PipeWaitEnd {
+    func waitForPipe(_ config: ProviderConfig, for conversationID: UUID) async -> PipeWaitEnd {
         let wait = PipeWait(providerID: config.id)
-        pipeWait = wait
-        defer { if pipeWait === wait { pipeWait = nil } }
+        pipeWaits[conversationID] = wait
+        defer { if pipeWaits[conversationID] === wait { pipeWaits[conversationID] = nil } }
         if let end = look(at: wait) { return end }
         for await _ in wait.changes {
             if let end = look(at: wait) { return end }
@@ -73,11 +74,18 @@ extension AppModel {
             return .refused(Failure(message: refusal, code: nil, whereToLook: .unknown))
         }
         let looking = pipeSessions[id] != nil && pipeStatuses[id] != .closed
-        guard !connecting.contains(id), !looking, !wait.dialled else { return nil }
+        guard !connecting.contains(id), !waitDials.contains(id), !looking, !wait.dialled else { return nil }
         wait.dialled = true
+        // Marked until the dial ends. A dial for a closed pipe hangs it up
+        // first, which takes a while, and a second wait looking then would
+        // hang it up again and call this dial off.
+        waitDials.insert(id)
         // Not a child of the reply: Stop ends the wait and leaves the dial
         // to finish, so the pipe is up for the next send.
-        Task { await dial(config) }
+        Task {
+            await dial(config)
+            waitDials.remove(id)
+        }
         return nil
     }
 
@@ -90,21 +98,22 @@ extension AppModel {
         await connectPipe(for: config, quietly: true)
     }
 
-    /// Gives a refused dial's sentence to the send waiting on this provider.
-    /// Returns whether one took it: the question then shows the sentence, so
-    /// nothing else should.
+    /// Gives a refused dial's sentence to every send waiting on this
+    /// provider. Returns whether one took it: the questions then show the
+    /// sentence, so nothing else should.
     @discardableResult
     func handToWaitingSend(_ sentence: String, for providerID: UUID) -> Bool {
-        guard let wait = pipeWait, wait.providerID == providerID else { return false }
-        wait.refusal = sentence
-        wait.wake()
-        return true
+        let waits = pipeWaits.values.filter { $0.providerID == providerID }
+        for wait in waits {
+            wait.refusal = sentence
+            wait.wake()
+        }
+        return !waits.isEmpty
     }
 
-    /// Asks the send waiting on this provider, if there is one, to look again.
+    /// Asks every send waiting on this provider to look again.
     func wakeWaitingSend(for providerID: UUID) {
-        guard let wait = pipeWait, wait.providerID == providerID else { return }
-        wait.wake()
+        for wait in pipeWaits.values where wait.providerID == providerID { wait.wake() }
     }
 
     /// "Waiting for home · last heard 08:12", or "Waiting for home · not

@@ -9,8 +9,8 @@ final class PipeWaitDeletionTests: XCTestCase {
     private let ticket = "pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na"
     private let serverURL = URL(string: "http://127.0.0.1:49995/v1")!
 
-    /// The wait ends, and a send in another conversation, to a server that
-    /// answers, is not refused as if a reply were still in flight.
+    /// The wait ends and leaves nothing behind it, and a send in another
+    /// conversation, to a server that answers, is answered.
     @MainActor
     func testDeletingAConversationEndsItsWait() async throws {
         let registry = LoopbackProviderRegistry()
@@ -36,6 +36,7 @@ final class PipeWaitDeletionTests: XCTestCase {
         model.deleteConversation(waiting.id)
         for _ in 0..<200 where model.isStreaming { await Task.yield() }
         XCTAssertFalse(model.isStreaming, "the wait outlived its conversation")
+        XCTAssertTrue(model.pipeWaits.isEmpty, "the wait is still kept")
         send.cancel()
         await send.value
         XCTAssertFalse(model.conversations.contains { $0.id == waiting.id }, "the ended wait wrote it back")

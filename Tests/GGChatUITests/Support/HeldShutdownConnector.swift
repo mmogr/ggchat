@@ -15,6 +15,7 @@ final class HeldShutdownConnector: PipeConnector {
     private let inner: MockPipeConnector
     private let released = Mutex(false)
     private let started = Mutex(0)
+    private let mocks = Mutex<[MockPipeSession]>([])
 
     init(registry: LoopbackProviderRegistry) {
         inner = MockPipeConnector(sleeper: ImmediateSleeper(), registry: registry)
@@ -25,13 +26,21 @@ final class HeldShutdownConnector: PipeConnector {
         started.withLock { $0 }
     }
 
+    /// The mock sessions inside the held ones, in the order they were made,
+    /// so a test can close one the way its far side would.
+    var mockSessions: [MockPipeSession] {
+        mocks.withLock { $0 }
+    }
+
     /// Lets every hang-up through: the ones waiting and the ones still to come.
     func release() {
         released.withLock { $0 = true }
     }
 
     func connect(ticket: String, token: String) async throws -> any PipeSession {
-        HeldSession(inner: try await inner.connect(ticket: ticket, token: token), connector: self)
+        let session = try await inner.connect(ticket: ticket, token: token)
+        if let mock = session as? MockPipeSession { mocks.withLock { $0.append(mock) } }
+        return HeldSession(inner: session, connector: self)
     }
 
     /// Hangs up like the mock's, and is held like every other session here:

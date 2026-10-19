@@ -95,7 +95,7 @@ struct DraftField: View {
 
     private var sendButton: some View {
         Button {
-            if streaming { model.stop() } else { sendIfPossible() }
+            if streaming { model.stop(conversation.id) } else { sendIfPossible() }
         } label: {
             Image(systemName: streaming ? "stop.fill" : "arrow.up")
                 .font(.body.weight(.semibold))
@@ -108,9 +108,9 @@ struct DraftField: View {
         .keyboardShortcut(.return, modifiers: .command)
     }
 
-    /// False while any reply is in flight, even in another conversation, and
-    /// while a hub is still writing this one's last reply: the model would
-    /// refuse the send. A draft is text, images, or both; one with an image
+    /// False while this conversation has a reply in flight, and while a hub
+    /// is still writing its last reply: the model would refuse the send. A
+    /// reply in another conversation is no reason to wait. A draft is text, images, or both; one with an image
     /// still being made ready waits for it.
     private var canSend: Bool {
         let provider = model.provider(for: conversation)

@@ -101,7 +101,6 @@ struct MessageRow: View {
                 model.continueReply()
             }
             .buttonStyle(.bordered)
-            .disabled(model.isStreaming)
         }
         .padding(.top, 2)
     }
@@ -119,7 +118,6 @@ struct MessageRow: View {
                 model.retry()
             }
             .buttonStyle(.bordered)
-            .disabled(model.isStreaming)
         }
         .padding(.top, 2)
     }

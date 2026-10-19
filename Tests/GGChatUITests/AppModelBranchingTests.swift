@@ -136,7 +136,8 @@ final class AppModelBranchingTests: XCTestCase {
 
     /// While its reply streams, the last question is no longer edited in
     /// place: the edit is made on a branch, and the question the reply
-    /// answers is left as it was.
+    /// answers is left as it was. The branch is a conversation of its own,
+    /// so it is answered at once, beside the reply still streaming.
     @MainActor
     func testAQuestionWhoseReplyIsStreamingIsEditedOnABranch() async throws {
         let model = try makeModel(HangingProvider())
@@ -144,13 +145,18 @@ final class AppModelBranchingTests: XCTestCase {
         let original = try XCTUnwrap(model.selectedConversation)
         XCTAssertTrue(model.isStreaming(original.id))
 
-        model.edit(original.messages[0].id, in: original.id, to: "Plan a long trip")
+        let answering = model.edit(original.messages[0].id, in: original.id, to: "Plan a long trip")
 
         XCTAssertEqual(model.conversations.count, 2, "the question was edited under its streaming reply")
         let kept = try XCTUnwrap(model.conversations.first { $0.id == original.id })
         XCTAssertEqual(kept.messages.map(\.content), ["Plan a trip"])
-        model.stop()
+        let branch = try XCTUnwrap(model.conversations.first { $0.id != original.id })
+        XCTAssertNotNil(answering, "the branch waited on another conversation's reply")
+        XCTAssertTrue(model.isStreaming(branch.id))
+        model.stop(original.id)
+        model.stop(branch.id)
         await streaming.value
+        await answering?.value
     }
 
     @MainActor

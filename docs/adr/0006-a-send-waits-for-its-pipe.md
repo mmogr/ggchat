@@ -1,7 +1,8 @@
 # ADR 0006 — A send through a pipe that is not connected waits for it
 
 - **Status:** Accepted
-- **Date:** 2026-09-29
+- **Date:** 2026-09-29 (amended 2026-10-19 — a send waits per conversation,
+  and several waits on one pipe share one dial, see ADR 0012)
 - **Supersedes:** nothing
 - **Superseded by:** nothing
 
@@ -22,6 +23,11 @@ dial is refused, whose sentence goes on the question and not into an alert;
 and on Stop, the background or the provider's removal, which leave Retry and
 no failure, or on the conversation's deletion. There is no time limit. A dial
 the wait started goes on after Stop, so the pipe is up for the next send.
+
+> **Amended 2026-10-19 (ADR 0012).** Each conversation can have a send
+> waiting, and several can wait on one pipe. The pipe is still dialled once:
+> a wait joins a dial another wait started, and a refused dial's sentence
+> goes under every waiting question.
 
 Nothing is stored or counted. The wait lives in memory, as a reply in
 flight does until it is a run the hub owns (ADR 0002, amended 2026-09-29,

@@ -67,7 +67,7 @@ extension AppModel {
         // Only a close the session reported comes with a reason.
         notePipeStatus(providerID, from: previous, to: status, closedOnItsOwn: status == .closed && reason != nil)
         if status == .closed, previous != .closed {
-            let midReply = cutShort || streamingProviderID == providerID
+            let midReply = cutShort || streamingProviderIDs.contains(providerID)
             log.log(.info, "pipe closed\(midReply ? " mid-reply" : "")\(reason.map { ": \($0)" } ?? "")")
         }
         if status?.isConnected == true, previous?.isConnected != true {
@@ -91,22 +91,24 @@ extension AppModel {
         wakeWaitingSend(for: providerID)
     }
 
-    /// The provider the reply in flight goes through, streaming or still
-    /// waiting for its pipe, if there is one.
-    var replyProviderID: UUID? {
-        liveReply.flatMap { live in
-            conversations.first { $0.id == live.conversationID }?.providerID
-        }
+    /// The replies in flight through this provider, streaming or still
+    /// waiting for its pipe.
+    func liveReplies(through providerID: UUID) -> [LiveReply] {
+        liveReplies.values.filter { providerID == provider(ofReply: $0) }
     }
 
-    /// The provider the reply in flight is streaming through, if there is one.
-    /// A reply still waiting for its pipe is not streaming, so a close then is
-    /// not logged as one mid-reply: nothing had arrived.
+    /// The providers a reply in flight is streaming through. A reply still
+    /// waiting for its pipe is not streaming, so a close then is not logged
+    /// as one mid-reply: nothing had arrived.
     ///
     /// Not `private`: the hang-up pass reads it, and it lives in
     /// `AppModel+Lifecycle` — a different file, which is what `private` means
     /// in Swift even for two extensions of the same type.
-    var streamingProviderID: UUID? {
-        liveReply?.waitingFor == nil ? replyProviderID : nil
+    var streamingProviderIDs: Set<UUID> {
+        Set(liveReplies.values.filter { $0.waitingFor == nil }.compactMap(provider(ofReply:)))
+    }
+
+    private func provider(ofReply live: LiveReply) -> UUID? {
+        conversations.first { $0.id == live.conversationID }?.providerID
     }
 }

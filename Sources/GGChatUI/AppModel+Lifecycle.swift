@@ -90,8 +90,8 @@ extension AppModel {
         await connectPipe(for: config, quietly: true)
     }
 
-    /// The app is going away: the reply in flight is put down and every pipe
-    /// is hung up.
+    /// The app is going away: every reply in flight is put down and every
+    /// pipe is hung up.
     ///
     /// There is no brief-background regime worth holding a pipe open for.
     /// iOS reclaims a suspended process's sockets without telling it —
@@ -103,31 +103,32 @@ extension AppModel {
     /// with a pill reading "Direct" over nothing. So the choice is binary,
     /// and this is the half of it that costs a reconnect instead of a lie.
     ///
-    /// The reply is cancelled and waited for first, so its partial text
+    /// The replies are cancelled and waited for first, so their partial text
     /// reaches the conversation while there is still a runtime to write it:
     /// a process killed for memory while streaming otherwise leaves the
     /// user's question with no answer under it and no error either. A run is
     /// not cancelled: the reading stops, the hub goes on writing, and what
     /// arrived is kept with the run's id so the return can read on.
     ///
-    /// Which provider that reply belonged to has to be read before it is put
-    /// down. `finish(_:finished:cancelled:)` clears `liveReply`, so by the time
-    /// the pipes are hung up below nothing is left to say that the close about
-    /// to be shown is the one that ended a reply, and the log line calls that
-    /// close mid-reply.
+    /// Which providers those replies belonged to has to be read before they
+    /// are put down. `finish(_:finished:cancelled:)` clears `liveReplies`, so
+    /// by the time the pipes are hung up below nothing is left to say that a
+    /// close about to be shown is one that ended a reply, and the log line
+    /// calls that close mid-reply.
     func hangUpEveryPipe() async {
-        let cutShort = streamingProviderID
-        if let inFlight = streamTask {
-            // A run is walked away from, not stopped: the hub goes on
-            // writing it, and coming back reads on. See `AppModel+Runs`.
-            liveReply?.detaching = true
-            inFlight.cancel()
-            await inFlight.value
+        let cutShort = streamingProviderIDs
+        // A run is walked away from, not stopped: the hub goes on writing it,
+        // and coming back reads on. See `AppModel+Runs`.
+        let inFlight = liveReplies.values.compactMap { live in
+            live.detaching = true
+            return live.task
         }
+        for task in inFlight { task.cancel() }
+        for task in inFlight { await task.value }
         // So is a reply a Mac is writing to its chat.
         await detachHubReplies()
         for config in providers where config.isPipe && pipeStatuses[config.id] != nil {
-            await disconnectPipe(for: config.id, leaving: .closed, cutShort: config.id == cutShort)
+            await disconnectPipe(for: config.id, leaving: .closed, cutShort: cutShort.contains(config.id))
         }
     }
 }

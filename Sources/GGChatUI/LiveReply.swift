@@ -56,6 +56,9 @@ public final class LiveReply {
     var detaching = false
     /// Whether the person stopped this reply, which is then never unread.
     var stoppedHere = false
+    /// The task streaming this reply, or reading it on from its run.
+    /// Cancelling it puts the reply down; see `AppModel.stop`.
+    @ObservationIgnored var task: Task<Void, Never>?
     /// The content's markdown, kept between tokens; see `blocks`.
     @ObservationIgnored private var markdown = LiveMarkdown()
 
