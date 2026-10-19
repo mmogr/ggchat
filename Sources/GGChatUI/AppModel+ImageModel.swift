@@ -13,11 +13,12 @@ enum DrawVerdict: Equatable {
     /// The hub cannot draw whatever is chosen, or has not said.
     case hub(String)
     /// The hub cannot draw with the image model the chat chose. It is never
-    /// drawn with another in its place: another is picked from the menu.
+    /// drawn with another in its place: another is picked on the line over
+    /// the field, which says so.
     case choice(String)
     /// The hub cannot draw until an image model is chosen, and none is: it
     /// lists several that can draw and no default
-    /// (`Drawing.awaitsImageChoice`). The Draw control then opens the list.
+    /// (`Drawing.awaitsImageChoice`). The line over the field then asks.
     case undecided(String)
 
     var sentence: String {
@@ -68,10 +69,10 @@ extension AppModel {
         switch listed.fault(ofChoice: chosen) {
         case .gone:
             return .choice(
-                "\(config.name) no longer has the image model this chat draws with. Pick another from the Draw menu.")
+                "\(config.name) no longer has the image model this chat draws with. Pick another image model.")
         case .incomplete(let row):
             let lacks = row.missingLabels.isEmpty ? "a file it needs" : row.missingLabels.formatted(.list(type: .and))
-            return .choice("\(row.name) is missing \(lacks) on \(config.name). Pick another from the Draw menu.")
+            return .choice("\(row.name) is missing \(lacks) on \(config.name). Pick another image model.")
         case nil:
             // The hub's own refusal was for want of a choice, and this is
             // one its list has with all its files.
@@ -106,11 +107,20 @@ extension AppModel {
 
     // MARK: - A conversation kept here
 
-    /// Whether the conversation's Draw control opens the image models when
-    /// pressed, there being nothing to draw with until one is chosen.
+    /// Whether the line over the conversation's field asks for an image
+    /// model, there being nothing to draw with until one is chosen.
     public func drawAwaitsChoice(for conversation: Conversation) -> Bool {
         guard let config = provider(for: conversation), config.isPipe else { return false }
         if case .undecided = drawVerdict(on: config, choosing: conversation.imageModelID) { return true }
+        return false
+    }
+
+    /// Whether the conversation's choice of image model is one its Mac
+    /// cannot draw with, so that the line over the field says so and
+    /// offers another.
+    public func drawChoiceRefused(for conversation: Conversation) -> Bool {
+        guard let config = provider(for: conversation), config.isPipe else { return false }
+        if case .choice = drawVerdict(on: config, choosing: conversation.imageModelID) { return true }
         return false
     }
 
@@ -120,7 +130,7 @@ extension AppModel {
         return drawsWith(on: config, choosing: conversation.imageModelID)
     }
 
-    /// The Draw control's menu for the conversation: none unless its
+    /// The image-model menu over the field for the conversation: none unless its
     /// provider is a paired Mac that lists its image models.
     public func drawMenu(for conversation: Conversation) -> DrawMenu {
         guard let config = provider(for: conversation), config.isPipe else { return .none }
@@ -146,19 +156,29 @@ extension AppModel {
 
     // MARK: - A Mac's chat
 
-    /// The Draw control's menu for the chat open.
+    /// The image-model menu over the field for the chat open.
     public var hubDrawMenu: DrawMenu {
         guard let open = openedHubChat else { return .none }
         return DrawMenu(drawings[open.providerID], chosen: open.imageModel)
     }
 
-    /// Whether the open chat's Draw control opens the image models when
-    /// pressed, as `drawAwaitsChoice(for:)`.
+    /// Whether the line over the open chat's field asks for an image
+    /// model, as `drawAwaitsChoice(for:)`.
     public var hubDrawAwaitsChoice: Bool {
         guard let open = openedHubChat, let config = providers.first(where: { $0.id == open.providerID }) else {
             return false
         }
         if case .undecided = drawVerdict(on: config, choosing: open.imageModel) { return true }
+        return false
+    }
+
+    /// Whether the open chat's choice of image model is one its Mac cannot
+    /// draw with, as `drawChoiceRefused(for:)`.
+    public var hubDrawChoiceRefused: Bool {
+        guard let open = openedHubChat, let config = providers.first(where: { $0.id == open.providerID }) else {
+            return false
+        }
+        if case .choice = drawVerdict(on: config, choosing: open.imageModel) { return true }
         return false
     }
 

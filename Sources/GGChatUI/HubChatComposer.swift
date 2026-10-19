@@ -87,21 +87,23 @@ struct HubComposer: View {
                 AttachmentStrip(images: draft.images, preparing: preparing > 0) { draft.remove($0) }
             }
             DrawsWithLine(
-                shown: DrawToggle.shows(on: draft.draws, refusal: model.hubDrawRefusal), model: model.hubDrawsWith)
+                isOn: draft.draws, refusal: model.hubDrawRefusal, model: model.hubDrawsWith, menu: model.hubDrawMenu,
+                choosing: model.hubDrawAwaitsChoice, refused: model.hubDrawChoiceRefused
+            ) {
+                model.setHubImageModel($0)
+            }
             ComposerRows {
                 field
             } leading: {
                 AddImageButtons(
                     disabled: writing, refusal: canSee ? nil : "This model cannot read images.", take: take)
                 DrawToggle(
-                    isOn: draft.draws, refusal: model.hubDrawRefusal, disabled: writing, menu: model.hubDrawMenu,
+                    isOn: draft.draws, refusal: model.hubDrawRefusal, disabled: writing,
                     choosing: model.hubDrawAwaitsChoice
                 ) {
                     draft.draws = $0
                 } say: {
                     model.lastError = $0
-                } pick: {
-                    model.setHubImageModel($0)
                 }
             } send: {
                 sendButton

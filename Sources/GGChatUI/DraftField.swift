@@ -7,9 +7,10 @@ import SwiftUI
 ///
 /// An image comes from the photo picker, a paste or a drop, and every one
 /// goes through `ImageDownscale` before it joins the draft. Draw is pressed
-/// for one message, where the provider is gglib (`DrawToggle`), and held to
-/// choose the image model where its Mac lists some. A draft refused
-/// on its way out keeps its text and its images.
+/// for one message, where the provider is gglib (`DrawToggle`), and the
+/// image model is chosen on the line over the field (`DrawsWithLine`) where
+/// its Mac lists some. A draft refused on its way out keeps its text and
+/// its images.
 struct DraftField: View {
     @Environment(AppModel.self) private var model
     @State private var draft = Draft()
@@ -31,8 +32,12 @@ struct DraftField: View {
                 AttachmentStrip(images: draft.images, preparing: preparing > 0) { draft.remove($0) }
             }
             DrawsWithLine(
-                shown: DrawToggle.shows(on: draft.draws, refusal: model.drawRefusal(for: conversation)),
-                model: model.drawsWith(for: conversation))
+                isOn: draft.draws, refusal: model.drawRefusal(for: conversation),
+                model: model.drawsWith(for: conversation), menu: model.drawMenu(for: conversation),
+                choosing: model.drawAwaitsChoice(for: conversation), refused: model.drawChoiceRefused(for: conversation)
+            ) {
+                model.setImageModel($0, for: conversation.id)
+            }
             ComposerRows {
                 field
             } leading: {
@@ -48,13 +53,11 @@ struct DraftField: View {
                 if model.offersDrawing(for: conversation) {
                     DrawToggle(
                         isOn: draft.draws, refusal: model.drawRefusal(for: conversation), disabled: streaming,
-                        menu: model.drawMenu(for: conversation), choosing: model.drawAwaitsChoice(for: conversation)
+                        choosing: model.drawAwaitsChoice(for: conversation)
                     ) {
                         draft.draws = $0
                     } say: {
                         model.lastError = $0
-                    } pick: {
-                        model.setImageModel($0, for: conversation.id)
                     }
                 }
             } send: {

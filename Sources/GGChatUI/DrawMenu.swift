@@ -1,12 +1,12 @@
 import GGChatCore
 import SwiftUI
 
-/// What the Draw control's menu lists: the image models of the chat's hub,
-/// as its answer about drawing gave them, with the chat's choice marked. It
-/// has rows only where there is a choice to make or one to undo: a hub that
-/// lists two image models or more, or a chat that has already chosen. Any
-/// other hub, one from before the list among them, has none, and the
-/// control is then the plain switch.
+/// What the image-model menu over a composer's field lists: the image
+/// models of the chat's hub, as its answer about drawing gave them, with
+/// the chat's choice marked. It has rows only where there is a choice to
+/// make or one to undo: a hub that lists two image models or more, or a
+/// chat that has already chosen. Any other hub, one from before the list
+/// among them, has none, and the line is then plain.
 public struct DrawMenu: Equatable, Sendable {
     /// One row: the hub's own pick, or one image model.
     public struct Row: Equatable, Sendable, Identifiable {
@@ -82,7 +82,7 @@ public struct DrawMenu: Equatable, Sendable {
     }
 }
 
-/// The rows of a Draw control's menu, as buttons: the name, the line under
+/// The rows of the image-model menu, as buttons: the name, the line under
 /// it, and a tick on the chat's choice. A model that cannot draw is dimmed
 /// and cannot be picked.
 struct DrawMenuRows: View {
