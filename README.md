@@ -55,7 +55,7 @@ idle → relayed → direct. The status pill
 follows the session, reads "Reconnect" when the pipe closes, and stays
 pressable in every state but a dial in flight, because a connected status
 can be stale. Going
-to the background hangs up every pipe and puts down the reply in flight,
+to the background hangs up every pipe and puts down every reply in flight,
 except a reply to gglib, which the hub goes on writing and the app reads on
 from where it stopped, and coming back dials again. A provider's row opens its settings, so a
 machine that has stopped admitting this device, or whose endpoint identity
@@ -1283,7 +1283,8 @@ Each claim names the test that keeps it true.
   (ADR 0006) under "Waiting for home · last heard 08:12", until the pipe
   connects, its dial is refused, or Stop, the background, a removed provider
   or a deleted conversation ends the wait. Removing a provider puts down the
-  reply through it first, keeping what had arrived.
+  replies through it first, keeping what had arrived. Sends in several
+  conversations can wait on one pipe, which is dialled once for all of them.
   <!-- test: PipeWaitTests.testASendDuringADialWaitsForItThenStreamsWithNoAlert -->
   <!-- test: PipeWaitTests.testASendOnAClosedPipeDialsIt -->
   <!-- test: PipeWaitTests.testARefusedDialPutsItsSentenceOnTheQuestion -->
@@ -1294,6 +1295,18 @@ Each claim names the test that keeps it true.
   <!-- test: PipeWaitDeletionTests.testDeletingAConversationEndsItsWait -->
   <!-- test: ProviderRemovalTests.testRemovingAProviderCancelsTheReplyThroughItAndKeepsThePartial -->
   <!-- test: ProviderRemovalTests.testRemovingAProviderLeavesAReplyThroughAnotherAlone -->
+  <!-- test: ConcurrentPipeWaitTests.testTwoSendsWaitingOnOnePipeDialItOnceAndBothStream -->
+  <!-- test: ConcurrentPipeWaitTests.testTwoSendsWaitingOnAClosedPipeHangItUpOnce -->
+  <!-- test: ConcurrentPipeWaitTests.testARefusedDialSaysWhyUnderBothQuestions -->
+- A message can be sent in one conversation while another is still replying
+  (ADR 0012). Each conversation has at most one reply in flight; Stop, the
+  background and a removed provider put down the replies they cover and no
+  others, and coming back reads on from every reply a hub went on writing.
+  <!-- test: ConcurrentReplyTests.testTwoConversationsStreamAtOnceAndEachKeepsItsOwnReply -->
+  <!-- test: ConcurrentReplyTests.testRemovingAProviderStopsOnlyTheRepliesThroughIt -->
+  <!-- test: ConcurrentReplyTests.testTheBackgroundPutsDownEveryReply -->
+  <!-- test: ConcurrentRunReadOnTests.testTwoDetachedRunsAreBothReadOnAfterAReturn -->
+  <!-- test: AppModelRefusalTests.testRetryWhileAnotherConversationStreamsAsksAgain -->
 - An error written into a stream that had already begun ends the reply
   there. gglib writes it as a bare `error` event and then `[DONE]`, and the
   `[DONE]` no longer counts the reply as finished. Text that had arrived stays
@@ -1518,7 +1531,8 @@ Each claim names the test that keeps it true.
   they part. An edited reply is kept as written on a branch and not
   answered; Branch from here copies the conversation and sends nothing. Only
   the last question nothing answers, while no reply to it is being written,
-  is edited in place, and a reply saved as it was changes nothing. A copy carries no
+  is edited in place, and a reply saved as it was changes nothing. A branch
+  made while the reply it parts from streams is answered at once. A copy carries no
   run, a branch of a branch belongs to the first conversation's family, and
   a branch's lineage survives a relaunch (ADR 0010).
   <!-- test: AppModelBranchingTests.testAnEditOfAnAnsweredQuestionOpensABranchAnsweredThere -->
@@ -1766,6 +1780,9 @@ against the mock.
   the picture a conversation kept here asked for is kept in this device's
   store. Amended: a drawn picture is fixed or drawn again from itself, and
   joins its chat only on Keep.
+- [ADR 0012](docs/adr/0012-a-reply-in-flight-is-per-conversation.md): a
+  reply in flight is per conversation, so a send in one never waits for a
+  reply in another; gglib queues the second request.
 
 ## Releases
 
