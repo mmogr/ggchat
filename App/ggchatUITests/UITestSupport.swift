@@ -13,7 +13,7 @@ extension XCTestCase {
     func launchFreshApp(typeSize: String? = nil) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-ggchat-reset", "YES"]
+        app.launchArguments = ["-ggchat-reset", "YES", "-ggchat-still", "YES"]
         if let typeSize {
             app.launchArguments += ["-UIPreferredContentSizeCategoryName", typeSize]
         }

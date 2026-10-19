@@ -42,7 +42,7 @@ final class RefusalUITests: XCTestCase {
 
         // Kept with the question, so a relaunch finds it where it was left.
         app.terminate()
-        app.launchArguments = []
+        app.launchArguments = ["-ggchat-still", "YES"]
         app.launch()
         if !sentence.waitForExistence(timeout: 10) {
             // A phone can open on the list instead. The conversation is its

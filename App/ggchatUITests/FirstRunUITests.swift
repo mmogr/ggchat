@@ -117,7 +117,7 @@ final class FirstRunUITests: XCTestCase {
     private func runFirstRun(live: LiveServer?) throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["-ggchat-reset", "YES"]
+        app.launchArguments = ["-ggchat-reset", "YES", "-ggchat-still", "YES"]
         app.launch()
         XCTContext.runActivity(named: "provider: \(live?.baseURL ?? "the DEBUG mock")") { _ in }
         let suffix = live == nil ? "mock" : "live"

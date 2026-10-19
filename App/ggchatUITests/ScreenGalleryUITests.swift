@@ -19,7 +19,7 @@ final class ScreenGalleryUITests: XCTestCase {
     private func launch() {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["-ggchat-reset", "YES"]
+        app.launchArguments = ["-ggchat-reset", "YES", "-ggchat-still", "YES"]
         app.launch()
     }
 
