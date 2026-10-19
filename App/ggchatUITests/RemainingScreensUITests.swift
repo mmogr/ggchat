@@ -13,9 +13,7 @@ final class RemainingScreensUITests: XCTestCase {
 
     @MainActor
     private func addMockProvider() {
-        let addProvider = app.buttons["Add a provider"].firstMatch
-        XCTAssertTrue(addProvider.waitForExistence(timeout: 30))
-        addProvider.tap()
+        openProviderForm(in: app)
         app.buttons["Cancel"].firstMatch.tap()
         app.buttons["Providers"].firstMatch.tap()
         let mock = app.buttons["Add mock provider"].firstMatch
@@ -30,9 +28,7 @@ final class RemainingScreensUITests: XCTestCase {
     func testTheServerStatusPaneAgainstARealServer() throws {
         guard let live = LiveServer.resolve() else { throw XCTSkip(LiveServer.absenceReason) }
         launch()
-        let addProvider = app.buttons["Add a provider"].firstMatch
-        XCTAssertTrue(addProvider.waitForExistence(timeout: 30))
-        addProvider.tap()
+        openProviderForm(in: app)
         let address = app.textFields["provider-address"].firstMatch
         XCTAssertTrue(address.waitForExistence(timeout: 10))
         enter(live.baseURL, into: address)
@@ -111,9 +107,7 @@ final class RemainingScreensUITests: XCTestCase {
     @MainActor
     func testAClosedPipeOffersAReconnect() {
         launch()
-        let addProvider = app.buttons["Add a provider"].firstMatch
-        XCTAssertTrue(addProvider.waitForExistence(timeout: 30))
-        addProvider.tap()
+        openProviderForm(in: app)
         let ticket = choosePipe(in: app)
         // modelpipe's normative vector 1. Nothing shorter will do: the form
         // refuses a ticket under 67 characters, so Add would stay disabled

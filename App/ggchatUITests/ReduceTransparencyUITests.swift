@@ -159,9 +159,7 @@ final class ReduceTransparencyUITests: XCTestCase {
 
     @MainActor
     private func addMockProvider() {
-        let addProvider = app.buttons["Add a provider"].firstMatch
-        XCTAssertTrue(addProvider.waitForExistence(timeout: 30))
-        addProvider.tap()
+        openProviderForm(in: app)
         app.buttons["Cancel"].firstMatch.tap()
         app.buttons["Providers"].firstMatch.tap()
         let mock = app.buttons["Add mock provider"].firstMatch

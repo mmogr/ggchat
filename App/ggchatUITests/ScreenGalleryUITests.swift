@@ -25,9 +25,7 @@ final class ScreenGalleryUITests: XCTestCase {
 
     @MainActor
     private func openAddProvider() {
-        let add = app.buttons["Add a provider"].firstMatch
-        XCTAssertTrue(add.waitForExistence(timeout: 30), "first run offers no way to add a provider")
-        add.tap()
+        openProviderForm(in: app)
     }
 
     /// The form, and the sentence it shows for an address that is not one.
