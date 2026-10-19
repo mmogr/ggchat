@@ -52,8 +52,9 @@ struct HubLiveReplyRows: View {
 /// sentence the last send left, and above them the context ring once the
 /// chat has a reading. An image is picked, pasted or dropped
 /// as in the local composer, through the one downscale, and a draft may be
-/// images alone. Draw is pressed for one message (`DrawToggle`). Stock controls: the app's glass is the local composer's
-/// alone.
+/// images alone. Draw is pressed for one message (`DrawToggle`). The field
+/// and the toolbar under it are the local composer's rows (`ComposerRows`),
+/// in stock controls: the app's glass is the local composer's alone.
 struct HubComposer: View {
     @Environment(AppModel.self) private var model
     @State private var draft = Draft()
@@ -87,7 +88,9 @@ struct HubComposer: View {
             }
             DrawsWithLine(
                 shown: DrawToggle.shows(on: draft.draws, refusal: model.hubDrawRefusal), model: model.hubDrawsWith)
-            HStack(alignment: .bottom, spacing: 8) {
+            ComposerRows {
+                field
+            } leading: {
                 AddImageButtons(
                     disabled: writing, refusal: canSee ? nil : "This model cannot read images.", take: take)
                 DrawToggle(
@@ -100,25 +103,8 @@ struct HubComposer: View {
                 } pick: {
                     model.setHubImageModel($0)
                 }
-                TextField("Message", text: $draft.text, axis: .vertical)
-                    .lineLimit(1...8)
-                    .textFieldStyle(.roundedBorder)
-                    .accessibilityIdentifier("hub-composer")
-                    .onSubmit(sendIfPossible)
-                    .disabled(writing)
-                    .pastesImages(take)
-                Button {
-                    if writing { model.stopHubReply() } else { sendIfPossible() }
-                } label: {
-                    Image(systemName: writing ? "stop.fill" : "arrow.up")
-                        .font(.body.weight(.semibold))
-                        .frame(minWidth: 28, minHeight: 28)
-                }
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.circle)
-                .disabled(!writing && !canSend)
-                .accessibilityLabel(writing ? "Stop" : "Send")
-                .keyboardShortcut(.return, modifiers: .command)
+            } send: {
+                sendButton
             }
         }
         .padding()
@@ -129,6 +115,32 @@ struct HubComposer: View {
             guard back != nil, draft.isEmpty, let back = model.takeUnsentHubDraft() else { return }
             draft = back
         }
+    }
+
+    private var field: some View {
+        TextField("Message", text: $draft.text, axis: .vertical)
+            .lineLimit(1...8)
+            .textFieldStyle(.roundedBorder)
+            .accessibilityIdentifier("hub-composer")
+            .onSubmit(sendIfPossible)
+            .disabled(model.openHubChatIsWriting)
+            .pastesImages(take)
+    }
+
+    private var sendButton: some View {
+        let writing = model.openHubChatIsWriting
+        return Button {
+            if writing { model.stopHubReply() } else { sendIfPossible() }
+        } label: {
+            Image(systemName: writing ? "stop.fill" : "arrow.up")
+                .font(.body.weight(.semibold))
+                .frame(minWidth: 28, minHeight: 28)
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.circle)
+        .disabled(!writing && !canSend)
+        .accessibilityLabel(writing ? "Stop" : "Send")
+        .keyboardShortcut(.return, modifiers: .command)
     }
 
     private func sendIfPossible() {
