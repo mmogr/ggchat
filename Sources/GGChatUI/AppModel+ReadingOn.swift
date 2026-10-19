@@ -96,7 +96,7 @@ extension AppModel {
         }
         if !live.started, request == nil { return false }
         liveReply = live
-        streamTask = Task { [weak self] in
+        live.task = Task { [weak self] in
             if let request {
                 await self?.putRun(request, on: hub, for: config, live: live)
             } else {

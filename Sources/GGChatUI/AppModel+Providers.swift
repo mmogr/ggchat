@@ -131,7 +131,7 @@ extension AppModel {
         // Replies its hub is still writing away from here are given up, and
         // the one being read is put down as Stop puts it down.
         giveUpRuns(through: removed)
-        let reply = replyProviderID == id ? streamTask : nil
+        let reply = replyProviderID == id ? liveReply?.task : nil
         reply?.cancel()
         Task {
             await reply?.value

@@ -98,7 +98,7 @@ extension AppModel {
     /// two apart by `LiveReply.detaching`, which only the background sets.
     public func stop() {
         liveReply?.stoppedHere = true
-        streamTask?.cancel()
+        liveReply?.task?.cancel()
     }
 
     @discardableResult
@@ -139,7 +139,7 @@ extension AppModel {
                 await self?.streamChat(request, on: provider, live: live)
             }
         }
-        streamTask = task
+        live.task = task
         return task
     }
 

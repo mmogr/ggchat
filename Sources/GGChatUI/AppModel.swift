@@ -19,7 +19,6 @@ public final class AppModel {
     public var lastError: String?
     /// The reply being streamed, if any.
     public internal(set) var liveReply: LiveReply?
-    var streamTask: Task<Void, Never>?
     var streamErrors: [UUID: ProviderError] = [:]
     var modelsByProvider: [UUID: [ModelInfo]] = [:]
     var pipeStatuses: [UUID: PipeStatus] = [:]

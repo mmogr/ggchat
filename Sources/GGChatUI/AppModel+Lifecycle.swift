@@ -117,7 +117,7 @@ extension AppModel {
     /// close mid-reply.
     func hangUpEveryPipe() async {
         let cutShort = streamingProviderID
-        if let inFlight = streamTask {
+        if let inFlight = liveReply?.task {
             // A run is walked away from, not stopped: the hub goes on
             // writing it, and coming back reads on. See `AppModel+Runs`.
             liveReply?.detaching = true
