@@ -24,7 +24,7 @@ extension AppModel {
         defer {
             // Only the reply in flight is cleared: a run given up while it is
             // not being read is finished through here too, beside another.
-            if liveReply === live { liveReply = nil }
+            if liveReplies[live.conversationID] === live { liveReplies[live.conversationID] = nil }
         }
         guard var conversation = conversations.first(where: { $0.id == live.conversationID }) else { return }
         let stamp = now()

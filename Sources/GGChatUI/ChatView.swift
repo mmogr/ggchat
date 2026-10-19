@@ -31,7 +31,7 @@ struct ChatView: View {
                         changes: model.messageChanges(in: conversation.id) { editing = $0 }
                     )
                 }
-                if let live = model.liveReply, live.conversationID == conversation.id {
+                if let live = model.liveReplies[conversation.id] {
                     LiveReplyRow(live: live)
                 } else if let end = points.first(where: { $0.messageID == nil }) {
                     BranchEndRow(choice: BranchChoice(end) { model.openBranch($0) })

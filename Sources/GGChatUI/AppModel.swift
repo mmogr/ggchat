@@ -17,8 +17,9 @@ public final class AppModel {
     var chatShown: UUID?
     /// The last failure worth telling the user about, as its own sentence.
     public var lastError: String?
-    /// The reply being streamed, if any.
-    public internal(set) var liveReply: LiveReply?
+    /// The replies in flight, one at most per conversation, by conversation:
+    /// streaming, waiting for a pipe, or reading on from a run.
+    public internal(set) var liveReplies: [UUID: LiveReply] = [:]
     var streamErrors: [UUID: ProviderError] = [:]
     var modelsByProvider: [UUID: [ModelInfo]] = [:]
     var pipeStatuses: [UUID: PipeStatus] = [:]
@@ -64,8 +65,13 @@ public final class AppModel {
     /// opening still under way; see `AppModel+Opening`.
     var followed: Set<UUID> = []
     var opening: [UUID: Task<Void, Never>] = [:]
-    /// The send waiting for its pipe, if one is; see `AppModel+Waiting`.
-    var pipeWait: PipeWait?
+    /// The sends waiting for their pipes, by conversation; see
+    /// `AppModel+Waiting`.
+    var pipeWaits: [UUID: PipeWait] = [:]
+    /// The providers whose pipe a waiting send is dialling now, so a second
+    /// send waiting on the same pipe joins that dial instead of starting one;
+    /// see `AppModel+Waiting`.
+    var waitDials: Set<UUID> = []
     /// Each paired Mac's chats as this phone last saw them and when, how its
     /// last list went, the lists being read, and the one chat open with its
     /// read. Only the titles and the time are stored
@@ -224,7 +230,7 @@ public final class AppModel {
         // Its reply in flight is put down as Stop puts it down. A waiting one
         // would otherwise wait on, with no Stop left on screen to end it. A
         // run the hub is writing for it away from here is stopped too.
-        if liveReply?.conversationID == id { stop() }
+        stop(id)
         if let conversation = conversations.first(where: { $0.id == id }) { stopDetachedRuns(in: conversation) }
         conversations.removeAll { $0.id == id }
         if selectedConversationID == id { selectedConversationID = nil }

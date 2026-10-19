@@ -51,27 +51,26 @@ extension AppModel {
         readOnHubReply()
     }
 
-    /// Reads on from one reply still being written whose hub can be reached
-    /// now: `preferring` first, then the open conversation's, then the rest.
-    /// One at a time, as every reply in flight is, and none while one is.
+    /// Reads on from every reply still being written whose hub can be
+    /// reached now, or only from `preferring`'s, the open conversation's
+    /// first. A conversation that has a reply in flight here is left to it.
     func readOnDetachedRuns(preferring messageID: UUID? = nil) {
-        guard liveReply == nil, !isAway else { return }
+        guard !isAway else { return }
         let ordered =
             conversations.filter { $0.id == selectedConversationID }
             + conversations.filter { $0.id != selectedConversationID }
-        for conversation in ordered {
+        for conversation in ordered where liveReplies[conversation.id] == nil {
             guard let message = conversation.messages.last(where: \.isBeingWritten),
                 messageID == nil || message.id == messageID
             else { continue }
-            if readOn(message, in: conversation) { return }
+            readOn(message, in: conversation)
         }
-        if messageID != nil { readOnDetachedRuns() }
     }
 
-    /// Starts reading on from one detached reply, and says whether it did:
-    /// not when its hub cannot be reached now. A run whose `PUT` was never
-    /// answered is asked for again under its id first.
-    private func readOn(_ message: Message, in conversation: Conversation) -> Bool {
+    /// Starts reading on from one detached reply, unless its hub cannot be
+    /// reached now. A run whose `PUT` was never answered is asked for again
+    /// under its id first.
+    private func readOn(_ message: Message, in conversation: Conversation) {
         let live = LiveReply(conversationID: conversation.id, continuingMessageID: message.id)
         live.runID = message.runID
         live.cursor = message.runCursor ?? 0
@@ -82,9 +81,9 @@ extension AppModel {
         guard let config = provider(for: conversation) else {
             // Its provider is gone, and the hub with it.
             giveUp(live, saying: "is no longer a provider here, so the rest of this reply cannot be read.")
-            return false
+            return
         }
-        guard let hub = reachableHub(for: config) else { return false }
+        guard let hub = reachableHub(for: config) else { return }
         var request: ChatRequest?
         do {
             request = live.started ? nil : try sentRequest(for: message, in: conversation, config: config)
@@ -92,10 +91,10 @@ extension AppModel {
             // Sent again without its image it would be another question, so
             // the reply is given up with the reason, and Retry asks again.
             finish(live, finished: false, cancelled: false, refusal: error.failure)
-            return false
+            return
         }
-        if !live.started, request == nil { return false }
-        liveReply = live
+        if !live.started, request == nil { return }
+        liveReplies[conversation.id] = live
         live.task = Task { [weak self] in
             if let request {
                 await self?.putRun(request, on: hub, for: config, live: live)
@@ -103,7 +102,6 @@ extension AppModel {
                 await self?.readRun(on: hub, live: live)
             }
         }
-        return true
     }
 
     /// The request a run was started with, built again from the conversation:
@@ -136,7 +134,9 @@ extension AppModel {
     /// way, so the conversation is free again: what arrived stays, with
     /// Continue, and an empty reply leaves the question with Retry.
     public func stopWriting(_ messageID: UUID) {
-        if liveReply?.continuingMessageID == messageID { return stop() }
+        if let live = liveReplies.values.first(where: { $0.continuingMessageID == messageID }) {
+            return stop(live.conversationID)
+        }
         guard let conversation = conversations.first(where: { $0.messages.contains { $0.id == messageID } }),
             let message = conversation.messages.first(where: { $0.id == messageID }), let id = message.runID
         else { return }
@@ -150,7 +150,8 @@ extension AppModel {
         let hub = reachableHub(for: config)
         for conversation in conversations where conversation.providerID == config.id {
             for message in conversation.messages where message.isBeingWritten {
-                guard liveReply?.continuingMessageID != message.id, let id = message.runID else { continue }
+                guard liveReplies[conversation.id]?.continuingMessageID != message.id, let id = message.runID
+                else { continue }
                 if let hub { cancelRun(id, on: hub) }
                 letGo(message, in: conversation)
             }

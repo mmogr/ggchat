@@ -131,10 +131,10 @@ extension AppModel {
         // Replies its hub is still writing away from here are given up, and
         // the one being read is put down as Stop puts it down.
         giveUpRuns(through: removed)
-        let reply = replyProviderID == id ? liveReply?.task : nil
-        reply?.cancel()
+        let replies = liveReplies(through: id).compactMap(\.task)
+        for reply in replies { reply.cancel() }
         Task {
-            await reply?.value
+            for reply in replies { await reply.value }
             await disconnectPipe(for: id)
         }
         do {

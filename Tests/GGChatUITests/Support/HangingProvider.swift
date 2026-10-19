@@ -4,7 +4,7 @@ import GGChatCore
 /// mid-flight without any of it depending on a clock.
 ///
 /// `MockProvider` always reaches a terminal event, and
-/// `finish(_:finished:cancelled:)` clears `liveReply` when it does — so a test
+/// `finish(_:finished:cancelled:)` clears its `liveReplies` entry when it does — so a test
 /// that wants a close to land while a reply is genuinely still streaming cannot
 /// use it. Every test that asks "was a reply in flight when this happened?"
 /// holds the reply open with this and cancels it afterwards.

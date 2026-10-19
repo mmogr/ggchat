@@ -2,12 +2,9 @@ import Foundation
 import GGChatCore
 
 extension AppModel {
-    public var isStreaming: Bool {
-        liveReply != nil
-    }
-
+    /// Whether this conversation has a reply in flight.
     public func isStreaming(_ conversationID: UUID) -> Bool {
-        liveReply?.conversationID == conversationID
+        liveReplies[conversationID] != nil
     }
 
     /// The last failure of a stream in this conversation, as the provider
@@ -43,17 +40,19 @@ extension AppModel {
         return conversation
     }
 
-    /// Whether a turn can be added now: no reply is in flight, and no hub is
-    /// still writing one of this conversation's.
+    /// Whether a turn can be added now: this conversation has no reply in
+    /// flight, and no hub is still writing one of its replies. Another
+    /// conversation's reply is no reason to wait: gglib queues a second
+    /// request, and a server that runs two at once answers both.
     func takesTurn(_ conversation: Conversation) -> Bool {
-        !isStreaming && !conversation.messages.contains(where: \.isBeingWritten)
+        !isStreaming(conversation.id) && !conversation.messages.contains(where: \.isBeingWritten)
     }
 
     /// Re-sends the conversation with its partial reply as the last message,
     /// so the model carries on from where it stopped. See ADR 0002.
     @discardableResult
     public func continueReply() -> Task<Void, Never>? {
-        guard let conversation = selectedConversation, !isStreaming,
+        guard let conversation = selectedConversation, !isStreaming(conversation.id),
             let last = conversation.messages.last, last.role == .assistant, last.isPartial, !last.isBeingWritten
         else { return nil }
         return stream(conversation, continuing: last.id)
@@ -81,7 +80,7 @@ extension AppModel {
     /// never drawn with another.
     @discardableResult
     public func retry() -> Task<Void, Never>? {
-        guard var conversation = selectedConversation, !isStreaming,
+        guard var conversation = selectedConversation, !isStreaming(conversation.id),
             let last = conversation.messages.indices.last, conversation.messages[last].role == .user
         else { return nil }
         conversation.messages[last].failure = nil
@@ -93,12 +92,14 @@ extension AppModel {
         return task
     }
 
-    /// Puts the reply in flight down. A run is cancelled on its hub, where
-    /// the background only walks away from it; the reading task tells the
-    /// two apart by `LiveReply.detaching`, which only the background sets.
-    public func stop() {
-        liveReply?.stoppedHere = true
-        liveReply?.task?.cancel()
+    /// Puts this conversation's reply in flight down, if it has one. A run is
+    /// cancelled on its hub, where the background only walks away from it;
+    /// the reading task tells the two apart by `LiveReply.detaching`, which
+    /// only the background sets.
+    public func stop(_ conversationID: UUID) {
+        guard let live = liveReplies[conversationID] else { return }
+        live.stoppedHere = true
+        live.task?.cancel()
     }
 
     @discardableResult
@@ -128,7 +129,7 @@ extension AppModel {
         let live = LiveReply(conversationID: conversation.id, continuingMessageID: continuing)
         live.model = modelID
         live.waitingFor = waits ? config.id : nil
-        liveReply = live
+        liveReplies[conversation.id] = live
         let task = Task { [weak self] in
             var connected = ready
             if connected == nil { connected = await self?.providerOnceConnected(config, for: live) }
@@ -188,7 +189,7 @@ extension AppModel {
     /// the wait ended another way, in which case the reply is finished here:
     /// as Stop finishes it, or with the refused dial's sentence.
     private func providerOnceConnected(_ config: ProviderConfig, for live: LiveReply) async -> (any Provider)? {
-        switch await waitForPipe(config) {
+        switch await waitForPipe(config, for: live.conversationID) {
         case .connected(let provider):
             live.waitingFor = nil
             return provider

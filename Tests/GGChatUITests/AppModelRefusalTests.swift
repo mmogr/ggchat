@@ -79,8 +79,10 @@ final class AppModelRefusalTests: XCTestCase {
         XCTAssertEqual(model.selectedConversation?.messages.count, 2)
     }
 
+    /// A reply in another conversation is no reason not to ask again; a
+    /// second Retry in the conversation whose question is being asked is.
     @MainActor
-    func testRetryWhileAReplyIsStreamingDoesNothing() async throws {
+    func testRetryWhileAnotherConversationStreamsAsksAgain() async throws {
         let (model, registry) = try makeModel(refusing(forgotten))
         let refused = try XCTUnwrap(model.send("anyone?"))
         await refused.value
@@ -89,12 +91,16 @@ final class AppModelRefusalTests: XCTestCase {
         registry.register(HangingProvider(), at: baseURL)
         model.newConversation()
         let hanging = try XCTUnwrap(model.send("still there?"))
+        let hangingID = try XCTUnwrap(model.selectedConversationID)
         model.selectedConversationID = refusedID
-        XCTAssertTrue(model.isStreaming)
-        XCTAssertNil(model.retry(), "a second stream would orphan the one in flight")
-        XCTAssertNotNil(model.selectedConversation?.messages.last?.failure, "the refusal was cleared for nothing")
+        let asked = try XCTUnwrap(model.retry(), "another conversation's reply held this one back")
+        XCTAssertNil(model.selectedConversation?.messages.last?.failure, "the refusal stayed on a question asked again")
+        XCTAssertEqual(Set(model.liveReplies.keys), [refusedID, hangingID])
+        XCTAssertNil(model.retry(), "a second stream would orphan this conversation's own")
 
-        model.stop()
+        model.stop(refusedID)
+        model.stop(hangingID)
+        await asked.value
         await hanging.value
     }
 
