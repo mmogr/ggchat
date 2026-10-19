@@ -114,22 +114,6 @@ extension XCTestCase {
         return witness.exists
     }
 
-    /// Holds, then checks the hold opened what it should, and holds again if
-    /// it did not. A context menu is the system's to present, and on a loaded
-    /// simulator a hold can end before the menu is armed, or land while the
-    /// row under it is still being laid out, and nothing opens. CI saw this
-    /// on the iPhone leg, on a reply's menu, twice in three runs.
-    @MainActor
-    @discardableResult
-    func press(_ element: XCUIElement, untilExists witness: XCUIElement, attempts: Int = 4) -> Bool {
-        for _ in 0..<attempts where waitUntilHittable(element, timeout: 15) {
-            element.press(forDuration: 1.2)
-            if witness.waitForExistence(timeout: 8) { return true }
-            dismissAnythingOnTop()
-        }
-        return witness.exists
-    }
-
     /// Switches the provider sheet to its Pipe half, and returns the ticket
     /// field that proves it did.
     ///
@@ -160,6 +144,9 @@ extension XCTestCase {
     /// waited for. Without a sweep, for the reason
     /// ``waitUntilHittable(_:timeout:sweeping:)`` gives.
     ///
+    /// Focus is not the end of it: a form still scrolling the field clear of
+    /// the keyboard misses keys the same way, so that is waited out too.
+    ///
     /// Not called `type`, which would hide `Swift.type(of:)` in every test
     /// case in the target.
     @MainActor
@@ -167,7 +154,21 @@ extension XCTestCase {
         _ text: String, into field: XCUIElement, attempts: Int = 3,
         file: StaticString = #filePath, line: UInt = #line
     ) {
-        if focus(field, attempts: attempts, file: file, line: line) { field.typeText(text) }
+        guard focus(field, attempts: attempts, file: file, line: line) else { return }
+        settle(field)
+        field.typeText(text)
+    }
+
+    /// Waits, up to `timeout`, until `element` holds still between two reads.
+    @MainActor
+    func settle(_ element: XCUIElement, timeout: TimeInterval = 5) {
+        let deadline = Date().addingTimeInterval(timeout)
+        var last = element.frame
+        while Date() < deadline {
+            _ = XCTWaiter().wait(for: [XCTestExpectation(description: "a beat")], timeout: 0.3)
+            if element.frame == last { return }
+            last = element.frame
+        }
     }
 
     /// Taps a field of the provider sheet until it has the keyboard; see

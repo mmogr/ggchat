@@ -54,3 +54,21 @@ final class BranchingUITests: XCTestCase {
             "the conversation the edit was made on changed")
     }
 }
+
+extension XCTestCase {
+    /// Holds, then checks the hold opened what it should, and holds again if
+    /// it did not. A context menu is the system's to present, and on a loaded
+    /// simulator a hold can end before the menu is armed, or land while the
+    /// row under it is still being laid out, and nothing opens. CI saw this
+    /// on the iPhone leg, on a reply's menu, twice in three runs.
+    @MainActor
+    @discardableResult
+    func press(_ element: XCUIElement, untilExists witness: XCUIElement, attempts: Int = 4) -> Bool {
+        for _ in 0..<attempts where waitUntilHittable(element, timeout: 15) {
+            element.press(forDuration: 1.2)
+            if witness.waitForExistence(timeout: 8) { return true }
+            dismissAnythingOnTop()
+        }
+        return witness.exists
+    }
+}
