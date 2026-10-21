@@ -174,6 +174,22 @@ Each claim names the test that keeps it true.
   <!-- test: ImageStoreTests.testAStoreOpensAcrossTheImagesChangeInBothDirections -->
   <!-- test: ImageStoreTests.testTheResetLeavesNoImageFileBehind -->
   <!-- test: FirstRunUITests.testAPastedImageIsSentAloneAndDrawnInTheTranscript -->
+- A new conversation, from the list or the app's icon, is with the
+  provider of the one open, a Mac's chat included, and with the first
+  provider when none is open or the open one's provider was removed.
+  Choosing a model changes that conversation alone, never a provider's
+  default. With more than one provider, or none, the model list also lists
+  the providers: choosing one moves the conversation there with that
+  provider's default model, and drops the Thinking choice and the image
+  model made for the one left. A conversation whose reply is still being
+  written stays where it was asked.
+  <!-- test: QuickActionTests.testANewChatIsWithTheOpenConversationsProvider -->
+  <!-- test: QuickActionTests.testANewChatIsWithTheFirstProviderWhenTheOpenOnesIsGone -->
+  <!-- test: QuickActionTests.testANewChatIsWithTheMacWhoseChatIsOpen -->
+  <!-- test: AppModelStreamingTests.testModelsAreListedAndAChoiceChangesOnlyTheConversation -->
+  <!-- test: QuickActionTests.testAConversationMovedToAnotherProviderTakesItsDefaultModel -->
+  <!-- test: QuickActionTests.testAConversationAHubIsStillWritingStaysOnItsProvider -->
+  <!-- test: ConcurrentReplyTests.testAConversationWhoseReplyIsStreamingStaysOnItsProvider -->
 - gglib draws pictures with an image model, and its model list names one
   with `image_generation`. Such a model cannot chat, and neither can one
   listed with `embeddings`: the model list offers neither, and a provider

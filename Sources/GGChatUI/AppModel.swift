@@ -201,9 +201,23 @@ public final class AppModel {
 
     // MARK: - Conversations
 
+    /// A new conversation with the provider of the one open, a local one or
+    /// a Mac's chat, and with the first provider when none is open or the
+    /// open one's provider has been removed.
     @discardableResult
     public func newConversation() -> Conversation {
-        newConversation(with: providers.first)
+        newConversation(with: providerOfTheOpenConversation)
+    }
+
+    /// The provider a new conversation starts with: see `newConversation()`.
+    var providerOfTheOpenConversation: ProviderConfig? {
+        let open: UUID? =
+            switch selection {
+            case .local(let id)?: conversations.first { $0.id == id }?.providerID
+            case .hub(let providerID, _)?: providerID
+            case nil: nil
+            }
+        return providers.first { $0.id == open } ?? providers.first
     }
 
     /// A new conversation with `provider`, at the top of the list and open.

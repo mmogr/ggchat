@@ -148,9 +148,45 @@ struct Composer: View {
                         .foregroundStyle(.secondary)
                         .padding(10)
                 }
+                if provider == nil || model.providers.count > 1 {
+                    providerList
+                }
             }
         }
         .frame(maxHeight: 260)
+    }
+
+    /// The providers this conversation can move to, the one it is on ticked:
+    /// offered when there is more than one, and when it has none, which is
+    /// also how a conversation whose provider was removed gets another.
+    @ViewBuilder
+    private var providerList: some View {
+        Divider()
+        Text("Provider")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 12)
+            .padding(.top, 8)
+        ForEach(model.providers) { config in
+            Button {
+                model.select(provider: config.id, for: conversation.id)
+                withAnimation(reduceMotion ? nil : .snappy) { pickingModel = false }
+            } label: {
+                HStack {
+                    Text(config.name)
+                    Spacer()
+                    if config.id == provider?.id {
+                        Image(systemName: "checkmark").foregroundStyle(.tint)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .disabled(!model.canChangeProvider(of: conversation))
+            .accessibilityLabel("Provider, \(config.name)")
+        }
     }
 
     private var currentModelID: String? {
