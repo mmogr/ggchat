@@ -16,6 +16,9 @@ private final class StatusServer: URLProtocol, @unchecked Sendable {
     private static let asked = Mutex<[String: Int]>([:])
     private static let held = Mutex<[String: [StatusServer]]>([:])
 
+    /// A status that is never sent: the request fails as if nothing listened.
+    static let unreachable = 0
+
     static func answer(_ statuses: [Int], at host: String) {
         answers.withLock { $0[host] = statuses }
     }
@@ -67,6 +70,10 @@ private final class StatusServer: URLProtocol, @unchecked Sendable {
 
     private func answer(_ status: Int) {
         guard let url = request.url else { return }
+        if status == Self.unreachable {
+            client?.urlProtocol(self, didFailWithError: URLError(.cannotConnectToHost))
+            return
+        }
         let response = HTTPURLResponse(
             url: url, statusCode: status, httpVersion: "HTTP/1.1", headerFields: ["Content-Type": "application/json"])!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
@@ -103,6 +110,19 @@ final class AppModelProxyStatusTests: XCTestCase {
         return (model, config)
     }
 
+    /// A server added by its address, on a model whose other provider is
+    /// already known to be gglib.
+    @MainActor
+    private func addServer(answeringAt host: String) async throws -> (AppModel, ProviderConfig) {
+        let (model, _) = try await AppModelRunTests.makeModel(
+            behind: StatusServer.provider(at: "home.\(host)"), direct: true)
+        let url = try XCTUnwrap(URL(string: "http://127.0.0.1:49993/v1"))
+        model.registry.register(StatusServer.provider(at: host), at: url)
+        let server = ProviderConfig(name: "server", kind: .openAICompatible(baseURL: url), defaultModel: "m")
+        try model.addProvider(server, credentials: [:])
+        return (model, server)
+    }
+
     @MainActor
     private func waitForStatus(_ wanted: PipeStatus, _ model: AppModel, _ id: UUID) async {
         for _ in 0..<200 where model.pipeStatus(for: id) != wanted {
@@ -134,9 +154,8 @@ final class AppModelProxyStatusTests: XCTestCase {
 
     /// A session is installed before its far machine answers: `connect`
     /// returns once the local port is bound, and the connecting side, which
-    /// never had a backend to reach, answers `502` in that gap. What a probe
-    /// finds there is forgotten when the pipe comes up, so the next probe, on
-    /// the pulse, asks.
+    /// never had a backend to reach, answers `502` in that gap. A probe that
+    /// finds that keeps nothing, so the next probe, on the pulse, asks.
     @MainActor
     func testTheStatusPaneIsAskedForAgainWhenThePipeConnects() async throws {
         let host = "not-answering-yet.status.test"
@@ -183,6 +202,40 @@ final class AppModelProxyStatusTests: XCTestCase {
         StatusServer.answer([200], at: host)
         await model.probeProxyStatus(for: config)
         XCTAssertTrue(model.proxyStatusAvailable(for: config.id))
+    }
+
+    /// A probe that fails, the Mac asleep and then gglib still starting,
+    /// keeps nothing: kept, it would take the server as not gglib until the
+    /// app was launched again. The next probe asks, and finds the pane.
+    @MainActor
+    func testAProbeThatFailsKeepsNothingAndTheNextOneAsks() async throws {
+        let host = "unreachable-first.status.test"
+        StatusServer.answer([StatusServer.unreachable, 500, 200], at: host)
+        let (model, server) = try await addServer(answeringAt: host)
+
+        for failure in ["out of reach", "a 500"] {
+            await model.probeProxyStatus(for: server)
+            XCTAssertNil(model.proxyStatusAvailability[server.id], "a probe that found \(failure) kept an answer")
+        }
+        await model.probeProxyStatus(for: server)
+
+        XCTAssertEqual(StatusServer.requests(at: host), 3, "the server was not asked again")
+        XCTAssertTrue(model.proxyStatusAvailable(for: server.id), "the pane stayed hidden once the server answered")
+    }
+
+    /// A 404 is an answer: the server has no pane, and it is not asked again.
+    @MainActor
+    func testA404IsKeptAndNotAskedAgain() async throws {
+        let host = "no-pane.status.test"
+        StatusServer.answer([404, 200], at: host)
+        let (model, server) = try await addServer(answeringAt: host)
+
+        await model.probeProxyStatus(for: server)
+        XCTAssertEqual(model.proxyStatusAvailability[server.id], false, "a 404 was not kept as no pane")
+        await model.probeProxyStatus(for: server)
+
+        XCTAssertEqual(StatusServer.requests(at: host), 1, "a server that said it has no pane was asked again")
+        XCTAssertFalse(model.proxyStatusAvailable(for: server.id))
     }
 
     /// The other way a stale answer used to be kept: the request is answered

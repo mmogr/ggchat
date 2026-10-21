@@ -77,6 +77,12 @@ and the switch is there when the Mac lists that model as one that thinks.
 And a Mac's chat set off elsewhere runs off from here whether or not the
 switch can be shown.
 
+> **Note, 2026-10-21 (#172).** A first probe that fails no longer costs the
+> rest of the run. It keeps nothing, so a server added by address is asked
+> again the next time a conversation on it is opened, and has its switch
+> from the first probe it answers. A 404 is still kept for the run, as not
+> gglib.
+
 ## What would undo it
 
 - **Reading:** one of a Mac's chats open on gglib's chat page and here,

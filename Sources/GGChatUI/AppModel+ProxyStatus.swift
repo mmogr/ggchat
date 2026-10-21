@@ -29,9 +29,11 @@ extension AppModel {
         probeGeneration[config.id] = (probeGeneration[config.id] ?? 0) + 1
     }
 
-    /// Asks once per provider, and again each time its pipe comes up. A 404,
-    /// a transport failure or a non-server provider all mean "no pane";
-    /// nothing is reported to the user.
+    /// Asks once per provider, and again each time its pipe comes up. A 404
+    /// or a non-server provider means "no pane", kept until then. A request
+    /// that fails, whether by transport, an error status or a body that does
+    /// not decode, keeps nothing, so the next catch-up asks again. Nothing is
+    /// reported to the user.
     ///
     /// A pipe with no session yet is not asked and nothing is kept for it:
     /// asking through `makeProvider` then raises its "not connected yet"
@@ -51,13 +53,13 @@ extension AppModel {
         let generation = (probeGeneration[config.id] ?? 0) + 1
         probeGeneration[config.id] = generation
         // Any answer, a 404 included, is the machine heard.
-        let snapshot: ProxyStatus??
+        let snapshot: ProxyStatus?
         do {
             snapshot = try await provider.proxyStatus()
             heard(config.id)
         } catch {
-            snapshot = nil
             note(error, from: config.id)
+            return
         }
         // Kept only if nothing moved this probe on while it waited. A pipe
         // coming up moves it on, and so does a newer probe. A cancelled
@@ -66,7 +68,7 @@ extension AppModel {
         // then be kept until the next one. The generation does not depend on
         // that timing.
         guard probeGeneration[config.id] == generation, !Task.isCancelled else { return }
-        let available = snapshot.flatMap { $0 } != nil
+        let available = snapshot != nil
         proxyStatusAvailability[config.id] = available
         log.log(.info, "proxy status \(available ? "available" : "absent") for \(config.name)")
     }

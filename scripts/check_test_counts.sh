@@ -567,8 +567,14 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # README had reached, and past the one test and marker that read a Z-Image
 # model's family as gglib names it. Nothing else shows that label, so the
 # test is the whole of its guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 799
+#
+# 799 -> 801 and 708 -> 710 for a status probe that fails: it keeps nothing
+# and the next one asks, while a 404 is kept and not asked again. A probe
+# that kept its failure would hide a gglib's Thinking switch for the rest of
+# the run and fail nothing else, so these two are the whole of that guard, and
+# the README claim names both.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 801
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 708
+floor "README test markers" "${markers:-0}" 710
 
 exit $status

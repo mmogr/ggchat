@@ -814,6 +814,11 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelProxyStatusTests.testAProbeCalledOffBeforeItsAnswerKeepsNothing -->
   <!-- test: AppModelProxyStatusTests.testAnAnswerThatArrivesAfterThePipeReconnectedIsNotKept -->
   <!-- test: AppModelOpeningTests.testThePaneIsAskedAboutWhenAFollowedPipeComesUp -->
+  A probe that fails, the server out of reach or answering with an error,
+  keeps nothing either, so the next one asks. A 404 is kept: that server is
+  not asked again.
+  <!-- test: AppModelProxyStatusTests.testAProbeThatFailsKeepsNothingAndTheNextOneAsks -->
+  <!-- test: AppModelProxyStatusTests.testA404IsKeptAndNotAskedAgain -->
 - Opening a conversation hands its provider to the model, which dials it if
   it is down, lists its models once the pipe is up, and asks about its status
   pane; a server added by address is asked at once. The work is the model's
