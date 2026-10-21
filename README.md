@@ -206,7 +206,8 @@ Each claim names the test that keeps it true.
 - A newer gglib's answer about drawing lists its image models, `models`:
   each with its id on that machine, its name, its family, whether it has all
   its files and which it lacks, whether it is the default and whether it is
-  loaded, in gglib's order. A family or a role this build has not heard of
+  loaded, in gglib's order. A family reads in gglib's words: Flux.1, SDXL,
+  Qwen-Image 2.1 and Z-Image. A family or a role this build has not heard of
   is kept as the string it came as, and the answer still reads. An answer
   with no `models` is a gglib from before the list, which is never sent
   `image_model`; an empty list is a newer one with no image model. The
@@ -220,6 +221,7 @@ Each claim names the test that keeps it true.
   <!-- test: ImageModelWireTests.testTheContractsAnswerListsTheImageModelsInOrder -->
   <!-- test: ImageModelWireTests.testAnAnswerWithoutTheListIsAnOlderGGLibAndAnEmptyListIsNot -->
   <!-- test: ImageModelWireTests.testAFamilyOrARoleThisBuildDoesNotKnowStillReads -->
+  <!-- test: ImageModelWireTests.testEveryFamilyGGLibNamesReadsInItsWords -->
   <!-- test: ImageModelWireTests.testTheQuestionCanNameAnImageModelToBeJudged -->
   <!-- test: ImageModelWireTests.testATurnNamesItsImageModelOnlyWhenItDraws -->
   <!-- test: ImageModelWireTests.testARunNamesItsImageModelInItsQueryOnlyWhenItDraws -->

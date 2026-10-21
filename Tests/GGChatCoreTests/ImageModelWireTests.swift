@@ -99,6 +99,14 @@ final class ImageModelWireTests: XCTestCase {
         XCTAssertEqual(rows[2], ImageModelRow(id: .max, name: "c", family: ""))
     }
 
+    /// Every family gglib names reads in gglib's words (`ImageFamily::label`),
+    /// and one it does not name stays the string it came as.
+    func testEveryFamilyGGLibNamesReadsInItsWords() {
+        let families = ["flux1", "sdxl", "qwen-image-2.1", "z-image", "wan-3"]
+        let labels = families.map { ImageModelRow(id: 1, name: "m", family: $0).familyLabel }
+        XCTAssertEqual(labels, ["Flux.1", "SDXL", "Qwen-Image 2.1", "Z-Image", "wan-3"])
+    }
+
     /// The question can name an image model, `?image_model=<id>`, and the
     /// answer is then gglib's judgement of a message that names it. With
     /// none the request has no query, as it always had.

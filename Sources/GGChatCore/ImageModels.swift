@@ -10,8 +10,8 @@
 public struct ImageModelRow: Decodable, Sendable, Equatable, Identifiable {
     public let id: UInt64
     public let name: String
-    /// The family as gglib wrote it: `flux1`, `sdxl`, `qwen-image-2.1`, or
-    /// one this build has not heard of, kept as it came.
+    /// The family as gglib wrote it: `flux1`, `sdxl`, `qwen-image-2.1`,
+    /// `z-image`, or one this build has not heard of, kept as it came.
     public let family: String
     /// Whether it has every file it needs to draw.
     public let complete: Bool
@@ -54,13 +54,14 @@ public struct ImageModelRow: Decodable, Sendable, Equatable, Identifiable {
         resident = try container.decodeIfPresent(Bool.self, forKey: .resident) ?? false
     }
 
-    /// The family as a person reads it, in gglib's words for the three it
+    /// The family as a person reads it, in gglib's words for the four it
     /// has (`ImageFamily::label`), and the raw string for any other.
     public var familyLabel: String {
         switch family {
         case "flux1": "Flux.1"
         case "sdxl": "SDXL"
         case "qwen-image-2.1": "Qwen-Image 2.1"
+        case "z-image": "Z-Image"
         default: family
         }
     }
