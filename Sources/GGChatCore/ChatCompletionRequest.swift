@@ -108,14 +108,16 @@ struct ChatCompletionRequest: Encodable {
     init(_ request: ChatRequest) throws(MissingImage) {
         model = request.model
         var wire: [WireMessage] = []
-        for message in request.messages {
+        for (index, message) in request.messages.enumerated() {
             let calls = request.replaysToolCalls ? Self.toolMessages(of: message) : []
             wire += calls
             // A reply of a picture alone has no words to send after it.
             if !calls.isEmpty, message.content.isEmpty { continue }
+            let shown = request.shownPicture.flatMap { $0.at == index ? $0.image : nil }
             wire.append(
-                WireMessage(role: message.role.rawValue, content: try Self.content(of: message, images: request.images))
-            )
+                WireMessage(
+                    role: message.role.rawValue,
+                    content: try Self.content(of: message, showing: shown, images: request.images)))
         }
         messages = wire
         maxTokens = request.maxTokens
@@ -142,15 +144,26 @@ struct ChatCompletionRequest: Encodable {
     }
 
     /// A reply's images are ones a tool made for the person to look at.
-    /// They are never sent back to the model: a reply is its text alone.
-    private static func content(of message: Message, images: [String: Data]) throws(MissingImage) -> Content {
-        guard !message.images.isEmpty, message.role != .assistant else { return .text(message.content) }
+    /// They are not sent back as the reply's: a reply is its text alone.
+    /// The drawn picture a request shows (`shown`) goes on the message
+    /// after it instead, as ``ShownPicture/line`` and the picture ahead of
+    /// the message's own parts.
+    private static func content(
+        of message: Message, showing shown: ImageRef?, images: [String: Data]
+    ) throws(MissingImage) -> Content {
+        let own = message.role == .assistant ? [] : message.images
+        guard !own.isEmpty || shown != nil else { return .text(message.content) }
+        var added: [Part] = []
+        if let shown { added = [.text(ShownPicture.line), try part(of: shown, images: images)] }
         let text: [Part] = message.content.isEmpty ? [] : [.text(message.content)]
-        let pictures = try message.images.map { image throws(MissingImage) -> Part in
-            guard let data = images[image.id] else { throw MissingImage(id: image.id) }
-            return .imageURL("data:\(image.mime);base64,\(data.base64EncodedString())")
-        }
-        return .parts(text + pictures)
+        let pictures = try own.map { image throws(MissingImage) in try part(of: image, images: images) }
+        return .parts(added + text + pictures)
+    }
+
+    /// An image as an `image_url` part, its bytes in a `data:` URL.
+    private static func part(of image: ImageRef, images: [String: Data]) throws(MissingImage) -> Part {
+        guard let data = images[image.id] else { throw MissingImage(id: image.id) }
+        return .imageURL("data:\(image.mime);base64,\(data.base64EncodedString())")
     }
 
     /// A message names an image the request holds no bytes for. It says the

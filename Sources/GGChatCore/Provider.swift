@@ -33,11 +33,16 @@ public struct ChatRequest: Sendable, Equatable {
     /// in a request that offers no tools, and is sent the reply's words
     /// alone, as before.
     public var replaysToolCalls: Bool
+    /// The drawn picture shown to the model, on the message it names, with
+    /// its bytes in `images`. Set only for gglib, and only for a model its
+    /// list names as one that reads images: gglib refuses an image to any
+    /// other.
+    public var shownPicture: ShownPicture?
 
     public init(
         model: String, messages: [Message], images: [String: Data] = [:], maxTokens: Int? = nil,
         returnProgress: Bool = false, reasoningBudgetTokens: Int? = nil, draws: Bool = false,
-        imageModelID: UInt64? = nil, replaysToolCalls: Bool = false
+        imageModelID: UInt64? = nil, replaysToolCalls: Bool = false, shownPicture: ShownPicture? = nil
     ) {
         self.model = model
         self.messages = messages
@@ -48,6 +53,7 @@ public struct ChatRequest: Sendable, Equatable {
         self.draws = draws
         self.imageModelID = imageModelID
         self.replaysToolCalls = replaysToolCalls
+        self.shownPicture = shownPicture
     }
 }
 

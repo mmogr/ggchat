@@ -581,8 +581,18 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # provider resetting what was chosen for the one left, and no move while a
 # reply streams or a hub writes it. No UI walk changes a provider, so these
 # are the whole of that guard, and the README claim names all seven.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 807
+#
+# 807 -> 818 and 717 -> 728 for the drawn picture shown to a model that reads
+# images: the parts and their order, the newest picture only, the same
+# message on every later request, a newer picture moving it, none where
+# nothing drew, none from a reply where another tool answered too (two),
+# none for a model without `vision`, none for a server not known to be
+# gglib, and none when its bytes are gone. A picture left out sends the chat
+# that worked before, so nothing else fails when it stops being sent; these
+# eleven are the whole of its guard, and the floors move to the totals they
+# reach.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 818
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 717
+floor "README test markers" "${markers:-0}" 728
 
 exit $status
