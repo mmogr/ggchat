@@ -211,6 +211,7 @@ extension AppModel {
         }
     }
 
+    /// Changes this conversation's model, and no provider's default.
     public func select(model modelID: String, for conversationID: UUID) {
         guard var conversation = conversations.first(where: { $0.id == conversationID }) else { return }
         conversation.model = modelID
@@ -218,10 +219,28 @@ extension AppModel {
         // turn back on, so a choice made under another model goes with it.
         if listsAsThinking(modelID, on: conversation.providerID) == false { conversation.thinkingOff = false }
         update(conversation)
-        if var config = provider(for: conversation) {
-            config.defaultModel = modelID
-            updateProvider(config)
-        }
+    }
+
+    /// Moves a conversation to another provider, with that provider's
+    /// default model. The Thinking choice and the image model were made for
+    /// the model and the machine left behind, so they go with them.
+    public func select(provider providerID: UUID, for conversationID: UUID) {
+        guard var conversation = conversations.first(where: { $0.id == conversationID }),
+            conversation.providerID != providerID, canChangeProvider(of: conversation),
+            let config = providers.first(where: { $0.id == providerID })
+        else { return }
+        conversation.providerID = config.id
+        conversation.model = config.defaultModel
+        conversation.thinkingOff = false
+        conversation.imageModelID = nil
+        update(conversation)
+    }
+
+    /// Whether `conversation` can move to another provider: not while a reply
+    /// is in flight or a hub is still writing one, which is read from the
+    /// provider it was asked of.
+    public func canChangeProvider(of conversation: Conversation) -> Bool {
+        !isStreaming(conversation.id) && !conversation.messages.contains(where: \.isBeingWritten)
     }
 
     /// The status of the pipe behind this conversation, or nil for a server

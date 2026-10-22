@@ -573,8 +573,16 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # that kept its failure would hide a gglib's Thinking switch for the rest of
 # the run and fail nothing else, so these two are the whole of that guard, and
 # the README claim names both.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 801
+#
+# 801 -> 807 and 710 -> 717, to the counts after it, for the
+# provider a conversation is with (#86): a new chat with the open one's
+# provider, the first when that provider is gone, a Mac's chat's provider,
+# a model choice that leaves the provider's default alone, a move to another
+# provider resetting what was chosen for the one left, and no move while a
+# reply streams or a hub writes it. No UI walk changes a provider, so these
+# are the whole of that guard, and the README claim names all seven.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 807
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 710
+floor "README test markers" "${markers:-0}" 717
 
 exit $status

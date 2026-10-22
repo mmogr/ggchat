@@ -74,8 +74,10 @@ final class AppModelStreamingTests: XCTestCase {
         XCTAssertNil(model.streamError(for: conversationID))
     }
 
+    /// Choosing a model changes the conversation and leaves its provider's
+    /// default, which new conversations start with, as it was.
     @MainActor
-    func testModelsAreListedAndSelectionIsRemembered() async throws {
+    func testModelsAreListedAndAChoiceChangesOnlyTheConversation() async throws {
         let (model, _) = try makeModel(MockProvider())
         let provider = try XCTUnwrap(model.providers.first)
         await model.refreshModels(for: provider)
@@ -83,7 +85,8 @@ final class AppModelStreamingTests: XCTestCase {
         let conversationID = try XCTUnwrap(model.selectedConversationID)
         model.select(model: "mock-4b", for: conversationID)
         XCTAssertEqual(model.selectedConversation?.model, "mock-4b")
-        XCTAssertEqual(model.providers.first?.defaultModel, "mock-4b")
+        XCTAssertEqual(model.providers.first?.defaultModel, "mock-27b")
+        XCTAssertEqual(model.newConversation().model, "mock-27b")
     }
 
     @MainActor

@@ -84,6 +84,23 @@ final class ConcurrentReplyTests: XCTestCase {
         XCTAssertTrue(model.liveReplies.isEmpty)
     }
 
+    /// A conversation whose reply is streaming from a server added by
+    /// address, with no hub writing it, stays on that server: the tokens
+    /// still arriving are read from it.
+    @MainActor
+    func testAConversationWhoseReplyIsStreamingStaysOnItsProvider() async throws {
+        let (model, providers) = try await makeModel()
+        let (id, task) = try await ask(model, through: providers[2])
+        XCTAssertFalse(messages(model, id).contains(where: \.isBeingWritten), "a hub is writing this reply")
+        let conversation = try XCTUnwrap(model.conversations.first { $0.id == id })
+        XCTAssertFalse(model.canChangeProvider(of: conversation))
+        model.select(provider: providers[0].id, for: id)
+        XCTAssertEqual(model.conversations.first { $0.id == id }?.providerID, providers[2].id)
+        XCTAssertTrue(model.isStreaming(id))
+        model.stop(id)
+        await task.value
+    }
+
     /// Removing a provider puts down every reply through it, keeping what
     /// arrived, and leaves the reply through another provider streaming.
     @MainActor

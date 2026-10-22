@@ -34,11 +34,11 @@ extension AppModel {
 
     /// Starts a new conversation as `action` asks, and leaves its composer
     /// a note of how to begin. Draw's is with a paired Mac, whichever
-    /// provider is first; the others are with the first provider, as New
-    /// conversation's is. Nothing is started with no provider, or for Draw
-    /// with no paired Mac: the app opens as it was.
+    /// provider is open; the others are with the open conversation's
+    /// provider, as New conversation's is. Nothing is started with no
+    /// provider, or for Draw with no paired Mac: the app opens as it was.
     func perform(_ action: QuickAction) {
-        guard let provider = action == .draw ? drawingProvider : providers.first else { return }
+        guard let provider = action == .draw ? drawingProvider : providerOfTheOpenConversation else { return }
         enlarged = nil
         let conversation = newConversation(with: provider)
         composerStart = action == .newChat ? nil : ComposerStart(conversation: conversation.id, action: action)
