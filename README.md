@@ -405,10 +405,10 @@ Each claim names the test that keeps it true.
   in a request that offers no tools. A call nothing answered is left out, a
   reply of a picture alone sends no empty words, and a draw that failed is
   sent with the tool's own error when its reply was kept. The picture
-  itself is still not sent to the model. A reply from before this keeps no
-  call and is sent as it was, a branch's copy keeps its calls, an answer
-  read by a later reading of the run finds its call, and a store opens
-  across the column in both directions.
+  itself goes only to a model that reads images, as the next item says. A
+  reply from before this keeps no call and is sent as it was, a branch's
+  copy keeps its calls, an answer read by a later reading of the run finds
+  its call, and a store opens across the column in both directions.
   <!-- test: DrawnHistoryWireTests.testTheRecordedFramesOfAPictureLeaveItsCallAndItsAnswer -->
   <!-- test: DrawnHistoryWireTests.testTheMessageAfterAPictureCarriesTheCallItsAnswerThenTheWords -->
   <!-- test: DrawnHistoryWireTests.testAnotherServerAndAReplyFromBeforeAreSentTheWordsAlone -->
@@ -422,6 +422,39 @@ Each claim names the test that keeps it true.
   <!-- test: DrawnHistoryTests.testAnAnswerReadOnALaterReadingFindsItsCall -->
   <!-- test: DrawnHistoryTests.testTheCallsOutliveAReopening -->
   <!-- test: DrawnHistoryTests.testAStoreOpensAcrossTheCallsColumnInBothDirections -->
+- A model that reads images is shown the most recent picture drawn in a
+  conversation kept here, as gglib asks of a client that keeps its own
+  chats (gglib's `docs/clients.md`, Images): gglib cannot read this
+  device's pictures, so this device sends it. The first message the person
+  sent after the draw goes as three kinds of part, in this order: gglib's
+  line saying the image was added automatically and is the drawing tool's
+  most recent picture, the picture as a base64 `data:` URL read from this
+  device's store, then the message's own words and images. Only the newest
+  picture is shown: the last image of the latest reply that holds an
+  answered call of the drawing tool, so a fix kept on the reply takes the
+  place of the picture it came from, and a newer drawing moves it to the
+  message after that one, which leaves the older message as it was
+  written. A reply that also holds an answered call of any other tool
+  shows none, not even an older picture: a reply's images are every
+  tool's, which call made which is not kept, and so its last image may be
+  another tool's. Every later request carries the picture on the same
+  message. It goes only to gglib, which is sent the draw's call and answer, and only
+  for a model whose entry in gglib's model list says `vision`; any other
+  model, and one the list does not name, is sent the chat as before, with
+  no picture and no bytes read. A picture whose bytes this device no
+  longer has is left out rather than stopping the message, and nothing of
+  it is saved.
+  <!-- test: DrawnPictureShownWireTests.testTheMessageAfterADrawCarriesTheLineThePictureThenItsOwnParts -->
+  <!-- test: DrawnPictureShownWireTests.testOnlyTheNewestPictureIsShown -->
+  <!-- test: DrawnPictureShownWireTests.testTheSameMessageCarriesItOnEveryLaterRequest -->
+  <!-- test: DrawnPictureShownWireTests.testANewerPictureMovesToTheMessageAfterIt -->
+  <!-- test: DrawnPictureShownWireTests.testNoDrawnPictureNoPicture -->
+  <!-- test: DrawnPictureShownWireTests.testAReplyThatDrewAndCalledAnotherToolShowsNoPicture -->
+  <!-- test: DrawnPictureShownWireTests.testAFailedDrawBesideAnotherToolsImageShowsNoPicture -->
+  <!-- test: DrawnPictureShownTests.testAModelThatReadsImagesIsShownTheDrawnPicture -->
+  <!-- test: DrawnPictureShownTests.testAModelThatDoesNotListVisionIsNotShownIt -->
+  <!-- test: DrawnPictureShownTests.testAServerThatIsNotGglibIsNotShownIt -->
+  <!-- test: DrawnPictureShownTests.testAPictureWhoseBytesAreGoneIsLeftOut -->
 - The picture such a run draws is this device's to keep, since the
   conversation is: its bytes are read from the hub by id as soon as the tool
   finishes, before its frame is applied, checked against the id, kept in
@@ -430,12 +463,13 @@ Each claim names the test that keeps it true.
   not read again. One lost on the way is not passed over: the reply walks
   away with its cursor at the frame before, and the next reading asks again.
   One the hub no longer has, or whose bytes are not its id's, is named and
-  not kept. A reply's picture is never sent back to the model, so the next
-  request neither carries it nor needs its bytes. While it is drawn the
-  reply shows its step and the latest look, and keeps neither. The
-  background walks away with the run's id, its cursor and how it writes its
-  events, kept with the message in two optional columns that a store opens
-  across both ways, and coming back reads on with the same decoder.
+  not kept. A reply's picture is not sent back as the reply's own, so a
+  request needs its bytes only to show it to a model that reads images, as
+  the item above says. While it is drawn the reply shows its step and the
+  latest look, and keeps neither. The background walks away with the run's
+  id, its cursor and how it writes its events, kept with the message in two
+  optional columns that a store opens across both ways, and coming back
+  reads on with the same decoder.
   <!-- test: DrawingRunWireTests.testAReplysImagesAreNotSentBackToTheModel -->
   <!-- test: DrawingRunImageTests.testAPictureIsReadOnceAndKeptUnderItsID -->
   <!-- test: DrawingRunImageTests.testAPictureLostOnTheWayIsAskedForAgain -->
