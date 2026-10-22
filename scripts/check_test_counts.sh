@@ -562,8 +562,13 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # from a Mac's chat and from this device's store. The pinch itself and the
 # save to Photos are seen only on a phone, so these five are the whole of
 # what a gate holds of it.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 790
+#
+# 2026-10-21: 790 -> 799 and 698 -> 708, to the counts the suite and the
+# README had reached, and past the one test and marker that read a Z-Image
+# model's family as gglib names it. Nothing else shows that label, so the
+# test is the whole of its guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 799
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 698
+floor "README test markers" "${markers:-0}" 708
 
 exit $status
