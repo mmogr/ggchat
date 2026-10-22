@@ -254,6 +254,10 @@ extension XCTestCase {
     @MainActor
     func clearingThePasswordManagerPrompt(in app: XCUIApplication, during work: () -> Void) {
         let monitor = addUIInterruptionMonitor(withDescription: "password manager") { alert in
+            // On an iPhone Duo the provider sheet itself is handed here
+            // ahead of the tap on its Add, and its Cancel is one of the
+            // titles below: the sheet is known by that Add and left alone.
+            if alert.buttons["Add"].exists { return false }
             for title in ["Not Now", "Cancel", "Dismiss"] where alert.buttons[title].exists {
                 alert.buttons[title].tap()
                 return true

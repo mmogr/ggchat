@@ -1778,17 +1778,19 @@ iPhones only. CI runs the walk on both families.
 `make uitest-duo` runs it on an iPhone Duo, whose open inner display is the
 iPad's two columns and whose closed outer display is the iPhone's stack.
 `simctl` cannot set the pose, so the walk runs in whichever one the
-simulator boots in, which is closed, and the half-open poses are looked at
-by hand in Xcode's Device Hub. It needs the iOS 27.1 runtime and Xcode
-27.1, which the CI runners do not have, so no CI leg runs it. The outer
-display is 678 points tall, and the walk was written for taller ones: on
-2026-10-22 nineteen of its twenty-seven cases passed there. Of the rest, the
-two live cases wanted a key for the server on port 8080; the three that add
-a pipe lose the sheet's Add button once the token field, which the keyboard
-had hidden, has been scrolled to and filled; the branching walk cannot bring
-the reply's label clear of the bars; and the two pastes, of a key with ⌘V
-and of a picture through the add-image menu, land nothing. None of these
-has been traced to the app yet.
+simulator is in, closed when it boots, and the half-open poses are looked
+at by hand in Xcode's Device Hub. It needs the iOS 27.1 runtime and Xcode
+27.1, which the CI runners do not have, so no CI leg runs it. The walk was
+written for taller screens and for a sidebar that is either a screen back
+or on screen: the closed outer display is 678 points tall, which hides a
+form's lower fields under the keyboard and scrolls a sheet's header away,
+and the open inner display in portrait is regular width with the sidebar
+behind a button, where the walks that tap the sidebar's Providers button
+stop. On 2026-10-22, closed, nineteen of twenty-seven cases passed before
+the sheet's Add and the Thinking switch were taught to the walk; the two
+pastes, of a key with ⌘V and of a picture through the add-image menu, land
+nothing there, and the branching walk cannot bring the reply's label clear
+of the bars. The two live cases need a key for the server on port 8080.
 
 `make uitest-dark` and `make uitest-contrast` run the same walk with the
 device set to dark mode and to Increase Contrast. Both are settings on the

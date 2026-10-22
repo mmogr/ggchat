@@ -6,7 +6,9 @@ import SwiftUI
 ///
 /// The state is never colour alone: the symbol is filled while on and an
 /// outline while off, beside whatever the system draws for a pressed toggle,
-/// and VoiceOver hears "On" or "Off". It sits in the toolbar, so its glass
+/// and VoiceOver hears "on" or "off" in its name. In the name, not as an
+/// accessibility value: the vertical bar an iPhone Duo lays toolbar items
+/// in keeps a label and drops a value. It sits in the toolbar, so its glass
 /// is the system's and not one of the composer's three.
 struct ThinkingToggle: View {
     /// Whether the model thinks.
@@ -16,10 +18,10 @@ struct ThinkingToggle: View {
 
     var body: some View {
         Toggle(isOn: Binding(get: { isOn }, set: { set($0) })) {
-            Label("Thinking", systemImage: Self.symbol(isOn: isOn))
+            Label(Self.label(isOn: isOn), systemImage: Self.symbol(isOn: isOn))
         }
         .toggleStyle(.button)
-        .accessibilityValue(Self.value(isOn: isOn))
+        .accessibilityIdentifier("thinking")
         .accessibilityHint("Turns the model's thinking on or off for this conversation")
     }
 
@@ -28,9 +30,9 @@ struct ThinkingToggle: View {
         isOn ? "brain.fill" : "brain"
     }
 
-    /// What VoiceOver says after the label.
-    static func value(isOn: Bool) -> String {
-        isOn ? "On" : "Off"
+    /// The switch's name, with its state.
+    static func label(isOn: Bool) -> String {
+        isOn ? "Thinking, on" : "Thinking, off"
     }
 }
 
