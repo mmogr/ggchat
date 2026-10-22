@@ -3,7 +3,7 @@
 # those.
 SWIFT_SOURCES := Sources Tests Package.swift $(wildcard App/ggchat/*.swift) $(wildcard App/ggchatUITests/*.swift)
 
-.PHONY: icon build-app-device phone screenshots project bootstrap fmt fmt-check lint analyze boundaries enforce build build-release build-app build-app-release test test-live uitest uitest-ipad uitest-dark uitest-contrast unused docs ci
+.PHONY: icon build-app-device phone screenshots project bootstrap fmt fmt-check lint analyze boundaries enforce build build-release build-app build-app-release test test-live uitest uitest-ipad uitest-duo uitest-dark uitest-contrast unused docs ci
 
 project:
 	cd App && xcodegen generate --quiet
@@ -213,6 +213,19 @@ IPAD ?= iPad Pro 13-inch (M5)
 # until someone has, rather than a note in the README.
 uitest-ipad:
 	udid=$(ipad_udid); [ -n "$$udid" ] || { echo 'uitest-ipad: no simulator udid' >&2; exit 1; }; \
+	$(UITEST) -skip-testing:ggchatUITests/ReduceTransparencyUITests -destination "id=$$udid"
+
+# Which iPhone Duo. Open, its inner display is the iPad's layout; closed,
+# its outer display is the iPhone's. simctl has no say over the pose, so the
+# walk runs in whatever pose the simulator boots in and the other poses are
+# looked at by hand in Device Hub. There is no CI leg: the runners' Xcode is
+# 26.6, which has neither the iOS 27.1 runtime nor the device. The Reduce
+# Transparency reading is left out for the iPad leg's reason.
+DUO ?= iPhone Duo
+duo_udid = $$(scripts/simulator_udid.sh '$(DUO)')
+
+uitest-duo:
+	udid=$(duo_udid); [ -n "$$udid" ] || { echo 'uitest-duo: no simulator udid' >&2; exit 1; }; \
 	$(UITEST) -skip-testing:ggchatUITests/ReduceTransparencyUITests -destination "id=$$udid"
 
 # Dark and Increase Contrast are settings on the device, not launch

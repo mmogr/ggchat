@@ -36,8 +36,7 @@ struct Composer: View {
         .padding(.horizontal)
         .padding(.top, 10)
         .padding(.bottom, 10)
-        .frame(maxWidth: 760)
-        .frame(maxWidth: .infinity)
+        .keptOffTheFold(maxWidth: 760)
         .task(id: provider?.id) {
             // Handed to the model and not awaited: SwiftUI can cancel this
             // task as soon as it starts, and the work must outlive that. See
