@@ -1778,9 +1778,17 @@ iPhones only. CI runs the walk on both families.
 `make uitest-duo` runs it on an iPhone Duo, whose open inner display is the
 iPad's two columns and whose closed outer display is the iPhone's stack.
 `simctl` cannot set the pose, so the walk runs in whichever one the
-simulator boots in and the half-open poses are looked at by hand in Xcode's
-Device Hub. It needs the iOS 27.1 runtime and Xcode 27.1, which the CI
-runners do not have, so no CI leg runs it.
+simulator boots in, which is closed, and the half-open poses are looked at
+by hand in Xcode's Device Hub. It needs the iOS 27.1 runtime and Xcode
+27.1, which the CI runners do not have, so no CI leg runs it. The outer
+display is 678 points tall, and the walk was written for taller ones: on
+2026-10-22 nineteen of its twenty-seven cases passed there. Of the rest, the
+two live cases wanted a key for the server on port 8080; the three that add
+a pipe lose the sheet's Add button once the token field, which the keyboard
+had hidden, has been scrolled to and filled; the branching walk cannot bring
+the reply's label clear of the bars; and the two pastes, of a key with ⌘V
+and of a picture through the add-image menu, land nothing. None of these
+has been traced to the app yet.
 
 `make uitest-dark` and `make uitest-contrast` run the same walk with the
 device set to dark mode and to Increase Contrast. Both are settings on the

@@ -31,7 +31,7 @@ final class ThinkingSwitchUITests: XCTestCase {
         ).firstMatch
         XCTAssertTrue(toggle.waitForExistence(timeout: 60), "a model listed as thinking has no Thinking switch")
         XCTAssertEqual(toggle.value as? String, "On", "a new conversation's switch is not on")
-        XCTAssertTrue(app.buttons["System prompt"].firstMatch.exists, "the switch took the system prompt's place")
+        XCTAssertTrue(app.buttons["system-prompt"].firstMatch.exists, "the switch took the system prompt's place")
 
         XCTAssertTrue(waitUntilHittable(toggle, timeout: 15), "the switch cannot be pressed")
         toggle.tap()

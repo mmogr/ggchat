@@ -77,7 +77,7 @@ final class RemainingScreensUITests: XCTestCase {
 
         // The pill is up once the conversation is, but on a phone the screen
         // can still be sliding in, so the button is waited for on its own.
-        let promptButton = app.buttons["System prompt"].firstMatch
+        let promptButton = app.buttons["system-prompt"].firstMatch
         let editor = app.textViews["system-prompt"].firstMatch
         XCTAssertTrue(promptButton.waitForExistence(timeout: 10), "the conversation offers no system prompt")
         XCTAssertTrue(
@@ -88,7 +88,8 @@ final class RemainingScreensUITests: XCTestCase {
         XCTAssertTrue(waitUntilHittable(save, timeout: 10, sweeping: false), "the sheet offers no Save")
         save.tap()
         XCTAssertTrue(editor.waitForNonExistence(timeout: 10), "the sheet did not close after Save")
-        let isSet = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == 'Set'"), object: promptButton)
+        let isSet = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label == 'System prompt, set'"), object: promptButton)
         XCTAssertEqual(
             XCTWaiter().wait(for: [isSet], timeout: 10), .completed,
             "the toolbar button does not say a prompt is set")

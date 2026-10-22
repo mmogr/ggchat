@@ -58,11 +58,18 @@ struct ChatView: View {
         #endif
         .toolbar {
             // Always there, so a prompt can be set before the first message.
+            // Whether one is set is in the label, not an accessibility
+            // value: the vertical bar an iPhone Duo lays toolbar items in
+            // keeps a button's label and identifier and drops its value.
             ToolbarItem(placement: .automatic) {
-                Button("System prompt", systemImage: promptSymbol) {
+                Button {
                     editingPrompt = true
+                } label: {
+                    Label(
+                        conversation.hasSystemPrompt ? "System prompt, set" : "System prompt", systemImage: promptSymbol
+                    )
                 }
-                .accessibilityValue(conversation.hasSystemPrompt ? "Set" : "None")
+                .accessibilityIdentifier("system-prompt")
             }
             // Only for a model gglib lists as one that thinks.
             if model.offersThinking(for: conversation) {
