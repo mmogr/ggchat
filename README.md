@@ -564,6 +564,11 @@ Each claim names the test that keeps it true.
   opened whole and its editor are held by the app and shown from its root,
   so a chat whose rows are drawn again under the sheet takes nothing with
   them.
+- On iOS 27.1 the editor arranges the picture and its controls around the
+  screen: side by side while the editor is wider than tall, the picture above
+  the controls while it is taller, and on a half-open iPhone Duo each on its
+  own side of the fold, with the controls scrolling within their half. On a
+  Mac, and on iOS before 27.1, the editor is the one scrolling column it was.
   <!-- test: PictureEditingTests.testFixWaitsForABrushStrokeAndBothWaitForWords -->
   <!-- test: PictureEditingTests.testAFixSendsThePictureWithAMaskItsSizeAndARedoSendsNoMask -->
   <!-- test: PictureEditingTests.testARenderIsFollowedToItsPictureAndAFrameIsKeptAcrossAReportWithoutOne -->
