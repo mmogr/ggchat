@@ -13,6 +13,10 @@ import SwiftUI
 /// While a render, a result or a Keep is in hand there is no way back but
 /// Stop, Discard and Keep, so a picture that took minutes is not lost to a
 /// swipe. What is chosen and what is drawn is `PictureEditing`'s.
+///
+/// On iOS 27.1 the picture and the controls are arranged around the screen
+/// and its fold (`arranged`); everywhere else they are one scrolling column
+/// (`stacked`), which is what the editor had before.
 struct PictureEditor: View {
     @Environment(\.locale) private var locale
     @Bindable var editing: PictureEditing
@@ -20,46 +24,80 @@ struct PictureEditor: View {
     let original: CGImage?
     /// Closes the sheet once the chat holds the newer picture.
     let close: () -> Void
+    #if os(iOS) && compiler(>=6.4)
+        /// Whether the editor lies across an active fold.
+        @State private var folded = false
+    #endif
 
     var body: some View {
+        layout
+            .navigationTitle(editing.drawn == nil ? "Fix or redo this picture" : "Keep this picture?")
+            #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .navigationBarBackButtonHidden(editing.holdsWork)
+            .interactiveDismissDisabled(editing.holdsWork)
+            .onChange(of: editing.isKept) { _, kept in
+                if kept { close() }
+            }
+            .onDisappear { editing.leave() }
+    }
+
+    @ViewBuilder
+    private var layout: some View {
+        #if os(iOS) && compiler(>=6.4)
+            if #available(iOS 27.1, *) {
+                arranged
+            } else {
+                stacked
+            }
+        #else
+            stacked
+        #endif
+    }
+
+    /// One column: what to do, the picture, then the controls.
+    private var stacked: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 if editing.isEditing { modes }
-                PictureCanvas(
-                    picture: shown, look: look, natural: editing.size,
-                    strokes: editing.isEditing && editing.mode == .fix ? editing.strokes : [],
-                    brushes: editing.isEditing && editing.mode == .fix, begin: editing.begin, extend: editing.extend
-                )
-                .frame(maxWidth: .infinity, maxHeight: 440)
-                .accessibilityElement()
-                .accessibilityLabel(
-                    Self.label(drawn: editing.drawn != nil, comparing: editing.comparing, mode: editing.mode)
-                )
-                // VoiceOver passes touches straight through here, so the
-                // part to fix can be brushed with it on.
-                .accessibilityAddTraits(editing.isEditing && editing.mode == .fix ? .allowsDirectInteraction : [])
-                if let why = Self.failure(of: editing) {
-                    Label(why, systemImage: "exclamationmark.triangle")
-                        .font(.callout)
-                        .foregroundStyle(.red)
-                }
-                if editing.isEditing { PictureChoices(editing: editing) }
-                actions
+                canvas(maxHeight: 440)
+                controls
             }
             .padding()
             .frame(maxWidth: 760)
             .frame(maxWidth: .infinity)
         }
-        .navigationTitle(editing.drawn == nil ? "Fix or redo this picture" : "Keep this picture?")
-        #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-        #endif
-        .navigationBarBackButtonHidden(editing.holdsWork)
-        .interactiveDismissDisabled(editing.holdsWork)
-        .onChange(of: editing.isKept) { _, kept in
-            if kept { close() }
+    }
+
+    /// The picture, with the brush while a part is being chosen.
+    private func canvas(maxHeight: CGFloat) -> some View {
+        PictureCanvas(
+            picture: shown, look: look, natural: editing.size,
+            strokes: editing.isEditing && editing.mode == .fix ? editing.strokes : [],
+            brushes: editing.isEditing && editing.mode == .fix, begin: editing.begin, extend: editing.extend
+        )
+        .frame(maxWidth: .infinity, maxHeight: maxHeight)
+        .accessibilityElement()
+        .accessibilityLabel(
+            Self.label(drawn: editing.drawn != nil, comparing: editing.comparing, mode: editing.mode)
+        )
+        // VoiceOver passes touches straight through here, so the
+        // part to fix can be brushed with it on.
+        .accessibilityAddTraits(editing.isEditing && editing.mode == .fix ? .allowsDirectInteraction : [])
+    }
+
+    /// What follows the picture: why something failed, the choices, the
+    /// actions.
+    @ViewBuilder
+    private var controls: some View {
+        if let why = Self.failure(of: editing) {
+            Label(why, systemImage: "exclamationmark.triangle")
+                .font(.callout)
+                .foregroundStyle(.red)
         }
-        .onDisappear { editing.leave() }
+        if editing.isEditing { PictureChoices(editing: editing) }
+        actions
     }
 
     /// The picture under everything: the one drawn again, or the original
@@ -151,6 +189,44 @@ struct PictureEditor: View {
         return mode == .fix ? "The picture. Brush over the part to fix" : "The picture"
     }
 }
+
+#if os(iOS) && compiler(>=6.4)
+    extension PictureEditor {
+        /// The picture in one half and the controls in the other: side by
+        /// side while the editor is wider than tall, the picture above the
+        /// controls while it is taller, and on a half-open phone each on its
+        /// own side of the fold, where the system sets the split. The
+        /// controls scroll within their half, so a phone held upright loses
+        /// none of them under the keyboard. Only Swift 6.4 has the iOS 27.1
+        /// SDK these come from, so the layout before it is kept for CI.
+        @available(iOS 27.1, *)
+        fileprivate var arranged: some View {
+            ArrangementView {
+                canvas(maxHeight: .infinity)
+                    .padding()
+                    .layoutPriority(1)
+                    .splitArrangementLayoutRatio(folded ? nil : 0.6)
+            } secondary: {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        if editing.isEditing { modes }
+                        controls
+                    }
+                    .padding()
+                    .frame(maxWidth: 760)
+                    .frame(maxWidth: .infinity)
+                }
+                .splitArrangementLayoutSize(minWidth: 300, minHeight: 220)
+            }
+            .arrangementViewStyle(.split)
+            .onGeometryChange(for: Bool.self) {
+                !Fold.divisions(in: $0).isEmpty
+            } action: {
+                folded = $0
+            }
+        }
+    }
+#endif
 
 /// One of the two things to do, as a button that says whether it is chosen
 /// by its fill and to VoiceOver.
