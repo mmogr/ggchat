@@ -160,10 +160,11 @@ extension AppModel {
     /// them: the chat route and a run each say it in their own way. What a
     /// finished call counted is kept, the last one over any before it: the
     /// chat route says it as it finishes, and a run in a frame of its own.
-    /// A run that draws also says how far its picture has got (`ToolWork`)
-    /// and names the images it made, whose bytes `keepImages` has stored by
-    /// the time they are named here, and what each tool was called with and
-    /// answered, which `finish` keeps with the reply.
+    /// A run with gglib's tools, one that draws or one with a Mac's MCP
+    /// servers, also says what each tool was called with and answered,
+    /// which `finish` keeps with the reply; one that draws also says how far
+    /// its picture has got (`ToolWork`) and names the images it made, whose
+    /// bytes `keepImages` has stored by the time they are named here.
     func apply(_ event: ChatEvent, to live: LiveReply) {
         live.work.apply(event)
         switch event {

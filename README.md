@@ -354,17 +354,30 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingPreviewTests.testOnlyTheLatestLookIsHeldAndItGoesWithItsTool -->
   <!-- test: DrawingPreviewTests.testAMacsReplyShowsTheLookAndItsCursorDoesNotMove -->
   <!-- test: DrawingPreviewTests.testARunThatEndsMidPictureLeavesNoLook -->
-- A conversation kept on this device draws too. A message sent with Draw on,
-  to a hub that said it can draw, is put as
-  `PUT /v1/runs/{id}?kind=chat&tools=builtin&draw=true`, its body the OpenAI
-  request it always was; any other message has no query at all, and a hub
-  that cannot draw, is too old or was never heard from is sent a plain run.
+- A conversation kept on this device draws too, and runs a paired Mac's
+  tools. A message sent with Draw on, to a hub that said it can draw, is
+  put as `PUT /v1/runs/{id}?kind=chat&tools=builtin&draw=true`; a hub that
+  cannot draw, is too old or was never heard from is sent it as one that
+  does not draw. A paired Mac whose answer about drawing names MCP servers
+  it offers (`mcp_servers`, said whether or not it can draw) has every
+  question that does not draw put as
+  `PUT /v1/runs/{id}?kind=chat&tools=builtin`, Retry included, so its
+  reply can call their tools. The body is the OpenAI request it always
+  was. Any other message has no query at all unless it draws: one to a
+  Mac that names no server, to a gglib from before the list, to a hub
+  never heard from, or to a gglib reached by address, which refuses the
+  words; any other would spend its agent loop on a plain chat (one from
+  before drawing ignores them). A question whose answer was lost is sent
+  again with the tools while the Mac's answer is known; after a relaunch it
+  goes before that answer is back, and so without them. A Continue of a
+  reply with words is sent again with none.
   The switch is off again in the draft a taken send leaves, and a refused
   draft keeps it. The run's answer says how its events are written, `frames`,
   and that picks the decoder: `agent` is read as a Mac's chat's run is, and
   absent is the chat route's chunks, as every run before. The question is
   kept as one that drew, so Retry asks for the picture again while the hub
-  can draw and goes without once it cannot; Continue never asks for one. A
+  can draw and goes without once it cannot; Continue, which carries a
+  reply's words on, never asks for a picture or runs tools. A
   run that ends with one of drawing's codes leaves it on the question with
   the code's own line, unless the run reported an error of its own first:
   then that sentence is what the question shows, with no code and no line
@@ -388,6 +401,15 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingRunTests.testAProviderMovedToAnotherMacForgetsWhetherItCanDraw -->
   <!-- test: DrawingRunTests.testARunWrittenAWayThisBuildCannotReadIsGivenUp -->
   <!-- test: DrawingRunWireTests.testAnUnknownWordForTheFramesStillReads -->
+  <!-- test: ToolsOfferedWireTests.testAnAnswerThatNamesServersOffersToolsWhetherOrNotItCanDraw -->
+  <!-- test: ToolsOfferedWireTests.testARunWithToolsIsPutWithThemAndDrawsOnlyWhenItDraws -->
+  <!-- test: ToolsOfferedRunTests.testAMacThatOffersToolsHasEveryQuestionRunWithThem -->
+  <!-- test: ToolsOfferedRunTests.testAMacThatCannotDrawStillRunsItsTools -->
+  <!-- test: ToolsOfferedRunTests.testAMacThatNamesNoServersIsSentWhatItWas -->
+  <!-- test: ToolsOfferedRunTests.testRetryRunsTheToolsAndContinueDoesNot -->
+  <!-- test: ToolsOfferedRunTests.testAGglibByAddressIsNeverSentTools -->
+  <!-- test: ToolsOfferedRunTests.testAQuestionPutAgainAfterItsAnswerWasLostCarriesTheTools -->
+  <!-- test: ToolsOfferedRunTests.testAContinuePutAgainAfterItsAnswerWasLostRunsNoTools -->
 - A conversation kept here remembers how its picture was made. The reply a
   run drew for keeps, with its words and its picture, each tool the run
   called and what the tool answered: the call's id, the tool's name, the
@@ -437,7 +459,9 @@ Each claim names the test that keeps it true.
   written. A reply that also holds an answered call of any other tool
   shows none, not even an older picture: a reply's images are every
   tool's, which call made which is not kept, and so its last image may be
-  another tool's. Every later request carries the picture on the same
+  another tool's. With a Mac that offers its MCP servers' tools, that is a
+  reply that both drew and, say, searched: the model is then not shown its
+  picture. Every later request carries the picture on the same
   message. It goes only to gglib, which is sent the draw's call and answer, and only
   for a model whose entry in gglib's model list says `vision`; any other
   model, and one the list does not name, is sent the chat as before, with

@@ -597,8 +597,18 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # sends. These five are the whole of its guard -- no fold, a fold it crosses,
 # one it misses, a horizontal one, and a pane too narrow to move into -- so
 # the floor moves past them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 823
+#
+# 2026-10-23: 823 -> 832 and 728 -> 737 for the tools a paired Mac offers.
+# A question that stops being sent with them fails nothing: it is answered
+# as a plain chat, only without the search. These nine are the whole of
+# that guard -- the answer's `mcp_servers` read whether or not the Mac can
+# draw, the query table with the body unchanged, every question run with
+# them, a Mac that cannot draw still running them, none to a Mac that names
+# none, Retry with them and Continue without, none to a gglib reached by
+# address, and a lost PUT sent again with them for a question and without
+# for a Continue -- and the README claim names all nine.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 832
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 728
+floor "README test markers" "${markers:-0}" 737
 
 exit $status
