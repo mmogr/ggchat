@@ -26,12 +26,10 @@ final class ThinkingSwitchUITests: XCTestCase {
         openConversation(in: app)
 
         // The switch comes with the pipe: its models are listed once it is up.
-        let toggle = app.descendants(matching: .any).matching(
-            NSPredicate(format: "label == 'Thinking' AND (value == 'On' OR value == 'Off')")
-        ).firstMatch
+        let toggle = app.descendants(matching: .any).matching(identifier: "thinking").firstMatch
         XCTAssertTrue(toggle.waitForExistence(timeout: 60), "a model listed as thinking has no Thinking switch")
-        XCTAssertEqual(toggle.value as? String, "On", "a new conversation's switch is not on")
-        XCTAssertTrue(app.buttons["System prompt"].firstMatch.exists, "the switch took the system prompt's place")
+        XCTAssertEqual(toggle.label, "Thinking, on", "a new conversation's switch is not on")
+        XCTAssertTrue(app.buttons["system-prompt"].firstMatch.exists, "the switch took the system prompt's place")
 
         XCTAssertTrue(waitUntilHittable(toggle, timeout: 15), "the switch cannot be pressed")
         toggle.tap()
@@ -43,7 +41,7 @@ final class ThinkingSwitchUITests: XCTestCase {
             app.staticTexts["ASSISTANT"].firstMatch.waitForExistence(timeout: 60), "no reply arrived with thinking off")
         XCTAssertTrue(app.buttons["Send"].firstMatch.waitForExistence(timeout: 60), "the reply never finished")
         XCTAssertFalse(reasoning.firstMatch.exists, "a reply asked for with thinking off has a reasoning row")
-        XCTAssertEqual(toggle.value as? String, "Off", "the switch flipped back after a reply")
+        XCTAssertEqual(toggle.label, "Thinking, off", "the switch flipped back after a reply")
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = "thinking-off"
         shot.lifetime = .keepAlways
@@ -61,7 +59,8 @@ final class ThinkingSwitchUITests: XCTestCase {
     /// Whether the switch comes to say `value`.
     @MainActor
     private func says(_ value: String, _ toggle: XCUIElement) -> Bool {
-        let said = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", value), object: toggle)
+        let said = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label == %@", "Thinking, \(value.lowercased())"), object: toggle)
         return XCTWaiter().wait(for: [said], timeout: 10) == .completed
     }
 

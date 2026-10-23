@@ -72,20 +72,6 @@ extension XCTestCase {
         }
     }
 
-    /// Scrolls a screen until an element is there to be tapped. SwiftUI
-    /// leaves the rows of a long `Form` below the fold out of the tree, so
-    /// such a control reports `exists == false`, which reads as one never
-    /// built. Swipes, as `scrollToElement` needs a frame it has not got.
-    @MainActor
-    @discardableResult
-    func scrollUntilHittable(_ element: XCUIElement, in app: XCUIApplication, swipes: Int = 6) -> Bool {
-        for _ in 0...swipes {
-            if element.exists, element.isHittable { return true }
-            app.swipeUp()
-        }
-        return element.exists && element.isHittable
-    }
-
     /// Taps, then checks the tap actually did something, and tries again if
     /// it did not. The password manager's offer can arrive a second time,
     /// after the first has been dismissed, and swallow the tap that follows.
@@ -169,7 +155,11 @@ extension XCTestCase {
     func focus(_ field: XCUIElement, attempts: Int = 3, file: StaticString = #filePath, line: UInt = #line) -> Bool {
         let focused = NSPredicate(format: "hasKeyboardFocus == true")
         var tapped = false
-        for _ in 0..<attempts where waitUntilHittable(field, timeout: 15, sweeping: false) {
+        for _ in 0..<attempts {
+            // A field under the keyboard exists and is not hittable until
+            // the form is scrolled; see ``nudge(in:)``.
+            if field.exists, !field.isHittable { nudge(in: XCUIApplication()) }
+            guard waitUntilHittable(field, timeout: 15, sweeping: false) else { continue }
             field.tap()
             tapped = true
             let took = XCTNSPredicateExpectation(predicate: focused, object: field)
@@ -264,6 +254,10 @@ extension XCTestCase {
     @MainActor
     func clearingThePasswordManagerPrompt(in app: XCUIApplication, during work: () -> Void) {
         let monitor = addUIInterruptionMonitor(withDescription: "password manager") { alert in
+            // On an iPhone Duo the provider sheet itself is handed here
+            // ahead of the tap on its Add, and its Cancel is one of the
+            // titles below: the sheet is known by that Add and left alone.
+            if alert.buttons["Add"].exists { return false }
             for title in ["Not Now", "Cancel", "Dismiss"] where alert.buttons[title].exists {
                 alert.buttons[title].tap()
                 return true
@@ -289,7 +283,12 @@ extension XCTestCase {
     @MainActor
     func submitProviderForm(in app: XCUIApplication) {
         let cancel = app.buttons["Cancel"].firstMatch
-        app.buttons["Add"].firstMatch.tap()
+        let add = app.buttons["Add"].firstMatch
+        // On an iPhone Duo's outer display the sheet's header, Add in it,
+        // scrolls away with the form once the form is scrolled to a field
+        // under the keyboard, so it is scrolled back first.
+        for _ in 0..<3 where !(add.exists && add.isHittable) { nudge(in: app, up: false) }
+        add.tap()
         XCTAssertTrue(
             cancel.waitForNonExistence(timeout: 20),
             "the provider sheet did not close after Add, so nothing was added")

@@ -110,8 +110,7 @@ struct HubComposer: View {
             }
         }
         .padding()
-        .frame(maxWidth: 760)
-        .frame(maxWidth: .infinity)
+        .keptOffTheFold(maxWidth: 760)
         .dropsImages(take)
         .onChange(of: unsent, initial: true) { _, back in
             guard back != nil, draft.isEmpty, let back = model.takeUnsentHubDraft() else { return }

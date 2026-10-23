@@ -591,7 +591,13 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # that worked before, so nothing else fails when it stops being sent; these
 # eleven are the whole of its guard, and the floors move to the totals they
 # reach.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 818
+#
+# 2026-10-22: 818 -> 823 for the composer kept off the fold of a half-open
+# iPhone Duo. A composer left across the crease fails nothing: it still
+# sends. These five are the whole of its guard -- no fold, a fold it crosses,
+# one it misses, a horizontal one, and a pane too narrow to move into -- so
+# the floor moves past them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 823
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
 floor "README test markers" "${markers:-0}" 728
 

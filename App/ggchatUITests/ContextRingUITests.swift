@@ -56,7 +56,7 @@ final class ContextRingUITests: XCTestCase {
 
         // The mock's list, read by now, names mock-27b as one that thinks,
         // but a mock added by address is not gglib: no Thinking switch.
-        let thinking = NSPredicate(format: "label == 'Thinking' AND (value == 'On' OR value == 'Off')")
+        let thinking = NSPredicate(format: "identifier == 'thinking'")
         XCTAssertFalse(
             app.descendants(matching: .any).matching(thinking).firstMatch.exists,
             "a server that is not gglib has a Thinking switch")

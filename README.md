@@ -1650,7 +1650,11 @@ Each claim names the test that keeps it true.
 
 ## Building and testing
 
-Requires Xcode 26 and Swift 6.2 or later.
+Requires Xcode 26 and Swift 6.2 or later. The iPhone Duo layouts are
+compiled only by Swift 6.4 or later and run only on iOS 27.1, so they need
+Xcode 27.1 or later; Xcode 27.0 has that compiler without the iOS 27.1 SDK
+and cannot build the package. Every other layout is what CI, on Xcode 26.6,
+builds and tests.
 
 ```sh
 swift build && swift test
@@ -1770,6 +1774,23 @@ conversation are two columns rather than a stack, and Settings is on
 screen instead of one screen back. It is the leg CI runs, and like CI it
 leaves out the Reduce Transparency reading, which has been measured on
 iPhones only. CI runs the walk on both families.
+
+`make uitest-duo` runs it on an iPhone Duo, whose open inner display is the
+iPad's two columns and whose closed outer display is the iPhone's stack.
+`simctl` cannot set the pose, so the walk runs in whichever one the
+simulator is in, closed when it boots, and the half-open poses are looked
+at by hand in Xcode's Device Hub. It needs the iOS 27.1 runtime and Xcode
+27.1, which the CI runners do not have, so no CI leg runs it. The walk was
+written for taller screens and for a sidebar that is either a screen back
+or on screen: the closed outer display is 678 points tall, which hides a
+form's lower fields under the keyboard and scrolls a sheet's header away,
+and the open inner display in portrait is regular width with the sidebar
+behind a button, where the walks that tap the sidebar's Providers button
+stop. On 2026-10-22, closed, nineteen of twenty-seven cases passed before
+the sheet's Add and the Thinking switch were taught to the walk; the two
+pastes, of a key with ⌘V and of a picture through the add-image menu, land
+nothing there, and the branching walk cannot bring the reply's label clear
+of the bars. The two live cases need a key for the server on port 8080.
 
 `make uitest-dark` and `make uitest-contrast` run the same walk with the
 device set to dark mode and to Increase Contrast. Both are settings on the

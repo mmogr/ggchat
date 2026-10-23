@@ -268,13 +268,13 @@ final class AppModelThinkingTests: XCTestCase {
         XCTAssertEqual(recorder.requests.map(\.reasoningBudgetTokens), [0, nil])
     }
 
-    /// The switch's state is a symbol and a spoken word, each different on
-    /// and off, and never the tint alone.
+    /// The switch's state is a symbol and a word in its name, each different
+    /// on and off, and never the tint alone.
     @MainActor
     func testTheSwitchSaysItsStateWithASymbolAndAWord() {
         XCTAssertEqual(ThinkingToggle.symbol(isOn: true), "brain.fill")
         XCTAssertEqual(ThinkingToggle.symbol(isOn: false), "brain")
-        XCTAssertEqual(ThinkingToggle.value(isOn: true), "On")
-        XCTAssertEqual(ThinkingToggle.value(isOn: false), "Off")
+        XCTAssertEqual(ThinkingToggle.label(isOn: true), "Thinking, on")
+        XCTAssertEqual(ThinkingToggle.label(isOn: false), "Thinking, off")
     }
 }
