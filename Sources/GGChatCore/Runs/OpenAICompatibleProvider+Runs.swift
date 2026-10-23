@@ -10,12 +10,16 @@ extension OpenAICompatibleProvider: RunProvider {
     /// `PUT runs/{id}` with the body `chat/completions` would be sent.
     /// A 404 or a 405 with no run code is a hub without the route.
     ///
-    /// A request that draws is put as `?kind=chat&tools=builtin&draw=true`,
-    /// its body the same: the query, not the body, is what gives the run
-    /// gglib's own tools and lets this message's reply ask for a picture.
-    /// Any other request has no query at all, as before. A request that
-    /// draws with a chosen image model adds `&image_model=<id>`; gglib
-    /// refuses the word without `draw=true`, so no other request says it.
+    /// A request that runs tools (`runsTools`) or draws is put as
+    /// `?kind=chat&tools=builtin`, its body the same: the query, not the
+    /// body, is what gives the run gglib's tools, the MCP servers the Mac
+    /// opens among them. One that draws adds `&draw=true`, which lets this
+    /// message's reply ask for a picture, and with a chosen image model
+    /// `&image_model=<id>` after it; gglib refuses that word without
+    /// `draw=true`, so no other request says it. Any other request has no
+    /// query at all, as before: a gglib reached by address refuses the
+    /// words, and any other would spend its agent loop on a plain chat (one
+    /// from before drawing ignores them).
     public func startRun(id: String, _ chatRequest: ChatRequest) async throws(ProviderError) -> RunStart {
         let body: Data
         do {
@@ -24,13 +28,13 @@ extension OpenAICompatibleProvider: RunProvider {
             throw .decoding("could not encode the request: \(error)")
         }
         var request = makeRequest(path: "runs/\(id)", method: "PUT", body: body)
-        if chatRequest.draws {
-            var query = [
-                URLQueryItem(name: "kind", value: "chat"), URLQueryItem(name: "tools", value: "builtin"),
-                URLQueryItem(name: "draw", value: "true"),
-            ]
-            if let chosen = chatRequest.imageModelID {
-                query.append(URLQueryItem(name: "image_model", value: String(chosen)))
+        if chatRequest.draws || chatRequest.runsTools {
+            var query = [URLQueryItem(name: "kind", value: "chat"), URLQueryItem(name: "tools", value: "builtin")]
+            if chatRequest.draws {
+                query.append(URLQueryItem(name: "draw", value: "true"))
+                if let chosen = chatRequest.imageModelID {
+                    query.append(URLQueryItem(name: "image_model", value: String(chosen)))
+                }
             }
             request.url = request.url?.appending(queryItems: query)
         }

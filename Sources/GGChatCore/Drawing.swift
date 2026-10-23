@@ -12,7 +12,8 @@ import Foundation
 /// Whether a message sent with Draw pressed can be drawn on a hub now, as
 /// gglib's `GET /v1/images/drawing` answers it (`DrawingAvailability` there):
 /// the image model that would draw when it can, and when it cannot, why, in
-/// words that say what would fix it.
+/// words that say what would fix it. A paired Mac's answer also names the
+/// MCP servers whose tools a run from this device is offered.
 public struct Drawing: Decodable, Sendable, Equatable {
     public var available: Bool
     /// Why not, as a code: `drawing_unavailable`, or one of the three a
@@ -28,10 +29,16 @@ public struct Drawing: Decodable, Sendable, Equatable {
     /// from before the list, which is never sent `image_model`; empty from
     /// one that has the list and no image model.
     public var models: [ImageModelRow]?
+    /// The MCP servers whose tools a run from this device is offered, by
+    /// name. Nil from a gglib from before the list, and empty from one that
+    /// opens none; either way no run is put with tools for them. Said
+    /// whether or not the hub can draw: a Mac with no image model can still
+    /// offer its servers.
+    public var mcpServers: [String]?
 
     public init(
         available: Bool, code: String? = nil, reason: String? = nil, model: String? = nil, modelID: UInt64? = nil,
-        models: [ImageModelRow]? = nil
+        models: [ImageModelRow]? = nil, mcpServers: [String]? = nil
     ) {
         self.available = available
         self.code = code
@@ -39,11 +46,19 @@ public struct Drawing: Decodable, Sendable, Equatable {
         self.model = model
         self.modelID = modelID
         self.models = models
+        self.mcpServers = mcpServers
+    }
+
+    /// Whether a run from this device is offered the tools of at least one
+    /// MCP server: absent, `null` and `[]` all mean none.
+    public var offersTools: Bool {
+        !(mcpServers ?? []).isEmpty
     }
 
     enum CodingKeys: String, CodingKey {
         case available, code, reason, model, models
         case modelID = "model_id"
+        case mcpServers = "mcp_servers"
     }
 }
 

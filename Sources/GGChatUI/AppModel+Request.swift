@@ -4,12 +4,16 @@ import GGChatCore
 extension AppModel {
     /// The request that sends `messages` to `model` through `config`. A send,
     /// Continue and Retry build it here, and so does a run's `PUT` sent
-    /// again, so every one carries the same images and the same flags, the
+    /// again, so every one carries the same images and the same flags (but
+    /// whether it runs the Mac's tools follows the Mac's answer as last
+    /// heard, which an app just relaunched has not heard yet), the
     /// conversation's Thinking choice (`thinkingBudget`), the tools its
     /// replies called when the provider is gglib (`asksForProgress`), which
     /// alone reads them, and whether it
     /// draws: it does when the turn it ends on is a question sent with Draw
-    /// pressed, which a Continue's partial reply never is. `imageModel` is
+    /// pressed, which a Continue's partial reply never is. A question to a
+    /// paired Mac that offers its MCP servers' tools runs with them
+    /// (`offersTools`), drawing or not; a Continue does not. `imageModel` is
     /// the conversation's choice of image model, which the request names
     /// when it draws, for a hub that lists its image models
     /// (`imageModelToSend`). The latest drawn picture is shown to a model
@@ -25,6 +29,7 @@ extension AppModel {
         request.reasoningBudgetTokens = thinkingBudget(off: thinkingOff, model: model, for: config)
         request.replaysToolCalls = asksForProgress(config)
         request.draws = messages.last.map { $0.role == .user && $0.draws } ?? false
+        request.runsTools = offersTools(config) && messages.last?.role == .user
         request.imageModelID = request.draws ? imageModelToSend(imageModel, to: config) : nil
         if showsDrawnPicture(to: model, request: request, for: config), let shown = messages.shownPicture,
             let data = try? store.loadImage(id: shown.image.id)
@@ -33,6 +38,16 @@ extension AppModel {
             request.images[shown.image.id] = data
         }
         return request
+    }
+
+    /// Whether a run through `config` is put with gglib's tools: only for a
+    /// paired Mac whose answer about drawing named MCP servers it offers. A
+    /// gglib reached by address, one from before the list and one not heard
+    /// from are sent what they were: one reached by address refuses the
+    /// words, and any other would spend its agent loop on a plain chat (one
+    /// from before drawing ignores them).
+    func offersTools(_ config: ProviderConfig) -> Bool {
+        config.isPipe && drawings[config.id]?.offersTools == true
     }
 
     /// Whether a request to `model` shows it the drawn picture: only when

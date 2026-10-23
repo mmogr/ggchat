@@ -26,6 +26,10 @@ public struct ChatRequest: Sendable, Equatable {
     /// one that does not draw never says it. Set only for a gglib whose
     /// answer about drawing listed its image models.
     public var imageModelID: UInt64?
+    /// Whether the run is put with gglib's tools (`tools=builtin`) though it
+    /// may not draw: no part of the body, as `draws` is not. Set only for a
+    /// paired Mac whose answer about drawing named servers it offers.
+    public var runsTools: Bool
     /// Whether a reply is sent with the tools it called and what they
     /// answered (``Message/exchanges``), as an assistant message with
     /// `tool_calls` and a `tool` message ahead of its words. Set only for
@@ -42,7 +46,8 @@ public struct ChatRequest: Sendable, Equatable {
     public init(
         model: String, messages: [Message], images: [String: Data] = [:], maxTokens: Int? = nil,
         returnProgress: Bool = false, reasoningBudgetTokens: Int? = nil, draws: Bool = false,
-        imageModelID: UInt64? = nil, replaysToolCalls: Bool = false, shownPicture: ShownPicture? = nil
+        imageModelID: UInt64? = nil, replaysToolCalls: Bool = false, shownPicture: ShownPicture? = nil,
+        runsTools: Bool = false
     ) {
         self.model = model
         self.messages = messages
@@ -54,6 +59,7 @@ public struct ChatRequest: Sendable, Equatable {
         self.imageModelID = imageModelID
         self.replaysToolCalls = replaysToolCalls
         self.shownPicture = shownPicture
+        self.runsTools = runsTools
     }
 }
 
