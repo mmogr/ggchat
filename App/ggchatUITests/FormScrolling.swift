@@ -16,22 +16,34 @@ extension XCTestCase {
         return element.exists && element.isHittable
     }
 
-    /// Scrolls whatever is on screen up by one swipe, which starts on a
-    /// label of the form rather than at the app's centre: with the keyboard
-    /// up, the centre of a short screen is the keyboard, and a swipe there
-    /// scrolls nothing. An iPhone Duo's outer display is 678 points tall,
-    /// and the provider form's token field sits under the keyboard its
-    /// ticket field raised; a swipe on the "Pairing string" header scrolls
-    /// the form the hundred points that bring the token into view. Not on a
-    /// field: a swipe there moves the caret into it instead, and the walk
-    /// then types into the wrong one. The lowest label above the keyboard
-    /// is taken, so the swipe has the most room to travel.
+    /// Scrolls whatever is on screen by one swipe. The swipe is
+    /// `XCUIApplication.swipeUp()`'s, from the app's centre, unless that
+    /// centre is on a text field or the keyboard: a swipe on a field moves
+    /// the caret into it and scrolls nothing, and a swipe on the keyboard
+    /// scrolls nothing at all. Then it starts on the lowest label above the
+    /// keyboard instead, which is on the form and not on a field. An iPhone
+    /// Duo's outer display is 678 points tall, and the provider form's
+    /// ticket field sits across its centre once the keyboard is up; on a
+    /// taller phone, and on an iPad, the centre is clear and this is the
+    /// swipe it always was.
     @MainActor
     func nudge(in app: XCUIApplication, up: Bool = true) {
+        let window = app.windows.firstMatch.frame
+        let centre = CGPoint(x: window.midX, y: window.midY)
+        let fields =
+            app.textFields.allElementsBoundByIndex + app.secureTextFields.allElementsBoundByIndex
+            + app.textViews.allElementsBoundByIndex
         let keyboard = app.keyboards.element
-        let ceiling = keyboard.exists ? keyboard.frame.minY : app.windows.firstMatch.frame.maxY
-        let labels = app.staticTexts.allElementsBoundByIndex.filter { $0.isHittable && $0.frame.maxY < ceiling }
-        let handle = labels.max(by: { $0.frame.maxY < $1.frame.maxY })
+        let covered =
+            (keyboard.exists && keyboard.frame.contains(centre)) || fields.contains { $0.frame.contains(centre) }
+        var handle: XCUIElement?
+        if covered {
+            let ceiling = keyboard.exists ? keyboard.frame.minY : window.maxY
+            let labels = app.staticTexts.allElementsBoundByIndex.filter { label in
+                label.isHittable && label.frame.maxY < ceiling && !fields.contains { $0.frame.intersects(label.frame) }
+            }
+            handle = labels.max(by: { $0.frame.maxY < $1.frame.maxY })
+        }
         switch (handle, up) {
         case (let handle?, true): handle.swipeUp()
         case (let handle?, false): handle.swipeDown()
