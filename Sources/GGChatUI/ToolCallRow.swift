@@ -65,12 +65,13 @@ struct ToolCallRow: View {
 }
 
 /// The tools a stored reply called, one row each, in the order it called
-/// them. A question has none.
+/// them. A question has none, and nor has a reply a hub is still writing:
+/// its rows come once it has finished.
 struct ToolCallRows: View {
     let message: Message
 
     var body: some View {
-        if message.role == .assistant {
+        if message.role == .assistant, !message.isBeingWritten {
             ForEach(message.exchanges, id: \.callID) { exchange in
                 ToolCallRow(exchange: exchange)
             }

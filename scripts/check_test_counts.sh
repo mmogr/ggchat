@@ -623,8 +623,13 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # in the status sheet -- and the README claims name them, beside three
 # earlier tests they extend: the query table, a branch's copy and a move to
 # another provider.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 848
+#
+# 2026-10-24: 848 -> 850 and 756 -> 758. One test pins that a gglib which
+# refuses `tools=none` leaves its sentence on the question, still drawing,
+# and one that a question with Draw put again after a relaunch, before the
+# Mac's answer is back, keeps the tools off.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 850
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 756
+floor "README test markers" "${markers:-0}" 758
 
 exit $status

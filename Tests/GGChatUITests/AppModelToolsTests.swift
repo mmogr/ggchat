@@ -97,6 +97,25 @@ final class AppModelToolsTests: XCTestCase {
         XCTAssertEqual(puts.first, puts.last, "the PUT sent again was another request")
     }
 
+    /// A gglib from before `tools=none` refuses a question sent with Draw
+    /// and the tools off, and the question shows its sentence, with Retry,
+    /// since no reply came; it still draws, so Retry asks for the picture.
+    func testAGglibThatRefusesNoneLeavesItsSentenceOnTheQuestion() async throws {
+        let hub = hub()
+        let refusal = ProviderError.server(status: 400, code: "invalid_request", message: "unknown tools: none")
+        hub.with { $0.start = .refused(refusal) }
+        let (model, _) = try await DrawingRunTests.makeModel(behind: hub, drawing: ToolsOfferedRunTests.offers)
+        model.setTools(on: false, for: try XCTUnwrap(model.selectedConversationID))
+        XCTAssertTrue(model.send("a fox in snow", images: [], draws: true))
+        try await Runs.until("the refusal") { Runs.settled(model) && hub.with { $0.starts.count } == 1 }
+        let messages = try XCTUnwrap(model.selectedConversation?.messages)
+        XCTAssertEqual(messages.map(\.role), [.user], "a reply was kept for a refused run")
+        XCTAssertEqual(messages.first?.failure?.message, "unknown tools: none")
+        XCTAssertEqual(messages.first?.draws, true)
+        XCTAssertEqual(requests(hub).map(\.toolsOff), [true])
+        XCTAssertEqual(requests(hub).map(\.draws), [true])
+    }
+
     /// A gglib reached by address, a Mac whose answer names no servers, one
     /// from before the list and one not heard from have no switch. A
     /// conversation stored off is sent to the first three as if it were on:

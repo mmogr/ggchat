@@ -420,7 +420,7 @@ Each claim names the test that keeps it true.
   `PUT /v1/runs/{id}?kind=chat&tools=none&draw=true`, with the chosen
   image model after it, which leaves it gglib's drawing tool and no other;
   the body is the one it always was. A gglib from before `none` refuses
-  it, and the question shows the refusal with Retry. The choice is the
+  it, and the question shows the refusal with Retry, still drawing. The choice is the
   conversation's, kept in one optional column written only for a
   conversation that turned the tools off, and outlives a relaunch; setting
   it leaves the conversation's date alone. A branch copies it, a move to
@@ -444,6 +444,7 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelToolsTests.testANewConversationHasTheToolsOnAndTheSwitchTurnsThemOff -->
   <!-- test: AppModelToolsTests.testOffSendsAPlainRunAndWithDrawOnlyTheDrawingTool -->
   <!-- test: AppModelToolsTests.testAQuestionPutAgainAfterItsAnswerWasLostKeepsTheToolsOff -->
+  <!-- test: AppModelToolsTests.testAGglibThatRefusesNoneLeavesItsSentenceOnTheQuestion -->
   <!-- test: AppModelToolsTests.testTheSwitchIsHiddenAndOffNeverSentWhereNoToolsAreOffered -->
   <!-- test: AppModelToolsTests.testARelaunchedPutOfADrawQuestionBeforeTheMacsAnswerKeepsTheToolsOff -->
   <!-- test: ToolsStoreTests.testTheChoiceOutlivesAReopeningAndAnUnchangedOneMarksNoRow -->
@@ -543,8 +544,9 @@ Each claim names the test that keeps it true.
   2,000 characters and never inside one, with a line saying how many more
   in the locale's digits. A call nothing answered says it was not
   answered. Both can be selected. It is the same for every tool. A
-  question has no rows, and a reply still being written shows its tool
-  lines as it did, not these rows.
+  question has no rows, and nor has a reply still being written, here or
+  on the Mac: one written here shows its tool lines as it did, and the
+  rows come once it has finished.
   <!-- test: ToolExchangeDisplayTests.testAHeadingNamesTheToolAndWhoseItIs -->
   <!-- test: ToolExchangeDisplayTests.testTheArgumentsAreLaidOutWhenTheyAreJSON -->
   <!-- test: ToolExchangeDisplayTests.testALongAnswerIsCutOnACharacterAndSaysHowMuchMore -->

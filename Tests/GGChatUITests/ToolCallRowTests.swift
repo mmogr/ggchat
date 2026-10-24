@@ -77,7 +77,7 @@ final class ToolCallRowTests: XCTestCase {
     /// A reply a run with a server's tool and gglib's own wrote keeps both
     /// calls, the server's named and its failure said, and the stored
     /// reply draws one row for each, in order, under its words; its
-    /// question draws none.
+    /// question draws none, and nor does a reply a hub is still writing.
     func testEachToolAStoredReplyCalledIsOneRowAndAQuestionHasNone() async throws {
         let hub = FakeRunHub(frames: [
             [.tool("Tavily Search: cargo lock v4"), .toolCalled(Self.search)],
@@ -107,5 +107,8 @@ final class ToolCallRowTests: XCTestCase {
         var none = reply
         none.exchanges = []
         XCTAssertEqual(rows(in: ToolCallRows(message: none).body), [])
+        var writing = reply
+        writing.runID = "r1"
+        XCTAssertNil(rows(in: ToolCallRows(message: writing).body), "a reply still being written drew its rows")
     }
 }
