@@ -1177,13 +1177,26 @@ Each claim names the test that keeps it true.
   shows or hides the list as the system does. Wherever the list is beside
   the chat, the chat narrows to make room rather than the list lying over
   it. The sidebar button still hides the list, until the next unfolding or
-  turn upright puts it back.
+  turn upright puts it back. On a phone, where iOS lays a split view's list
+  over the chat whatever it is asked, the app lays the two side by side
+  itself, the list at three eighths of the width as Claude's own app keeps
+  it and never under 240 points, with the sidebar button at the chat's
+  leading edge. Wherever the list is a column beside the chat, its header
+  holds its title and the new-conversation button, and Providers and
+  Settings sit in a bar at its foot. The window is read by its width and
+  the tallest height seen at it, so the keyboard, which only takes height
+  away, never changes the layout under the field being typed in.
   <!-- test: SidebarPinningTests.testAnOpenDuoHeldUprightKeepsTheListBesideTheChat -->
   <!-- test: SidebarPinningTests.testAWideWindowLeavesTheListToTheSystem -->
   <!-- test: SidebarPinningTests.testAFoldedDuoIsAPhoneWithItsListAScreenBack -->
   <!-- test: SidebarPinningTests.testAFoldedDuoOnItsSideLeavesTheListToTheSystem -->
   <!-- test: SidebarPinningTests.testASquareWindowLeavesTheListToTheSystem -->
   <!-- test: SidebarPinningTests.testAWindowTooNarrowForTheListAndAChatLeavesTheListToTheSystem -->
+  <!-- test: SidebarPinningTests.testAPhoneGivesTheListThreeEighthsOfTheWidthAsClaudesAppDoes -->
+  <!-- test: SidebarPinningTests.testTheListIsNeverNarrowerThan240Points -->
+  <!-- test: SidebarPinningTests.testTheKeyboardTakingHeightLeavesAnOpenDuoReadAsTall -->
+  <!-- test: SidebarPinningTests.testTurningOrFoldingIsReadAfresh -->
+  <!-- test: SidebarPinningTests.testTheFirstReadingIsTakenAsItIs -->
 - Each paired Mac has a section of its own in the list, "On home", with the
   chats gglib keeps there, listed at launch, when its pipe comes up and on a
   pull, each with the time it last changed (the date too when not today),
