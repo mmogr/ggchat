@@ -16,6 +16,25 @@ enum Fold {
         return []
     }
 
+    #if os(iOS)
+        /// Whether the app was launched with `-ggchat-fold YES`, which the
+        /// walk of a Duo's pages passes: no simulator can be half opened by
+        /// a test.
+        nonisolated static var isFaked: Bool {
+            UserDefaults.standard.bool(forKey: "ggchat-fold")
+        }
+
+        /// The divisions the window's layout reads, which under `isFaked`
+        /// are a fold down the middle of `proxy`. Only the window's: a
+        /// control kept off the fold reads `divisions(in:)`, and moves for a
+        /// real one alone.
+        nonisolated static func windowDivisions(in proxy: GeometryProxy) -> [CGRect] {
+            guard isFaked else { return divisions(in: proxy) }
+            let size = proxy.size
+            return [CGRect(x: (size.width / 2).rounded() - 12, y: 0, width: 24, height: size.height)]
+        }
+    #endif
+
     /// The narrowest pane a column is moved into. Beyond a fold nearer the
     /// trailing edge than this the column stays where it was, across the
     /// fold, which still works.

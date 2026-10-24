@@ -5,6 +5,7 @@ import SwiftUI
 /// bottom while a reply streams, with the composer floating over it.
 struct ChatView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.chatControlsOnPage) private var controlsOnPage
     @State private var showingStatus = false
     @State private var editingPrompt = false
     @State private var editing: Message?
@@ -59,40 +60,45 @@ struct ChatView: View {
             .navigationBarTitleDisplayMode(.inline)
         #endif
         .toolbar {
-            // Always there, so a prompt can be set before the first message.
-            // Whether one is set is in the label, not an accessibility
-            // value: the vertical bar an iPhone Duo lays toolbar items in
-            // keeps a button's label and identifier and drops its value.
-            ToolbarItem(placement: .automatic) {
-                Button {
-                    editingPrompt = true
-                } label: {
-                    Label(
-                        conversation.hasSystemPrompt ? "System prompt, set" : "System prompt", systemImage: promptSymbol
-                    )
-                }
-                .accessibilityIdentifier("system-prompt")
-            }
-            // Only for a model gglib lists as one that thinks.
-            if model.offersThinking(for: conversation) {
+            // On an open Duo on its side these are in the chat's panel.
+            if !controlsOnPage {
+                // Always there, so a prompt can be set before the first
+                // message. Whether one is set is in the label, not an
+                // accessibility value: the vertical bar an iPhone Duo lays
+                // toolbar items in keeps a button's label and identifier and
+                // drops its value.
                 ToolbarItem(placement: .automatic) {
-                    ThinkingToggle(isOn: model.thinkingOn(for: conversation)) { on in
-                        model.setThinking(on: on, for: conversation.id)
+                    Button {
+                        editingPrompt = true
+                    } label: {
+                        Label(
+                            conversation.hasSystemPrompt ? "System prompt, set" : "System prompt",
+                            systemImage: promptSymbol
+                        )
+                    }
+                    .accessibilityIdentifier("system-prompt")
+                }
+                // Only for a model gglib lists as one that thinks.
+                if model.offersThinking(for: conversation) {
+                    ToolbarItem(placement: .automatic) {
+                        ThinkingToggle(isOn: model.thinkingOn(for: conversation)) { on in
+                            model.setThinking(on: on, for: conversation.id)
+                        }
                     }
                 }
-            }
-            // Only for a paired Mac that offers its MCP servers' tools.
-            if model.offersTools(for: conversation) {
-                ToolbarItem(placement: .automatic) {
-                    ToolsToggle(isOn: model.toolsOn(for: conversation)) { on in
-                        model.setTools(on: on, for: conversation.id)
+                // Only for a paired Mac that offers its MCP servers' tools.
+                if model.offersTools(for: conversation) {
+                    ToolbarItem(placement: .automatic) {
+                        ToolsToggle(isOn: model.toolsOn(for: conversation)) { on in
+                            model.setTools(on: on, for: conversation.id)
+                        }
                     }
                 }
-            }
-            if let provider, model.proxyStatusAvailable(for: provider.id) {
-                ToolbarItem(placement: .automatic) {
-                    Button("Server status", systemImage: "gauge.with.dots.needle.33percent") {
-                        showingStatus = true
+                if let provider, model.proxyStatusAvailable(for: provider.id) {
+                    ToolbarItem(placement: .automatic) {
+                        Button("Server status", systemImage: "gauge.with.dots.needle.33percent") {
+                            showingStatus = true
+                        }
                     }
                 }
             }
