@@ -9,6 +9,22 @@ import SwiftUI
 /// than saving a copy of the conversation: a reply can finish while the
 /// sheet is up, and a copy taken before it would write over it.
 struct SystemPromptView: View {
+    let conversation: Conversation
+
+    var body: some View {
+        NavigationStack {
+            SystemPromptForm(conversation: conversation)
+        }
+        #if os(macOS)
+            .frame(minWidth: 420, minHeight: 320)
+        #endif
+    }
+}
+
+/// The field, Cancel and Save, for the sheet's stack or pushed on another:
+/// on an open iPhone Duo on its side, on the chat's panel beside it. Either
+/// way out is the stack's, a sheet dismissed or a page popped.
+struct SystemPromptForm: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @State private var text: String
@@ -20,36 +36,35 @@ struct SystemPromptView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    TextEditor(text: $text)
-                        .frame(minHeight: 160)
-                        .accessibilityIdentifier("system-prompt")
-                } footer: {
-                    Text(
-                        "Sent ahead of every message in this conversation. "
-                            + "Changes apply from the next message; leave it empty to send none."
-                    )
-                }
+        Form {
+            Section {
+                TextEditor(text: $text)
+                    .frame(minHeight: 160)
+                    .accessibilityIdentifier("system-prompt")
+            } footer: {
+                Text(
+                    "Sent ahead of every message in this conversation. "
+                        + "Changes apply from the next message; leave it empty to send none."
+                )
             }
-            .formStyle(.grouped)
-            .navigationTitle("System prompt")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        model.setSystemPrompt(text, for: conversationID)
-                        dismiss()
-                    }
+        }
+        .formStyle(.grouped)
+        .navigationTitle("System prompt")
+        #if os(iOS)
+            // Pushed, Cancel is the way back, as in the sheet.
+            .navigationBarBackButtonHidden()
+        #endif
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") { dismiss() }
+            }
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") {
+                    model.setSystemPrompt(text, for: conversationID)
+                    dismiss()
                 }
             }
         }
-        #if os(macOS)
-            .frame(minWidth: 420, minHeight: 320)
-        #endif
     }
 }
 
