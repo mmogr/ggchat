@@ -2,8 +2,9 @@ import GGChatCore
 import SwiftUI
 
 /// gglib's "what is the server doing" pane: slots, context in use, recent
-/// requests and the flags gglib raised on them. Fed by the SSE stream while
-/// open. Shown only for providers that answer the endpoint.
+/// requests and the flags gglib raised on them, fed by the SSE stream while
+/// open, and the MCP servers a paired Mac offers. Shown only for providers
+/// that answer the endpoint.
 struct ProxyStatusView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -41,6 +42,7 @@ struct ProxyStatusView: View {
                 } else if failure == nil {
                     ProgressView("Waiting for the first snapshot")
                 }
+                ToolsOfferedSection(names: model.toolsOffered(by: provider))
             }
             .navigationTitle("Server status")
             .toolbar {
@@ -67,6 +69,27 @@ struct ProxyStatusView: View {
         } catch is CancellationError {
         } catch {
             failure = error.localizedDescription
+        }
+    }
+}
+
+/// The MCP servers a paired Mac offers this phone's runs, by the names it
+/// gives them, and where they are chosen: on the Mac, never here, so there
+/// is nothing to tap (ADR 0013). No section where none are offered.
+struct ToolsOfferedSection: View {
+    let names: [String]
+
+    var body: some View {
+        if !names.isEmpty {
+            Section {
+                ForEach(Array(names.enumerated()), id: \.offset) { _, name in
+                    Text(name)
+                }
+            } header: {
+                Text("Tools offered")
+            } footer: {
+                Text("Chosen on the Mac with `gglib remote enable --allow-mcp <server>`, once for each server")
+            }
         }
     }
 }

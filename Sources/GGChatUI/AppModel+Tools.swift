@@ -15,6 +15,13 @@ extension AppModel {
         return offersTools(config)
     }
 
+    /// The servers a paired Mac offers its runs, by the names it gives them,
+    /// in its order, for the server-status sheet to list: none where no
+    /// tools are offered (`offersTools`).
+    public func toolsOffered(by config: ProviderConfig) -> [String] {
+        offersTools(config) ? drawings[config.id]?.mcpServers ?? [] : []
+    }
+
     /// Whether the conversation's switch shows on, which is while it is not
     /// switched off. The opposite is taken here, where a test reads it.
     public func toolsOn(for conversation: Conversation) -> Bool {

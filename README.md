@@ -39,8 +39,8 @@ its own, set from the toolbar and sent ahead of every request without ever
 becoming a row in the transcript; a request refused before anything arrived
 says why under the question, with a Retry button. A server added by address lists its models and
 streams; against gglib, a server status pane shows slots, context in use
-and recent requests, and it is hidden for servers that do not answer that
-endpoint. The app has been run: the screens above are photographs of it,
+and recent requests, with the MCP servers a paired Mac offers, and it is
+hidden for servers that do not answer that endpoint. The app has been run: the screens above are photographs of it,
 not mock-ups. A pipe provider is added by pasting the `ticket-code` string
 the other machine showed for it (`gglib remote enable --invite` for the
 first device, `gglib remote invite` for each one after that), or on iOS by
@@ -434,6 +434,12 @@ Each claim names the test that keeps it true.
   never runs the tools the person turned off, and a gglib from before
   `none` refuses it with the refusal and Retry on the question; without
   Draw it is a plain run.
+  Which servers the Mac offers is chosen on the Mac, never here: the
+  server-status sheet lists them by the names the Mac gives them, under
+  "Tools offered", with a line saying they are chosen with
+  `gglib remote enable --allow-mcp <server>`, once for each server, and
+  nothing there can be tapped. The section is not there where no tools
+  are offered.
   <!-- test: ToolsOfferedWireTests.testARunWithToolsIsPutWithThemAndDrawsOnlyWhenItDraws -->
   <!-- test: AppModelToolsTests.testANewConversationHasTheToolsOnAndTheSwitchTurnsThemOff -->
   <!-- test: AppModelToolsTests.testOffSendsAPlainRunAndWithDrawOnlyTheDrawingTool -->
@@ -442,6 +448,7 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelToolsTests.testARelaunchedPutOfADrawQuestionBeforeTheMacsAnswerKeepsTheToolsOff -->
   <!-- test: ToolsStoreTests.testTheChoiceOutlivesAReopeningAndAnUnchangedOneMarksNoRow -->
   <!-- test: ToolsStoreTests.testAStoreOpensAcrossTheToolsColumnInBothDirections -->
+  <!-- test: ProxyStatusToolsTests.testTheSheetListsTheServersAMacOffersAndNothingWhereNoneAre -->
   <!-- test: ConversationBranchesTests.testABranchCopiesTheSettingsAndNoRun -->
   <!-- test: QuickActionTests.testAConversationMovedToAnotherProviderTakesItsDefaultModel -->
 - A conversation kept here remembers how its picture was made. The reply a
