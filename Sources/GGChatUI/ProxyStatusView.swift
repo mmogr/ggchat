@@ -6,7 +6,6 @@ import SwiftUI
 /// open, and the MCP servers a paired Mac offers. Shown only for providers
 /// that answer the endpoint.
 struct ProxyStatusView: View {
-    @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     let provider: ProviderConfig
     @State private var status: ProxyStatus?
@@ -15,34 +14,7 @@ struct ProxyStatusView: View {
     var body: some View {
         NavigationStack {
             List {
-                if let failure {
-                    Text(failure)
-                        .foregroundStyle(.red)
-                }
-                if let status {
-                    Section("Server") {
-                        LabeledContent("Active connections", value: "\(status.activeConnectionCount)")
-                        if let available = status.slotsAvailable {
-                            LabeledContent("Slots", value: available ? "Available" : "Busy")
-                        }
-                    }
-                    Section("Slots") {
-                        ForEach(Array(status.slots.enumerated()), id: \.offset) { _, slot in
-                            SlotRow(slot: slot)
-                        }
-                    }
-                    Section("Recent requests") {
-                        if status.recentRequests.isEmpty {
-                            Text("None yet.").foregroundStyle(.secondary)
-                        }
-                        ForEach(Array(status.recentRequests.reversed().enumerated()), id: \.offset) { _, request in
-                            RecentRequestRow(request: request)
-                        }
-                    }
-                } else if failure == nil {
-                    ProgressView("Waiting for the first snapshot")
-                }
-                ToolsOfferedSection(names: model.toolsOffered(by: provider))
+                ProxyStatusSections(provider: provider, status: status, failure: failure)
             }
             .navigationTitle("Server status")
             .toolbar {
@@ -51,13 +23,82 @@ struct ProxyStatusView: View {
                 }
             }
         }
-        .task { await follow() }
+        .followsProxyStatus(of: provider, status: $status, failure: $failure)
         #if os(macOS)
             .frame(minWidth: 420, minHeight: 420)
         #endif
     }
+}
 
-    private func follow() async {
+/// The pane's rows, for its own list or the panel beside the chat on an open
+/// iPhone Duo on its side: what the last snapshot said, or why there is none.
+/// Whoever lays them out follows the stream with `followsProxyStatus`, on
+/// the list itself, which is one view where these rows are many.
+struct ProxyStatusSections: View {
+    @Environment(AppModel.self) private var model
+    let provider: ProviderConfig
+    let status: ProxyStatus?
+    let failure: String?
+
+    var body: some View {
+        if let failure {
+            Text(failure)
+                .foregroundStyle(.red)
+        }
+        if let status {
+            Section("Server") {
+                LabeledContent("Active connections", value: "\(status.activeConnectionCount)")
+                if let available = status.slotsAvailable {
+                    LabeledContent("Slots", value: available ? "Available" : "Busy")
+                }
+            }
+            Section("Slots") {
+                ForEach(Array(status.slots.enumerated()), id: \.offset) { _, slot in
+                    SlotRow(slot: slot)
+                }
+            }
+            Section("Recent requests") {
+                if status.recentRequests.isEmpty {
+                    Text("None yet.").foregroundStyle(.secondary)
+                }
+                ForEach(Array(status.recentRequests.reversed().enumerated()), id: \.offset) { _, request in
+                    RecentRequestRow(request: request)
+                }
+            }
+        } else if failure == nil {
+            ProgressView("Waiting for the first snapshot")
+        }
+        ToolsOfferedSection(names: model.toolsOffered(by: provider))
+    }
+}
+
+extension View {
+    /// Reads `provider`'s status stream into `status` while the view is on
+    /// screen, or says in `failure` why it cannot, starting again for
+    /// another provider. Nil reads nothing.
+    func followsProxyStatus(
+        of provider: ProviderConfig?, status: Binding<ProxyStatus?>, failure: Binding<String?>
+    ) -> some View {
+        modifier(ProxyStatusFeed(provider: provider, status: status, failure: failure))
+    }
+}
+
+private struct ProxyStatusFeed: ViewModifier {
+    @Environment(AppModel.self) private var model
+    let provider: ProviderConfig?
+    @Binding var status: ProxyStatus?
+    @Binding var failure: String?
+
+    func body(content: Content) -> some View {
+        content.task(id: provider?.id) {
+            status = nil
+            failure = nil
+            guard let provider else { return }
+            await follow(provider)
+        }
+    }
+
+    private func follow(_ provider: ProviderConfig) async {
         guard let stream = model.proxyStatusStream(for: provider) else {
             failure = "This provider does not report status."
             return
