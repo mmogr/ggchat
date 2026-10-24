@@ -138,6 +138,19 @@ Each claim names the test that keeps it true.
   Send at the toolbar's trailing end, so the field is as wide as the
   composer however many controls the toolbar holds.
   <!-- test: ContextRingUITests.testAReplyRaisesTheRingAndItsSheetSaysTheCounts -->
+- A transcript scrolled more than half a screen up offers a round button
+  above the composer that takes it back to the latest message, and the
+  next reply is followed from there; at its latest, and in a chat shorter
+  than its screen, there is none. A chat at its latest stays there when the
+  keyboard comes back up as a reply ends, and one scrolled up stays put.
+  <!-- test: JumpToLatestTests.testAtTheBottomThereIsNoButton -->
+  <!-- test: JumpToLatestTests.testTheComposersInsetIsNotCountedAsDistance -->
+  <!-- test: JumpToLatestTests.testScrolledUpLessThanHalfAScreenThereIsNoButton -->
+  <!-- test: JumpToLatestTests.testScrolledUpMoreThanHalfAScreenThereIsOne -->
+  <!-- test: JumpToLatestTests.testAChatShorterThanItsScreenNeverHasOne -->
+  <!-- test: JumpToLatestTests.testAChatAtItsLatestIsKeptThereWhenTheKeyboardComesUp -->
+  <!-- test: JumpToLatestTests.testAChatScrolledUpStaysWhereItIsWhenTheKeyboardComesUpOrGoes -->
+  <!-- test: JumpToLatestUITests.testAChatScrolledUpOffersAWayBackToItsLatestReply -->
 - An image joins a draft through the photo picker, a paste or a drop, on
   iOS the paste as a row of the add-image menu, and every one goes through
   one downscale: turned upright by its orientation,

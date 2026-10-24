@@ -639,8 +639,17 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # 2026-10-24: 853 -> 854 and 761 -> 762. One test pins that a Mac's run
 # which ends while a call is still being written leaves no line for that
 # call on the ended reply.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 854
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 762
+#
+# 2026-10-24: 854 -> 861, 28 -> 29 and 762 -> 770 for a long chat's way back
+# to its latest message. A button that never shows fails nothing: the chat
+# still scrolls, only by hand. These eight are the whole of its guard -- none
+# at the bottom, the composer's inset not counted, none under half a screen,
+# one past it, none for a short chat, a chat at its latest kept there as the
+# keyboard comes up and one scrolled up left alone, and the walk that scrolls
+# up, jumps back and follows the next reply -- so the floors move past all
+# of them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 861
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 29
+floor "README test markers" "${markers:-0}" 770
 
 exit $status

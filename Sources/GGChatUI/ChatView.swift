@@ -40,10 +40,12 @@ struct ChatView: View {
             .padding(.horizontal)
             .padding(.top)
             .padding(.bottom, 8)
+            .footOfTheLatest()
             .frame(maxWidth: 760)
             .frame(maxWidth: .infinity)
         }
         .defaultScrollAnchor(.bottom)
+        .jumpsToLatest(replying: model.isStreaming(conversation.id), in: conversation.id)
         .overlay {
             if conversation.messages.isEmpty, !model.isStreaming(conversation.id) {
                 ContentUnavailableView("Say something", systemImage: "text.bubble")
