@@ -24,11 +24,14 @@ enum JumpToLatest {
     /// Whether a chat at its latest is taken back there after its foot is
     /// covered more, as when the keyboard comes up as a reply ends: the
     /// scroll view keeps its offset, and the latest reply would sit under the
-    /// keyboard. A chat scrolled up stays where it is.
+    /// keyboard. At its latest is wherever the button would not show: a
+    /// finished reply's row is drawn again a few points taller or shorter,
+    /// and a keyboard back before the chat settled found it short of its very
+    /// bottom and left it there. A chat scrolled well up stays where it is.
     nonisolated static func keepsToLatest(
-        distanceBefore: CGFloat, insetBefore: CGFloat, insetAfter: CGFloat
+        distanceBefore: CGFloat, viewportBefore: CGFloat, insetBefore: CGFloat, insetAfter: CGFloat
     ) -> Bool {
-        distanceBefore <= 1 && insetAfter > insetBefore
+        !shows(distanceFromBottom: distanceBefore, viewport: viewportBefore) && insetAfter > insetBefore
     }
 
     /// The id of the transcript's foot, which the button scrolls to.
@@ -92,7 +95,8 @@ private struct JumpsToLatest<Chat: Hashable>: ViewModifier {
             } action: { before, after in
                 shown = JumpToLatest.shows(distanceFromBottom: after.distance, viewport: after.viewport)
                 if JumpToLatest.keepsToLatest(
-                    distanceBefore: before.distance, insetBefore: before.inset, insetAfter: after.inset)
+                    distanceBefore: before.distance, viewportBefore: before.viewport, insetBefore: before.inset,
+                    insetAfter: after.inset)
                 {
                     proxy.scrollTo(JumpToLatest.foot, anchor: .bottom)
                 }

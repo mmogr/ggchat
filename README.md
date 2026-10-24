@@ -150,6 +150,7 @@ Each claim names the test that keeps it true.
   <!-- test: JumpToLatestTests.testAChatShorterThanItsScreenNeverHasOne -->
   <!-- test: JumpToLatestTests.testAChatAtItsLatestIsKeptThereWhenTheKeyboardComesUp -->
   <!-- test: JumpToLatestTests.testAChatScrolledUpStaysWhereItIsWhenTheKeyboardComesUpOrGoes -->
+  <!-- test: JumpToLatestTests.testAChatAFewPointsShortOfItsLatestIsStillTakenThere -->
   <!-- test: JumpToLatestUITests.testAChatScrolledUpOffersAWayBackToItsLatestReply -->
 - An image joins a draft through the photo picker, a paste or a drop, on
   iOS the paste as a row of the add-image menu, and every one goes through

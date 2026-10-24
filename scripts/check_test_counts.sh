@@ -668,8 +668,13 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # it does. These three are the whole of that guard -- the keyboard's height
 # ignored, a turn or a fold read afresh, and the first reading taken as it
 # is -- so the floors move past them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 872
+#
+# 2026-10-24: 872 -> 873 and 781 -> 782. One test pins that a chat a few points
+# short of its latest, as a finished reply's row drawn again leaves it, is
+# still taken back there when the keyboard comes up: on CI's slower runners
+# it was left with the reply under the keyboard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 873
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 29
-floor "README test markers" "${markers:-0}" 781
+floor "README test markers" "${markers:-0}" 782
 
 exit $status
