@@ -2,7 +2,8 @@ import Foundation
 
 /// A tool a reply called, and what the tool answered: what a run's agent
 /// events say of it (`tool_call_start`, `tool_call_complete`), kept so a
-/// later request can say again how the reply came about. Never drawn.
+/// later request can say again how the reply came about, and drawn under
+/// the finished reply as a collapsed row (`ToolExchangeDisplay.swift`).
 ///
 /// `arguments` is what the model gave the tool, as JSON text: an OpenAI
 /// history writes a call's arguments as a string. `result` is the tool's

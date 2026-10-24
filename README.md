@@ -420,7 +420,8 @@ Each claim names the test that keeps it true.
   and `tool_call_complete` events and kept in one optional column. An answer
   that does not say is not known to have failed or worked, and a list kept
   before the server and the failure were read still reads, with neither.
-  None of it is drawn, and the transcript holds the rows it always did.
+  The transcript holds the messages it always did, and each call is drawn
+  under its reply as a collapsed row, as the item after next says.
   Every later request says it again ahead of the reply's words, in OpenAI's
   shape: an assistant message with the call in `tool_calls` and no content,
   then a `tool` message with the call's id and the answer. The server and
@@ -488,6 +489,27 @@ Each claim names the test that keeps it true.
   <!-- test: DrawnPictureShownTests.testAModelThatDoesNotListVisionIsNotShownIt -->
   <!-- test: DrawnPictureShownTests.testAServerThatIsNotGglibIsNotShownIt -->
   <!-- test: DrawnPictureShownTests.testAPictureWhoseBytesAreGoneIsLeftOut -->
+- Under a finished reply kept here, each tool it called is one row,
+  collapsed, in the order it called them: a wrench, the tool's name after
+  its first `:`, then whose it is, the MCP server the call named or
+  "gglib" for one of gglib's own (`builtin:…`), as in
+  `tavily_search · Tavily Web Search`. A tool whose owner is not known
+  shows its name alone. A tool that said it failed has a warning mark, and
+  VoiceOver hears "failed" in the row's name, so it is never the colour
+  alone. Opened, the row shows what was Sent, the arguments as JSON laid
+  out over lines with their keys sorted, or as written when they are not
+  JSON, and what was Received, the answer as the tool gave it, cut after
+  2,000 characters and never inside one, with a line saying how many more
+  in the locale's digits. A call nothing answered says it was not
+  answered. Both can be selected. It is the same for every tool. A
+  question has no rows, and a reply still being written shows its tool
+  lines as it did, not these rows.
+  <!-- test: ToolExchangeDisplayTests.testAHeadingNamesTheToolAndWhoseItIs -->
+  <!-- test: ToolExchangeDisplayTests.testTheArgumentsAreLaidOutWhenTheyAreJSON -->
+  <!-- test: ToolExchangeDisplayTests.testALongAnswerIsCutOnACharacterAndSaysHowMuchMore -->
+  <!-- test: ToolExchangeDisplayTests.testACallNothingAnsweredHasNoAnswerToShow -->
+  <!-- test: ToolCallRowTests.testTheRowSaysTheToolWhoseItIsAndWhetherItFailed -->
+  <!-- test: ToolCallRowTests.testEachToolAStoredReplyCalledIsOneRowAndAQuestionHasNone -->
 - The picture such a run draws is this device's to keep, since the
   conversation is: its bytes are read from the hub by id as soon as the tool
   finishes, before its frame is applied, checked against the id, kept in

@@ -8,8 +8,9 @@ public enum ChatEvent: Sendable, Equatable {
     /// A tool the reply called, as one line: its name and what it was given.
     /// Only a hub's agent run sends one.
     case tool(String)
-    /// A tool the reply called, by its call's id, with its name and what the
-    /// model gave it, to keep with the reply. Sent after the call's line.
+    /// A tool the reply called, by its call's id, with its name, what the
+    /// model gave it and the MCP server it is one of when the run says, to
+    /// keep with the reply and draw under it. Sent after the call's line.
     /// Only a hub's agent run sends one.
     case toolCalled(ToolExchange)
     /// What a tool the reply called answered, word for word, by its call's

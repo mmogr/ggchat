@@ -4,7 +4,8 @@ import SwiftUI
 /// One stored turn. Flat: a role label, reasoning collapsed, then the
 /// content as markdown blocks, with the images it carries above a question's
 /// words and under a reply's, where a reply being written draws the images
-/// its tools made. The last one, once nothing is streaming after it, says
+/// its tools made, and under a reply a collapsed row for each tool it
+/// called. The last one, once nothing is streaming after it, says
 /// how its turn ended: under a partial reply, with Continue, and under a
 /// question with no reply, with Retry and the reason when something gave
 /// one. A reply a hub is still writing away from this device offers neither,
@@ -51,6 +52,7 @@ struct MessageRow: View {
             if message.role == .assistant, !message.images.isEmpty {
                 MessageImages(images: message.images, fromHub: imagesFromHub, owner: message.id)
             }
+            ToolCallRows(message: message)
             if showsEnding {
                 if let writingLine {
                     writingFooter(writingLine)

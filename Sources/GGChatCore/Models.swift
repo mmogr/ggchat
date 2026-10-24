@@ -23,9 +23,9 @@ public enum Role: String, Codable, Sendable, Equatable, Hashable {
 /// as the chat route's chunks, so a reply read on is read with the decoder
 /// its run needs; nil with `runID`, and for a run of chunks.
 /// `exchanges` is the tools a reply called and what each answered, in
-/// order, as a run with gglib's tools said them: never drawn, and sent back
-/// to a gglib with the reply so the model reads how its picture was made
-/// and what its other tools answered.
+/// order, as a run with gglib's tools said them: drawn under a reply as a
+/// collapsed row each, and sent back to a gglib with the reply so the model
+/// reads how its picture was made and what its other tools answered.
 public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
     public var id: UUID
     public var role: Role
