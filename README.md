@@ -180,9 +180,9 @@ Each claim names the test that keeps it true.
   Choosing a model changes that conversation alone, never a provider's
   default. With more than one provider, or none, the model list also lists
   the providers: choosing one moves the conversation there with that
-  provider's default model, and drops the Thinking choice and the image
-  model made for the one left. A conversation whose reply is still being
-  written stays where it was asked.
+  provider's default model, and drops the Thinking choice, the image
+  model and the Tools choice made for the one left. A conversation whose
+  reply is still being written stays where it was asked.
   <!-- test: QuickActionTests.testANewChatIsWithTheOpenConversationsProvider -->
   <!-- test: QuickActionTests.testANewChatIsWithTheFirstProviderWhenTheOpenOnesIsGone -->
   <!-- test: QuickActionTests.testANewChatIsWithTheMacWhoseChatIsOpen -->
@@ -356,11 +356,13 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingPreviewTests.testARunThatEndsMidPictureLeavesNoLook -->
 - A conversation kept on this device draws too, and runs a paired Mac's
   tools. A message sent with Draw on, to a hub that said it can draw, is
-  put as `PUT /v1/runs/{id}?kind=chat&tools=builtin&draw=true`; a hub that
-  cannot draw, is too old or was never heard from is sent it as one that
+  put as `PUT /v1/runs/{id}?kind=chat&tools=builtin&draw=true`, or with
+  `tools=none` when the conversation has its tools off, as an item below
+  says; a hub that cannot draw, is too old or was never heard from is sent it as one that
   does not draw. A paired Mac whose answer about drawing names MCP servers
   it offers (`mcp_servers`, said whether or not it can draw) has every
-  question that does not draw put as
+  question that does not draw, while the conversation's Tools switch is
+  on, put as
   `PUT /v1/runs/{id}?kind=chat&tools=builtin`, Retry included, so its
   reply can call their tools. The body is the OpenAI request it always
   was. Any other message has no query at all unless it draws: one to a
@@ -371,7 +373,7 @@ Each claim names the test that keeps it true.
   again with the tools while the Mac's answer is known; after a relaunch it
   goes before that answer is back, and so without them. A Continue of a
   reply with words is sent again with none.
-  The switch is off again in the draft a taken send leaves, and a refused
+  The Draw switch is off again in the draft a taken send leaves, and a refused
   draft keeps it. The run's answer says how its events are written, `frames`,
   and that picks the decoder: `agent` is read as a Mac's chat's run is, and
   absent is the chat route's chunks, as every run before. The question is
@@ -410,6 +412,38 @@ Each claim names the test that keeps it true.
   <!-- test: ToolsOfferedRunTests.testAGglibByAddressIsNeverSentTools -->
   <!-- test: ToolsOfferedRunTests.testAQuestionPutAgainAfterItsAnswerWasLostCarriesTheTools -->
   <!-- test: ToolsOfferedRunTests.testAContinuePutAgainAfterItsAnswerWasLostRunsNoTools -->
+- A conversation kept here on a paired Mac that offers its MCP servers'
+  tools has a Tools switch in its top bar, on until it is turned off: a
+  wrench, filled while on and an outline while off, with "on" or "off" in
+  its name so the state is never the tint alone. Off, a question is put as
+  a plain run, with no query, and one sent with Draw is put as
+  `PUT /v1/runs/{id}?kind=chat&tools=none&draw=true`, with the chosen
+  image model after it, which leaves it gglib's drawing tool and no other;
+  the body is the one it always was. A gglib from before `none` refuses
+  it, and the question shows the refusal with Retry. The choice is the
+  conversation's, kept in one optional column written only for a
+  conversation that turned the tools off, and outlives a relaunch; setting
+  it leaves the conversation's date alone. A branch copies it, a move to
+  another provider drops it, and a question whose `PUT` lost its answer is
+  put again with it. A gglib reached by address, a Mac that names no
+  servers, one from before the list and one not heard from have no switch.
+  The first three are never told the tools are off, whatever a
+  conversation stores. One not heard from may offer servers, so it is
+  told: a question with Draw whose `PUT` is put again after a relaunch,
+  before the Mac's answer is back, goes with `tools=none&draw=true`, so it
+  never runs the tools the person turned off, and a gglib from before
+  `none` refuses it with the refusal and Retry on the question; without
+  Draw it is a plain run.
+  <!-- test: ToolsOfferedWireTests.testARunWithToolsIsPutWithThemAndDrawsOnlyWhenItDraws -->
+  <!-- test: AppModelToolsTests.testANewConversationHasTheToolsOnAndTheSwitchTurnsThemOff -->
+  <!-- test: AppModelToolsTests.testOffSendsAPlainRunAndWithDrawOnlyTheDrawingTool -->
+  <!-- test: AppModelToolsTests.testAQuestionPutAgainAfterItsAnswerWasLostKeepsTheToolsOff -->
+  <!-- test: AppModelToolsTests.testTheSwitchIsHiddenAndOffNeverSentWhereNoToolsAreOffered -->
+  <!-- test: AppModelToolsTests.testARelaunchedPutOfADrawQuestionBeforeTheMacsAnswerKeepsTheToolsOff -->
+  <!-- test: ToolsStoreTests.testTheChoiceOutlivesAReopeningAndAnUnchangedOneMarksNoRow -->
+  <!-- test: ToolsStoreTests.testAStoreOpensAcrossTheToolsColumnInBothDirections -->
+  <!-- test: ConversationBranchesTests.testABranchCopiesTheSettingsAndNoRun -->
+  <!-- test: QuickActionTests.testAConversationMovedToAnotherProviderTakesItsDefaultModel -->
 - A conversation kept here remembers how its picture was made. The reply a
   run drew for keeps, with its words and its picture, each tool the run
   called and what the tool answered: the call's id, the tool's name, the

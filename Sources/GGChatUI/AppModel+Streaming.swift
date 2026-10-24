@@ -115,8 +115,7 @@ extension AppModel {
         let request: ChatRequest
         do {
             request = try chatRequest(
-                model: modelID, messages: conversation.requestMessages, thinkingOff: conversation.thinkingOff,
-                imageModel: conversation.imageModelID, for: config)
+                model: modelID, messages: conversation.requestMessages, of: conversation, for: config)
         } catch {
             lastError = error.errorDescription
             return nil

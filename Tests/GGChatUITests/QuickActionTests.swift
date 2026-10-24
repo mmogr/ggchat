@@ -107,6 +107,7 @@ final class QuickActionTests: XCTestCase {
         conversation.model = "mock-4b"
         conversation.thinkingOff = true
         conversation.imageModelID = 3
+        conversation.toolsOff = true
         model.update(conversation)
         model.select(provider: model.providers[1].id, for: conversation.id)
         let moved = try XCTUnwrap(model.selectedConversation)
@@ -114,6 +115,7 @@ final class QuickActionTests: XCTestCase {
         XCTAssertEqual(moved.model, "other-9b")
         XCTAssertFalse(moved.thinkingOff)
         XCTAssertNil(moved.imageModelID)
+        XCTAssertFalse(moved.toolsOff, "a move kept the tools turned off for the Mac left")
         XCTAssertEqual(model.providers.map(\.defaultModel), ["mock-27b", "other-9b"])
     }
 

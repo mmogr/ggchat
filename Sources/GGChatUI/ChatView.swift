@@ -79,6 +79,14 @@ struct ChatView: View {
                     }
                 }
             }
+            // Only for a paired Mac that offers its MCP servers' tools.
+            if model.offersTools(for: conversation) {
+                ToolbarItem(placement: .automatic) {
+                    ToolsToggle(isOn: model.toolsOn(for: conversation)) { on in
+                        model.setTools(on: on, for: conversation.id)
+                    }
+                }
+            }
             if let provider, model.proxyStatusAvailable(for: provider.id) {
                 ToolbarItem(placement: .automatic) {
                     Button("Server status", systemImage: "gauge.with.dots.needle.33percent") {
