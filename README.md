@@ -1197,6 +1197,34 @@ Each claim names the test that keeps it true.
   <!-- test: SidebarPinningTests.testTheKeyboardTakingHeightLeavesAnOpenDuoReadAsTall -->
   <!-- test: SidebarPinningTests.testTurningOrFoldingIsReadAfresh -->
   <!-- test: SidebarPinningTests.testTheFirstReadingIsTakenAsItIs -->
+- An iPhone Duo open on its side and half open is a book. The chat is on
+  the trailing page, the size of the outside screen and drawn as it is
+  there, and the conversation list is on the leading page, the two meeting
+  at the fold with nothing drawn across it. In that pose the chat's top bar
+  is the list button, its title and a panel button: the panel, "This chat",
+  takes the list's place on the leading page with the chat's model and
+  provider, Thinking, Tools, system prompt, context counts and server
+  status, the ones the chat offers, and the top bar leaves those out. A
+  Mac's chat has its model, Thinking, context and server there, its tools
+  and prompt being the Mac's. Laid flat, the chat has the whole screen and
+  the list button lays the list beside it at half the width; half opened
+  again, the list comes back, and a hide holds until then. A window less
+  than 600 points high, a folded Duo or a large iPhone on its side, is not
+  read as an open Duo. The chat is laid out once whatever is beside it, so
+  turning, half opening, laying flat and hiding the list keep its draft.
+  <!-- test: BookPagesTests.testAnOpenDuoOnItsSideIsReadAsSideways -->
+  <!-- test: BookPagesTests.testAFoldedDuoOnItsSideAndAProMaxTurnedAreNot -->
+  <!-- test: BookPagesTests.testAnOpenDuoUprightIsNot -->
+  <!-- test: BookPagesTests.testTheWalkWaivesTheHeightButNotTheRoomForTwoPages -->
+  <!-- test: BookPagesTests.testHalfOpenThePagesMeetAtTheFold -->
+  <!-- test: BookPagesTests.testFlatThereAreNoPages -->
+  <!-- test: BookPagesTests.testAPropFoldAcrossTheScreenMakesNoPages -->
+  <!-- test: BookPagesTests.testAFoldLeavingAPageTooNarrowMakesNoPages -->
+  <!-- test: BookPagesTests.testAListShownByHandWhileFlatGetsHalfTheScreen -->
+  <!-- test: BookPagesTests.testAChatKeptHereShowsEverythingItIsOffered -->
+  <!-- test: BookPagesTests.testAChatOfferedNothingStillShowsItsModelAndPrompt -->
+  <!-- test: BookPagesTests.testAMacsChatHasNoToolsOrPromptHere -->
+  <!-- test: BookPagesUITests.testTheChatIsOnTheTrailingPageAndItsPanelOnTheLeading -->
 - Each paired Mac has a section of its own in the list, "On home", with the
   chats gglib keeps there, listed at launch, when its pipe comes up and on a
   pull, each with the time it last changed (the date too when not today),

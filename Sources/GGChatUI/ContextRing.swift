@@ -78,16 +78,12 @@ struct ContextRing: View {
 /// gives: a sheet whose one way out is Done.
 private struct ContextSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.locale) private var locale
     let reading: ContextReading
 
     var body: some View {
         NavigationStack {
             List {
-                ForEach(Array(reading.lines(in: locale).enumerated()), id: \.offset) { _, line in
-                    Text(line)
-                        .monospacedDigit()
-                }
+                ContextLines(reading: reading)
             }
             .navigationTitle("Context")
             #if os(iOS)
@@ -103,6 +99,20 @@ private struct ContextSheet: View {
         #if os(macOS)
             .frame(minWidth: 420, minHeight: 260)
         #endif
+    }
+}
+
+/// The counts as rows, for the sheet's list or a section of another: the
+/// panel beside the chat on an open iPhone Duo on its side.
+struct ContextLines: View {
+    @Environment(\.locale) private var locale
+    let reading: ContextReading
+
+    var body: some View {
+        ForEach(Array(reading.lines(in: locale).enumerated()), id: \.offset) { _, line in
+            Text(line)
+                .monospacedDigit()
+        }
     }
 }
 

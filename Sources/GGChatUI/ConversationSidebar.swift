@@ -41,6 +41,48 @@ enum SidebarPinning {
     }
 }
 
+/// Where an open iPhone Duo held on its side is laid out as a book: the chat
+/// on the trailing page, as on the outside screen, which each page is about
+/// the size of, and the list or the chat's own panel on the leading page.
+/// Only while the phone is half open, which is when the fold is reported;
+/// laid flat, the chat has the whole screen and the list is a tap away.
+enum BookPages {
+    /// The shortest window read as an open Duo on its side. A folded Duo on
+    /// its side is 466 points high and a Pro Max turned 440; open, the Duo
+    /// is 669.
+    nonisolated static let shortest: CGFloat = 600
+
+    /// Whether `size`, read as `SidebarPinning.measured` reads it, is an
+    /// open Duo on its side: wider than tall, tall enough, and room for two
+    /// pages. `anyHeight` waives the height, for the walk on an iPhone.
+    nonisolated static func opensSideways(_ size: CGSize, anyHeight: Bool = false) -> Bool {
+        size.width > size.height && (anyHeight || size.height >= shortest)
+            && size.width >= 2 * Fold.narrowest
+    }
+
+    /// The two pages across a window, in its leading-edge space.
+    nonisolated struct Pages: Equatable {
+        /// The leading page's width.
+        var leading: CGFloat
+        /// The width between the pages: the fold's, or none.
+        var gap: CGFloat
+    }
+
+    /// The pages either side of a vertical fold in `folds`, or nil when
+    /// there is none, as when the phone is flat or upright, or when a page
+    /// beyond it would be narrower than `Fold.narrowest`.
+    nonisolated static func pages(in size: CGSize, folds: [CGRect]) -> Pages? {
+        guard let fold = folds.first(where: { $0.height > $0.width }) else { return nil }
+        guard fold.minX >= Fold.narrowest, size.width - fold.maxX >= Fold.narrowest else { return nil }
+        return Pages(leading: fold.minX, gap: fold.width)
+    }
+
+    /// Two even pages, for a list shown by hand while the phone is flat.
+    nonisolated static func even(in size: CGSize) -> Pages {
+        Pages(leading: (size.width / 2).rounded(), gap: 0)
+    }
+}
+
 struct ConversationSidebar: View {
     @Environment(AppModel.self) private var model
     @Binding var showingProviders: Bool

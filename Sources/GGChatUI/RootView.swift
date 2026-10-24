@@ -19,13 +19,14 @@ public struct RootView: View {
     @State private var columns: NavigationSplitViewVisibility = .automatic
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var widthClass
-        @Environment(\.accessibilityReduceMotion) private var reduceMotion
         /// Whether the window is wide and tall enough to keep the list on screen.
         @State private var fits = false
         /// The window as the rule reads it: see `SidebarPinning.measured`.
         @State private var window: CGSize = .zero
-        /// Whether the list laid beside the chat on a phone is showing.
-        @State private var listShown = true
+        /// Whether the window is an open Duo on its side; see `BookPages`.
+        @State private var sideways = false
+        /// The window's fold while the phone is half open; see `Fold`.
+        @State private var folds: [CGRect] = []
     #endif
     /// What opening the store had to say.
     private let storeNotice: ShownStoreNotice
@@ -50,14 +51,21 @@ public struct RootView: View {
                         window = SidebarPinning.measured(size, after: window)
                         let now = SidebarPinning.fits(window)
                         if now != fits { fits = now }
+                        let turned = BookPages.opensSideways(window, anyHeight: Fold.isFaked)
+                        if turned != sideways { sideways = turned }
                     }
-                    // The list is put back on each unfolding and each turn
-                    // upright, and a hide holds until then; leaving, only a list
-                    // kept here is handed back to the system.
+                    // Half opening and laying flat change no size: only the
+                    // fold comes and goes.
+                    .onGeometryChange(for: [CGRect].self) { proxy in
+                        Fold.windowDivisions(in: proxy)
+                    } action: {
+                        folds = $0
+                    }
+                    // Leaving, only a list kept here is handed back to the
+                    // system.
                     .onChange(of: pinsSidebar, initial: true) { _, pinned in
                         if pinned {
                             columns = .doubleColumn
-                            listShown = true
                         } else if columns == .doubleColumn {
                             columns = .automatic
                         }
@@ -120,13 +128,18 @@ public struct RootView: View {
 
 extension RootView {
     /// The system's split view, but where a phone keeps the list beside the
-    /// chat: there iOS lays the list over the chat and takes it away again,
-    /// whatever the split view is asked for, so the two are laid out here.
+    /// chat or is an open Duo on its side: there iOS lays the list over the
+    /// chat and takes it away again, whatever the split view is asked for, so
+    /// the two are laid out here.
     @ViewBuilder
     fileprivate var layout: some View {
         #if os(iOS)
-            if pinsSidebar, UIDevice.current.userInterfaceIdiom == .phone {
-                listBesideTheChat
+            if phoneLayout != .system {
+                PhoneColumns(layout: phoneLayout, folds: folds) {
+                    sidebar(beside: true)
+                } detail: {
+                    detail
+                }
             } else {
                 // Balanced, so the chat narrows beside a list on screen
                 // rather than the list being laid over it.
@@ -148,11 +161,14 @@ extension RootView {
 
     private var sidebar: some View {
         #if os(iOS)
-            let beside = widthClass == .regular
+            sidebar(beside: widthClass == .regular)
         #else
-            let beside = false
+            sidebar(beside: false)
         #endif
-        return ConversationSidebar(
+    }
+
+    private func sidebar(beside: Bool) -> some View {
+        ConversationSidebar(
             showingProviders: $showingProviders, showingSettings: $showingSettings,
             addingProvider: $addingProvider, beside: beside
         )
@@ -172,43 +188,18 @@ extension RootView {
 
 #if os(iOS)
     extension RootView {
-        /// The chat with its sidebar button, in its own navigation stack.
-        private var chatColumn: some View {
-            NavigationStack {
-                detail.toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button(
-                            listShown ? "Hide the conversation list" : "Show the conversation list",
-                            systemImage: "sidebar.leading"
-                        ) {
-                            withAnimation(reduceMotion ? nil : .snappy) { listShown.toggle() }
-                        }
-                        .accessibilityIdentifier("conversation-list")
-                    }
-                }
-            }
-        }
-
-        /// The list and the chat side by side, the list at its share of the
-        /// width, with a button at the chat's leading edge that hides and
-        /// shows the list.
-        fileprivate var listBesideTheChat: some View {
-            GeometryReader { proxy in
-                HStack(spacing: 0) {
-                    if listShown {
-                        NavigationStack { sidebar }
-                            .frame(width: SidebarPinning.listWidth(beside: proxy.size.width))
-                            .transition(.move(edge: .leading))
-                        Divider()
-                    }
-                    chatColumn
-                }
-            }
-        }
-
         /// See `SidebarPinning`.
         fileprivate var pinsSidebar: Bool {
             widthClass == .regular && fits
+        }
+
+        /// Which of the layouts a phone gets. Not the phone's alone: an iPad
+        /// keeps the system's split view in every pose.
+        fileprivate var phoneLayout: PhoneLayout {
+            guard UIDevice.current.userInterfaceIdiom == .phone else { return .system }
+            if pinsSidebar { return .listBeside }
+            guard sideways else { return .system }
+            return BookPages.pages(in: window, folds: folds) == nil ? .flat : .pages
         }
 
         /// Does what a quick action waiting asks, once the model has read
