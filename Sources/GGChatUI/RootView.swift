@@ -16,6 +16,13 @@ public struct RootView: View {
     @State private var showingSettings = false
     // periphery:ignore - read only through its binding, see above
     @State private var addingProvider = false
+    // periphery:ignore - read only through its binding, see above
+    @State private var columns: NavigationSplitViewVisibility = .automatic
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var widthClass
+        /// Whether the window is wide and tall enough to keep the list on screen.
+        @State private var fits = false
+    #endif
     /// What opening the store had to say.
     private let storeNotice: ShownStoreNotice
 
@@ -29,7 +36,7 @@ public struct RootView: View {
         // over it: under such an inset the chat's composer stayed where it
         // was on an iPhone, and the notice was drawn over it.
         VStack(spacing: 0) {
-            NavigationSplitView {
+            NavigationSplitView(columnVisibility: $columns) {
                 ConversationSidebar(
                     showingProviders: $showingProviders, showingSettings: $showingSettings,
                     addingProvider: $addingProvider
@@ -44,6 +51,26 @@ public struct RootView: View {
                     EmptyDetailView(addingProvider: $addingProvider)
                 }
             }
+            #if os(iOS)
+                // Balanced, so the chat narrows beside a list on screen rather
+                // than the list being laid over it. The list is put back on
+                // each unfolding and each turn upright, and a hide with the
+                // sidebar button holds until then; leaving, only a list kept
+                // here is handed back to the system.
+                .navigationSplitViewStyle(.balanced)
+                .onGeometryChange(for: Bool.self) { proxy in
+                    SidebarPinning.fits(proxy.size)
+                } action: {
+                    fits = $0
+                }
+                .onChange(of: pinsSidebar, initial: true) { _, pinned in
+                    if pinned {
+                        columns = .doubleColumn
+                    } else if columns == .doubleColumn {
+                        columns = .automatic
+                    }
+                }
+            #endif
             if !storeNotice.lines.isEmpty {
                 StoreNoticeView(notice: storeNotice)
             }
@@ -101,6 +128,11 @@ public struct RootView: View {
 
 #if os(iOS)
     extension RootView {
+        /// See `SidebarPinning`.
+        fileprivate var pinsSidebar: Bool {
+            widthClass == .regular && fits
+        }
+
         /// Does what a quick action waiting asks, once the model has read
         /// its providers: before that there is none to start a chat with.
         fileprivate func actOnQuickAction() {
@@ -108,6 +140,26 @@ public struct RootView: View {
         }
     }
 #endif
+
+/// Whether the conversation list is kept beside the chat: on a regular-width
+/// window taller than it is wide, as an open iPhone Duo and an iPad held
+/// upright are, and wide enough for the list and a chat no narrower than the
+/// narrowest the fold allows. iOS would put the list behind a button there. A
+/// folded Duo is a phone, its list a screen back, and a window wider than it
+/// is tall, a folded Duo or a large iPhone turned on its side among them, has
+/// the list shown or hidden as the system does.
+enum SidebarPinning {
+    /// The list's ideal width and the narrowest chat beside it.
+    nonisolated static let narrowest: CGFloat = 280 + Fold.narrowest
+
+    nonisolated static func fits(_ size: CGSize) -> Bool {
+        size.height > size.width && size.width >= narrowest
+    }
+
+    nonisolated static func pins(regularWidth: Bool, size: CGSize) -> Bool {
+        regularWidth && fits(size)
+    }
+}
 
 struct ConversationSidebar: View {
     @Environment(AppModel.self) private var model

@@ -1169,6 +1169,21 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelListMarkTests.testEachMarkHasAWordAndALabel -->
   <!-- test: UnreadStoreTests.testTheUnreadMarkIsKeptWithItsConversation -->
   <!-- test: UnreadStoreTests.testAStoreOpensAcrossTheUnreadChangeInBothDirections -->
+- On a regular-width window taller than it is wide and at least 600 points
+  across, an iPhone Duo open and held upright or an iPad in portrait, the
+  conversation list is kept beside the chat rather than behind the sidebar
+  button. Folded, a Duo is a phone and its list a screen back; a window
+  wider than it is tall, or too narrow for the list and a 320-point chat,
+  shows or hides the list as the system does. Wherever the list is beside
+  the chat, the chat narrows to make room rather than the list lying over
+  it. The sidebar button still hides the list, until the next unfolding or
+  turn upright puts it back.
+  <!-- test: SidebarPinningTests.testAnOpenDuoHeldUprightKeepsTheListBesideTheChat -->
+  <!-- test: SidebarPinningTests.testAWideWindowLeavesTheListToTheSystem -->
+  <!-- test: SidebarPinningTests.testAFoldedDuoIsAPhoneWithItsListAScreenBack -->
+  <!-- test: SidebarPinningTests.testAFoldedDuoOnItsSideLeavesTheListToTheSystem -->
+  <!-- test: SidebarPinningTests.testASquareWindowLeavesTheListToTheSystem -->
+  <!-- test: SidebarPinningTests.testAWindowTooNarrowForTheListAndAChatLeavesTheListToTheSystem -->
 - Each paired Mac has a section of its own in the list, "On home", with the
   chats gglib keeps there, listed at launch, when its pipe comes up and on a
   pull, each with the time it last changed (the date too when not today),

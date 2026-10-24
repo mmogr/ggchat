@@ -648,8 +648,15 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # keyboard comes up and one scrolled up left alone, and the walk that scrolls
 # up, jumps back and follows the next reply -- so the floors move past all
 # of them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 861
+#
+# 2026-10-24: 861 -> 867 and 770 -> 776 for the conversation list kept beside
+# the chat on an open iPhone Duo. A list left behind its button fails
+# nothing: it is still a tap away. These six are the whole of its guard --
+# kept on a tall regular-width window, left alone on a wide one, a square
+# one, one too narrow for the list and a chat, a folded Duo, and a folded Duo
+# on its side -- so the floors move past them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 867
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 29
-floor "README test markers" "${markers:-0}" 770
+floor "README test markers" "${markers:-0}" 776
 
 exit $status
