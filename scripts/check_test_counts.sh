@@ -673,8 +673,14 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # short of its latest, as a finished reply's row drawn again leaves it, is
 # still taken back there when the keyboard comes up: on CI's slower runners
 # it was left with the reply under the keyboard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 873
+#
+# 2026-10-25: 873 -> 875 and 782 -> 784. Two tests pin that a chat at its
+# latest follows a reply as it grows, even a few points short of its very
+# bottom, and that one scrolled well up, or with nothing coming, is not: the
+# bottom anchor let go of such a chat on CI's iPad and the reply ran on under
+# the keyboard. Nothing else fails when it does.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 875
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 29
-floor "README test markers" "${markers:-0}" 782
+floor "README test markers" "${markers:-0}" 784
 
 exit $status

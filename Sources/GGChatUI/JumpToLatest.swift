@@ -34,6 +34,21 @@ enum JumpToLatest {
         !shows(distanceFromBottom: distanceBefore, viewport: viewportBefore) && insetAfter > insetBefore
     }
 
+    /// Whether a chat at its latest follows a reply that grows its content.
+    /// The bottom anchor follows only a chat at its very bottom, and a chat
+    /// a few points short of it, as a finished reply's row drawn again can
+    /// leave it, stayed put while the next reply ran on under the composer
+    /// and the keyboard. Only while a reply is coming: a lazy transcript's
+    /// height changes as it is scrolled, and a chat being scrolled up with
+    /// nothing coming must not be taken back.
+    nonisolated static func followsReply(
+        distanceBefore: CGFloat, viewportBefore: CGFloat, contentBefore: CGFloat, contentAfter: CGFloat,
+        replying: Bool
+    ) -> Bool {
+        replying && !shows(distanceFromBottom: distanceBefore, viewport: viewportBefore)
+            && contentAfter > contentBefore
+    }
+
     /// The id of the transcript's foot, which the button scrolls to.
     nonisolated static let foot = "jump-to-latest-foot"
 }
@@ -73,6 +88,7 @@ private struct JumpsToLatest<Chat: Hashable>: ViewModifier {
         var distance: CGFloat
         var viewport: CGFloat
         var inset: CGFloat
+        var content: CGFloat
     }
 
     func body(content: Content) -> some View {
@@ -91,13 +107,17 @@ private struct JumpsToLatest<Chat: Hashable>: ViewModifier {
                     distance: JumpToLatest.distanceFromBottom(
                         contentHeight: geometry.contentSize.height, visibleMaxY: visible.maxY,
                         bottomInset: insets.bottom),
-                    viewport: visible.height - insets.top - insets.bottom, inset: insets.bottom)
+                    viewport: visible.height - insets.top - insets.bottom, inset: insets.bottom,
+                    content: geometry.contentSize.height)
             } action: { before, after in
                 shown = JumpToLatest.shows(distanceFromBottom: after.distance, viewport: after.viewport)
-                if JumpToLatest.keepsToLatest(
+                let keeps = JumpToLatest.keepsToLatest(
                     distanceBefore: before.distance, viewportBefore: before.viewport, insetBefore: before.inset,
                     insetAfter: after.inset)
-                {
+                let follows = JumpToLatest.followsReply(
+                    distanceBefore: before.distance, viewportBefore: before.viewport, contentBefore: before.content,
+                    contentAfter: after.content, replying: replying)
+                if keeps || follows {
                     proxy.scrollTo(JumpToLatest.foot, anchor: .bottom)
                 }
             }

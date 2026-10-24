@@ -68,4 +68,29 @@ final class JumpToLatestTests: XCTestCase {
             JumpToLatest.keepsToLatest(
                 distanceBefore: 12, viewportBefore: viewport, insetBefore: 160, insetAfter: bottom))
     }
+
+    func testAChatAFewPointsShortOfItsLatestFollowsAReplyAsItGrows() {
+        // The bottom anchor lets go of a chat not at its very bottom, and
+        // the reply ran on under the keyboard on CI's iPad.
+        XCTAssertTrue(
+            JumpToLatest.followsReply(
+                distanceBefore: 12, viewportBefore: viewport, contentBefore: 2_000, contentAfter: 2_040,
+                replying: true))
+    }
+
+    func testAChatScrolledUpOrWithNothingComingIsNotFollowed() {
+        XCTAssertFalse(
+            JumpToLatest.followsReply(
+                distanceBefore: viewport, viewportBefore: viewport, contentBefore: 2_000, contentAfter: 2_040,
+                replying: true))
+        // A lazy transcript's height changes as it is scrolled up.
+        XCTAssertFalse(
+            JumpToLatest.followsReply(
+                distanceBefore: 12, viewportBefore: viewport, contentBefore: 2_000, contentAfter: 2_040,
+                replying: false))
+        XCTAssertFalse(
+            JumpToLatest.followsReply(
+                distanceBefore: 12, viewportBefore: viewport, contentBefore: 2_000, contentAfter: 1_990,
+                replying: true))
+    }
 }

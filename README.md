@@ -143,6 +143,9 @@ Each claim names the test that keeps it true.
   next reply is followed from there; at its latest, and in a chat shorter
   than its screen, there is none. A chat at its latest stays there when the
   keyboard comes back up as a reply ends, and one scrolled up stays put.
+  While a reply is coming, a chat at its latest follows it as it grows,
+  even a few points short of its very bottom; one scrolled more than half
+  a screen up, or with nothing coming, is left where it is.
   <!-- test: JumpToLatestTests.testAtTheBottomThereIsNoButton -->
   <!-- test: JumpToLatestTests.testTheComposersInsetIsNotCountedAsDistance -->
   <!-- test: JumpToLatestTests.testScrolledUpLessThanHalfAScreenThereIsNoButton -->
@@ -151,6 +154,8 @@ Each claim names the test that keeps it true.
   <!-- test: JumpToLatestTests.testAChatAtItsLatestIsKeptThereWhenTheKeyboardComesUp -->
   <!-- test: JumpToLatestTests.testAChatScrolledUpStaysWhereItIsWhenTheKeyboardComesUpOrGoes -->
   <!-- test: JumpToLatestTests.testAChatAFewPointsShortOfItsLatestIsStillTakenThere -->
+  <!-- test: JumpToLatestTests.testAChatAFewPointsShortOfItsLatestFollowsAReplyAsItGrows -->
+  <!-- test: JumpToLatestTests.testAChatScrolledUpOrWithNothingComingIsNotFollowed -->
   <!-- test: JumpToLatestUITests.testAChatScrolledUpOffersAWayBackToItsLatestReply -->
 - An image joins a draft through the photo picker, a paste or a drop, on
   iOS the paste as a row of the add-image menu, and every one goes through
