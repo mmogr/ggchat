@@ -668,8 +668,18 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # it does. These three are the whole of that guard -- the keyboard's height
 # ignored, a turn or a fold read afresh, and the first reading taken as it
 # is -- so the floors move past them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 872
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 29
-floor "README test markers" "${markers:-0}" 781
+#
+# 2026-10-25: 872 -> 884, 29 -> 30 and 781 -> 794 for an iPhone Duo open on
+# its side as a book. Pages that never show fail nothing: the chat still
+# spans the fold as it did. These twelve are the whole of that rule's guard
+# -- read as sideways, not when folded, turned small or upright, the walk's
+# height waived, the pages met at the fold, none flat, none across a prop
+# fold or beside a fold too near an edge, half the screen flat, and the
+# panel's parts for a chat kept here, one offered nothing and a Mac's -- and
+# the walk is the only check that the panel takes the list's place and the
+# draft is kept, so the floors move past all thirteen.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 884
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 30
+floor "README test markers" "${markers:-0}" 794
 
 exit $status
