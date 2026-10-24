@@ -33,4 +33,30 @@ final class SidebarPinningTests: XCTestCase {
         XCTAssertFalse(SidebarPinning.pins(regularWidth: true, size: CGSize(width: 599, height: 900)))
         XCTAssertTrue(SidebarPinning.pins(regularWidth: true, size: CGSize(width: 600, height: 900)))
     }
+
+    func testAPhoneGivesTheListThreeEighthsOfTheWidthAsClaudesAppDoes() {
+        XCTAssertEqual(SidebarPinning.listWidth(beside: open.width), 251)
+    }
+
+    func testTheListIsNeverNarrowerThan240Points() {
+        XCTAssertEqual(SidebarPinning.listWidth(beside: SidebarPinning.narrowest), 240)
+    }
+
+    func testTheKeyboardTakingHeightLeavesAnOpenDuoReadAsTall() {
+        // The open Duo's readout with the keyboard up: 669 by 469 after 835.
+        let typing = SidebarPinning.measured(CGSize(width: 669, height: 469), after: CGSize(width: 669, height: 835))
+        XCTAssertEqual(typing, CGSize(width: 669, height: 835))
+        XCTAssertTrue(SidebarPinning.pins(regularWidth: true, size: typing))
+    }
+
+    func testTurningOrFoldingIsReadAfresh() {
+        let turned = SidebarPinning.measured(CGSize(width: 951, height: 669), after: CGSize(width: 669, height: 835))
+        XCTAssertEqual(turned, CGSize(width: 951, height: 669))
+        let folded = SidebarPinning.measured(CGSize(width: 466, height: 678), after: CGSize(width: 669, height: 835))
+        XCTAssertEqual(folded, CGSize(width: 466, height: 678))
+    }
+
+    func testTheFirstReadingIsTakenAsItIs() {
+        XCTAssertEqual(SidebarPinning.measured(open, after: .zero), open)
+    }
 }

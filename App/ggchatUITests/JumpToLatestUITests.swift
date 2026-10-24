@@ -21,8 +21,11 @@ final class JumpToLatestUITests: XCTestCase {
         openConversation(in: app)
 
         let jump = app.buttons["jump-to-latest"].firstMatch
-        // Four replies are more than any of the walked screens holds.
-        for turn in 1...4 {
+        // Enough replies to fill the screen twice over with the keyboard
+        // down, which the scrolling up below takes away: four on a phone,
+        // eight on an iPad held upright.
+        let turns = max(4, Int((app.windows.firstMatch.frame.height / 180).rounded(.up)))
+        for turn in 1...turns {
             send("Question \(turn)", in: app)
             XCTAssertTrue(latestEndingIsOnScreen(after: turn, in: app), "reply \(turn) was not followed to its end")
             XCTAssertFalse(jump.exists, "a transcript at its latest offers a way to it")
@@ -39,10 +42,11 @@ final class JumpToLatestUITests: XCTestCase {
 
         jump.tap()
         XCTAssertTrue(jump.waitForNonExistence(timeout: 10), "the button stayed after taking the chat to its latest")
-        XCTAssertTrue(latestEndingIsOnScreen(after: 4, in: app), "the jump did not reach the latest reply")
+        XCTAssertTrue(latestEndingIsOnScreen(after: turns, in: app), "the jump did not reach the latest reply")
 
-        send("Question 5", in: app)
-        XCTAssertTrue(latestEndingIsOnScreen(after: 5, in: app), "a reply after the jump was not followed to its end")
+        send("Question \(turns + 1)", in: app)
+        XCTAssertTrue(
+            latestEndingIsOnScreen(after: turns + 1, in: app), "a reply after the jump was not followed to its end")
         XCTAssertFalse(jump.exists, "a transcript at its latest offers a way to it")
     }
 

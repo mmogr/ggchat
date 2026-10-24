@@ -655,8 +655,21 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # kept on a tall regular-width window, left alone on a wide one, a square
 # one, one too narrow for the list and a chat, a folded Duo, and a folded Duo
 # on its side -- so the floors move past them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 867
+#
+# 2026-10-24: 867 -> 869 and 776 -> 778 for the list laid beside the chat on a
+# phone, where iOS lays a split view's list over the chat. A list at the
+# wrong width fails nothing: it is still beside the chat. These two are the
+# whole of that rule's guard -- three eighths of the open Duo, and never
+# under 240 points -- so the floors move past them.
+#
+# 2026-10-24: 869 -> 872 and 778 -> 781 for the window read by its width. On
+# the open Duo the keyboard made the window read as wide, the layout changed
+# under the field, and the keyboard went back down; nothing else fails when
+# it does. These three are the whole of that guard -- the keyboard's height
+# ignored, a turn or a fold read afresh, and the first reading taken as it
+# is -- so the floors move past them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 872
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 29
-floor "README test markers" "${markers:-0}" 776
+floor "README test markers" "${markers:-0}" 781
 
 exit $status

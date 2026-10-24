@@ -1,4 +1,3 @@
-import GGChatCore
 import SwiftUI
 
 /// Sidebar of conversations, chat on the right. Stock containers only: the
@@ -20,8 +19,13 @@ public struct RootView: View {
     @State private var columns: NavigationSplitViewVisibility = .automatic
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var widthClass
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
         /// Whether the window is wide and tall enough to keep the list on screen.
         @State private var fits = false
+        /// The window as the rule reads it: see `SidebarPinning.measured`.
+        @State private var window: CGSize = .zero
+        /// Whether the list laid beside the chat on a phone is showing.
+        @State private var listShown = true
     #endif
     /// What opening the store had to say.
     private let storeNotice: ShownStoreNotice
@@ -36,41 +40,29 @@ public struct RootView: View {
         // over it: under such an inset the chat's composer stayed where it
         // was on an iPhone, and the notice was drawn over it.
         VStack(spacing: 0) {
-            NavigationSplitView(columnVisibility: $columns) {
-                ConversationSidebar(
-                    showingProviders: $showingProviders, showingSettings: $showingSettings,
-                    addingProvider: $addingProvider
-                )
-                .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 400)
-            } detail: {
-                if let conversation = model.selectedConversation {
-                    ChatView(conversation: conversation)
-                } else if let chat = model.openedHubChat {
-                    HubChatView(chat: chat)
-                } else {
-                    EmptyDetailView(addingProvider: $addingProvider)
-                }
-            }
-            #if os(iOS)
-                // Balanced, so the chat narrows beside a list on screen rather
-                // than the list being laid over it. The list is put back on
-                // each unfolding and each turn upright, and a hide with the
-                // sidebar button holds until then; leaving, only a list kept
-                // here is handed back to the system.
-                .navigationSplitViewStyle(.balanced)
-                .onGeometryChange(for: Bool.self) { proxy in
-                    SidebarPinning.fits(proxy.size)
-                } action: {
-                    fits = $0
-                }
-                .onChange(of: pinsSidebar, initial: true) { _, pinned in
-                    if pinned {
-                        columns = .doubleColumn
-                    } else if columns == .doubleColumn {
-                        columns = .automatic
+            layout
+                #if os(iOS)
+                    // Read by its width and the tallest height seen at it,
+                    // so the keyboard coming up does not change the layout
+                    // under the field being typed in; see
+                    // `SidebarPinning.measured`.
+                    .onGeometryChange(for: CGSize.self, of: \.size) { size in
+                        window = SidebarPinning.measured(size, after: window)
+                        let now = SidebarPinning.fits(window)
+                        if now != fits { fits = now }
                     }
-                }
-            #endif
+                    // The list is put back on each unfolding and each turn
+                    // upright, and a hide holds until then; leaving, only a list
+                    // kept here is handed back to the system.
+                    .onChange(of: pinsSidebar, initial: true) { _, pinned in
+                        if pinned {
+                            columns = .doubleColumn
+                            listShown = true
+                        } else if columns == .doubleColumn {
+                            columns = .automatic
+                        }
+                    }
+                #endif
             if !storeNotice.lines.isEmpty {
                 StoreNoticeView(notice: storeNotice)
             }
@@ -126,8 +118,94 @@ public struct RootView: View {
     }
 }
 
+extension RootView {
+    /// The system's split view, but where a phone keeps the list beside the
+    /// chat: there iOS lays the list over the chat and takes it away again,
+    /// whatever the split view is asked for, so the two are laid out here.
+    @ViewBuilder
+    fileprivate var layout: some View {
+        #if os(iOS)
+            if pinsSidebar, UIDevice.current.userInterfaceIdiom == .phone {
+                listBesideTheChat
+            } else {
+                // Balanced, so the chat narrows beside a list on screen
+                // rather than the list being laid over it.
+                splitView.navigationSplitViewStyle(.balanced)
+            }
+        #else
+            splitView
+        #endif
+    }
+
+    private var splitView: some View {
+        NavigationSplitView(columnVisibility: $columns) {
+            sidebar
+                .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 400)
+        } detail: {
+            detail
+        }
+    }
+
+    private var sidebar: some View {
+        #if os(iOS)
+            let beside = widthClass == .regular
+        #else
+            let beside = false
+        #endif
+        return ConversationSidebar(
+            showingProviders: $showingProviders, showingSettings: $showingSettings,
+            addingProvider: $addingProvider, beside: beside
+        )
+    }
+
+    @ViewBuilder
+    private var detail: some View {
+        if let conversation = model.selectedConversation {
+            ChatView(conversation: conversation)
+        } else if let chat = model.openedHubChat {
+            HubChatView(chat: chat)
+        } else {
+            EmptyDetailView(addingProvider: $addingProvider)
+        }
+    }
+}
+
 #if os(iOS)
     extension RootView {
+        /// The chat with its sidebar button, in its own navigation stack.
+        private var chatColumn: some View {
+            NavigationStack {
+                detail.toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button(
+                            listShown ? "Hide the conversation list" : "Show the conversation list",
+                            systemImage: "sidebar.leading"
+                        ) {
+                            withAnimation(reduceMotion ? nil : .snappy) { listShown.toggle() }
+                        }
+                        .accessibilityIdentifier("conversation-list")
+                    }
+                }
+            }
+        }
+
+        /// The list and the chat side by side, the list at its share of the
+        /// width, with a button at the chat's leading edge that hides and
+        /// shows the list.
+        fileprivate var listBesideTheChat: some View {
+            GeometryReader { proxy in
+                HStack(spacing: 0) {
+                    if listShown {
+                        NavigationStack { sidebar }
+                            .frame(width: SidebarPinning.listWidth(beside: proxy.size.width))
+                            .transition(.move(edge: .leading))
+                        Divider()
+                    }
+                    chatColumn
+                }
+            }
+        }
+
         /// See `SidebarPinning`.
         fileprivate var pinsSidebar: Bool {
             widthClass == .regular && fits
@@ -140,105 +218,6 @@ public struct RootView: View {
         }
     }
 #endif
-
-/// Whether the conversation list is kept beside the chat: on a regular-width
-/// window taller than it is wide, as an open iPhone Duo and an iPad held
-/// upright are, and wide enough for the list and a chat no narrower than the
-/// narrowest the fold allows. iOS would put the list behind a button there. A
-/// folded Duo is a phone, its list a screen back, and a window wider than it
-/// is tall, a folded Duo or a large iPhone turned on its side among them, has
-/// the list shown or hidden as the system does.
-enum SidebarPinning {
-    /// The list's ideal width and the narrowest chat beside it.
-    nonisolated static let narrowest: CGFloat = 280 + Fold.narrowest
-
-    nonisolated static func fits(_ size: CGSize) -> Bool {
-        size.height > size.width && size.width >= narrowest
-    }
-
-    nonisolated static func pins(regularWidth: Bool, size: CGSize) -> Bool {
-        regularWidth && fits(size)
-    }
-}
-
-struct ConversationSidebar: View {
-    @Environment(AppModel.self) private var model
-    @Binding var showingProviders: Bool
-    @Binding var showingSettings: Bool
-    @Binding var addingProvider: Bool
-
-    var body: some View {
-        @Bindable var model = model
-        List(selection: $model.selection) {
-            Section {
-                ForEach(model.conversations) { conversation in
-                    ConversationRow(conversation: conversation)
-                        .tag(SidebarSelection.local(conversation.id))
-                }
-                .onDelete { offsets in
-                    for index in offsets {
-                        model.deleteConversation(model.conversations[index].id)
-                    }
-                }
-                if model.conversations.isEmpty, !model.hubProviders.isEmpty {
-                    Text("No conversations on this phone yet.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            } header: {
-                // Named only when a paired Mac's section follows it.
-                if !model.hubProviders.isEmpty { Text("On this phone") }
-            } footer: {
-                if !model.hubProviders.isEmpty {
-                    Text("These chats are kept only on this phone. The Mac does not keep them.")
-                }
-            }
-            ForEach(model.hubProviders) { config in
-                HubChatsSection(config: config)
-            }
-        }
-        .refreshable { await model.refreshHubChats() }
-        .overlay {
-            if model.conversations.isEmpty, model.hubProviders.isEmpty {
-                // The way in on a phone, where the detail pane and its call
-                // to action are a screen away.
-                VStack(spacing: 12) {
-                    Text(model.providers.isEmpty ? "No providers yet" : "No conversations yet")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                    if model.providers.isEmpty {
-                        Button("Add a provider") { addingProvider = true }
-                    } else {
-                        Button("New conversation") { model.newConversation() }
-                    }
-                }
-                .buttonStyle(.bordered)
-                .padding()
-            }
-        }
-        .navigationTitle("ggchat")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button("New conversation", systemImage: "square.and.pencil") {
-                    model.newConversation()
-                }
-                .disabled(model.providers.isEmpty)
-            }
-            ToolbarItem(placement: .automatic) {
-                Button("Providers", systemImage: "server.rack") {
-                    showingProviders = true
-                }
-            }
-            #if os(iOS)
-                ToolbarItem(placement: .automatic) {
-                    Button("Settings", systemImage: "gearshape") {
-                        showingSettings = true
-                    }
-                }
-            #endif
-        }
-    }
-}
 
 /// What the app says when nothing is selected. On first run it is the way
 /// in: a first-time user is one button from adding their server.
