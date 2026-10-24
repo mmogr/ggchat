@@ -24,11 +24,29 @@ enum JumpToLatest {
     /// Whether a chat at its latest is taken back there after its foot is
     /// covered more, as when the keyboard comes up as a reply ends: the
     /// scroll view keeps its offset, and the latest reply would sit under the
-    /// keyboard. A chat scrolled up stays where it is.
+    /// keyboard. At its latest is wherever the button would not show: a
+    /// finished reply's row is drawn again a few points taller or shorter,
+    /// and a keyboard back before the chat settled found it short of its very
+    /// bottom and left it there. A chat scrolled well up stays where it is.
     nonisolated static func keepsToLatest(
-        distanceBefore: CGFloat, insetBefore: CGFloat, insetAfter: CGFloat
+        distanceBefore: CGFloat, viewportBefore: CGFloat, insetBefore: CGFloat, insetAfter: CGFloat
     ) -> Bool {
-        distanceBefore <= 1 && insetAfter > insetBefore
+        !shows(distanceFromBottom: distanceBefore, viewport: viewportBefore) && insetAfter > insetBefore
+    }
+
+    /// Whether a chat at its latest follows a reply that grows its content.
+    /// The bottom anchor follows only a chat at its very bottom, and a chat
+    /// a few points short of it, as a finished reply's row drawn again can
+    /// leave it, stayed put while the next reply ran on under the composer
+    /// and the keyboard. Only while a reply is coming: a lazy transcript's
+    /// height changes as it is scrolled, and a chat being scrolled up with
+    /// nothing coming must not be taken back.
+    nonisolated static func followsReply(
+        distanceBefore: CGFloat, viewportBefore: CGFloat, contentBefore: CGFloat, contentAfter: CGFloat,
+        replying: Bool
+    ) -> Bool {
+        replying && !shows(distanceFromBottom: distanceBefore, viewport: viewportBefore)
+            && contentAfter > contentBefore
     }
 
     /// The id of the transcript's foot, which the button scrolls to.
@@ -70,6 +88,7 @@ private struct JumpsToLatest<Chat: Hashable>: ViewModifier {
         var distance: CGFloat
         var viewport: CGFloat
         var inset: CGFloat
+        var content: CGFloat
     }
 
     func body(content: Content) -> some View {
@@ -88,12 +107,17 @@ private struct JumpsToLatest<Chat: Hashable>: ViewModifier {
                     distance: JumpToLatest.distanceFromBottom(
                         contentHeight: geometry.contentSize.height, visibleMaxY: visible.maxY,
                         bottomInset: insets.bottom),
-                    viewport: visible.height - insets.top - insets.bottom, inset: insets.bottom)
+                    viewport: visible.height - insets.top - insets.bottom, inset: insets.bottom,
+                    content: geometry.contentSize.height)
             } action: { before, after in
                 shown = JumpToLatest.shows(distanceFromBottom: after.distance, viewport: after.viewport)
-                if JumpToLatest.keepsToLatest(
-                    distanceBefore: before.distance, insetBefore: before.inset, insetAfter: after.inset)
-                {
+                let keeps = JumpToLatest.keepsToLatest(
+                    distanceBefore: before.distance, viewportBefore: before.viewport, insetBefore: before.inset,
+                    insetAfter: after.inset)
+                let follows = JumpToLatest.followsReply(
+                    distanceBefore: before.distance, viewportBefore: before.viewport, contentBefore: before.content,
+                    contentAfter: after.content, replying: replying)
+                if keeps || follows {
                     proxy.scrollTo(JumpToLatest.foot, anchor: .bottom)
                 }
             }
