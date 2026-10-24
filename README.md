@@ -1962,6 +1962,10 @@ against the mock.
 - [ADR 0012](docs/adr/0012-a-reply-in-flight-is-per-conversation.md): a
   reply in flight is per conversation, so a send in one never waits for a
   reply in another; gglib queues the second request.
+- [ADR 0013](docs/adr/0013-tools-are-a-conversation-switch.md): whether a
+  question may call a paired Mac's tools is a switch of the conversation,
+  on until turned off; which MCP servers the Mac offers is chosen on the
+  Mac and only read here.
 
 ## Releases
 

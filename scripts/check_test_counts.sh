@@ -607,8 +607,24 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # none, Retry with them and Continue without, none to a gglib reached by
 # address, and a lost PUT sent again with them for a question and without
 # for a Continue -- and the README claim names all nine.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 832
+#
+# 2026-10-24: 832 -> 848 and 737 -> 756 for the tool calls under a reply and
+# the Tools switch. A row that stops being drawn, a server or failure that
+# stops being kept, or a switch that stops being sent fails nothing else:
+# the reply still reads and the question is still answered. These sixteen
+# are the whole of that guard -- an exchange kept before the two fields,
+# the server and failure read from the run, the request unchanged by them,
+# the heading, the arguments, the cut answer, a call never answered, the
+# row's words and mark, one row per call and none under a question, the
+# switch on by default and turned off, off sent as a plain run or with the
+# drawing tool alone, off kept on a PUT sent again, no switch where no tools
+# are offered and off told there only to a Mac not yet heard from, the
+# column kept and opened across in both directions, and the servers listed
+# in the status sheet -- and the README claims name them, beside three
+# earlier tests they extend: the query table, a branch's copy and a move to
+# another provider.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 848
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 737
+floor "README test markers" "${markers:-0}" 756
 
 exit $status
