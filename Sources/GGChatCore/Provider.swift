@@ -30,6 +30,14 @@ public struct ChatRequest: Sendable, Equatable {
     /// may not draw: no part of the body, as `draws` is not. Set only for a
     /// paired Mac whose answer about drawing named servers it offers.
     public var runsTools: Bool
+    /// Whether the conversation has its tools switched off: a run that
+    /// draws is then put with only the drawing tool (`tools=none`), and one
+    /// that does not draw is a plain run. No part of the body. Set only for
+    /// a paired Mac not known to offer no servers: one whose answer about
+    /// drawing named some, or one not heard from yet, which may. A gglib
+    /// reached by address and a Mac known to offer none are never sent
+    /// `none`.
+    public var toolsOff: Bool
     /// Whether a reply is sent with the tools it called and what they
     /// answered (``Message/exchanges``), as an assistant message with
     /// `tool_calls` and a `tool` message ahead of its words. Set only for
@@ -47,7 +55,7 @@ public struct ChatRequest: Sendable, Equatable {
         model: String, messages: [Message], images: [String: Data] = [:], maxTokens: Int? = nil,
         returnProgress: Bool = false, reasoningBudgetTokens: Int? = nil, draws: Bool = false,
         imageModelID: UInt64? = nil, replaysToolCalls: Bool = false, shownPicture: ShownPicture? = nil,
-        runsTools: Bool = false
+        runsTools: Bool = false, toolsOff: Bool = false
     ) {
         self.model = model
         self.messages = messages
@@ -60,6 +68,7 @@ public struct ChatRequest: Sendable, Equatable {
         self.replaysToolCalls = replaysToolCalls
         self.shownPicture = shownPicture
         self.runsTools = runsTools
+        self.toolsOff = toolsOff
     }
 }
 

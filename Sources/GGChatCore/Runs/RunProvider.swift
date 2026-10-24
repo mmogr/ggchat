@@ -46,7 +46,8 @@ public protocol RunProvider: Provider {
     /// this device's: 1 to 64 of `[A-Za-z0-9_-]`, a UUID string fitting.
     /// A request that draws (`ChatRequest.draws`) or runs tools
     /// (`ChatRequest.runsTools`) starts a chat run that carries gglib's
-    /// tools, whose events are an agent's.
+    /// tools, whose events are an agent's; one that draws with its tools off
+    /// (`ChatRequest.toolsOff`) carries the drawing tool alone.
     func startRun(id: String, _ request: ChatRequest) async throws(ProviderError) -> RunStart
     /// The events of the run `id` numbered above `after`, each read as
     /// `frames` says the run writes them, then its end.

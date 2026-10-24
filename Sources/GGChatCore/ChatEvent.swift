@@ -6,15 +6,20 @@ public enum ChatEvent: Sendable, Equatable {
     /// gglib when the request asks for it.
     case progress(PromptProgress)
     /// A tool the reply called, as one line: its name and what it was given.
-    /// Only a hub's agent run sends one.
-    case tool(String)
-    /// A tool the reply called, by its call's id, with its name and what the
-    /// model gave it, to keep with the reply. Sent after the call's line.
+    /// With `writing`, a call the model is still writing, as its name and
+    /// how many pieces of the reply's calls have streamed: that line stands only until the
+    /// next tool line, which takes its place. Only a hub's agent run sends
+    /// one.
+    case tool(String, writing: Bool = false)
+    /// A tool the reply called, by its call's id, with its name, what the
+    /// model gave it and the MCP server it is one of when the run says, to
+    /// keep with the reply and draw under it. Sent after the call's line.
     /// Only a hub's agent run sends one.
     case toolCalled(ToolExchange)
     /// What a tool the reply called answered, word for word, by its call's
-    /// id, to keep with the reply. Sent after the call's end.
-    case toolAnswered(callID: String, text: String)
+    /// id, to keep with the reply, and whether the tool said it failed: nil
+    /// when the answer does not say. Sent after the call's end.
+    case toolAnswered(callID: String, text: String, failed: Bool? = nil)
     /// The images a tool the reply called made, in the order it made them,
     /// by reference: the bytes are the hub's, read by id when drawn. Only a
     /// hub's agent run sends one.

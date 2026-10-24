@@ -39,8 +39,8 @@ its own, set from the toolbar and sent ahead of every request without ever
 becoming a row in the transcript; a request refused before anything arrived
 says why under the question, with a Retry button. A server added by address lists its models and
 streams; against gglib, a server status pane shows slots, context in use
-and recent requests, and it is hidden for servers that do not answer that
-endpoint. The app has been run: the screens above are photographs of it,
+and recent requests, with the MCP servers a paired Mac offers, and it is
+hidden for servers that do not answer that endpoint. The app has been run: the screens above are photographs of it,
 not mock-ups. A pipe provider is added by pasting the `ticket-code` string
 the other machine showed for it (`gglib remote enable --invite` for the
 first device, `gglib remote invite` for each one after that), or on iOS by
@@ -180,9 +180,9 @@ Each claim names the test that keeps it true.
   Choosing a model changes that conversation alone, never a provider's
   default. With more than one provider, or none, the model list also lists
   the providers: choosing one moves the conversation there with that
-  provider's default model, and drops the Thinking choice and the image
-  model made for the one left. A conversation whose reply is still being
-  written stays where it was asked.
+  provider's default model, and drops the Thinking choice, the image
+  model and the Tools choice made for the one left. A conversation whose
+  reply is still being written stays where it was asked.
   <!-- test: QuickActionTests.testANewChatIsWithTheOpenConversationsProvider -->
   <!-- test: QuickActionTests.testANewChatIsWithTheFirstProviderWhenTheOpenOnesIsGone -->
   <!-- test: QuickActionTests.testANewChatIsWithTheMacWhoseChatIsOpen -->
@@ -356,11 +356,13 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingPreviewTests.testARunThatEndsMidPictureLeavesNoLook -->
 - A conversation kept on this device draws too, and runs a paired Mac's
   tools. A message sent with Draw on, to a hub that said it can draw, is
-  put as `PUT /v1/runs/{id}?kind=chat&tools=builtin&draw=true`; a hub that
-  cannot draw, is too old or was never heard from is sent it as one that
+  put as `PUT /v1/runs/{id}?kind=chat&tools=builtin&draw=true`, or with
+  `tools=none` when the conversation has its tools off, as an item below
+  says; a hub that cannot draw, is too old or was never heard from is sent it as one that
   does not draw. A paired Mac whose answer about drawing names MCP servers
   it offers (`mcp_servers`, said whether or not it can draw) has every
-  question that does not draw put as
+  question that does not draw, while the conversation's Tools switch is
+  on, put as
   `PUT /v1/runs/{id}?kind=chat&tools=builtin`, Retry included, so its
   reply can call their tools. The body is the OpenAI request it always
   was. Any other message has no query at all unless it draws: one to a
@@ -371,7 +373,7 @@ Each claim names the test that keeps it true.
   again with the tools while the Mac's answer is known; after a relaunch it
   goes before that answer is back, and so without them. A Continue of a
   reply with words is sent again with none.
-  The switch is off again in the draft a taken send leaves, and a refused
+  The Draw switch is off again in the draft a taken send leaves, and a refused
   draft keeps it. The run's answer says how its events are written, `frames`,
   and that picks the decoder: `agent` is read as a Mac's chat's run is, and
   absent is the chat route's chunks, as every run before. The question is
@@ -410,16 +412,63 @@ Each claim names the test that keeps it true.
   <!-- test: ToolsOfferedRunTests.testAGglibByAddressIsNeverSentTools -->
   <!-- test: ToolsOfferedRunTests.testAQuestionPutAgainAfterItsAnswerWasLostCarriesTheTools -->
   <!-- test: ToolsOfferedRunTests.testAContinuePutAgainAfterItsAnswerWasLostRunsNoTools -->
+- A conversation kept here on a paired Mac that offers its MCP servers'
+  tools has a Tools switch in its top bar, on until it is turned off: a
+  wrench, filled while on and an outline while off, with "on" or "off" in
+  its name so the state is never the tint alone. Off, a question is put as
+  a plain run, with no query, and one sent with Draw is put as
+  `PUT /v1/runs/{id}?kind=chat&tools=none&draw=true`, with the chosen
+  image model after it, which leaves it gglib's drawing tool and no other;
+  the body is the one it always was. A gglib from before `none` refuses
+  it, and the question shows the refusal with Retry, still drawing. The choice is the
+  conversation's, kept in one optional column written only for a
+  conversation that turned the tools off, and outlives a relaunch; setting
+  it leaves the conversation's date alone. A branch copies it, a move to
+  another provider drops it, and a question whose `PUT` lost its answer is
+  put again with it. A gglib reached by address, a Mac that names no
+  servers, one from before the list and one not heard from have no switch.
+  The first three are never told the tools are off, whatever a
+  conversation stores. One not heard from may offer servers, so it is
+  told: a question with Draw whose `PUT` is put again after a relaunch,
+  before the Mac's answer is back, goes with `tools=none&draw=true`, so it
+  never runs the tools the person turned off, and a gglib from before
+  `none` refuses it with the refusal and Retry on the question; without
+  Draw it is a plain run.
+  Which servers the Mac offers is chosen on the Mac, never here: the
+  server-status sheet lists them by the names the Mac gives them, under
+  "Tools offered", with a line saying they are chosen with
+  `gglib remote enable --allow-mcp <server>`, once for each server, and
+  nothing there can be tapped. The section is not there where no tools
+  are offered.
+  <!-- test: ToolsOfferedWireTests.testARunWithToolsIsPutWithThemAndDrawsOnlyWhenItDraws -->
+  <!-- test: AppModelToolsTests.testANewConversationHasTheToolsOnAndTheSwitchTurnsThemOff -->
+  <!-- test: AppModelToolsTests.testOffSendsAPlainRunAndWithDrawOnlyTheDrawingTool -->
+  <!-- test: AppModelToolsTests.testAQuestionPutAgainAfterItsAnswerWasLostKeepsTheToolsOff -->
+  <!-- test: AppModelToolsTests.testAGglibThatRefusesNoneLeavesItsSentenceOnTheQuestion -->
+  <!-- test: AppModelToolsTests.testTheSwitchIsHiddenAndOffNeverSentWhereNoToolsAreOffered -->
+  <!-- test: AppModelToolsTests.testARelaunchedPutOfADrawQuestionBeforeTheMacsAnswerKeepsTheToolsOff -->
+  <!-- test: ToolsStoreTests.testTheChoiceOutlivesAReopeningAndAnUnchangedOneMarksNoRow -->
+  <!-- test: ToolsStoreTests.testAStoreOpensAcrossTheToolsColumnInBothDirections -->
+  <!-- test: ProxyStatusToolsTests.testTheSheetListsTheServersAMacOffersAndNothingWhereNoneAre -->
+  <!-- test: ConversationBranchesTests.testABranchCopiesTheSettingsAndNoRun -->
+  <!-- test: QuickActionTests.testAConversationMovedToAnotherProviderTakesItsDefaultModel -->
 - A conversation kept here remembers how its picture was made. The reply a
   run drew for keeps, with its words and its picture, each tool the run
   called and what the tool answered: the call's id, the tool's name, the
-  arguments the model wrote as JSON text, and the answer word for word, read
-  from the run's `tool_call_start` and `tool_call_complete` events and kept
-  in one optional column. None of it is drawn, and the transcript holds the
-  rows it always did. Every later request says it again ahead of the reply's
-  words, in OpenAI's shape: an assistant message with the call in
-  `tool_calls` and no content, then a `tool` message with the call's id and
-  the answer. gglib reads that as a chat that holds a drawn picture and
+  arguments the model wrote as JSON text, the answer word for word, the MCP
+  server the tool is one of when `tool_call_start` names one (`server`,
+  which gglib leaves out for its own tools), and whether the tool failed,
+  the opposite of `result.success`, read from the run's `tool_call_start`
+  and `tool_call_complete` events and kept in one optional column. An answer
+  that does not say is not known to have failed or worked, and a list kept
+  before the server and the failure were read still reads, with neither.
+  The transcript holds the messages it always did, and each call is drawn
+  under its reply as a collapsed row, as the item after next says.
+  Every later request says it again ahead of the reply's words, in OpenAI's
+  shape: an assistant message with the call in `tool_calls` and no content,
+  then a `tool` message with the call's id and the answer. The server and
+  the failure are never sent: the request is byte for byte the one it would
+  be without them. gglib reads that as a chat that holds a drawn picture and
   tells the model so, which is what stops the next reply saying it cannot
   make images (gglib issue 1387). Only gglib is sent them, a paired Mac or
   one reached by an address that answered as gglib; any other server is
@@ -443,6 +492,9 @@ Each claim names the test that keeps it true.
   <!-- test: DrawnHistoryTests.testTwoPicturesKeepTwoCallsUnderTheirOwnIDs -->
   <!-- test: DrawnHistoryTests.testAnAnswerReadOnALaterReadingFindsItsCall -->
   <!-- test: DrawnHistoryTests.testTheCallsOutliveAReopening -->
+  <!-- test: ToolExchangeWireTests.testAnExchangeKeptBeforeItsServerAndFailureReadsWithNeither -->
+  <!-- test: ToolExchangeWireTests.testAToolsServerAndItsFailureLandOnItsExchange -->
+  <!-- test: ToolExchangeWireTests.testTheRequestNeverSaysAToolsServerOrWhetherItFailed -->
   <!-- test: DrawnHistoryTests.testAStoreOpensAcrossTheCallsColumnInBothDirections -->
 - A model that reads images is shown the most recent picture drawn in a
   conversation kept here, as gglib asks of a client that keeps its own
@@ -479,6 +531,28 @@ Each claim names the test that keeps it true.
   <!-- test: DrawnPictureShownTests.testAModelThatDoesNotListVisionIsNotShownIt -->
   <!-- test: DrawnPictureShownTests.testAServerThatIsNotGglibIsNotShownIt -->
   <!-- test: DrawnPictureShownTests.testAPictureWhoseBytesAreGoneIsLeftOut -->
+- Under a finished reply kept here, each tool it called is one row,
+  collapsed, in the order it called them: a wrench, the tool's name after
+  its first `:`, then whose it is, the MCP server the call named or
+  "gglib" for one of gglib's own (`builtin:…`), as in
+  `tavily_search · Tavily Web Search`. A tool whose owner is not known
+  shows its name alone. A tool that said it failed has a warning mark, and
+  VoiceOver hears "failed" in the row's name, so it is never the colour
+  alone. Opened, the row shows what was Sent, the arguments as JSON laid
+  out over lines with their keys sorted, or as written when they are not
+  JSON, and what was Received, the answer as the tool gave it, cut after
+  2,000 characters and never inside one, with a line saying how many more
+  in the locale's digits. A call nothing answered says it was not
+  answered. Both can be selected. It is the same for every tool. A
+  question has no rows, and nor has a reply still being written, here or
+  on the Mac: one written here shows its tool lines as it did, and the
+  rows come once it has finished.
+  <!-- test: ToolExchangeDisplayTests.testAHeadingNamesTheToolAndWhoseItIs -->
+  <!-- test: ToolExchangeDisplayTests.testTheArgumentsAreLaidOutWhenTheyAreJSON -->
+  <!-- test: ToolExchangeDisplayTests.testALongAnswerIsCutOnACharacterAndSaysHowMuchMore -->
+  <!-- test: ToolExchangeDisplayTests.testACallNothingAnsweredHasNoAnswerToShow -->
+  <!-- test: ToolCallRowTests.testTheRowSaysTheToolWhoseItIsAndWhetherItFailed -->
+  <!-- test: ToolCallRowTests.testEachToolAStoredReplyCalledIsOneRowAndAQuestionHasNone -->
 - The picture such a run draws is this device's to keep, since the
   conversation is: its bytes are read from the hub by id as soon as the tool
   finishes, before its frame is applied, checked against the id, kept in
@@ -513,11 +587,21 @@ Each claim names the test that keeps it true.
   picture, drawn from the frame as it came and scaled up smoothly; bytes
   that are not a picture draw nothing. A reply kept on this device also
   shows a line for each tool it calls, and under it the pictures made, read
-  from this device's store.
+  from this device's store. While the model is still writing a call, a
+  reply here and one on a Mac's chat show one line for it, such as
+  “Writing Generate Image… 512 tokens” with the count in the locale's
+  digits, from gglib's `tool_call_writing`; each later count, and then the
+  call's own line, takes its place. When a run ends with such a line still
+  showing, cut off or failed, the line goes with it: an ended reply shows no
+  call still being written.
   <!-- test: DrawingViewTests.testTheDrawSwitchSaysItsStateAndAPressSaysWhyItCannotDraw -->
   <!-- test: DrawingViewTests.testAMacsReplyDrawsTheWorkInPlaceOfTheSpinner -->
   <!-- test: DrawingViewTests.testTheWorkIsItsLineItsBarAndTheLatestLook -->
   <!-- test: DrawingViewTests.testAReplyKeptHereShowsItsToolsAndNoSpinnerWhileAPictureIsDrawn -->
+  <!-- test: ToolCallWritingWireTests.testACallBeingWrittenIsALineWithItsCountOnBothDoors -->
+  <!-- test: HubChatContinueTests.testARunThatEndsWhileACallIsWrittenLeavesNoWritingLine -->
+  <!-- test: ToolCallWritingWireTests.testTheCountIsInTheLocalesDigitsAndAFrameWithoutANameIsNothing -->
+  <!-- test: ToolLinesTests.testACallBeingWrittenIsOneLineThatItsCallTakesThePlaceOf -->
 - Draw can be pressed for a second message in the same chat. A press that
   changes nothing of a draft but the switch is a change to it, which is
   what SwiftUI asks of a composer's draft before it draws the composer
@@ -1890,6 +1974,10 @@ against the mock.
 - [ADR 0012](docs/adr/0012-a-reply-in-flight-is-per-conversation.md): a
   reply in flight is per conversation, so a send in one never waits for a
   reply in another; gglib queues the second request.
+- [ADR 0013](docs/adr/0013-tools-are-a-conversation-switch.md): whether a
+  question may call a paired Mac's tools is a switch of the conversation,
+  on until turned off; which MCP servers the Mac offers is chosen on the
+  Mac and only read here.
 
 ## Releases
 

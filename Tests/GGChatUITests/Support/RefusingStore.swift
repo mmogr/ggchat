@@ -14,6 +14,8 @@ final class RefusingStore: Store {
     let inner = InMemoryStore()
     var refusesSaves = false
     var refusesDeletes = false
+    /// Refuses a conversation's save, which `refusesSaves` lets through.
+    var refusesConversationSaves = false
     /// Answers every image as one it does not have.
     var forgetsImages = false
     /// How many more images it keeps before it refuses the next; nil for
@@ -66,6 +68,7 @@ final class RefusingStore: Store {
     }
 
     func save(conversation: Conversation) throws {
+        if refusesConversationSaves { throw Refused() }
         try inner.save(conversation: conversation)
     }
 

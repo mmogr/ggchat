@@ -135,7 +135,7 @@ public final class SwiftDataStore: Store {
                 systemPrompt: record.systemPrompt, createdAt: record.createdAt, updatedAt: record.updatedAt,
                 hasUnreadReply: record.hasUnreadReply ?? false, context: Self.reading(from: record.contextData),
                 thinkingOff: record.thinkingOff ?? false, branchOf: record.branchOf, family: record.family,
-                imageModelID: record.imageModelID.flatMap(UInt64.init(exactly:)))
+                imageModelID: record.imageModelID.flatMap(UInt64.init(exactly:)), toolsOff: record.toolsOff ?? false)
         }
     }
 
@@ -158,32 +158,7 @@ public final class SwiftDataStore: Store {
     /// it is saved. Answers the ids of the images it took off a turn.
     @discardableResult
     func write(_ conversation: Conversation) throws -> Set<String> {
-        let record: ConversationRecord
-        if let existing = try fetchConversation(conversation.id) {
-            record = existing
-            Self.assign(\.title, of: record, to: conversation.title)
-            Self.assign(\.providerID, of: record, to: conversation.providerID)
-            Self.assign(\.model, of: record, to: conversation.model)
-            Self.assign(\.systemPrompt, of: record, to: conversation.systemPrompt)
-            Self.assign(\.hasUnreadReply, of: record, to: conversation.hasUnreadReply)
-            Self.assign(\.thinkingOff, of: record, to: conversation.thinkingOff)
-            Self.assign(\.branchOf, of: record, to: conversation.branchOf)
-            Self.assign(\.family, of: record, to: conversation.family)
-            Self.assign(\.imageModelID, of: record, to: conversation.imageModelID.flatMap(Int.init(exactly:)))
-            Self.assign(\.updatedAt, of: record, to: conversation.updatedAt)
-            if Self.reading(from: record.contextData) != conversation.context {
-                record.contextData = try conversation.context.map { try JSONEncoder().encode($0) }
-            }
-        } else {
-            record = ConversationRecord(
-                id: conversation.id, title: conversation.title, providerID: conversation.providerID,
-                model: conversation.model, createdAt: conversation.createdAt, updatedAt: conversation.updatedAt,
-                systemPrompt: conversation.systemPrompt, hasUnreadReply: conversation.hasUnreadReply,
-                contextData: try conversation.context.map { try JSONEncoder().encode($0) },
-                thinkingOff: conversation.thinkingOff, branchOf: conversation.branchOf, family: conversation.family,
-                imageModelID: conversation.imageModelID.flatMap(Int.init(exactly:)))
-            context.insert(record)
-        }
+        let record = try conversationRow(for: conversation)
         var existing = Dictionary(record.messages.map { ($0.uuid, $0) }, uniquingKeysWith: { first, _ in first })
         var dropped = Set<String>()
         for (order, message) in conversation.messages.enumerated() {
@@ -218,6 +193,38 @@ public final class SwiftDataStore: Store {
             context.delete(orphan)
         }
         return dropped
+    }
+
+    /// The conversation's own row, brought in line with it field by field,
+    /// or a new one inserted for it.
+    private func conversationRow(for conversation: Conversation) throws -> ConversationRecord {
+        if let record = try fetchConversation(conversation.id) {
+            Self.assign(\.title, of: record, to: conversation.title)
+            Self.assign(\.providerID, of: record, to: conversation.providerID)
+            Self.assign(\.model, of: record, to: conversation.model)
+            Self.assign(\.systemPrompt, of: record, to: conversation.systemPrompt)
+            Self.assign(\.hasUnreadReply, of: record, to: conversation.hasUnreadReply)
+            Self.assign(\.thinkingOff, of: record, to: conversation.thinkingOff)
+            Self.assign(\.branchOf, of: record, to: conversation.branchOf)
+            Self.assign(\.family, of: record, to: conversation.family)
+            Self.assign(\.imageModelID, of: record, to: conversation.imageModelID.flatMap(Int.init(exactly:)))
+            Self.assign(\.toolsOff, of: record, to: conversation.toolsOff ? true : nil)
+            Self.assign(\.updatedAt, of: record, to: conversation.updatedAt)
+            if Self.reading(from: record.contextData) != conversation.context {
+                record.contextData = try conversation.context.map { try JSONEncoder().encode($0) }
+            }
+            return record
+        }
+        let record = ConversationRecord(
+            id: conversation.id, title: conversation.title, providerID: conversation.providerID,
+            model: conversation.model, createdAt: conversation.createdAt, updatedAt: conversation.updatedAt,
+            systemPrompt: conversation.systemPrompt, hasUnreadReply: conversation.hasUnreadReply,
+            contextData: try conversation.context.map { try JSONEncoder().encode($0) },
+            thinkingOff: conversation.thinkingOff, branchOf: conversation.branchOf, family: conversation.family,
+            imageModelID: conversation.imageModelID.flatMap(Int.init(exactly:)),
+            toolsOff: conversation.toolsOff ? true : nil)
+        context.insert(record)
+        return record
     }
 
     /// A new row holding `message`, at `order` in its conversation.

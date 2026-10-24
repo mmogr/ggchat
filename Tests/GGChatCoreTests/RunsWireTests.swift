@@ -106,7 +106,8 @@ final class RunsWireTests: XCTestCase {
             [
                 .tool("Draw"),
                 .toolCalled(ToolExchange(callID: "call-draw-1", name: "draw", arguments: #"{"prompt":"a red dot"}"#)),
-                .toolEnded("call-draw-1"), .toolAnswered(callID: "call-draw-1", text: "[image 1024x1024 PNG stored]"),
+                .toolEnded("call-draw-1"),
+                .toolAnswered(callID: "call-draw-1", text: "[image 1024x1024 PNG stored]", failed: false),
                 .images([image]), .delta("Here is a red dot."),
             ])
     }

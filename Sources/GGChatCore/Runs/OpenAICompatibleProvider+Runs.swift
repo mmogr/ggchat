@@ -16,10 +16,14 @@ extension OpenAICompatibleProvider: RunProvider {
     /// opens among them. One that draws adds `&draw=true`, which lets this
     /// message's reply ask for a picture, and with a chosen image model
     /// `&image_model=<id>` after it; gglib refuses that word without
-    /// `draw=true`, so no other request says it. Any other request has no
-    /// query at all, as before: a gglib reached by address refuses the
-    /// words, and any other would spend its agent loop on a plain chat (one
-    /// from before drawing ignores them).
+    /// `draw=true`, so no other request says it. A request whose
+    /// conversation has its tools off (`toolsOff`) runs none of them: one
+    /// that draws is put as `?kind=chat&tools=none&draw=true`, which leaves
+    /// it the drawing tool alone, and one that does not is a plain run. Any
+    /// other request has no query at all, as before: a gglib reached by
+    /// address refuses the words, and any other would spend its agent loop
+    /// on a plain chat (one from before drawing ignores them). A gglib from
+    /// before `none` refuses it, and the question shows the refusal.
     public func startRun(id: String, _ chatRequest: ChatRequest) async throws(ProviderError) -> RunStart {
         let body: Data
         do {
@@ -28,8 +32,9 @@ extension OpenAICompatibleProvider: RunProvider {
             throw .decoding("could not encode the request: \(error)")
         }
         var request = makeRequest(path: "runs/\(id)", method: "PUT", body: body)
-        if chatRequest.draws || chatRequest.runsTools {
-            var query = [URLQueryItem(name: "kind", value: "chat"), URLQueryItem(name: "tools", value: "builtin")]
+        if chatRequest.draws || (chatRequest.runsTools && !chatRequest.toolsOff) {
+            let tools = chatRequest.toolsOff ? "none" : "builtin"
+            var query = [URLQueryItem(name: "kind", value: "chat"), URLQueryItem(name: "tools", value: tools)]
             if chatRequest.draws {
                 query.append(URLQueryItem(name: "draw", value: "true"))
                 if let chosen = chatRequest.imageModelID {

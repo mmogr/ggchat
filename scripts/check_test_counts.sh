@@ -607,8 +607,40 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # none, Retry with them and Continue without, none to a gglib reached by
 # address, and a lost PUT sent again with them for a question and without
 # for a Continue -- and the README claim names all nine.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 832
+#
+# 2026-10-24: 832 -> 848 and 737 -> 756 for the tool calls under a reply and
+# the Tools switch. A row that stops being drawn, a server or failure that
+# stops being kept, or a switch that stops being sent fails nothing else:
+# the reply still reads and the question is still answered. These sixteen
+# are the whole of that guard -- an exchange kept before the two fields,
+# the server and failure read from the run, the request unchanged by them,
+# the heading, the arguments, the cut answer, a call never answered, the
+# row's words and mark, one row per call and none under a question, the
+# switch on by default and turned off, off sent as a plain run or with the
+# drawing tool alone, off kept on a PUT sent again, no switch where no tools
+# are offered and off told there only to a Mac not yet heard from, the
+# column kept and opened across in both directions, and the servers listed
+# in the status sheet -- and the README claims name them, beside three
+# earlier tests they extend: the query table, a branch's copy and a move to
+# another provider.
+#
+# 2026-10-24: 848 -> 850 and 756 -> 758. One test pins that a gglib which
+# refuses `tools=none` leaves its sentence on the question, still drawing,
+# and one that a question with Draw put again after a relaunch, before the
+# Mac's answer is back, keeps the tools off.
+#
+# 2026-10-24: 850 -> 853 and 758 -> 761 for the line of a call the model is
+# still writing. A frame that stops being read, or a count that stops being
+# shown, fails nothing else: the call's own line still comes. These three
+# are the whole of that guard -- the frames read on both doors with a cut
+# that ends in an error, the count in the locale's digits, and each later
+# line taking the writing line's place -- and the README claim names them.
+#
+# 2026-10-24: 853 -> 854 and 761 -> 762. One test pins that a Mac's run
+# which ends while a call is still being written leaves no line for that
+# call on the ended reply.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 854
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 737
+floor "README test markers" "${markers:-0}" 762
 
 exit $status

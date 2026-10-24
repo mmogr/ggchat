@@ -78,9 +78,17 @@ extension OpenAICompatibleProvider {
     /// event this build cannot read, mean nothing here: the run's last
     /// report says how it ended, and the hub saves the reply.
     ///
+    /// `tool_call_writing` is a call the model is still writing, before its
+    /// `tool_call_start`: a line with the tool's name and how many pieces of
+    /// the reply's calls have streamed, in `locale`'s digits (`writingLine`), which
+    /// the next tool line takes the place of. gglib sends it at the first
+    /// named piece and then at most once a second, or, for a model that
+    /// writes its calls as text, once when the call is whole. A run cut off
+    /// while a call is written ends with an `error`, read as any other.
+    ///
     /// `turn_usage` carries its counts flat, under the names a chat stream's
     /// `usage` gives them, so it is read as one.
-    static func agentEvents(_ event: SSEEvent) -> [ChatEvent] {
+    static func agentEvents(_ event: SSEEvent, in locale: Locale = .autoupdatingCurrent) -> [ChatEvent] {
         let data = Data(event.data.utf8)
         guard let agent = try? JSONDecoder().decode(AgentEvent.self, from: data) else { return [] }
         switch agent.type {
@@ -92,12 +100,24 @@ extension OpenAICompatibleProvider {
         case "tool_call_start":
             let line = agent.displayName.map { name in agent.argsSummary.map { "\(name): \($0)" } ?? name }
             return (line.map { [.tool($0)] } ?? []) + (ToolFrames.call(in: data).map { [.toolCalled($0)] } ?? [])
+        case "tool_call_writing":
+            guard let writing = read(ToolCallWriting.self, data) else { return [] }
+            return [.tool(writingLine(writing.displayName, tokens: writing.tokens, in: locale), writing: true)]
         case "tool_call_complete": return finishedTool(data)
         case "tool_progress": return read(ToolProgress.self, data).map { [.toolProgress($0)] } ?? []
         case "waiting": return read(RunWait.self, data).map { [.waiting($0)] } ?? []
         case "error": return [.error(.stream(code: nil, message: agent.message ?? "the reply failed"))]
         default: return []
         }
+    }
+
+    /// The line for a call the model is still writing: “Writing Generate
+    /// Image… 512 tokens”, the count in `locale`'s digits, or without one
+    /// when the frame has none.
+    static func writingLine(_ name: String, tokens: Int?, in locale: Locale) -> String {
+        guard let tokens else { return "Writing \(name)…" }
+        let count = tokens.formatted(.number.locale(locale))
+        return "Writing \(name)… \(count) \(tokens == 1 ? "token" : "tokens")"
     }
 
     /// One event's data as `type`, or nil when it does not read as one: a
@@ -107,7 +127,8 @@ extension OpenAICompatibleProvider {
     }
 
     /// A finished tool: that its call ended, by `result.tool_call_id`, what
-    /// it answered, `result.content`, as it came, and then the images it
+    /// it answered, `result.content`, as it came, with whether it failed,
+    /// the opposite of `result.success`, and then the images it
     /// made, `result.images`, gglib's `AttachmentInfo`
     /// each, which gglib leaves out when there are none. Images that cannot
     /// be read are passed over and the call has still ended; a result with
@@ -116,7 +137,9 @@ extension OpenAICompatibleProvider {
         guard let complete = try? JSONDecoder().decode(ToolCallComplete.self, from: data) else { return [] }
         let images = complete.result.images ?? []
         let id = complete.result.callID
-        let answer = complete.result.content.map { [ChatEvent.toolAnswered(callID: id, text: $0)] } ?? []
+        let failed = complete.result.success.map { !$0 }
+        let answer =
+            complete.result.content.map { [ChatEvent.toolAnswered(callID: id, text: $0, failed: failed)] } ?? []
         return [.toolEnded(id)] + answer + (images.isEmpty ? [] : [.images(images)])
     }
 }
@@ -126,23 +149,45 @@ private struct ToolCallComplete: Decodable {
     struct Result: Decodable {
         let callID: String
         let content: String?
+        let success: Bool?
         let images: [ImageRef]?
 
         enum CodingKeys: String, CodingKey {
             case callID = "tool_call_id"
-            case content, images
+            case content, success, images
         }
 
-        /// Images that do not read are none, not a result that does not.
+        /// Images that do not read are none, not a result that does not, and
+        /// a `success` that does not read is not known.
         init(from decoder: any Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             callID = try container.decode(String.self, forKey: .callID)
             content = try? container.decodeIfPresent(String.self, forKey: .content)
+            success = try? container.decodeIfPresent(Bool.self, forKey: .success)
             images = try? container.decodeIfPresent([ImageRef].self, forKey: .images)
         }
     }
 
     let result: Result
+}
+
+/// The part of gglib's `tool_call_writing` this device reads: the tool's
+/// name to show and how many pieces of the reply's calls have streamed. A count that
+/// does not read is none, not a frame that does not.
+private struct ToolCallWriting: Decodable {
+    let displayName: String
+    let tokens: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case displayName = "display_name"
+        case tokens
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        displayName = try container.decode(String.self, forKey: .displayName)
+        tokens = try? container.decodeIfPresent(Int.self, forKey: .tokens)
+    }
 }
 
 /// The parts of gglib's `AgentEvent` this device reads.

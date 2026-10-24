@@ -155,6 +155,7 @@ extension AppModel {
         reply.reading = nil
         reply.ended = true
         reply.work.end()
+        reply.toolLines.end()
         readOnAttempts[reply.key] = nil
         keepHubRuns(reply.providerID)
         guard openedHubChat?.providerID == reply.providerID, openedHubChat?.chatID == reply.chatID else {

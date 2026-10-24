@@ -23,9 +23,9 @@ public enum Role: String, Codable, Sendable, Equatable, Hashable {
 /// as the chat route's chunks, so a reply read on is read with the decoder
 /// its run needs; nil with `runID`, and for a run of chunks.
 /// `exchanges` is the tools a reply called and what each answered, in
-/// order, as a run with gglib's tools said them: never drawn, and sent back
-/// to a gglib with the reply so the model reads how its picture was made
-/// and what its other tools answered.
+/// order, as a run with gglib's tools said them: drawn under a reply as a
+/// collapsed row each, and sent back to a gglib with the reply so the model
+/// reads how its picture was made and what its other tools answered.
 public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
     public var id: UUID
     public var role: Role
@@ -159,6 +159,11 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
     /// setting of the conversation, sent with each message that draws; the
     /// id names nothing on another machine (ADR 0011).
     public var imageModelID: UInt64?
+    /// Whether the conversation's questions are asked without the tools of
+    /// the MCP servers its paired Mac offers. A setting of the
+    /// conversation, on until turned off, said only to a paired Mac that
+    /// offers them; which servers it offers is chosen on the Mac (ADR 0013).
+    public var toolsOff: Bool
     /// The conversation this one was branched from, and the first of its
     /// family, when it is a branch (ADR 0010); both nil for one started here.
     /// They are kept even when those conversations are deleted.
@@ -184,7 +189,8 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
         thinkingOff: Bool = false,
         branchOf: UUID? = nil,
         family: UUID? = nil,
-        imageModelID: UInt64? = nil
+        imageModelID: UInt64? = nil,
+        toolsOff: Bool = false
     ) {
         self.id = id
         self.title = title
@@ -200,6 +206,7 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
         self.branchOf = branchOf
         self.family = family
         self.imageModelID = imageModelID
+        self.toolsOff = toolsOff
     }
 
     /// The family the conversation is one of: the first conversation's id,

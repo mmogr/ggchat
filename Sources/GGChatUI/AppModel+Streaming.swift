@@ -115,8 +115,7 @@ extension AppModel {
         let request: ChatRequest
         do {
             request = try chatRequest(
-                model: modelID, messages: conversation.requestMessages, thinkingOff: conversation.thinkingOff,
-                imageModel: conversation.imageModelID, for: config)
+                model: modelID, messages: conversation.requestMessages, of: conversation, for: config)
         } catch {
             lastError = error.errorDescription
             return nil
@@ -180,7 +179,7 @@ extension AppModel {
             live.finishReason = reason
         case .images(let images):
             live.made += images.filter { image in !live.made.contains { $0.id == image.id } }
-        case .tool(let line): live.tools.append(line)
+        case .tool(let line, let writing): live.toolLines.take(line, writing: writing)
         case .toolCalled, .toolAnswered: live.exchanges.take(event)
         case .toolProgress, .toolEnded, .waiting: break
         }

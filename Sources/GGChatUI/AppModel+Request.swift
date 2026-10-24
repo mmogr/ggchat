@@ -2,35 +2,43 @@ import Foundation
 import GGChatCore
 
 extension AppModel {
-    /// The request that sends `messages` to `model` through `config`. A send,
+    /// The request that sends `messages` to `model` through `config`, with
+    /// the settings of `conversation`, which they are of. A send,
     /// Continue and Retry build it here, and so does a run's `PUT` sent
     /// again, so every one carries the same images and the same flags (but
     /// whether it runs the Mac's tools follows the Mac's answer as last
     /// heard, which an app just relaunched has not heard yet), the
     /// conversation's Thinking choice (`thinkingBudget`), the tools its
     /// replies called when the provider is gglib (`asksForProgress`), which
-    /// alone reads them, and whether it
-    /// draws: it does when the turn it ends on is a question sent with Draw
-    /// pressed, which a Continue's partial reply never is. A question to a
-    /// paired Mac that offers its MCP servers' tools runs with them
-    /// (`offersTools`), drawing or not; a Continue does not. `imageModel` is
-    /// the conversation's choice of image model, which the request names
-    /// when it draws, for a hub that lists its image models
-    /// (`imageModelToSend`). The latest drawn picture is shown to a model
-    /// gglib lists as one that reads images (`showsDrawnPicture`), its bytes
-    /// read here. One this device cannot read is left out, not refused as a
-    /// question's image is: the person did not send it, and the chat reads
-    /// without it.
+    /// alone reads them, and whether it draws: it does when the turn it ends
+    /// on is a question sent with Draw pressed, which a Continue's partial
+    /// reply never is. A question to a paired Mac that offers its MCP
+    /// servers' tools runs with them (`offersTools`), drawing or not, unless
+    /// the conversation has its tools off: then it is a plain run, or with
+    /// Draw one with the drawing tool alone (`toolsOff`). A paired Mac not
+    /// heard from yet is told so as well, since it may offer servers, so a
+    /// `PUT` sent again after a relaunch, before the Mac's answer is back,
+    /// never runs tools the person turned off; with Draw it goes with
+    /// `tools=none`, which a gglib from before `none` refuses, and the
+    /// question shows the refusal. A gglib reached by address and a Mac
+    /// known to offer none are never told. A Continue runs none. The
+    /// request names the conversation's choice of image model when it
+    /// draws, for a hub that lists its image models (`imageModelToSend`).
+    /// The latest drawn picture is shown to a model gglib lists as one that
+    /// reads images (`showsDrawnPicture`), its bytes read here. One this
+    /// device cannot read is left out, not refused as a question's image
+    /// is: the person did not send it, and the chat reads without it.
     func chatRequest(
-        model: String, messages: [Message], thinkingOff: Bool, imageModel: UInt64?, for config: ProviderConfig
+        model: String, messages: [Message], of conversation: Conversation, for config: ProviderConfig
     ) throws(ImageUnavailable) -> ChatRequest {
         var request = try ChatRequest(
             model: model, messages: messages, returnProgress: asksForProgress(config), imagesFrom: store)
-        request.reasoningBudgetTokens = thinkingBudget(off: thinkingOff, model: model, for: config)
+        request.reasoningBudgetTokens = thinkingBudget(off: conversation.thinkingOff, model: model, for: config)
         request.replaysToolCalls = asksForProgress(config)
         request.draws = messages.last.map { $0.role == .user && $0.draws } ?? false
-        request.runsTools = offersTools(config) && messages.last?.role == .user
-        request.imageModelID = request.draws ? imageModelToSend(imageModel, to: config) : nil
+        request.toolsOff = conversation.toolsOff && config.isPipe && drawings[config.id]?.offersTools != false
+        request.runsTools = offersTools(config) && !conversation.toolsOff && messages.last?.role == .user
+        request.imageModelID = request.draws ? imageModelToSend(conversation.imageModelID, to: config) : nil
         if showsDrawnPicture(to: model, request: request, for: config), let shown = messages.shownPicture,
             let data = try? store.loadImage(id: shown.image.id)
         {
