@@ -148,6 +148,28 @@ final class HubChatContinueTests: XCTestCase {
         XCTAssertEqual(hub.with(\.opens), [12, 12])
     }
 
+    /// A run that ends while the model writes a call, here cut off and with
+    /// the Mac's rows not read in its place, leaves the reply on screen with
+    /// the lines of the calls it made and none for the call never written.
+    func testARunThatEndsWhileACallIsWrittenLeavesNoWritingLine() async throws {
+        let hub = FakeChatsHub(reply: [
+            [.tool("Read File: Cargo.lock")], [.tool("Writing Generate Image\u{2026} 512 tokens", writing: true)],
+            [.error(.stream(code: nil, message: "cut"))],
+        ])
+        hub.runs.with { state in
+            state.ending = .failed
+            state.error = RunError(code: "turn_too_long", message: "cut")
+        }
+        let (model, _) = try await Self.opened(hub)
+        hub.with { $0.openFailure = .refused(.transport("gone")) }
+        model.sendToHubChat("draw a fox")
+        try await until("the end") {
+            model.openHubReply?.ended == true && hub.with(\.opens).count >= 2 && model.hubReading == nil
+        }
+        let reply = try XCTUnwrap(model.openHubReply, "the ended reply was dropped")
+        XCTAssertEqual(reply.tools, ["Read File: Cargo.lock"])
+    }
+
     /// A gglib that does not know turns takes one as a chat run, which would
     /// fail on its way to the model: the run is stopped, the Mac is said to
     /// be one without turns, and the text is given back.

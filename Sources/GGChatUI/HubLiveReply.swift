@@ -33,8 +33,10 @@ public final class HubLiveReply {
     let imageModel: UInt64?
     public internal(set) var content = ""
     public internal(set) var reasoning = ""
-    /// A line for each tool the reply called.
-    public internal(set) var tools: [String] = []
+    /// A line for each tool the reply called, and for one the model is
+    /// still writing until that call's own line (`ToolLines`).
+    public var tools: [String] { toolLines.lines }
+    var toolLines = ToolLines()
     /// The images the reply's tools made, in order, by reference: each is
     /// read from the Mac by id as it is drawn, into memory like the chat's
     /// other images.
@@ -113,7 +115,7 @@ public final class HubLiveReply {
         switch event {
         case .delta(let text): content += text
         case .reasoning(let text): reasoning += text
-        case .tool(let line): tools.append(line)
+        case .tool(let line, let writing): toolLines.take(line, writing: writing)
         case .images(let images): made += images
         case .usage(let counted, let reason):
             usage = counted

@@ -587,11 +587,21 @@ Each claim names the test that keeps it true.
   picture, drawn from the frame as it came and scaled up smoothly; bytes
   that are not a picture draw nothing. A reply kept on this device also
   shows a line for each tool it calls, and under it the pictures made, read
-  from this device's store.
+  from this device's store. While the model is still writing a call, a
+  reply here and one on a Mac's chat show one line for it, such as
+  “Writing Generate Image… 512 tokens” with the count in the locale's
+  digits, from gglib's `tool_call_writing`; each later count, and then the
+  call's own line, takes its place. When a run ends with such a line still
+  showing, cut off or failed, the line goes with it: an ended reply shows no
+  call still being written.
   <!-- test: DrawingViewTests.testTheDrawSwitchSaysItsStateAndAPressSaysWhyItCannotDraw -->
   <!-- test: DrawingViewTests.testAMacsReplyDrawsTheWorkInPlaceOfTheSpinner -->
   <!-- test: DrawingViewTests.testTheWorkIsItsLineItsBarAndTheLatestLook -->
   <!-- test: DrawingViewTests.testAReplyKeptHereShowsItsToolsAndNoSpinnerWhileAPictureIsDrawn -->
+  <!-- test: ToolCallWritingWireTests.testACallBeingWrittenIsALineWithItsCountOnBothDoors -->
+  <!-- test: HubChatContinueTests.testARunThatEndsWhileACallIsWrittenLeavesNoWritingLine -->
+  <!-- test: ToolCallWritingWireTests.testTheCountIsInTheLocalesDigitsAndAFrameWithoutANameIsNothing -->
+  <!-- test: ToolLinesTests.testACallBeingWrittenIsOneLineThatItsCallTakesThePlaceOf -->
 - Draw can be pressed for a second message in the same chat. A press that
   changes nothing of a draft but the switch is a change to it, which is
   what SwiftUI asks of a composer's draft before it draws the composer

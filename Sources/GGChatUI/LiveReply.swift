@@ -20,8 +20,11 @@ public final class LiveReply {
     /// what the reply waits for: shown while it is so, and never kept
     /// (`ToolWork`).
     var work = ToolWork()
-    /// A line for each tool the reply called, while it is read here.
-    public internal(set) var tools: [String] = []
+    /// A line for each tool the reply called, while it is read here, and
+    /// for one the model is still writing until that call's own line
+    /// (`ToolLines`).
+    public var tools: [String] { toolLines.lines }
+    var toolLines = ToolLines()
     /// The images the reply's tools made, in order, by reference. Their
     /// bytes are in this device's store by the time one is named here, and
     /// `finish` names them on the reply's message.

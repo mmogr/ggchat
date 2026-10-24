@@ -628,8 +628,19 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # refuses `tools=none` leaves its sentence on the question, still drawing,
 # and one that a question with Draw put again after a relaunch, before the
 # Mac's answer is back, keeps the tools off.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 850
+#
+# 2026-10-24: 850 -> 853 and 758 -> 761 for the line of a call the model is
+# still writing. A frame that stops being read, or a count that stops being
+# shown, fails nothing else: the call's own line still comes. These three
+# are the whole of that guard -- the frames read on both doors with a cut
+# that ends in an error, the count in the locale's digits, and each later
+# line taking the writing line's place -- and the README claim names them.
+#
+# 2026-10-24: 853 -> 854 and 761 -> 762. One test pins that a Mac's run
+# which ends while a call is still being written leaves no line for that
+# call on the ended reply.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 854
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 28
-floor "README test markers" "${markers:-0}" 758
+floor "README test markers" "${markers:-0}" 762
 
 exit $status
