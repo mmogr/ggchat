@@ -9,31 +9,47 @@ import Foundation
 /// answer word for word, and nil until it has answered: a call and its
 /// answer are two events of the run, and a reply can be put down between
 /// them.
+///
+/// `server` is the MCP server the tool is one of, by the name the Mac gives
+/// it, and nil for gglib's own tools and from a gglib that does not say.
+/// `failed` is whether the tool said it failed: nil until it has answered,
+/// and nil for an answer that does not say, which is not known to have
+/// failed and is not known to have worked. Neither is sent back with the
+/// reply. Both are optional so that a list kept before them still reads:
+/// a list that cannot be read is kept as none.
 public struct ToolExchange: Codable, Sendable, Equatable, Hashable {
     public var callID: String
     public var name: String
     public var arguments: String
     public var result: String?
+    public var server: String?
+    public var failed: Bool?
 
-    public init(callID: String, name: String, arguments: String, result: String? = nil) {
+    public init(
+        callID: String, name: String, arguments: String, result: String? = nil, server: String? = nil,
+        failed: Bool? = nil
+    ) {
         self.callID = callID
         self.name = name
         self.arguments = arguments
         self.result = result
+        self.server = server
+        self.failed = failed
     }
 }
 
 extension [ToolExchange] {
     /// Takes one event of a run: a call is added, in place of one already
-    /// held under its id, and an answer is put on the call it answers. An
-    /// answer to a call that is not held, and any other event, change
-    /// nothing.
+    /// held under its id, and an answer is put on the call it answers, with
+    /// whether it failed. An answer to a call that is not held, and any other
+    /// event, change nothing.
     public mutating func take(_ event: ChatEvent) {
         switch event {
         case .toolCalled(let call): self.merge([call])
-        case .toolAnswered(let callID, let text):
+        case .toolAnswered(let callID, let text, let failed):
             guard let index = lastIndex(where: { $0.callID == callID }) else { return }
             self[index].result = text
+            self[index].failed = failed
         default: break
         }
     }
@@ -55,14 +71,18 @@ extension [ToolExchange] {
 /// what was called and what it answered.
 enum ToolFrames {
     /// The call a `tool_call_start` names: `tool_call.id`, `.name` and
-    /// `.arguments`. Arguments that came as JSON are written as text, keys
-    /// sorted; ones that came as text are kept as they came; none is `{}`.
+    /// `.arguments`, and the frame's own `server`, the MCP server the tool
+    /// is one of, which gglib leaves out for its own tools. Arguments that
+    /// came as JSON are written as text, keys sorted; ones that came as text
+    /// are kept as they came; none is `{}`. A `server` that is not a string
+    /// is none.
     static func call(in data: Data) -> ToolExchange? {
         guard let frame = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
             let call = frame["tool_call"] as? [String: Any],
             let id = call["id"] as? String, let name = call["name"] as? String
         else { return nil }
-        return ToolExchange(callID: id, name: name, arguments: text(of: call["arguments"]))
+        return ToolExchange(
+            callID: id, name: name, arguments: text(of: call["arguments"]), server: frame["server"] as? String)
     }
 
     private static func text(of arguments: Any?) -> String {

@@ -133,8 +133,9 @@ final class HubTurnProviderTests: XCTestCase {
     }
 
     /// The run's events are read as an agent's: text, reasoning, a line per
-    /// tool call and the call itself, what a finished tool answered and the
-    /// images it made and what a finished model
+    /// tool call and the call itself, with the MCP server it is one of when
+    /// the frame names one, what a finished tool answered, whether it said
+    /// it failed, and the images it made, and what a finished model
     /// call counted, every event a frame whether or not it means anything
     /// here, then the run's report.
     func testAnAgentRunsEventsAreItsTextReasoningAndToolLines() async throws {
@@ -155,12 +156,18 @@ final class HubTurnProviderTests: XCTestCase {
                 .reasoning("The lock file"), .reasoning(" moved."), .tool("Read File: Cargo.lock"),
                 .toolCalled(
                     ToolExchange(callID: "c1", name: "builtin_read_file", arguments: #"{"path":"Cargo.lock"}"#)),
-                .toolEnded("c1"), .toolAnswered(callID: "c1", text: "version = 3"), .tool("List Dir"),
+                .toolEnded("c1"), .toolAnswered(callID: "c1", text: "version = 3", failed: false), .tool("List Dir"),
                 .toolCalled(ToolExchange(callID: "c2", name: "builtin_list_dir", arguments: "{}")),
                 .tool("Plot Chart: build times"),
                 .toolCalled(ToolExchange(callID: "c3", name: "plot_chart", arguments: #"{"title":"build times"}"#)),
-                .toolEnded("c3"), .toolAnswered(callID: "c3", text: "[image 640x480 PNG stored]"),
-                .images([Self.chart]),
+                .toolEnded("c3"), .toolAnswered(callID: "c3", text: "[image 640x480 PNG stored]", failed: false),
+                .images([Self.chart]), .tool("Tavily Search: cargo lock v4"),
+                .toolCalled(
+                    ToolExchange(
+                        callID: "c4", name: "3:tavily_search", arguments: #"{"query":"cargo lock v4"}"#,
+                        server: "Tavily Web Search")),
+                .toolEnded("c4"),
+                .toolAnswered(callID: "c4", text: "Tavily answered 432: usage limit reached", failed: true),
                 .delta("Pin "), .delta("the version."),
                 .usage(Usage(promptTokens: 812, completionTokens: 12, contextSize: 8_192), reason: "stop"),
             ])
@@ -191,7 +198,7 @@ final class HubTurnProviderTests: XCTestCase {
                         + #""content":"two charts","success":true\#(images)},"wait_ms":0,"execute_duration_ms":4,"#
                         + #""display_name":"Plot","duration_display":"4ms"}"#))
         }
-        let ended: [ChatEvent] = [.toolEnded("c3"), .toolAnswered(callID: "c3", text: "two charts")]
+        let ended: [ChatEvent] = [.toolEnded("c3"), .toolAnswered(callID: "c3", text: "two charts", failed: false)]
         let second = ImageRef(
             id: "84df8f6cc2c63ce08ab21ab29b20c0c6ef572839945f54cf708ba8dab69c2357", mime: "image/jpeg", width: 1024,
             height: 768)

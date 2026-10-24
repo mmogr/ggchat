@@ -13,8 +13,9 @@ public enum ChatEvent: Sendable, Equatable {
     /// Only a hub's agent run sends one.
     case toolCalled(ToolExchange)
     /// What a tool the reply called answered, word for word, by its call's
-    /// id, to keep with the reply. Sent after the call's end.
-    case toolAnswered(callID: String, text: String)
+    /// id, to keep with the reply, and whether the tool said it failed: nil
+    /// when the answer does not say. Sent after the call's end.
+    case toolAnswered(callID: String, text: String, failed: Bool? = nil)
     /// The images a tool the reply called made, in the order it made them,
     /// by reference: the bytes are the hub's, read by id when drawn. Only a
     /// hub's agent run sends one.

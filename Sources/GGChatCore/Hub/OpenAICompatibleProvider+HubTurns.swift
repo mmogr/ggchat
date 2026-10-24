@@ -107,7 +107,8 @@ extension OpenAICompatibleProvider {
     }
 
     /// A finished tool: that its call ended, by `result.tool_call_id`, what
-    /// it answered, `result.content`, as it came, and then the images it
+    /// it answered, `result.content`, as it came, with whether it failed,
+    /// the opposite of `result.success`, and then the images it
     /// made, `result.images`, gglib's `AttachmentInfo`
     /// each, which gglib leaves out when there are none. Images that cannot
     /// be read are passed over and the call has still ended; a result with
@@ -116,7 +117,9 @@ extension OpenAICompatibleProvider {
         guard let complete = try? JSONDecoder().decode(ToolCallComplete.self, from: data) else { return [] }
         let images = complete.result.images ?? []
         let id = complete.result.callID
-        let answer = complete.result.content.map { [ChatEvent.toolAnswered(callID: id, text: $0)] } ?? []
+        let failed = complete.result.success.map { !$0 }
+        let answer =
+            complete.result.content.map { [ChatEvent.toolAnswered(callID: id, text: $0, failed: failed)] } ?? []
         return [.toolEnded(id)] + answer + (images.isEmpty ? [] : [.images(images)])
     }
 }
@@ -126,18 +129,21 @@ private struct ToolCallComplete: Decodable {
     struct Result: Decodable {
         let callID: String
         let content: String?
+        let success: Bool?
         let images: [ImageRef]?
 
         enum CodingKeys: String, CodingKey {
             case callID = "tool_call_id"
-            case content, images
+            case content, success, images
         }
 
-        /// Images that do not read are none, not a result that does not.
+        /// Images that do not read are none, not a result that does not, and
+        /// a `success` that does not read is not known.
         init(from decoder: any Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             callID = try container.decode(String.self, forKey: .callID)
             content = try? container.decodeIfPresent(String.self, forKey: .content)
+            success = try? container.decodeIfPresent(Bool.self, forKey: .success)
             images = try? container.decodeIfPresent([ImageRef].self, forKey: .images)
         }
     }

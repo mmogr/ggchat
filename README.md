@@ -413,13 +413,19 @@ Each claim names the test that keeps it true.
 - A conversation kept here remembers how its picture was made. The reply a
   run drew for keeps, with its words and its picture, each tool the run
   called and what the tool answered: the call's id, the tool's name, the
-  arguments the model wrote as JSON text, and the answer word for word, read
-  from the run's `tool_call_start` and `tool_call_complete` events and kept
-  in one optional column. None of it is drawn, and the transcript holds the
-  rows it always did. Every later request says it again ahead of the reply's
-  words, in OpenAI's shape: an assistant message with the call in
-  `tool_calls` and no content, then a `tool` message with the call's id and
-  the answer. gglib reads that as a chat that holds a drawn picture and
+  arguments the model wrote as JSON text, the answer word for word, the MCP
+  server the tool is one of when `tool_call_start` names one (`server`,
+  which gglib leaves out for its own tools), and whether the tool failed,
+  the opposite of `result.success`, read from the run's `tool_call_start`
+  and `tool_call_complete` events and kept in one optional column. An answer
+  that does not say is not known to have failed or worked, and a list kept
+  before the server and the failure were read still reads, with neither.
+  None of it is drawn, and the transcript holds the rows it always did.
+  Every later request says it again ahead of the reply's words, in OpenAI's
+  shape: an assistant message with the call in `tool_calls` and no content,
+  then a `tool` message with the call's id and the answer. The server and
+  the failure are never sent: the request is byte for byte the one it would
+  be without them. gglib reads that as a chat that holds a drawn picture and
   tells the model so, which is what stops the next reply saying it cannot
   make images (gglib issue 1387). Only gglib is sent them, a paired Mac or
   one reached by an address that answered as gglib; any other server is
@@ -443,6 +449,9 @@ Each claim names the test that keeps it true.
   <!-- test: DrawnHistoryTests.testTwoPicturesKeepTwoCallsUnderTheirOwnIDs -->
   <!-- test: DrawnHistoryTests.testAnAnswerReadOnALaterReadingFindsItsCall -->
   <!-- test: DrawnHistoryTests.testTheCallsOutliveAReopening -->
+  <!-- test: ToolExchangeWireTests.testAnExchangeKeptBeforeItsServerAndFailureReadsWithNeither -->
+  <!-- test: ToolExchangeWireTests.testAToolsServerAndItsFailureLandOnItsExchange -->
+  <!-- test: ToolExchangeWireTests.testTheRequestNeverSaysAToolsServerOrWhetherItFailed -->
   <!-- test: DrawnHistoryTests.testAStoreOpensAcrossTheCallsColumnInBothDirections -->
 - A model that reads images is shown the most recent picture drawn in a
   conversation kept here, as gglib asks of a client that keeps its own
