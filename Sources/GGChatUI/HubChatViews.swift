@@ -100,10 +100,12 @@ struct HubChatView: View {
             .padding(.horizontal)
             .padding(.top)
             .padding(.bottom, 8)
+            .footOfTheLatest()
             .frame(maxWidth: 760)
             .frame(maxWidth: .infinity)
         }
         .defaultScrollAnchor(.bottom)
+        .jumpsToLatest(replying: model.openHubReply != nil, in: chat.chatID)
         .overlay {
             switch chat.state {
             case .reading:
