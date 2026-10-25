@@ -47,11 +47,50 @@ final class JumpToLatestTests: XCTestCase {
     }
 
     func testAChatAtItsLatestIsKeptThereWhenTheKeyboardComesUp() {
-        XCTAssertTrue(JumpToLatest.keepsToLatest(distanceBefore: 0, insetBefore: 160, insetAfter: bottom))
+        XCTAssertTrue(
+            JumpToLatest.keepsToLatest(
+                distanceBefore: 0, viewportBefore: viewport, insetBefore: 160, insetAfter: bottom))
     }
 
     func testAChatScrolledUpStaysWhereItIsWhenTheKeyboardComesUpOrGoes() {
-        XCTAssertFalse(JumpToLatest.keepsToLatest(distanceBefore: viewport, insetBefore: 160, insetAfter: bottom))
-        XCTAssertFalse(JumpToLatest.keepsToLatest(distanceBefore: 0, insetBefore: bottom, insetAfter: 160))
+        XCTAssertFalse(
+            JumpToLatest.keepsToLatest(
+                distanceBefore: viewport, viewportBefore: viewport, insetBefore: 160, insetAfter: bottom))
+        XCTAssertFalse(
+            JumpToLatest.keepsToLatest(
+                distanceBefore: 0, viewportBefore: viewport, insetBefore: bottom, insetAfter: 160))
+    }
+
+    func testAChatAFewPointsShortOfItsLatestIsStillTakenThere() {
+        // A finished reply's row drawn again a little taller, and the
+        // keyboard back before the chat settled at its very bottom.
+        XCTAssertTrue(
+            JumpToLatest.keepsToLatest(
+                distanceBefore: 12, viewportBefore: viewport, insetBefore: 160, insetAfter: bottom))
+    }
+
+    func testAChatAFewPointsShortOfItsLatestFollowsAReplyAsItGrows() {
+        // The bottom anchor lets go of a chat not at its very bottom, and
+        // the reply ran on under the keyboard on CI's iPad.
+        XCTAssertTrue(
+            JumpToLatest.followsReply(
+                distanceBefore: 12, viewportBefore: viewport, contentBefore: 2_000, contentAfter: 2_040,
+                replying: true))
+    }
+
+    func testAChatScrolledUpOrWithNothingComingIsNotFollowed() {
+        XCTAssertFalse(
+            JumpToLatest.followsReply(
+                distanceBefore: viewport, viewportBefore: viewport, contentBefore: 2_000, contentAfter: 2_040,
+                replying: true))
+        // A lazy transcript's height changes as it is scrolled up.
+        XCTAssertFalse(
+            JumpToLatest.followsReply(
+                distanceBefore: 12, viewportBefore: viewport, contentBefore: 2_000, contentAfter: 2_040,
+                replying: false))
+        XCTAssertFalse(
+            JumpToLatest.followsReply(
+                distanceBefore: 12, viewportBefore: viewport, contentBefore: 2_000, contentAfter: 1_990,
+                replying: true))
     }
 }
