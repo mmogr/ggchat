@@ -10,10 +10,10 @@ extension XCTestCase {
     static var accessibilityXXXL: String { "UICTContentSizeCategoryAccessibilityXXXL" }
 
     @MainActor
-    func launchFreshApp(typeSize: String? = nil) -> XCUIApplication {
+    func launchFreshApp(typeSize: String? = nil, arguments: [String] = []) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-ggchat-reset", "YES", "-ggchat-still", "YES"]
+        app.launchArguments = ["-ggchat-reset", "YES", "-ggchat-still", "YES"] + arguments
         if let typeSize {
             app.launchArguments += ["-UIPreferredContentSizeCategoryName", typeSize]
         }

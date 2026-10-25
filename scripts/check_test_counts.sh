@@ -679,8 +679,18 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # bottom, and that one scrolled well up, or with nothing coming, is not: the
 # bottom anchor let go of such a chat on CI's iPad and the reply ran on under
 # the keyboard. Nothing else fails when it does.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 875
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 29
-floor "README test markers" "${markers:-0}" 784
+#
+# 2026-10-25: 875 -> 887, 29 -> 30 and 784 -> 797 for an iPhone Duo open on
+# its side as a book. Pages that never show fail nothing: the chat still
+# spans the fold as it did. These twelve are the whole of that rule's guard
+# -- read as sideways, not when folded, turned small or upright, the walk's
+# height waived, the pages met at the fold, none flat, none across a prop
+# fold or beside a fold too near an edge, half the screen flat, and the
+# panel's parts for a chat kept here, one offered nothing and a Mac's -- and
+# the walk is the only check that the panel takes the list's place and the
+# draft is kept, so the floors move past all thirteen.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 887
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 30
+floor "README test markers" "${markers:-0}" 797
 
 exit $status
