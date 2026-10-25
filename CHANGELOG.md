@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.11.0](https://github.com/mmogr/ggchat/compare/v0.10.0...v0.11.0) (2026-10-25)
+
+
+### What the app now does
+
+* **chat:** a long chat offers a way back to its latest message, and a drag on the transcript puts the keyboard away ([#221](https://github.com/mmogr/ggchat/issues/221)) ([ca7b4f4](https://github.com/mmogr/ggchat/commit/ca7b4f4b3536126c165d6e2badbf2fb81c60dde5))
+* **chat:** a vision model sees the drawn picture ([#211](https://github.com/mmogr/ggchat/issues/211)) ([840d35c](https://github.com/mmogr/ggchat/commit/840d35cf488fb0ffb5294ca84abb816146ba5e31))
+* **duo:** a half-open iPhone Duo on its side keeps the chat on the trailing page, as on its outside screen, and the list or the chat's own panel on the leading ([#227](https://github.com/mmogr/ggchat/issues/227)) ([fbc7083](https://github.com/mmogr/ggchat/commit/fbc7083d50fb9a53a710c204ce653d97b71f5143))
+* **duo:** the composer keeps off the fold of a half-open iPhone Duo ([#213](https://github.com/mmogr/ggchat/issues/213)) ([4114938](https://github.com/mmogr/ggchat/commit/411493814c3a53d5eab5fa24c8800646d3d7bc0a))
+* **duo:** the conversation list stays beside the chat on a tall, wide screen such as an open iPhone Duo ([#223](https://github.com/mmogr/ggchat/issues/223)) ([ae9f86f](https://github.com/mmogr/ggchat/commit/ae9f86fbadafeffc95ed9fd7344c8115f7f7b8fa))
+* **pictures:** the picture editor is arranged around the screen and its fold ([#214](https://github.com/mmogr/ggchat/issues/214)) ([ffcfda8](https://github.com/mmogr/ggchat/commit/ffcfda8cffdf4d38f208db8f721951b0800e84fe))
+* **tools:** a reply shows the tools it called, and a chat can turn the Mac's tools off ([#220](https://github.com/mmogr/ggchat/issues/220)) ([8ac5239](https://github.com/mmogr/ggchat/commit/8ac5239847924501d615ba16fd14c3d2bafa6a3d))
+* **tools:** every question to a paired Mac that offers tools is a chat run with them ([#215](https://github.com/mmogr/ggchat/issues/215)) ([67e7ff4](https://github.com/mmogr/ggchat/commit/67e7ff4c6d8a997fd7ccbaf184008c5838f28156))
+
+
+### What the app stopped getting wrong
+
+* **chat:** a chat a few points short of its latest is still kept there when the keyboard comes up ([#226](https://github.com/mmogr/ggchat/issues/226)) ([16c8f4c](https://github.com/mmogr/ggchat/commit/16c8f4ccaa73be074232af7962e84b2d2667c3d6))
+* **duo:** the conversation list stays beside the chat on an open iPhone Duo, at Claude's proportions, and the keyboard comes up beside it ([#225](https://github.com/mmogr/ggchat/issues/225)) ([befa65c](https://github.com/mmogr/ggchat/commit/befa65c123a71565231396b352dfbd889ad87759))
+* **images:** a Z-Image model reads as gglib names it ([#208](https://github.com/mmogr/ggchat/issues/208)) ([7293902](https://github.com/mmogr/ggchat/commit/72939025c2509a482cb3ea59f64149fb884ab549))
+* **providers:** a new chat follows the open one ([#210](https://github.com/mmogr/ggchat/issues/210)) ([bb2c8f2](https://github.com/mmogr/ggchat/commit/bb2c8f24b856ecc37483703e964bb77aef83a145))
+* **status:** one failed probe is not an answer ([#209](https://github.com/mmogr/ggchat/issues/209)) ([aa903b9](https://github.com/mmogr/ggchat/commit/aa903b95da88a7ff79a08ac8002e27067c1459e2))
+* **tests:** a form is scrolled from above the keyboard's suggestion bar ([#224](https://github.com/mmogr/ggchat/issues/224)) ([38d5f84](https://github.com/mmogr/ggchat/commit/38d5f84c3bdd8ee0b1c154f588855b94ddcf77f0)), closes [#222](https://github.com/mmogr/ggchat/issues/222)
+
 ## [0.10.0](https://github.com/mmogr/ggchat/compare/v0.9.0...v0.10.0) (2026-10-19)
 
 
