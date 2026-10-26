@@ -717,8 +717,13 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # opened later badging every chat, a branch keeping what its source saw,
 # what counts as unseen, and the Duo panel button's name -- so the floors
 # move past them.
+#
+# 2026-10-26: 30 -> 31. The walk is the only check that the wrench shows
+# for a paired Mac that opens a server, that its menu's row picks it, and
+# that the name the toolbar keeps follows; a menu SwiftUI lays out wrong
+# fails nothing else.
 floor "package test cases" "$(test_cases "$ROOT/Tests")" 916
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 30
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 31
 floor "README test markers" "${markers:-0}" 826
 
 exit $status

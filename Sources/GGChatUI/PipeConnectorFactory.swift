@@ -1,3 +1,4 @@
+import Foundation
 import GGChatCore
 // Unconditional now that the pairing reader is the real one in every build.
 // It used to be under `#if !DEBUG`, because only the release arm of `make()`
@@ -28,11 +29,30 @@ public enum PipeConnectorFactory {
     /// retains public symbols.
     public static func make() -> any PipeConnector {
         #if DEBUG
-            MockPipeConnector(sleeper: ContinuousClockSleeper(), stepDelay: .milliseconds(900))
+            MockPipeConnector(
+                sleeper: ContinuousClockSleeper(), stepDelay: .milliseconds(900),
+                provider: MockProvider(offered: mockServers(UserDefaults.standard.string(forKey: mockServersKey))))
         #else
             ModelpipeConnector()
         #endif
     }
+
+    #if DEBUG
+        /// The default a UI walk sets, `-ggchat-mock-mcp-servers 3:tavily`,
+        /// to have the mock pipe say it opens those MCP servers.
+        static let mockServersKey = "ggchat-mock-mcp-servers"
+
+        /// The servers in `-ggchat-mock-mcp-servers`: `<id>:<name>` pairs
+        /// joined by commas, or nil when it is unset or names none.
+        static func mockServers(_ spelled: String?) -> [OfferedServer]? {
+            let servers = (spelled ?? "").split(separator: ",").compactMap { pair -> OfferedServer? in
+                let parts = pair.split(separator: ":", maxSplits: 1)
+                guard parts.count == 2, let id = Int64(parts[0]) else { return nil }
+                return OfferedServer(id: id, name: String(parts[1]))
+            }
+            return servers.isEmpty ? nil : servers
+        }
+    #endif
 
     /// Who reads a pairing string, in every build including DEBUG.
     ///
