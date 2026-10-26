@@ -689,8 +689,13 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # panel's parts for a chat kept here, one offered nothing and a Mac's -- and
 # the walk is the only check that the panel takes the list's place and the
 # draft is kept, so the floors move past all thirteen.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 887
+#
+# 2026-10-26: 887 -> 888 and 797 -> 798. A paired Mac's servers are read by
+# id and name, and two the Mac lists under one name are two: folded into
+# one, a pick of either would start both, and nothing else fails. The one
+# test is the whole of that guard, so the floors move past it.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 888
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 30
-floor "README test markers" "${markers:-0}" 797
+floor "README test markers" "${markers:-0}" 798
 
 exit $status

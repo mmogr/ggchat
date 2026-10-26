@@ -29,16 +29,16 @@ public struct Drawing: Decodable, Sendable, Equatable {
     /// from before the list, which is never sent `image_model`; empty from
     /// one that has the list and no image model.
     public var models: [ImageModelRow]?
-    /// The MCP servers whose tools a run from this device is offered, by
-    /// name. Nil from a gglib from before the list, and empty from one that
-    /// opens none; either way no run is put with tools for them. Said
-    /// whether or not the hub can draw: a Mac with no image model can still
-    /// offer its servers.
-    public var mcpServers: [String]?
+    /// The MCP servers whose tools a run from this device may be offered,
+    /// each by its id on the Mac and its name, in the Mac's order. Nil from a
+    /// gglib from before the list, and empty from one that opens none;
+    /// either way no run is put with tools for them. Said whether or not the
+    /// hub can draw: a Mac with no image model can still offer its servers.
+    public var mcpServers: [OfferedServer]?
 
     public init(
         available: Bool, code: String? = nil, reason: String? = nil, model: String? = nil, modelID: UInt64? = nil,
-        models: [ImageModelRow]? = nil, mcpServers: [String]? = nil
+        models: [ImageModelRow]? = nil, mcpServers: [OfferedServer]? = nil
     ) {
         self.available = available
         self.code = code
@@ -59,6 +59,22 @@ public struct Drawing: Decodable, Sendable, Equatable {
         case available, code, reason, model, models
         case modelID = "model_id"
         case mcpServers = "mcp_servers"
+    }
+}
+
+/// An MCP server a paired Mac opens to this device's runs, as its answer
+/// about drawing names it: by its id on the Mac, which a run names it by and
+/// which is never given to another server, and by its name, which only the
+/// person reads. Two servers may share a name; they are still two.
+public struct OfferedServer: Decodable, Sendable, Equatable, Hashable, Identifiable {
+    /// The server's id on the Mac.
+    public let id: Int64
+    /// The server's name, as the Mac lists it.
+    public let name: String
+
+    public init(id: Int64, name: String) {
+        self.id = id
+        self.name = name
     }
 }
 

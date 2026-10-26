@@ -15,10 +15,10 @@ extension AppModel {
         return offersTools(config)
     }
 
-    /// The servers a paired Mac offers its runs, by the names it gives them,
-    /// in its order, for the server-status sheet to list: none where no
-    /// tools are offered (`offersTools`).
-    public func toolsOffered(by config: ProviderConfig) -> [String] {
+    /// The servers a paired Mac offers its runs, by id and name, in its
+    /// order, for the server-status sheet to list: none where no tools are
+    /// offered (`offersTools`).
+    public func toolsOffered(by config: ProviderConfig) -> [OfferedServer] {
         offersTools(config) ? drawings[config.id]?.mcpServers ?? [] : []
     }
 

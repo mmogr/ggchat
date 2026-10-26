@@ -68,7 +68,7 @@ struct ProxyStatusSections: View {
         } else if failure == nil {
             ProgressView("Waiting for the first snapshot")
         }
-        ToolsOfferedSection(names: model.toolsOffered(by: provider))
+        ToolsOfferedSection(servers: model.toolsOffered(by: provider))
     }
 }
 
@@ -114,22 +114,22 @@ private struct ProxyStatusFeed: ViewModifier {
     }
 }
 
-/// The MCP servers a paired Mac offers this phone's runs, by the names it
-/// gives them, and where they are chosen: on the Mac, never here, so there
-/// is nothing to tap (ADR 0013). No section where none are offered.
+/// The MCP servers a paired Mac offers this phone's runs, each by the name
+/// it gives it and kept apart by its id, and how one is opened: on the Mac,
+/// so there is nothing to tap (ADR 0013). No section where none are offered.
 struct ToolsOfferedSection: View {
-    let names: [String]
+    let servers: [OfferedServer]
 
     var body: some View {
-        if !names.isEmpty {
+        if !servers.isEmpty {
             Section {
-                ForEach(Array(names.enumerated()), id: \.offset) { _, name in
-                    Text(name)
+                ForEach(servers) { server in
+                    Text(server.name)
                 }
             } header: {
                 Text("Tools offered")
             } footer: {
-                Text("Chosen on the Mac with `gglib remote enable --allow-mcp <server>`, once for each server")
+                Text("Opened on the Mac with `gglib mcp allow-remote <server>`.")
             }
         }
     }

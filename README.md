@@ -39,7 +39,8 @@ its own, set from the toolbar and sent ahead of every request without ever
 becoming a row in the transcript; a request refused before anything arrived
 says why under the question, with a Retry button. A server added by address lists its models and
 streams; against gglib, a server status pane shows slots, context in use
-and recent requests, with the MCP servers a paired Mac offers, and it is
+and recent requests, with the MCP servers a paired Mac offers listed one
+by one, and it is
 hidden for servers that do not answer that endpoint. The app has been run: the screens above are photographs of it,
 not mock-ups. A pipe provider is added by pasting the `ticket-code` string
 the other machine showed for it (`gglib remote enable --invite` for the
@@ -379,7 +380,8 @@ Each claim names the test that keeps it true.
   `tools=none` when the conversation has its tools off, as an item below
   says; a hub that cannot draw, is too old or was never heard from is sent it as one that
   does not draw. A paired Mac whose answer about drawing names MCP servers
-  it offers (`mcp_servers`, said whether or not it can draw) has every
+  it offers (`mcp_servers`, each by its id on the Mac and its name, two
+  of one name read as two, said whether or not it can draw) has every
   question that does not draw, while the conversation's Tools switch is
   on, put as
   `PUT /v1/runs/{id}?kind=chat&tools=builtin`, Retry included, so its
@@ -423,6 +425,7 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingRunTests.testARunWrittenAWayThisBuildCannotReadIsGivenUp -->
   <!-- test: DrawingRunWireTests.testAnUnknownWordForTheFramesStillReads -->
   <!-- test: ToolsOfferedWireTests.testAnAnswerThatNamesServersOffersToolsWhetherOrNotItCanDraw -->
+  <!-- test: ToolsOfferedWireTests.testTwoServersOfOneNameAreReadAsTwo -->
   <!-- test: ToolsOfferedWireTests.testARunWithToolsIsPutWithThemAndDrawsOnlyWhenItDraws -->
   <!-- test: ToolsOfferedRunTests.testAMacThatOffersToolsHasEveryQuestionRunWithThem -->
   <!-- test: ToolsOfferedRunTests.testAMacThatCannotDrawStillRunsItsTools -->
@@ -454,10 +457,10 @@ Each claim names the test that keeps it true.
   `none` refuses it with the refusal and Retry on the question; without
   Draw it is a plain run.
   Which servers the Mac offers is chosen on the Mac, never here: the
-  server-status sheet lists them by the names the Mac gives them, under
-  "Tools offered", with a line saying they are chosen with
-  `gglib remote enable --allow-mcp <server>`, once for each server, and
-  nothing there can be tapped. The section is not there where no tools
+  server-status sheet lists them by the names the Mac gives them, one row
+  for each server even when two share a name, under "Tools offered", with
+  a line saying a server is opened on the Mac with
+  `gglib mcp allow-remote <server>`, and nothing there can be tapped. The section is not there where no tools
   are offered.
   <!-- test: ToolsOfferedWireTests.testARunWithToolsIsPutWithThemAndDrawsOnlyWhenItDraws -->
   <!-- test: AppModelToolsTests.testANewConversationHasTheToolsOnAndTheSwitchTurnsThemOff -->

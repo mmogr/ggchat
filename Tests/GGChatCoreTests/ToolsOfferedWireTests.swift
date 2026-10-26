@@ -26,12 +26,14 @@ final class ToolsOfferedWireTests: XCTestCase {
         }
         let cannot =
             #"{"available":false,"code":"drawing_unavailable","reason":"there is no image model","#
-            + #""mcp_servers":["tavily"]}"#
+            + #""mcp_servers":[{"id":3,"name":"tavily"}]}"#
         let refused = try drawing(cannot)
         XCTAssertFalse(refused.available)
-        XCTAssertEqual(refused.mcpServers, ["tavily"])
+        XCTAssertEqual(refused.mcpServers, [OfferedServer(id: 3, name: "tavily")])
         XCTAssertTrue(refused.offersTools, "a Mac that cannot draw did not offer its servers")
-        XCTAssertTrue(try drawing(#"{"available":true,"model":"flux-dev","mcp_servers":["tavily","fs"]}"#).offersTools)
+        let two =
+            #"{"available":true,"model":"flux-dev","mcp_servers":[{"id":3,"name":"tavily"},{"id":4,"name":"fs"}]}"#
+        XCTAssertTrue(try drawing(two).offersTools)
 
         for none in [
             #"{"available":true,"model":"flux-dev"}"#, #"{"available":true,"model":"flux-dev","mcp_servers":null}"#,
@@ -40,6 +42,17 @@ final class ToolsOfferedWireTests: XCTestCase {
             XCTAssertFalse(try drawing(none).offersTools, none)
         }
         XCTAssertNil(try drawing(#"{"available":false}"#).mcpServers)
+    }
+
+    /// Two servers the Mac lists under one name are two servers, each by its
+    /// own id, in the Mac's order, and neither is folded into the other.
+    func testTwoServersOfOneNameAreReadAsTwo() throws {
+        let body =
+            #"{"available":true,"mcp_servers":[{"id":4,"name":"fs"},{"id":9,"name":"fs"},{"id":3,"name":"tavily"}]}"#
+        let read = try JSONDecoder().decode(Drawing.self, from: Data(body.utf8))
+        XCTAssertEqual(read.mcpServers?.map(\.id), [4, 9, 3])
+        XCTAssertEqual(read.mcpServers?.map(\.name), ["fs", "fs", "tavily"])
+        XCTAssertEqual(Set(read.mcpServers ?? []).count, 3, "two servers of one name read as one")
     }
 
     /// A run with tools is put as a chat run with gglib's tools, and adds

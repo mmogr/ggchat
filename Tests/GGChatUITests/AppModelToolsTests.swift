@@ -33,7 +33,7 @@ final class AppModelToolsTests: XCTestCase {
     func testANewConversationHasTheToolsOnAndTheSwitchTurnsThemOff() async throws {
         let store = RefusingStore()
         let (model, _) = try await DrawingRunTests.makeModel(
-            behind: hub(), drawing: ToolsOfferedRunTests.offers, store: store)
+            behind: hub(), drawing: Drawing.offersTavily, store: store)
         let conversation = try XCTUnwrap(model.selectedConversation)
         XCTAssertEqual(ToolsToggle.symbol(isOn: true), "wrench.and.screwdriver.fill")
         XCTAssertEqual(ToolsToggle.symbol(isOn: false), "wrench.and.screwdriver")
@@ -66,7 +66,7 @@ final class AppModelToolsTests: XCTestCase {
     /// agent's. Turned on again, the next question runs the tools.
     func testOffSendsAPlainRunAndWithDrawOnlyTheDrawingTool() async throws {
         let hub = hub()
-        let (model, _) = try await DrawingRunTests.makeModel(behind: hub, drawing: ToolsOfferedRunTests.offers)
+        let (model, _) = try await DrawingRunTests.makeModel(behind: hub, drawing: Drawing.offersTavily)
         let id = try XCTUnwrap(model.selectedConversationID)
         model.setTools(on: false, for: id)
         try await send(model, "what is new in Swift?", until: 2)
@@ -87,7 +87,7 @@ final class AppModelToolsTests: XCTestCase {
         let hub = hub()
         hub.with { $0.putsLost = 1 }
         let (model, config) = try await Runs.makeModel(behind: hub, sleeper: ReadOnSleeper(immediate: true))
-        model.drawings[config.id] = ToolsOfferedRunTests.offers
+        model.drawings[config.id] = Drawing.offersTavily
         model.setTools(on: false, for: try XCTUnwrap(model.selectedConversationID))
         XCTAssertTrue(model.send("a fox in snow", images: [], draws: true))
         try await Runs.until("the reply to be read on") { Runs.settled(model) && hub.with { $0.starts.count } == 2 }
@@ -104,7 +104,7 @@ final class AppModelToolsTests: XCTestCase {
         let hub = hub()
         let refusal = ProviderError.server(status: 400, code: "invalid_request", message: "unknown tools: none")
         hub.with { $0.start = .refused(refusal) }
-        let (model, _) = try await DrawingRunTests.makeModel(behind: hub, drawing: ToolsOfferedRunTests.offers)
+        let (model, _) = try await DrawingRunTests.makeModel(behind: hub, drawing: Drawing.offersTavily)
         model.setTools(on: false, for: try XCTUnwrap(model.selectedConversationID))
         XCTAssertTrue(model.send("a fox in snow", images: [], draws: true))
         try await Runs.until("the refusal") { Runs.settled(model) && hub.with { $0.starts.count } == 1 }
@@ -125,7 +125,7 @@ final class AppModelToolsTests: XCTestCase {
     func testTheSwitchIsHiddenAndOffNeverSentWhereNoToolsAreOffered() async throws {
         let direct = hub()
         let (byAddress, config) = try await Runs.makeModel(behind: direct, direct: true)
-        byAddress.drawings[config.id] = ToolsOfferedRunTests.offers
+        byAddress.drawings[config.id] = Drawing.offersTavily
         let shown = try XCTUnwrap(byAddress.selectedConversation)
         XCTAssertFalse(byAddress.offersTools(for: shown))
         byAddress.setTools(on: false, for: shown.id)

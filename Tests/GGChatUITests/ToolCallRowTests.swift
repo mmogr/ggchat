@@ -86,7 +86,7 @@ final class ToolCallRowTests: XCTestCase {
             [.toolEnded("c2"), .toolAnswered(callID: "c2", text: "Drew 1 image", failed: false)],
             [.delta("Pin the version.")],
         ])
-        let (model, _) = try await DrawingRunTests.makeModel(behind: hub, drawing: ToolsOfferedRunTests.offers)
+        let (model, _) = try await DrawingRunTests.makeModel(behind: hub, drawing: Drawing.offersTavily)
         XCTAssertTrue(model.send("what is new in cargo?", images: []))
         try await Runs.until("the reply") { Runs.settled(model) && model.selectedConversation?.messages.count == 2 }
         let messages = try XCTUnwrap(model.selectedConversation?.messages)

@@ -10,7 +10,6 @@ import XCTest
 @MainActor
 final class ToolsOfferedRunTests: XCTestCase {
     private typealias Runs = AppModelRunTests
-    static let offers = Drawing(available: true, model: "flux-dev", mcpServers: ["tavily"])
 
     private func hub() -> FakeRunHub {
         FakeRunHub(frames: FakeRunHub.frames(ofText: Runs.text, reasoning: ""))
@@ -29,7 +28,7 @@ final class ToolsOfferedRunTests: XCTestCase {
     /// by the chat route.
     func testAMacThatOffersToolsHasEveryQuestionRunWithThem() async throws {
         let hub = hub()
-        let (model, _) = try await DrawingRunTests.makeModel(behind: hub, drawing: Self.offers)
+        let (model, _) = try await DrawingRunTests.makeModel(behind: hub, drawing: Drawing.offersTavily)
         XCTAssertTrue(model.send("what is new in Swift?", images: []))
         try await Runs.until("the reply") { Runs.settled(model) && model.selectedConversation?.messages.count == 2 }
         XCTAssertTrue(model.send("a fox in snow", images: [], draws: true))
@@ -46,7 +45,8 @@ final class ToolsOfferedRunTests: XCTestCase {
     func testAMacThatCannotDrawStillRunsItsTools() async throws {
         let hub = hub()
         let cannot = Drawing(
-            available: false, code: "drawing_unavailable", reason: "there is no image model", mcpServers: ["tavily"])
+            available: false, code: "drawing_unavailable", reason: "there is no image model",
+            mcpServers: [OfferedServer(id: 3, name: "tavily")])
         let (model, _) = try await DrawingRunTests.makeModel(behind: hub, drawing: cannot)
         XCTAssertTrue(model.send("a fox in snow", images: [], draws: true))
         try await Runs.until("the reply") { Runs.settled(model) }
@@ -78,7 +78,7 @@ final class ToolsOfferedRunTests: XCTestCase {
             $0.ending = .failed
             $0.error = RunError(code: "upstream_error", message: "the model stopped answering")
         }
-        let (retried, _) = try await DrawingRunTests.makeModel(behind: failing, drawing: Self.offers)
+        let (retried, _) = try await DrawingRunTests.makeModel(behind: failing, drawing: Drawing.offersTavily)
         XCTAssertTrue(retried.send("what is new in Swift?", images: []))
         try await Runs.until("the failure") { Runs.settled(retried) && retried.liveReply == nil }
         XCTAssertEqual(retried.selectedConversation?.messages.count, 1)
@@ -88,7 +88,7 @@ final class ToolsOfferedRunTests: XCTestCase {
 
         let hub = hub()
         hub.with { $0.holdAt = 2 }
-        let (model, _) = try await DrawingRunTests.makeModel(behind: hub, drawing: Self.offers)
+        let (model, _) = try await DrawingRunTests.makeModel(behind: hub, drawing: Drawing.offersTavily)
         XCTAssertTrue(model.send("what is new in Swift?", images: []))
         try await Runs.until("two frames") { model.liveReply?.cursor == 2 }
         model.stop()
@@ -105,7 +105,7 @@ final class ToolsOfferedRunTests: XCTestCase {
     func testAGglibByAddressIsNeverSentTools() async throws {
         let hub = hub()
         let (model, config) = try await Runs.makeModel(behind: hub, direct: true)
-        model.drawings[config.id] = Self.offers
+        model.drawings[config.id] = Drawing.offersTavily
         XCTAssertTrue(model.send("what is new in Swift?", images: []))
         try await Runs.until("the reply") { Runs.settled(model) }
         XCTAssertEqual(runsTools(hub), [false])
@@ -118,7 +118,7 @@ final class ToolsOfferedRunTests: XCTestCase {
         let hub = hub()
         hub.with { $0.putsLost = 1 }
         let (model, config) = try await Runs.makeModel(behind: hub, sleeper: ReadOnSleeper(immediate: true))
-        model.drawings[config.id] = Self.offers
+        model.drawings[config.id] = Drawing.offersTavily
         try await XCTUnwrap(model.send("go")).value
         try await Runs.until("the reply to be read on") { Runs.settled(model) }
         XCTAssertEqual(try Runs.last(model).content, Runs.text)
@@ -132,7 +132,7 @@ final class ToolsOfferedRunTests: XCTestCase {
         let hub = hub()
         hub.with { $0.holdAt = 2 }
         let (model, config) = try await Runs.makeModel(behind: hub, sleeper: ReadOnSleeper(immediate: true))
-        model.drawings[config.id] = Self.offers
+        model.drawings[config.id] = Drawing.offersTavily
         XCTAssertTrue(model.send("what is new in Swift?", images: []))
         try await Runs.until("two frames") { model.liveReply?.cursor == 2 }
         model.stop()
