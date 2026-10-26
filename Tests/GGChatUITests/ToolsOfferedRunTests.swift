@@ -19,8 +19,13 @@ final class ToolsOfferedRunTests: XCTestCase {
         try XCTUnwrap(model.selectedConversation?.messages.last { $0.role == .user })
     }
 
+    /// Whether each run was put naming a server, as an agent's.
     private func runsTools(_ hub: FakeRunHub) -> [Bool] {
-        hub.with { $0.starts.map(\.request.runsTools) }
+        hub.with { $0.starts.map { $0.request.runsAgentLoop && !$0.request.toolServers.isEmpty } }
+    }
+
+    private func servers(_ hub: FakeRunHub) -> [[Int64]] {
+        hub.with { $0.starts.map(\.request.toolServers) }
     }
 
     /// A plain question and one sent with Draw both run with the tools, and
@@ -34,6 +39,7 @@ final class ToolsOfferedRunTests: XCTestCase {
         XCTAssertTrue(model.send("a fox in snow", images: [], draws: true))
         try await Runs.until("the reply") { Runs.settled(model) && model.selectedConversation?.messages.count == 4 }
         XCTAssertEqual(runsTools(hub), [true, true])
+        XCTAssertEqual(servers(hub), [[3], [3]])
         XCTAssertEqual(hub.with { $0.starts.map(\.request.draws) }, [false, true])
         XCTAssertEqual(hub.with(\.readFrames), [.agent, .agent])
         XCTAssertEqual(hub.with { $0.chats.count }, 0)
@@ -51,6 +57,7 @@ final class ToolsOfferedRunTests: XCTestCase {
         XCTAssertTrue(model.send("a fox in snow", images: [], draws: true))
         try await Runs.until("the reply") { Runs.settled(model) }
         XCTAssertEqual(runsTools(hub), [true])
+        XCTAssertEqual(servers(hub), [[3]])
         XCTAssertEqual(hub.with { $0.starts.map(\.request.draws) }, [false])
         XCTAssertEqual(hub.with(\.readFrames), [.agent])
         XCTAssertFalse(try question(model).draws)
@@ -84,6 +91,7 @@ final class ToolsOfferedRunTests: XCTestCase {
         XCTAssertEqual(retried.selectedConversation?.messages.count, 1)
         try await XCTUnwrap(retried.retry()).value
         XCTAssertEqual(runsTools(failing), [true, true])
+        XCTAssertEqual(servers(failing), [[3], [3]])
         XCTAssertEqual(failing.with(\.readFrames), [.agent, .agent])
 
         let hub = hub()
@@ -123,6 +131,7 @@ final class ToolsOfferedRunTests: XCTestCase {
         try await Runs.until("the reply to be read on") { Runs.settled(model) }
         XCTAssertEqual(try Runs.last(model).content, Runs.text)
         XCTAssertEqual(runsTools(hub), [true, true])
+        XCTAssertEqual(servers(hub), [[3], [3]])
         XCTAssertEqual(hub.with(\.readFrames), [.agent])
     }
 

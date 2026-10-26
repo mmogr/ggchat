@@ -6,14 +6,14 @@ import XCTest
 /// A paired Mac that offers its MCP servers' tools: what its answer about
 /// drawing says of them, and how a run that carries them is put.
 final class ToolsOfferedWireTests: XCTestCase {
-    /// One row of the query table: the request's flags, the host it is put
-    /// to, and the query it is put with.
+    /// One row of the query table: the servers the request names, whether
+    /// it draws and with which image model, the host it is put to, and the
+    /// query it is put with.
     private struct Row {
         var host: String
-        var runsTools: Bool
+        var servers: [Int64]
         var draws: Bool
         var chosen: UInt64?
-        var toolsOff = false
         var query: String?
     }
 
@@ -55,49 +55,44 @@ final class ToolsOfferedWireTests: XCTestCase {
         XCTAssertEqual(Set(read.mcpServers ?? []).count, 3, "two servers of one name read as one")
     }
 
-    /// A run with tools is put as a chat run with gglib's tools, and adds
-    /// `draw=true` only when it draws, with the chosen image model only
-    /// then; a run with neither has no query. With the conversation's tools
-    /// off, one that draws is put with `tools=none`, and one that does not
-    /// draw has no query, even if it was marked to run tools. The body is the
-    /// same in every one, and says nothing of tools.
+    /// A run that names servers is put as a chat run naming them by id,
+    /// sorted and joined by a bare comma, and adds `draw=true` only when it
+    /// draws, with the chosen image model only then. A run that draws and
+    /// names none is put with `tools=none`, and one that does neither has no
+    /// query. The body is the same in every one, and says nothing of tools.
     func testARunWithToolsIsPutWithThemAndDrawsOnlyWhenItDraws() async throws {
-        func request(runsTools: Bool, draws: Bool, chosen: UInt64?, toolsOff: Bool = false) -> ChatRequest {
+        func request(servers: [Int64], draws: Bool, chosen: UInt64?) -> ChatRequest {
             ChatRequest(
                 model: "Qwen3.8-27B",
                 messages: [Message(role: .user, content: "what is new?", createdAt: Date(timeIntervalSince1970: 0))],
-                returnProgress: true, draws: draws, imageModelID: chosen, runsTools: runsTools, toolsOff: toolsOff)
+                returnProgress: true, draws: draws, imageModelID: chosen, toolServers: servers)
         }
         let table = [
-            Row(host: "tools.offered.test", runsTools: true, draws: false, query: "kind=chat&tools=builtin"),
+            Row(host: "plain.offered.test", servers: [], draws: false),
+            Row(host: "unchosen.plain.offered.test", servers: [], draws: false, chosen: 7),
+            Row(host: "none.draws.offered.test", servers: [], draws: true, query: "kind=chat&tools=none&draw=true"),
             Row(
-                host: "tools.draws.offered.test", runsTools: true, draws: true,
-                query: "kind=chat&tools=builtin&draw=true"),
-            Row(
-                host: "tools.chosen.offered.test", runsTools: true, draws: true, chosen: 7,
-                query: "kind=chat&tools=builtin&draw=true&image_model=7"),
-            Row(
-                host: "tools.unchosen.offered.test", runsTools: true, draws: false, chosen: 7,
-                query: "kind=chat&tools=builtin"),
-            Row(host: "plain.offered.test", runsTools: false, draws: false),
-            Row(
-                host: "off.draws.offered.test", runsTools: false, draws: true, toolsOff: true,
-                query: "kind=chat&tools=none&draw=true"),
-            Row(
-                host: "off.chosen.offered.test", runsTools: false, draws: true, chosen: 7, toolsOff: true,
+                host: "none.chosen.offered.test", servers: [], draws: true, chosen: 7,
                 query: "kind=chat&tools=none&draw=true&image_model=7"),
-            Row(host: "off.plain.offered.test", runsTools: false, draws: false, toolsOff: true),
-            Row(host: "off.marked.offered.test", runsTools: true, draws: false, toolsOff: true),
+            Row(host: "one.offered.test", servers: [3], draws: false, query: "kind=chat&tools=3"),
+            Row(host: "two.offered.test", servers: [3, 7], draws: false, query: "kind=chat&tools=3,7"),
+            Row(host: "unsorted.offered.test", servers: [7, 3, 7], draws: false, query: "kind=chat&tools=3,7"),
+            Row(
+                host: "one.unchosen.offered.test", servers: [3], draws: false, chosen: 7,
+                query: "kind=chat&tools=3"),
+            Row(
+                host: "one.chosen.offered.test", servers: [3], draws: true, chosen: 7,
+                query: "kind=chat&tools=3&draw=true&image_model=7"),
         ]
         var script = RunHub.Script(frames: [], ending: RunHub.report("run-t", "completed", lastSeq: 0))
         script.put = (201, RunHub.report("run-t", "queued", lastSeq: 0))
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
         let plainBody = try encoder.encode(
-            try ChatCompletionRequest(request(runsTools: false, draws: false, chosen: nil)))
+            try ChatCompletionRequest(request(servers: [], draws: false, chosen: nil)))
         for row in table {
             RunHub.serve(script, at: row.host)
-            let sent = request(runsTools: row.runsTools, draws: row.draws, chosen: row.chosen, toolsOff: row.toolsOff)
+            let sent = request(servers: row.servers, draws: row.draws, chosen: row.chosen)
             _ = try await RunHub.provider(at: row.host).startRun(id: "run-t", sent)
             let put = try XCTUnwrap(RunHub.requests(at: row.host).first)
             XCTAssertEqual(put.httpMethod, "PUT", row.host)

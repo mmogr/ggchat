@@ -119,7 +119,7 @@ final class FakeRunHub: RunProvider, DrawingProvider {
         if lost { throw .transport("the answer was lost") }
         switch start {
         case .runs:
-            let agent = request.draws || request.runsTools
+            let agent = request.runsAgentLoop
             let frames: RunFrames? = agent && !with(\.saysNoFrames) ? with(\.saysFrames) ?? .agent : nil
             return .started(info(id, .queued, lastSeq: 0, frames: frames))
         case .unsupported: return .unsupported

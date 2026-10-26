@@ -75,8 +75,8 @@ final class AppModelToolsTests: XCTestCase {
         try await send(model, "and in cargo?", until: 6)
 
         let sent = requests(hub)
-        XCTAssertEqual(sent.map(\.toolsOff), [true, true, false])
-        XCTAssertEqual(sent.map(\.runsTools), [false, false, true])
+        XCTAssertEqual(sent.map(\.toolServers), [[], [], [3]])
+        XCTAssertEqual(sent.map(\.runsAgentLoop), [false, true, true])
         XCTAssertEqual(sent.map(\.draws), [false, true, false])
         XCTAssertEqual(hub.with(\.readFrames), [.openai, .agent, .agent])
     }
@@ -93,35 +93,15 @@ final class AppModelToolsTests: XCTestCase {
         try await Runs.until("the reply to be read on") { Runs.settled(model) && hub.with { $0.starts.count } == 2 }
         let puts = requests(hub)
         XCTAssertEqual(puts.count, 2, "the lost PUT was not sent again")
-        XCTAssertEqual(puts.map(\.toolsOff), [true, true])
+        XCTAssertEqual(puts.map(\.toolsWord), ["none", "none"])
+        XCTAssertEqual(puts.map(\.draws), [true, true])
         XCTAssertEqual(puts.first, puts.last, "the PUT sent again was another request")
     }
 
-    /// A gglib from before `tools=none` refuses a question sent with Draw
-    /// and the tools off, and the question shows its sentence, with Retry,
-    /// since no reply came; it still draws, so Retry asks for the picture.
-    func testAGglibThatRefusesNoneLeavesItsSentenceOnTheQuestion() async throws {
-        let hub = hub()
-        let refusal = ProviderError.server(status: 400, code: "invalid_request", message: "unknown tools: none")
-        hub.with { $0.start = .refused(refusal) }
-        let (model, _) = try await DrawingRunTests.makeModel(behind: hub, drawing: Drawing.offersTavily)
-        model.setTools(on: false, for: try XCTUnwrap(model.selectedConversationID))
-        XCTAssertTrue(model.send("a fox in snow", images: [], draws: true))
-        try await Runs.until("the refusal") { Runs.settled(model) && hub.with { $0.starts.count } == 1 }
-        let messages = try XCTUnwrap(model.selectedConversation?.messages)
-        XCTAssertEqual(messages.map(\.role), [.user], "a reply was kept for a refused run")
-        XCTAssertEqual(messages.first?.failure?.message, "unknown tools: none")
-        XCTAssertEqual(messages.first?.draws, true)
-        XCTAssertEqual(requests(hub).map(\.toolsOff), [true])
-        XCTAssertEqual(requests(hub).map(\.draws), [true])
-    }
-
     /// A gglib reached by address, a Mac whose answer names no servers, one
-    /// from before the list and one not heard from have no switch. A
-    /// conversation stored off is sent to the first three as if it were on:
-    /// none of them is ever told the tools are off. One not heard from may
-    /// offer servers, so it is told, and a question it cannot be asked to
-    /// draw yet is a plain run.
+    /// from before the list and one not heard from have no switch, and are
+    /// named no server whatever a conversation stores. A question one not
+    /// heard from cannot be asked to draw yet is a plain run.
     func testTheSwitchIsHiddenAndOffNeverSentWhereNoToolsAreOffered() async throws {
         let direct = hub()
         let (byAddress, config) = try await Runs.makeModel(behind: direct, direct: true)
@@ -130,7 +110,7 @@ final class AppModelToolsTests: XCTestCase {
         XCTAssertFalse(byAddress.offersTools(for: shown))
         byAddress.setTools(on: false, for: shown.id)
         try await send(byAddress, "what is new in Swift?", until: 2)
-        XCTAssertEqual(requests(direct).map(\.toolsOff), [false])
+        XCTAssertEqual(requests(direct).map(\.toolServers), [[]])
 
         let none = Drawing(available: true, model: "flux-dev", mcpServers: [])
         for drawing in [none, DrawingRunTests.can] {
@@ -140,7 +120,7 @@ final class AppModelToolsTests: XCTestCase {
             XCTAssertFalse(model.offersTools(for: conversation), String(describing: drawing))
             model.setTools(on: false, for: conversation.id)
             try await send(model, "a fox in snow", draws: true, until: 2)
-            XCTAssertEqual(requests(hub).map(\.toolsOff), [false], String(describing: drawing))
+            XCTAssertEqual(requests(hub).map(\.toolServers), [[]], String(describing: drawing))
             XCTAssertEqual(requests(hub).map(\.draws), [drawing.available], String(describing: drawing))
         }
 
@@ -151,19 +131,18 @@ final class AppModelToolsTests: XCTestCase {
         XCTAssertFalse(unheard.offersTools(for: conversation))
         unheard.setTools(on: false, for: conversation.id)
         try await send(unheard, "a fox in snow", draws: true, until: 2)
-        XCTAssertEqual(requests(quiet).map(\.toolsOff), [true])
+        XCTAssertEqual(requests(quiet).map(\.toolServers), [[]])
         XCTAssertEqual(requests(quiet).map(\.draws), [false])
-        XCTAssertEqual(requests(quiet).map(\.runsTools), [false])
+        XCTAssertEqual(requests(quiet).map(\.runsAgentLoop), [false])
         XCTAssertEqual(quiet.with(\.readFrames), [.openai], "a question to a Mac not heard from was not a plain run")
     }
 
     /// After a relaunch, a question sent with Draw in a conversation with
     /// its tools off, whose `PUT` lost its answer, is put again before the
-    /// Mac has said whether it offers servers. It keeps the tools off, and
+    /// Mac has said whether it offers servers. It names no server, and
     /// goes as `?kind=chat&tools=none&draw=true` (the query table's
-    /// `off.draws.offered.test` row, read here from the request itself), so
-    /// it never runs the tools the person turned off; a gglib from before
-    /// `none` refuses it, as the refusal test shows.
+    /// `none.draws.offered.test` row, read here from the request itself), so
+    /// it never runs the tools the person turned off.
     func testARelaunchedPutOfADrawQuestionBeforeTheMacsAnswerKeepsTheToolsOff() async throws {
         let hub = hub()
         hub.with { $0.drawing = .failure(.transport("not yet")) }
@@ -193,9 +172,9 @@ final class AppModelToolsTests: XCTestCase {
         XCTAssertNil(model.drawings[config.id], "the Mac's answer was known before the PUT")
         let put = try XCTUnwrap(hub.with { $0.starts.first })
         XCTAssertEqual(put.id, "r")
-        XCTAssertTrue(put.request.toolsOff, "the PUT sent again does not keep the tools off")
+        XCTAssertEqual(put.request.toolServers, [], "the PUT sent again named a server")
         XCTAssertTrue(put.request.draws)
-        XCTAssertFalse(put.request.runsTools)
+        XCTAssertTrue(put.request.runsAgentLoop)
 
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [QueryRecorder.self]

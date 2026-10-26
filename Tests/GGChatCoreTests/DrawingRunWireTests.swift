@@ -49,7 +49,7 @@ final class DrawingRunWireTests: XCTestCase {
         let put = try XCTUnwrap(RunHub.requests(at: "draws.runs.test").first)
         XCTAssertEqual(put.httpMethod, "PUT")
         XCTAssertEqual(put.url?.path(), "/v1/runs/run-d")
-        XCTAssertEqual(put.url?.query(), "kind=chat&tools=builtin&draw=true")
+        XCTAssertEqual(put.url?.query(), "kind=chat&tools=none&draw=true")
 
         script.put = (201, RunHub.report("run-d", "queued", lastSeq: 0))
         RunHub.serve(script, at: "plain.runs.test")

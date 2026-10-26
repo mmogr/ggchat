@@ -694,8 +694,15 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # id and name, and two the Mac lists under one name are two: folded into
 # one, a pick of either would start both, and nothing else fails. The one
 # test is the whole of that guard, so the floors move past it.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 888
+#
+# 2026-10-26: 888 -> 887 and 798 -> 797. A run names its servers by id or
+# says `none`, and `builtin` is gone from the wire, so a gglib that refuses
+# `none` is one from before ids, which refuses every run that names a
+# server as well; the test that a refused `none` left its sentence on the
+# question pinned a case this build no longer singles out, and goes with
+# its marker.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 887
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 30
-floor "README test markers" "${markers:-0}" 798
+floor "README test markers" "${markers:-0}" 797
 
 exit $status

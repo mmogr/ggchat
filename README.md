@@ -376,24 +376,25 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingPreviewTests.testARunThatEndsMidPictureLeavesNoLook -->
 - A conversation kept on this device draws too, and runs a paired Mac's
   tools. A message sent with Draw on, to a hub that said it can draw, is
-  put as `PUT /v1/runs/{id}?kind=chat&tools=builtin&draw=true`, or with
-  `tools=none` when the conversation has its tools off, as an item below
-  says; a hub that cannot draw, is too old or was never heard from is sent it as one that
-  does not draw. A paired Mac whose answer about drawing names MCP servers
-  it offers (`mcp_servers`, each by its id on the Mac and its name, two
-  of one name read as two, said whether or not it can draw) has every
-  question that does not draw, while the conversation's Tools switch is
-  on, put as
-  `PUT /v1/runs/{id}?kind=chat&tools=builtin`, Retry included, so its
-  reply can call their tools. The body is the OpenAI request it always
-  was. Any other message has no query at all unless it draws: one to a
-  Mac that names no server, to a gglib from before the list, to a hub
-  never heard from, or to a gglib reached by address, which refuses the
-  words; any other would spend its agent loop on a plain chat (one from
-  before drawing ignores them). A question whose answer was lost is sent
-  again with the tools while the Mac's answer is known; after a relaunch it
-  goes before that answer is back, and so without them. A Continue of a
-  reply with words is sent again with none.
+  put as `PUT /v1/runs/{id}?kind=chat&tools=none&draw=true` when it names
+  no server, which leaves it gglib's drawing tool alone, or with the
+  servers' ids in place of `none`; a hub that cannot draw, is too old or
+  was never heard from is sent it as one that does not draw. A paired Mac
+  whose answer about drawing names MCP servers it offers (`mcp_servers`,
+  each by its id on the Mac and its name, two of one name read as two,
+  said whether or not it can draw) has every question that does not draw,
+  while the conversation's Tools switch is on, put naming them by id,
+  sorted and joined by a bare comma, as
+  `PUT /v1/runs/{id}?kind=chat&tools=3,7`, Retry included, so its reply
+  can call their tools; gglib starts only those of them it opens to
+  devices. The body is the OpenAI request it always was. Any other message
+  has no query at all unless it draws: one to a Mac that names no server,
+  to a gglib from before the list, to a hub never heard from, or to a
+  gglib reached by address, which refuses the words; any other would
+  spend its agent loop on a plain chat. A question whose answer was lost
+  is sent again with the servers while the Mac's answer is known; after a
+  relaunch it goes before that answer is back, and so with none. A
+  Continue of a reply with words is sent again with none.
   The Draw switch is off again in the draft a taken send leaves, and a refused
   draft keeps it. The run's answer says how its events are written, `frames`,
   and that picks the decoder: `agent` is read as a Mac's chat's run is, and
@@ -441,21 +442,17 @@ Each claim names the test that keeps it true.
   a plain run, with no query, and one sent with Draw is put as
   `PUT /v1/runs/{id}?kind=chat&tools=none&draw=true`, with the chosen
   image model after it, which leaves it gglib's drawing tool and no other;
-  the body is the one it always was. A gglib from before `none` refuses
-  it, and the question shows the refusal with Retry, still drawing. The choice is the
+  the body is the one it always was. The choice is the
   conversation's, kept in one optional column written only for a
   conversation that turned the tools off, and outlives a relaunch; setting
   it leaves the conversation's date alone. A branch copies it, a move to
   another provider drops it, and a question whose `PUT` lost its answer is
   put again with it. A gglib reached by address, a Mac that names no
-  servers, one from before the list and one not heard from have no switch.
-  The first three are never told the tools are off, whatever a
-  conversation stores. One not heard from may offer servers, so it is
-  told: a question with Draw whose `PUT` is put again after a relaunch,
-  before the Mac's answer is back, goes with `tools=none&draw=true`, so it
-  never runs the tools the person turned off, and a gglib from before
-  `none` refuses it with the refusal and Retry on the question; without
-  Draw it is a plain run.
+  servers, one from before the list and one not heard from have no switch,
+  and are named no server whatever a conversation stores: a question with
+  Draw whose `PUT` is put again after a relaunch, before the Mac's answer
+  is back, goes with `tools=none&draw=true`, so it never runs the tools
+  the person turned off; without Draw it is a plain run.
   Which servers the Mac offers is chosen on the Mac, never here: the
   server-status sheet lists them by the names the Mac gives them, one row
   for each server even when two share a name, under "Tools offered", with
@@ -466,7 +463,6 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelToolsTests.testANewConversationHasTheToolsOnAndTheSwitchTurnsThemOff -->
   <!-- test: AppModelToolsTests.testOffSendsAPlainRunAndWithDrawOnlyTheDrawingTool -->
   <!-- test: AppModelToolsTests.testAQuestionPutAgainAfterItsAnswerWasLostKeepsTheToolsOff -->
-  <!-- test: AppModelToolsTests.testAGglibThatRefusesNoneLeavesItsSentenceOnTheQuestion -->
   <!-- test: AppModelToolsTests.testTheSwitchIsHiddenAndOffNeverSentWhereNoToolsAreOffered -->
   <!-- test: AppModelToolsTests.testARelaunchedPutOfADrawQuestionBeforeTheMacsAnswerKeepsTheToolsOff -->
   <!-- test: ToolsStoreTests.testTheChoiceOutlivesAReopeningAndAnUnchangedOneMarksNoRow -->

@@ -26,18 +26,12 @@ public struct ChatRequest: Sendable, Equatable {
     /// one that does not draw never says it. Set only for a gglib whose
     /// answer about drawing listed its image models.
     public var imageModelID: UInt64?
-    /// Whether the run is put with gglib's tools (`tools=builtin`) though it
-    /// may not draw: no part of the body, as `draws` is not. Set only for a
-    /// paired Mac whose answer about drawing named servers it offers.
-    public var runsTools: Bool
-    /// Whether the conversation has its tools switched off: a run that
-    /// draws is then put with only the drawing tool (`tools=none`), and one
-    /// that does not draw is a plain run. No part of the body. Set only for
-    /// a paired Mac not known to offer no servers: one whose answer about
-    /// drawing named some, or one not heard from yet, which may. A gglib
-    /// reached by address and a Mac known to offer none are never sent
-    /// `none`.
-    public var toolsOff: Bool
+    /// The MCP servers whose tools the run may call, by their ids on the
+    /// paired Mac, sorted: no part of the body, as `draws` is not. A run
+    /// that names any, or draws, is put with gglib's tools (`tools=` in its
+    /// query, `toolsWord`); one that does neither is a plain run. Set only
+    /// for a paired Mac, which drops any it does not open to devices.
+    public var toolServers: [Int64]
     /// Whether a reply is sent with the tools it called and what they
     /// answered (``Message/exchanges``), as an assistant message with
     /// `tool_calls` and a `tool` message ahead of its words. Set only for
@@ -55,7 +49,7 @@ public struct ChatRequest: Sendable, Equatable {
         model: String, messages: [Message], images: [String: Data] = [:], maxTokens: Int? = nil,
         returnProgress: Bool = false, reasoningBudgetTokens: Int? = nil, draws: Bool = false,
         imageModelID: UInt64? = nil, replaysToolCalls: Bool = false, shownPicture: ShownPicture? = nil,
-        runsTools: Bool = false, toolsOff: Bool = false
+        toolServers: [Int64] = []
     ) {
         self.model = model
         self.messages = messages
@@ -67,8 +61,20 @@ public struct ChatRequest: Sendable, Equatable {
         self.imageModelID = imageModelID
         self.replaysToolCalls = replaysToolCalls
         self.shownPicture = shownPicture
-        self.runsTools = runsTools
-        self.toolsOff = toolsOff
+        self.toolServers = toolServers
+    }
+
+    /// Whether the run is put as gglib's agent loop: it draws, or names a
+    /// server whose tools it may call. Any other is a plain run.
+    public var runsAgentLoop: Bool {
+        draws || !toolServers.isEmpty
+    }
+
+    /// The run's `tools=` word: `none` for no server, which leaves a run
+    /// that draws the drawing tool alone, or the servers' ids in canonical
+    /// decimal, sorted, each once, joined by commas.
+    public var toolsWord: String {
+        toolServers.isEmpty ? "none" : Set(toolServers).sorted().map(String.init).joined(separator: ",")
     }
 }
 
