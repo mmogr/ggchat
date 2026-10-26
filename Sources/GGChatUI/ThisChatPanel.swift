@@ -73,20 +73,20 @@ nonisolated enum ThisChatPart: Equatable {
                     LabeledContent("Provider", value: provider.name)
                 }
             }
-            if parts.contains(.thinking) || parts.contains(.tools) {
+            if parts.contains(.thinking) {
                 Section {
-                    if parts.contains(.thinking) {
-                        let on = model.thinkingOn(for: conversation)
-                        switchRow(ThinkingToggle.label(isOn: on), ThinkingToggle.symbol(isOn: on), on, id: "thinking") {
-                            model.setThinking(on: $0, for: conversation.id)
-                        }
-                    }
-                    if parts.contains(.tools) {
-                        let on = model.toolsOn(for: conversation)
-                        switchRow(ToolsToggle.label(isOn: on), ToolsToggle.symbol(isOn: on), on, id: "tools") {
-                            model.setTools(on: $0, for: conversation.id)
-                        }
-                    }
+                    let on = model.thinkingOn(for: conversation)
+                    PanelSwitchRow(
+                        label: ThinkingToggle.label(isOn: on), symbol: ThinkingToggle.symbol(isOn: on), isOn: on,
+                        id: "thinking"
+                    ) { model.setThinking(on: $0, for: conversation.id) }
+                }
+            }
+            if parts.contains(.tools) {
+                ToolsPanelRows(menu: model.toolsMenu(for: conversation)) {
+                    model.setTools(on: $0, for: conversation.id)
+                } pick: { server, picked in
+                    model.setServer(server, picked: picked, for: conversation.id)
                 }
             }
             if parts.contains(.systemPrompt) {
@@ -102,7 +102,8 @@ nonisolated enum ThisChatPart: Equatable {
                 Section("Context") { ContextLines(reading: reading) }
             }
             if parts.contains(.server), let provider {
-                ProxyStatusSections(provider: provider, status: status, failure: failure)
+                ProxyStatusSections(
+                    provider: provider, status: status, failure: failure, listsTools: !parts.contains(.tools))
             }
         }
 
@@ -127,9 +128,10 @@ nonisolated enum ThisChatPart: Equatable {
             if parts.contains(.thinking) {
                 Section {
                     let on = model.hubThinkingOn
-                    switchRow(ThinkingToggle.label(isOn: on), ThinkingToggle.symbol(isOn: on), on, id: "thinking") {
-                        model.setHubThinking(on: $0)
-                    }
+                    PanelSwitchRow(
+                        label: ThinkingToggle.label(isOn: on), symbol: ThinkingToggle.symbol(isOn: on), isOn: on,
+                        id: "thinking"
+                    ) { model.setHubThinking(on: $0) }
                 }
             }
             if parts.contains(.context), let reading {
@@ -141,17 +143,6 @@ nonisolated enum ThisChatPart: Equatable {
         }
 
         // MARK: - Pieces
-
-        /// A switch whose name carries its state, for the reason
-        /// `ThinkingToggle` gives, under the identifier the top bar's has.
-        private func switchRow(
-            _ label: String, _ symbol: String, _ isOn: Bool, id: String, set: @escaping (Bool) -> Void
-        ) -> some View {
-            Toggle(isOn: Binding(get: { isOn }, set: { set($0) })) {
-                Label(label, systemImage: symbol)
-            }
-            .accessibilityIdentifier(id)
-        }
 
         /// The provider whose status the panel follows: the open chat's,
         /// when it answers gglib's status endpoint.

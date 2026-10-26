@@ -87,6 +87,7 @@ final class ToolCallRowTests: XCTestCase {
             [.delta("Pin the version.")],
         ])
         let (model, _) = try await DrawingRunTests.makeModel(behind: hub, drawing: Drawing.offersTavily)
+        model.setServer(3, picked: true, for: try XCTUnwrap(model.selectedConversationID))
         XCTAssertTrue(model.send("what is new in cargo?", images: []))
         try await Runs.until("the reply") { Runs.settled(model) && model.selectedConversation?.messages.count == 2 }
         let messages = try XCTUnwrap(model.selectedConversation?.messages)

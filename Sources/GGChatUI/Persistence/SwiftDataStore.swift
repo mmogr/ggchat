@@ -135,7 +135,8 @@ public final class SwiftDataStore: Store {
                 systemPrompt: record.systemPrompt, createdAt: record.createdAt, updatedAt: record.updatedAt,
                 hasUnreadReply: record.hasUnreadReply ?? false, context: Self.reading(from: record.contextData),
                 thinkingOff: record.thinkingOff ?? false, branchOf: record.branchOf, family: record.family,
-                imageModelID: record.imageModelID.flatMap(UInt64.init(exactly:)), toolsOff: record.toolsOff ?? false)
+                imageModelID: record.imageModelID.flatMap(UInt64.init(exactly:)),
+                toolChoice: Self.toolChoice(from: record.toolChoiceData))
         }
     }
 
@@ -208,10 +209,12 @@ public final class SwiftDataStore: Store {
             Self.assign(\.branchOf, of: record, to: conversation.branchOf)
             Self.assign(\.family, of: record, to: conversation.family)
             Self.assign(\.imageModelID, of: record, to: conversation.imageModelID.flatMap(Int.init(exactly:)))
-            Self.assign(\.toolsOff, of: record, to: conversation.toolsOff ? true : nil)
             Self.assign(\.updatedAt, of: record, to: conversation.updatedAt)
             if Self.reading(from: record.contextData) != conversation.context {
                 record.contextData = try conversation.context.map { try JSONEncoder().encode($0) }
+            }
+            if Self.toolChoice(from: record.toolChoiceData) != conversation.toolChoice {
+                record.toolChoiceData = try Self.data(of: conversation.toolChoice)
             }
             return record
         }
@@ -222,7 +225,7 @@ public final class SwiftDataStore: Store {
             contextData: try conversation.context.map { try JSONEncoder().encode($0) },
             thinkingOff: conversation.thinkingOff, branchOf: conversation.branchOf, family: conversation.family,
             imageModelID: conversation.imageModelID.flatMap(Int.init(exactly:)),
-            toolsOff: conversation.toolsOff ? true : nil)
+            toolChoiceData: try Self.data(of: conversation.toolChoice))
         context.insert(record)
         return record
     }

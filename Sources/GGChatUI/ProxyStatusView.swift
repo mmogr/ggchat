@@ -39,6 +39,9 @@ struct ProxyStatusSections: View {
     let provider: ProviderConfig
     let status: ProxyStatus?
     let failure: String?
+    /// Whether the servers the Mac offers are listed: not where they are
+    /// already on screen as the chat's own tools rows.
+    var listsTools = true
 
     var body: some View {
         if let failure {
@@ -68,7 +71,9 @@ struct ProxyStatusSections: View {
         } else if failure == nil {
             ProgressView("Waiting for the first snapshot")
         }
-        ToolsOfferedSection(servers: model.toolsOffered(by: provider))
+        if listsTools {
+            ToolsOfferedSection(servers: model.toolsOffered(by: provider))
+        }
     }
 }
 
@@ -115,21 +120,29 @@ private struct ProxyStatusFeed: ViewModifier {
 }
 
 /// The MCP servers a paired Mac offers this phone's runs, each by the name
-/// it gives it and kept apart by its id, and how one is opened: on the Mac,
-/// so there is nothing to tap (ADR 0013). No section where none are offered.
+/// it gives it and kept apart by its id, and how one is opened: on the Mac.
+/// Nothing here can be tapped; a conversation picks among them from its own
+/// Tools control. No section where none are offered.
 struct ToolsOfferedSection: View {
     let servers: [OfferedServer]
+
+    /// How a server comes to be offered, and where a conversation picks
+    /// among them: words that hold whichever layout the wrench is in.
+    static let footer = """
+        Opened on the Mac with `gglib mcp allow-remote <server>`. \
+        Each conversation picks the ones it uses from its Tools control.
+        """
 
     var body: some View {
         if !servers.isEmpty {
             Section {
-                ForEach(servers) { server in
-                    Text(server.name)
+                ForEach(Array(zip(servers, ToolsMenu.titles(servers))), id: \.0.id) { _, title in
+                    Text(title)
                 }
             } header: {
                 Text("Tools offered")
             } footer: {
-                Text("Opened on the Mac with `gglib mcp allow-remote <server>`.")
+                Text(LocalizedStringKey(Self.footer))
             }
         }
     }

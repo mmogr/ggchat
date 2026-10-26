@@ -701,8 +701,16 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # server as well; the test that a refused `none` left its sentence on the
 # question pinned a case this build no longer singles out, and goes with
 # its marker.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 887
+#
+# 2026-10-26: 887 -> 909 and 797 -> 819 for each conversation picking which
+# of the paired Mac's servers it uses. A pick that stops being named, a new
+# conversation that names every server, a switch that drops the picks or a
+# choice that a relaunch, a branch or a move gets wrong fails nothing else:
+# the reply still comes, with other tools or none. These twenty-two are the
+# whole of that guard -- the choice's own rules, its column, its menu and
+# its panel rows, and the runs it names -- so the floors move past them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 909
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 30
-floor "README test markers" "${markers:-0}" 797
+floor "README test markers" "${markers:-0}" 819
 
 exit $status

@@ -48,6 +48,10 @@ final class ProxyStatusToolsTests: XCTestCase {
         let section = ToolsOfferedSection(servers: model.toolsOffered(by: config))
         XCTAssertEqual(drawn(["Section"], in: section.body), ["Section"])
         XCTAssertEqual(rows(in: section.body), 2, "a server was not listed")
+        XCTAssertEqual(
+            ToolsOfferedSection.footer,
+            "Opened on the Mac with `gglib mcp allow-remote <server>`. "
+                + "Each conversation picks the ones it uses from its Tools control.")
 
         let none = Drawing(available: true, model: "flux-dev", mcpServers: [])
         for drawing in [none, DrawingRunTests.can, nil] {

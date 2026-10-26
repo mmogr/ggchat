@@ -87,10 +87,13 @@ struct ChatView: View {
                     }
                 }
                 // Only for a paired Mac that offers its MCP servers' tools.
-                if model.offersTools(for: conversation) {
+                let tools = model.toolsMenu(for: conversation)
+                if !tools.isHidden {
                     ToolbarItem(placement: .automatic) {
-                        ToolsToggle(isOn: model.toolsOn(for: conversation)) { on in
+                        ToolsMenuButton(menu: tools) { on in
                             model.setTools(on: on, for: conversation.id)
+                        } pick: { server, picked in
+                            model.setServer(server, picked: picked, for: conversation.id)
                         }
                     }
                 }

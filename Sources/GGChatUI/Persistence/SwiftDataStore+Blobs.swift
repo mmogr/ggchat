@@ -38,4 +38,16 @@ extension SwiftDataStore {
     static func data(of exchanges: [ToolExchange]) throws -> Data? {
         exchanges.isEmpty ? nil : try JSONEncoder().encode(exchanges)
     }
+
+    /// Which servers the conversation uses. A choice this build cannot read
+    /// reads as a new conversation's, as a failure reads as none, and that
+    /// choice is written as nil, so a conversation that never picked writes
+    /// no column. Compared as values, so it is written only when it changed.
+    static func toolChoice(from data: Data?) -> ToolChoice {
+        data.flatMap { try? JSONDecoder().decode(ToolChoice.self, from: $0) } ?? ToolChoice()
+    }
+
+    static func data(of choice: ToolChoice) throws -> Data? {
+        choice.isDefault ? nil : try JSONEncoder().encode(choice)
+    }
 }

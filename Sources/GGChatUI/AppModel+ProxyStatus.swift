@@ -18,15 +18,32 @@ extension AppModel {
     /// Forgets the probe's answer when an edit moves a provider to another
     /// address or machine, as `setPipeStatus` does when a pipe comes up. The
     /// answer was about the old one, and a server that is not gglib must not
-    /// be asked for progress. The image model each of its conversations
-    /// chose goes too: an id names a model on the old machine alone. The generation drops a probe still in flight.
+    /// be asked for progress. The image model and the servers each of its
+    /// conversations chose go too: an id names a model or a server on the
+    /// old machine alone, and re-pairing is such a move. The generation drops
+    /// a probe still in flight.
     func forgetProxyStatus(ifMovedFrom previous: ProviderConfig, to config: ProviderConfig) {
         guard previous.kind != config.kind else { return }
         proxyStatusAvailability[config.id] = nil
         providersWithoutRuns.remove(config.id)
         drawings[config.id] = nil
-        forgetImageModels(on: config.id)
+        forgetMachineChoices(on: config.id)
         probeGeneration[config.id] = (probeGeneration[config.id] ?? 0) + 1
+    }
+
+    /// Forgets every image model and every server chosen on a provider,
+    /// when it is moved to another machine: an id names a model or a server
+    /// on the old one alone. One write for each conversation that chose
+    /// either, and none for one that chose neither.
+    func forgetMachineChoices(on providerID: UUID) {
+        imageChoiceAnswers[providerID] = nil
+        for var conversation in conversations where conversation.providerID == providerID {
+            guard conversation.imageModelID != nil || !conversation.toolChoice.isDefault else { continue }
+            conversation.imageModelID = nil
+            conversation.toolChoice = ToolChoice()
+            update(conversation)
+        }
+        if openedHubChat?.providerID == providerID { openedHubChat?.imageModel = nil }
     }
 
     /// Asks once per provider, and again each time its pipe comes up. A 404

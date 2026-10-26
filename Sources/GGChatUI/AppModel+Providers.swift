@@ -222,9 +222,9 @@ extension AppModel {
     }
 
     /// Moves a conversation to another provider, with that provider's
-    /// default model. The Thinking choice, the image model and the Tools
-    /// choice were made for the model and the machine left behind, so they
-    /// go with them.
+    /// default model. The Thinking choice, the image model and the servers
+    /// picked were made for the model and the machine left behind, so they
+    /// go with them: a server's id names nothing on another Mac.
     public func select(provider providerID: UUID, for conversationID: UUID) {
         guard var conversation = conversations.first(where: { $0.id == conversationID }),
             conversation.providerID != providerID, canChangeProvider(of: conversation),
@@ -234,7 +234,7 @@ extension AppModel {
         conversation.model = config.defaultModel
         conversation.thinkingOff = false
         conversation.imageModelID = nil
-        conversation.toolsOff = false
+        conversation.toolChoice = ToolChoice()
         update(conversation)
     }
 
