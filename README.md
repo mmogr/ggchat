@@ -488,7 +488,8 @@ Each claim names the test that keeps it true.
   alone. Picks are never pruned, since a Mac that answers with none may
   have failed to read its own list. A gglib reached by address, a Mac
   that names no servers, one from before the list and one not heard from
-  have no wrench, and a Mac's own chat keeps its tools on the Mac.
+  have no wrench, and a Mac's own chat keeps its tools on the Mac
+  ([ADR 0014](docs/adr/0014-each-conversation-picks-which-of-the-macs-servers-it-uses.md)).
   Which servers the Mac offers is chosen on the Mac: the server-status
   sheet lists them by the names the Mac gives them, one row for each
   server even when two share a name, under "Tools offered", with a line
@@ -2112,7 +2113,12 @@ against the mock.
 - [ADR 0013](docs/adr/0013-tools-are-a-conversation-switch.md): whether a
   question may call a paired Mac's tools is a switch of the conversation,
   on until turned off; which MCP servers the Mac offers is chosen on the
-  Mac and only read here.
+  Mac and only read here. Superseded in part by ADR 0014.
+- [ADR 0014](docs/adr/0014-each-conversation-picks-which-of-the-macs-servers-it-uses.md):
+  each conversation picks, by id, which of the paired Mac's offered MCP
+  servers it uses, under a stored master switch, and a new one picks none;
+  the wrench is badged while the Mac offers a server the conversation has
+  not shown, until a change is made from its menu.
 
 ## Releases
 

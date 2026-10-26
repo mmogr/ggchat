@@ -8,7 +8,7 @@ import GGChatCore
 // offers; a conversation only picks among them. The wrench is badged while
 // the Mac offers a server the conversation has never shown; a change made
 // from its menu, or its rows coming on screen in the Duo's panel, shows
-// them all.
+// them all (ADR 0014).
 extension AppModel {
     /// Whether the conversation is offered the wrench: its provider is a
     /// paired Mac whose answer about drawing named servers it offers

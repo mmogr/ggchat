@@ -122,7 +122,7 @@ private struct ProxyStatusFeed: ViewModifier {
 /// The MCP servers a paired Mac offers this phone's runs, each by the name
 /// it gives it and kept apart by its id, and how one is opened: on the Mac.
 /// Nothing here can be tapped; a conversation picks among them from its own
-/// Tools control. No section where none are offered.
+/// Tools control (ADR 0014). No section where none are offered.
 struct ToolsOfferedSection: View {
     let servers: [OfferedServer]
 

@@ -163,7 +163,7 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
     /// may use, by their ids there, under a master switch: a setting of the
     /// conversation, named only to a paired Mac. A new one is on with
     /// nothing picked. The Mac chooses which servers it offers; this picks
-    /// among them.
+    /// among them (ADR 0014).
     public var toolChoice: ToolChoice
     /// The conversation this one was branched from, and the first of its
     /// family, when it is a branch (ADR 0010); both nil for one started here.

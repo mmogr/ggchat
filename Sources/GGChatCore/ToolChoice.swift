@@ -6,7 +6,7 @@
 /// The master switch is stored apart from the picks. Turned off, a
 /// conversation names no server and keeps what it picked, so turning it on
 /// again restores them in one press. A new conversation is on with nothing
-/// picked, so it names no server until one is picked.
+/// picked, so it names no server until one is picked (ADR 0014).
 public struct ToolChoice: Codable, Sendable, Equatable, Hashable {
     /// Whether the conversation's tools are switched off.
     public var off = false

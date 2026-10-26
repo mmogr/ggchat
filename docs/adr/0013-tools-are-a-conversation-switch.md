@@ -1,9 +1,12 @@
 # ADR 0013 — Tools are a switch of the conversation, and what the Mac offers is chosen on the Mac
 
-- **Status:** Accepted
+- **Status:** Accepted; superseded in part by ADR 0014
 - **Date:** 2026-10-24
 - **Supersedes:** nothing
-- **Superseded by:** nothing
+- **Superseded by:** [ADR 0014](0014-each-conversation-picks-which-of-the-macs-servers-it-uses.md),
+  in part: the all-or-none switch and "what the Mac offers is chosen on the
+  Mac, never here". Each conversation now picks, by id, which of the
+  offered servers it uses, under a master switch.
 
 ## Context
 
