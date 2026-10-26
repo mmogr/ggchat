@@ -13,7 +13,7 @@ final class ConversationBranchesTests: XCTestCase {
                 Message(role: .user, content: "Plan a trip", createdAt: stamp),
                 Message(role: .assistant, content: "Day 1", createdAt: stamp, runID: "run-1", runCursor: 4),
             ], systemPrompt: "Be brief.", createdAt: stamp, updatedAt: stamp, thinkingOff: true,
-            imageModelID: 7, toolsOff: true)
+            imageModelID: 7, toolChoice: ToolChoice(off: true, picked: [3], seen: [3, 9]))
     }
 
     func testABranchCopiesTheSettingsAndNoRun() throws {
@@ -26,7 +26,9 @@ final class ConversationBranchesTests: XCTestCase {
         XCTAssertEqual(
             [branch.title, branch.model, branch.systemPrompt], [original.title, original.model, original.systemPrompt])
         XCTAssertTrue(branch.thinkingOff)
-        XCTAssertTrue(branch.toolsOff, "a branch asks with the tools its conversation turned off")
+        XCTAssertEqual(
+            branch.toolChoice, ToolChoice(off: true, picked: [3], seen: [3, 9]),
+            "a branch asks with other servers, or has seen others, than its conversation")
         XCTAssertEqual(branch.imageModelID, 7, "a branch draws with another image model than the one it left")
         XCTAssertEqual(branch.messages.map(\.originID), original.messages.map(\.id))
         XCTAssertFalse(branch.messages.contains(where: \.isBeingWritten), "a copy carries a run")

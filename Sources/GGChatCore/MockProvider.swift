@@ -30,6 +30,10 @@ public struct MockProvider: Provider {
     /// so a few words fill enough of it to see. Nil reports none, as a
     /// server that is not gglib.
     public var contextSize: Int?
+    /// The MCP servers a DEBUG build's mock says, as a paired Mac's answer
+    /// about drawing would, that it opens to this device, so a UI walk has
+    /// a wrench to pick from; nil says nothing, as every other mock does.
+    public var offered: [OfferedServer]?
 
     public init(
         models: [ModelInfo] = MockProvider.sampleModels,
@@ -38,7 +42,8 @@ public struct MockProvider: Provider {
         tokenDelay: Duration = .milliseconds(30),
         failAfterTokens: Int? = nil,
         failure: ProviderError? = nil,
-        contextSize: Int? = 4_096
+        contextSize: Int? = 4_096,
+        offered: [OfferedServer]? = nil
     ) {
         self.modelList = models
         self.scripts = scripts
@@ -47,6 +52,7 @@ public struct MockProvider: Provider {
         self.failAfterTokens = failAfterTokens
         self.failure = failure
         self.contextSize = contextSize
+        self.offered = offered
     }
 
     public func models() async throws -> [ModelInfo] {
@@ -136,3 +142,20 @@ public struct MockProvider: Provider {
             """
     )
 }
+
+#if DEBUG
+    extension MockProvider: DrawingProvider {
+        /// A Mac that cannot draw and opens `offered`, when the mock was
+        /// given servers. Otherwise no answer at all, so the app keeps
+        /// none, as it does for a hub it has not heard from, and every walk
+        /// and test that never seeds servers sees no wrench and no Draw.
+        public func drawing(judging imageModel: UInt64?) async throws(ProviderError) -> Drawing {
+            guard let offered else {
+                throw .server(status: 404, code: nil, message: "the mock has no drawing route")
+            }
+            return Drawing(
+                available: false, code: "drawing_unavailable", reason: "the mock has no image model",
+                mcpServers: offered)
+        }
+    }
+#endif

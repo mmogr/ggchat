@@ -12,16 +12,15 @@ extension AppModel {
     /// replies called when the provider is gglib (`asksForProgress`), which
     /// alone reads them, and whether it draws: it does when the turn it ends
     /// on is a question sent with Draw pressed, which a Continue's partial
-    /// reply never is. A question to a paired Mac that offers its MCP
-    /// servers' tools runs with them (`offersTools`), drawing or not, unless
-    /// the conversation has its tools off: then it is a plain run, or with
-    /// Draw one with the drawing tool alone (`toolsOff`). A paired Mac not
-    /// heard from yet is told so as well, since it may offer servers, so a
-    /// `PUT` sent again after a relaunch, before the Mac's answer is back,
-    /// never runs tools the person turned off; with Draw it goes with
-    /// `tools=none`, which a gglib from before `none` refuses, and the
-    /// question shows the refusal. A gglib reached by address and a Mac
-    /// known to offer none are never told. A Continue runs none. The
+    /// reply never is. A question to a paired Mac names, by id, the servers
+    /// its conversation picked that the Mac still offers (`toolServers`),
+    /// drawing or not, and none while its tools are off: with none it is a
+    /// plain run, or with Draw one with the drawing tool alone
+    /// (`tools=none`). A Mac known to offer none is named none. One not
+    /// heard from yet, after a relaunch or an edit, is named every pick as
+    /// kept, a fresh send and a `PUT` sent again alike, and drops those it
+    /// no longer opens. A gglib reached by address is named none, and so is
+    /// a Continue. The
     /// request names the conversation's choice of image model when it
     /// draws, for a hub that lists its image models (`imageModelToSend`).
     /// The latest drawn picture is shown to a model gglib lists as one that
@@ -36,8 +35,9 @@ extension AppModel {
         request.reasoningBudgetTokens = thinkingBudget(off: conversation.thinkingOff, model: model, for: config)
         request.replaysToolCalls = asksForProgress(config)
         request.draws = messages.last.map { $0.role == .user && $0.draws } ?? false
-        request.toolsOff = conversation.toolsOff && config.isPipe && drawings[config.id]?.offersTools != false
-        request.runsTools = offersTools(config) && !conversation.toolsOff && messages.last?.role == .user
+        request.toolServers =
+            config.isPipe && messages.last?.role == .user
+            ? conversation.toolChoice.servers(offered: drawings[config.id].map { $0.mcpServers ?? [] }) : []
         request.imageModelID = request.draws ? imageModelToSend(conversation.imageModelID, to: config) : nil
         if showsDrawnPicture(to: model, request: request, for: config), let shown = messages.shownPicture,
             let data = try? store.loadImage(id: shown.image.id)
@@ -48,12 +48,10 @@ extension AppModel {
         return request
     }
 
-    /// Whether a run through `config` is put with gglib's tools: only for a
-    /// paired Mac whose answer about drawing named MCP servers it offers. A
-    /// gglib reached by address, one from before the list and one not heard
-    /// from are sent what they were: one reached by address refuses the
-    /// words, and any other would spend its agent loop on a plain chat (one
-    /// from before drawing ignores them).
+    /// Whether a conversation on `config` has the wrench: only a paired Mac
+    /// whose answer about drawing named MCP servers it offers. A gglib
+    /// reached by address, one from before the list and one not heard from
+    /// have none.
     func offersTools(_ config: ProviderConfig) -> Bool {
         config.isPipe && drawings[config.id]?.offersTools == true
     }

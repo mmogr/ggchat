@@ -689,8 +689,41 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # panel's parts for a chat kept here, one offered nothing and a Mac's -- and
 # the walk is the only check that the panel takes the list's place and the
 # draft is kept, so the floors move past all thirteen.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 887
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 30
-floor "README test markers" "${markers:-0}" 797
+#
+# 2026-10-26: 887 -> 888 and 797 -> 798. A paired Mac's servers are read by
+# id and name, and two the Mac lists under one name are two: folded into
+# one, a pick of either would start both, and nothing else fails. The one
+# test is the whole of that guard, so the floors move past it.
+#
+# 2026-10-26: 888 -> 887 and 798 -> 797. A run names its servers by id or
+# says `none`, and `builtin` is gone from the wire, so a gglib that refuses
+# `none` is one from before ids, which refuses every run that names a
+# server as well; the test that a refused `none` left its sentence on the
+# question pinned a case this build no longer singles out, and goes with
+# its marker.
+#
+# 2026-10-26: 887 -> 909 and 797 -> 819 for each conversation picking which
+# of the paired Mac's servers it uses. A pick that stops being named, a new
+# conversation that names every server, a switch that drops the picks or a
+# choice that a relaunch, a branch or a move gets wrong fails nothing else:
+# the reply still comes, with other tools or none. These twenty-two are the
+# whole of that guard -- the choice's own rules, its column, its menu and
+# its panel rows, and the runs it names -- so the floors move past them.
+#
+# 2026-10-26: 909 -> 916 and 819 -> 826 for the wrench's "!". A badge that
+# never shows, or never clears, fails nothing: the menu still picks. These
+# seven are the whole of its guard -- a new chat badged, a change from the
+# menu clearing it in one write, showing twice writing once, a server
+# opened later badging every chat, a branch keeping what its source saw,
+# what counts as unseen, and the Duo panel button's name -- so the floors
+# move past them.
+#
+# 2026-10-26: 30 -> 31. The walk is the only check that the wrench shows
+# for a paired Mac that opens a server, that its menu's row picks it, and
+# that the name the toolbar keeps follows; a menu SwiftUI lays out wrong
+# fails nothing else.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 916
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 31
+floor "README test markers" "${markers:-0}" 826
 
 exit $status

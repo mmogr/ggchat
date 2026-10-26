@@ -69,6 +69,14 @@ final class BookPagesTests: XCTestCase {
         XCTAssertEqual(parts, [.model, .systemPrompt])
     }
 
+    func testTheThisChatButtonSaysNewToolsAreAvailable() {
+        XCTAssertEqual(
+            ToolsMenu.thisChatTitle(showsPanel: false, badged: true),
+            "Show this chat's panel, new tools available")
+        XCTAssertEqual(ToolsMenu.thisChatTitle(showsPanel: false, badged: false), "Show this chat's panel")
+        XCTAssertEqual(ToolsMenu.thisChatTitle(showsPanel: true, badged: true), "Hide this chat's panel")
+    }
+
     func testAMacsChatHasNoToolsOrPromptHere() {
         let parts = ThisChatPart.parts(
             isMacsChat: true, thinks: true, offersTools: true, hasContext: true, reportsStatus: true

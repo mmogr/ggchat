@@ -41,12 +41,17 @@ final class ProxyStatusToolsTests: XCTestCase {
     /// heard from and a gglib reached by address list none and draw no
     /// section.
     func testTheSheetListsTheServersAMacOffersAndNothingWhereNoneAre() async throws {
-        let offers = Drawing(available: false, code: "drawing_unavailable", mcpServers: ["Tavily Web Search", "fs"])
+        let servers = [OfferedServer(id: 3, name: "Tavily Web Search"), OfferedServer(id: 9, name: "fs")]
+        let offers = Drawing(available: false, code: "drawing_unavailable", mcpServers: servers)
         let (model, config) = try await DrawingRunTests.makeModel(behind: hub(), drawing: offers)
-        XCTAssertEqual(model.toolsOffered(by: config), ["Tavily Web Search", "fs"])
-        let section = ToolsOfferedSection(names: model.toolsOffered(by: config))
+        XCTAssertEqual(model.toolsOffered(by: config), servers)
+        let section = ToolsOfferedSection(servers: model.toolsOffered(by: config))
         XCTAssertEqual(drawn(["Section"], in: section.body), ["Section"])
         XCTAssertEqual(rows(in: section.body), 2, "a server was not listed")
+        XCTAssertEqual(
+            ToolsOfferedSection.footer,
+            "Opened on the Mac with `gglib mcp allow-remote <server>`. "
+                + "Each conversation picks the ones it uses from its Tools control.")
 
         let none = Drawing(available: true, model: "flux-dev", mcpServers: [])
         for drawing in [none, DrawingRunTests.can, nil] {
@@ -56,6 +61,6 @@ final class ProxyStatusToolsTests: XCTestCase {
         let (byAddress, direct) = try await Runs.makeModel(behind: hub(), direct: true)
         byAddress.drawings[direct.id] = offers
         XCTAssertEqual(byAddress.toolsOffered(by: direct), [], "a gglib reached by address listed servers")
-        XCTAssertEqual(drawn(["Section"], in: ToolsOfferedSection(names: []).body), [])
+        XCTAssertEqual(drawn(["Section"], in: ToolsOfferedSection(servers: []).body), [])
     }
 }

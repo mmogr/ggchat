@@ -173,7 +173,7 @@ final class ImageModelWireTests: XCTestCase {
             queries.append(try XCTUnwrap(RunHub.requests(at: host).first).url?.query())
         }
         XCTAssertEqual(
-            queries, ["kind=chat&tools=builtin&draw=true&image_model=7", "kind=chat&tools=builtin&draw=true", nil])
+            queries, ["kind=chat&tools=none&draw=true&image_model=7", "kind=chat&tools=none&draw=true", nil])
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
         let body = try encoder.encode(try ChatCompletionRequest(request(draws: false, chosen: nil)))

@@ -10,20 +10,20 @@ extension OpenAICompatibleProvider: RunProvider {
     /// `PUT runs/{id}` with the body `chat/completions` would be sent.
     /// A 404 or a 405 with no run code is a hub without the route.
     ///
-    /// A request that runs tools (`runsTools`) or draws is put as
-    /// `?kind=chat&tools=builtin`, its body the same: the query, not the
-    /// body, is what gives the run gglib's tools, the MCP servers the Mac
-    /// opens among them. One that draws adds `&draw=true`, which lets this
-    /// message's reply ask for a picture, and with a chosen image model
-    /// `&image_model=<id>` after it; gglib refuses that word without
-    /// `draw=true`, so no other request says it. A request whose
-    /// conversation has its tools off (`toolsOff`) runs none of them: one
-    /// that draws is put as `?kind=chat&tools=none&draw=true`, which leaves
-    /// it the drawing tool alone, and one that does not is a plain run. Any
-    /// other request has no query at all, as before: a gglib reached by
-    /// address refuses the words, and any other would spend its agent loop
-    /// on a plain chat (one from before drawing ignores them). A gglib from
-    /// before `none` refuses it, and the question shows the refusal.
+    /// A request that names MCP servers (`toolServers`) or draws
+    /// (`runsAgentLoop`) is put as `?kind=chat&tools=<word>`, its body the
+    /// same: the query, not the body, is what gives the run gglib's tools.
+    /// The word (`toolsWord`) is the servers' ids on the Mac joined by
+    /// commas, `tools=3,7`, which gglib narrows to those it opens to
+    /// devices, or `none` for a run that draws with no server, which
+    /// leaves it the drawing tool alone. One that draws adds `&draw=true`,
+    /// which lets this message's reply ask for a picture, and with a chosen
+    /// image model `&image_model=<id>` after it; gglib refuses that word
+    /// without `draw=true`, so no other request says it. Any other request
+    /// has no query at all, as before: a gglib reached by address refuses
+    /// the words, and any other would spend its agent loop on a plain chat.
+    /// A gglib from before ids refuses them, and the question shows the
+    /// refusal.
     public func startRun(id: String, _ chatRequest: ChatRequest) async throws(ProviderError) -> RunStart {
         let body: Data
         do {
@@ -32,9 +32,10 @@ extension OpenAICompatibleProvider: RunProvider {
             throw .decoding("could not encode the request: \(error)")
         }
         var request = makeRequest(path: "runs/\(id)", method: "PUT", body: body)
-        if chatRequest.draws || (chatRequest.runsTools && !chatRequest.toolsOff) {
-            let tools = chatRequest.toolsOff ? "none" : "builtin"
-            var query = [URLQueryItem(name: "kind", value: "chat"), URLQueryItem(name: "tools", value: tools)]
+        if chatRequest.runsAgentLoop {
+            var query = [
+                URLQueryItem(name: "kind", value: "chat"), URLQueryItem(name: "tools", value: chatRequest.toolsWord),
+            ]
             if chatRequest.draws {
                 query.append(URLQueryItem(name: "draw", value: "true"))
                 if let chosen = chatRequest.imageModelID {

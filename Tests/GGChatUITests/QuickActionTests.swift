@@ -99,15 +99,15 @@ final class QuickActionTests: XCTestCase {
     }
 
     /// A conversation moved to another provider takes that provider's
-    /// default model, and drops the Thinking choice and image model made
-    /// for the one left; no provider's default changes.
+    /// default model, and drops the Thinking choice, image model and
+    /// servers picked for the one left; no provider's default changes.
     func testAConversationMovedToAnotherProviderTakesItsDefaultModel() throws {
         let model = bare([addressed("first"), addressed("second", model: "other-9b")])
         var conversation = model.newConversation()
         conversation.model = "mock-4b"
         conversation.thinkingOff = true
         conversation.imageModelID = 3
-        conversation.toolsOff = true
+        conversation.toolChoice = ToolChoice(off: true, picked: [3], seen: [3])
         model.update(conversation)
         model.select(provider: model.providers[1].id, for: conversation.id)
         let moved = try XCTUnwrap(model.selectedConversation)
@@ -115,7 +115,7 @@ final class QuickActionTests: XCTestCase {
         XCTAssertEqual(moved.model, "other-9b")
         XCTAssertFalse(moved.thinkingOff)
         XCTAssertNil(moved.imageModelID)
-        XCTAssertFalse(moved.toolsOff, "a move kept the tools turned off for the Mac left")
+        XCTAssertEqual(moved.toolChoice, ToolChoice(), "a move kept the servers picked on the Mac left")
         XCTAssertEqual(model.providers.map(\.defaultModel), ["mock-27b", "other-9b"])
     }
 

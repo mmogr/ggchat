@@ -3,7 +3,8 @@
 - **Status:** Accepted
 - **Date:** 2026-10-10 (amended 2026-10-11 — a chat chooses the image model
   its pictures are drawn with; amended 2026-10-12 — a drawn picture is fixed
-  or drawn again; see the notes at the end of the decision)
+  or drawn again; see the notes at the end of the decision; amended
+  2026-10-26 — `tools=builtin` is gone, see ADR 0014)
 - **Supersedes:** nothing
 - **Superseded by:** nothing
 
@@ -38,6 +39,11 @@ chat for such a run, so the picture it made is named by no chat of its own,
 and it sweeps such an image at the daemon's next start once it is over a day
 old. It starts such a run, and hands over its picture, only for a device it
 has paired.
+
+> **Amended 2026-10-26 — `builtin` is gone.** A run now names, by id, the
+> paired Mac's servers its conversation picked, `tools=3,7&draw=true`, or
+> `tools=none&draw=true` with none picked, which leaves it the drawing tool
+> alone; see [ADR 0014](0014-each-conversation-picks-which-of-the-macs-servers-it-uses.md).
 
 ## Decision
 

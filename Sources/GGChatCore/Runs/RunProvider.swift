@@ -44,10 +44,10 @@ public enum RunEvent: Sendable, Equatable {
 public protocol RunProvider: Provider {
     /// Starts the run `id` with the request `send` would stream. The id is
     /// this device's: 1 to 64 of `[A-Za-z0-9_-]`, a UUID string fitting.
-    /// A request that draws (`ChatRequest.draws`) or runs tools
-    /// (`ChatRequest.runsTools`) starts a chat run that carries gglib's
-    /// tools, whose events are an agent's; one that draws with its tools off
-    /// (`ChatRequest.toolsOff`) carries the drawing tool alone.
+    /// A request that draws (`ChatRequest.draws`) or names MCP servers
+    /// (`ChatRequest.toolServers`) starts a chat run that carries gglib's
+    /// tools, those servers' and with Draw the drawing tool, whose events
+    /// are an agent's (`ChatRequest.runsAgentLoop`).
     func startRun(id: String, _ request: ChatRequest) async throws(ProviderError) -> RunStart
     /// The events of the run `id` numbered above `after`, each read as
     /// `frames` says the run writes them, then its end.

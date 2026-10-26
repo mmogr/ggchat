@@ -90,11 +90,12 @@ extension EnvironmentValues {
                         if layout.isBook, model.selectedConversation != nil || model.openedHubChat != nil {
                             ToolbarItem(placement: .topBarTrailing) {
                                 Button(
-                                    showsPanel ? "Hide this chat's panel" : "Show this chat's panel",
+                                    ToolsMenu.thisChatTitle(showsPanel: showsPanel, badged: toolsBadged),
                                     systemImage: showsPanel ? "info.circle.fill" : "info.circle"
                                 ) {
                                     withAnimation(reduceMotion ? nil : .snappy) { pressPanelButton() }
                                 }
+                                .badge(toolsBadged && !showsPanel ? Text("!") : nil)
                                 .accessibilityIdentifier("this-chat")
                             }
                         }
@@ -127,6 +128,13 @@ extension EnvironmentValues {
 
         private var showsPanel: Bool {
             listShown && leadingPage == .thisChat
+        }
+
+        /// Whether the chat open here, kept on this device, is badged for
+        /// servers its Mac offers that it has never shown; the wrench is in
+        /// the panel, so the panel's button carries the badge.
+        private var toolsBadged: Bool {
+            model.selectedConversation.map { model.toolsMenu(for: $0).badged } ?? false
         }
 
         private var listButtonLabel: String {

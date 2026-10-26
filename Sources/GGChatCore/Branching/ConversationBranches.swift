@@ -90,7 +90,7 @@ extension Conversation {
             let branch = Conversation(
                 id: newID, title: title, providerID: providerID, model: model, messages: copied,
                 systemPrompt: systemPrompt, createdAt: now, updatedAt: now, thinkingOff: thinkingOff,
-                branchOf: id, family: familyID, imageModelID: imageModelID, toolsOff: toolsOff)
+                branchOf: id, family: familyID, imageModelID: imageModelID, toolChoice: toolChoice)
             return ConversationChange(conversation: branch, isBranch: true, answer: answer)
         }
     }

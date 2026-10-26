@@ -235,16 +235,4 @@ extension AppModel {
         guard providers.first(where: { $0.id == config.id })?.kind == config.kind else { return }
         imageChoiceAnswers[config.id] = answers
     }
-
-    /// Forgets every image model chosen on a provider, when it is moved to
-    /// another machine: an id names a model on the old one alone.
-    func forgetImageModels(on providerID: UUID) {
-        imageChoiceAnswers[providerID] = nil
-        for var conversation in conversations where conversation.providerID == providerID {
-            guard conversation.imageModelID != nil else { continue }
-            conversation.imageModelID = nil
-            update(conversation)
-        }
-        if openedHubChat?.providerID == providerID { openedHubChat?.imageModel = nil }
-    }
 }

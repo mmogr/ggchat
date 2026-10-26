@@ -39,7 +39,8 @@ its own, set from the toolbar and sent ahead of every request without ever
 becoming a row in the transcript; a request refused before anything arrived
 says why under the question, with a Retry button. A server added by address lists its models and
 streams; against gglib, a server status pane shows slots, context in use
-and recent requests, with the MCP servers a paired Mac offers, and it is
+and recent requests, with the MCP servers a paired Mac offers listed one
+by one, and it is
 hidden for servers that do not answer that endpoint. The app has been run: the screens above are photographs of it,
 not mock-ups. A pipe provider is added by pasting the `ticket-code` string
 the other machine showed for it (`gglib remote enable --invite` for the
@@ -200,7 +201,7 @@ Each claim names the test that keeps it true.
   default. With more than one provider, or none, the model list also lists
   the providers: choosing one moves the conversation there with that
   provider's default model, and drops the Thinking choice, the image
-  model and the Tools choice made for the one left. A conversation whose
+  model and the servers picked for the one left. A conversation whose
   reply is still being written stays where it was asked.
   <!-- test: QuickActionTests.testANewChatIsWithTheOpenConversationsProvider -->
   <!-- test: QuickActionTests.testANewChatIsWithTheFirstProviderWhenTheOpenOnesIsGone -->
@@ -375,23 +376,31 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingPreviewTests.testARunThatEndsMidPictureLeavesNoLook -->
 - A conversation kept on this device draws too, and runs a paired Mac's
   tools. A message sent with Draw on, to a hub that said it can draw, is
-  put as `PUT /v1/runs/{id}?kind=chat&tools=builtin&draw=true`, or with
-  `tools=none` when the conversation has its tools off, as an item below
-  says; a hub that cannot draw, is too old or was never heard from is sent it as one that
-  does not draw. A paired Mac whose answer about drawing names MCP servers
-  it offers (`mcp_servers`, said whether or not it can draw) has every
-  question that does not draw, while the conversation's Tools switch is
-  on, put as
-  `PUT /v1/runs/{id}?kind=chat&tools=builtin`, Retry included, so its
-  reply can call their tools. The body is the OpenAI request it always
-  was. Any other message has no query at all unless it draws: one to a
-  Mac that names no server, to a gglib from before the list, to a hub
-  never heard from, or to a gglib reached by address, which refuses the
-  words; any other would spend its agent loop on a plain chat (one from
-  before drawing ignores them). A question whose answer was lost is sent
-  again with the tools while the Mac's answer is known; after a relaunch it
-  goes before that answer is back, and so without them. A Continue of a
-  reply with words is sent again with none.
+  put as `PUT /v1/runs/{id}?kind=chat&tools=none&draw=true` when it names
+  no server, which leaves it gglib's drawing tool alone, or with the
+  servers' ids in place of `none`; a hub that cannot draw, is too old or
+  was never heard from is sent it as one that does not draw. A paired Mac
+  whose answer about drawing names MCP servers it offers (`mcp_servers`,
+  each by its id on the Mac and its name, two of one name read as two,
+  said whether or not it can draw) has every question, drawing or not,
+  put naming the servers its conversation picked that the Mac still
+  offers, by id, sorted and joined by a bare comma, as
+  `PUT /v1/runs/{id}?kind=chat&tools=3,7`, Retry included, so its reply
+  can call their tools; gglib starts only those of them it opens to
+  devices. A new conversation picks none, so its questions are plain runs
+  until a server is picked, and a pick made while a reply is being written
+  reaches the next request, not that run. A pick the Mac stops offering is
+  kept and not named. The body is the OpenAI request it always was. Any
+  other message has no query at all unless it draws: one with no server
+  picked, one to a Mac that names no server or to a gglib from before the
+  list, and one to a gglib reached by address, which refuses the words.
+  A Mac not heard from yet, after a relaunch or an edit, is named every
+  pick as kept, a fresh send and a question put again alike, and drops
+  any it no longer opens; such a run takes one of the Mac's agent slots
+  while the wrench is hidden. A question whose answer was lost is sent
+  again under its id with the conversation's picks as they are then;
+  gglib keeps a started run's tools. A Continue of a reply with words is
+  sent again with none.
   The Draw switch is off again in the draft a taken send leaves, and a refused
   draft keeps it. The run's answer says how its events are written, `frames`,
   and that picks the decoder: `agent` is read as a Mac's chat's run is, and
@@ -423,51 +432,99 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingRunTests.testARunWrittenAWayThisBuildCannotReadIsGivenUp -->
   <!-- test: DrawingRunWireTests.testAnUnknownWordForTheFramesStillReads -->
   <!-- test: ToolsOfferedWireTests.testAnAnswerThatNamesServersOffersToolsWhetherOrNotItCanDraw -->
+  <!-- test: ToolsOfferedWireTests.testTwoServersOfOneNameAreReadAsTwo -->
   <!-- test: ToolsOfferedWireTests.testARunWithToolsIsPutWithThemAndDrawsOnlyWhenItDraws -->
-  <!-- test: ToolsOfferedRunTests.testAMacThatOffersToolsHasEveryQuestionRunWithThem -->
-  <!-- test: ToolsOfferedRunTests.testAMacThatCannotDrawStillRunsItsTools -->
-  <!-- test: ToolsOfferedRunTests.testAMacThatNamesNoServersIsSentWhatItWas -->
-  <!-- test: ToolsOfferedRunTests.testRetryRunsTheToolsAndContinueDoesNot -->
-  <!-- test: ToolsOfferedRunTests.testAGglibByAddressIsNeverSentTools -->
-  <!-- test: ToolsOfferedRunTests.testAQuestionPutAgainAfterItsAnswerWasLostCarriesTheTools -->
-  <!-- test: ToolsOfferedRunTests.testAContinuePutAgainAfterItsAnswerWasLostRunsNoTools -->
+  <!-- test: ToolChoiceRunTests.testANewChatAsksAPlainRunAndAPickedServerIsPutByID -->
+  <!-- test: ToolChoiceRunTests.testAMacThatCannotDrawStillSendsThePicks -->
+  <!-- test: ToolChoiceRunTests.testAMacThatNamesNoServersIsSentNoneOfThePicks -->
+  <!-- test: ToolChoiceRunTests.testRetryNamesThePicksAndContinueDoesNot -->
+  <!-- test: ToolChoiceRunTests.testAGglibByAddressIsNeverSentAServer -->
+  <!-- test: ToolChoiceRunTests.testAQuestionPutAgainAfterItsAnswerWasLostCarriesThePicks -->
+  <!-- test: ToolChoiceRunTests.testAContinuePutAgainAfterItsAnswerWasLostRunsNoTools -->
+  <!-- test: ToolChoiceRunTests.testAServerTheMacClosedIsNotNamed -->
+  <!-- test: ToolChoiceRunTests.testADrawQuestionWithNoPicksIsPutWithNone -->
+  <!-- test: ToolChoiceRunTests.testAPickMadeDuringARunReachesOnlyTheNextRequest -->
+  <!-- test: ToolChoiceRunTests.testAFreshSendToAnUnheardMacNamesThePicksAsKept -->
+  <!-- test: ToolChoiceTests.testANewChoiceNamesNoServer -->
+  <!-- test: ToolChoiceTests.testPicksAreNamedOnlyWhileTheMacOffersThem -->
+  <!-- test: ToolChoiceTests.testAnUnheardMacIsNamedThePicksAsKept -->
+  <!-- test: ToolChoiceTests.testAPickSurvivesARename -->
 - A conversation kept here on a paired Mac that offers its MCP servers'
-  tools has a Tools switch in its top bar, on until it is turned off: a
-  wrench, filled while on and an outline while off, with "on" or "off" in
-  its name so the state is never the tint alone. Off, a question is put as
-  a plain run, with no query, and one sent with Draw is put as
+  tools has a wrench in its top bar that opens a menu: "Use tools", the
+  conversation's master switch, on for a new conversation, then under
+  "Servers" a tick for each server the Mac offers, in the Mac's order,
+  none ticked until one is picked; while the switch is off every row is
+  still there with its pick, and none is named. Two servers of one name
+  each show their id after it,
+  `fs (3)`. The wrench's name says its state in words, "Tools, off",
+  "Tools, none picked", "Tools, 1 server" or "Tools, 2 servers", so the
+  state is never the tint alone, and it is filled only while a server
+  would be named. On an iPhone the menu stays open while picks are made;
+  on a Mac it closes after each. While the Mac offers a server the
+  conversation has never shown, a new conversation's included, the wrench
+  carries the system's "!" badge, its name ends ", new tools available",
+  since the badge is not read, and the server's row says "New"; a server
+  the Mac opens later badges every conversation and is picked in none. A
+  change made from the menu shows every server offered, in the same write,
+  and clears the badge; opening the menu and closing it with nothing
+  changed leaves it, as a SwiftUI menu says nothing of being opened. On an
+  open iPhone Duo on its side the panel's button carries the badge and its
+  name says so too, and the panel's tools rows coming on screen, or the
+  Mac's offer changing while they are, show the servers, which say "New"
+  for as long as the rows stay. A branch keeps what its conversation has
+  shown. Off, a question is put as a plain run,
+  with no query, and one sent with Draw is put as
   `PUT /v1/runs/{id}?kind=chat&tools=none&draw=true`, with the chosen
   image model after it, which leaves it gglib's drawing tool and no other;
-  the body is the one it always was. A gglib from before `none` refuses
-  it, and the question shows the refusal with Retry, still drawing. The choice is the
-  conversation's, kept in one optional column written only for a
-  conversation that turned the tools off, and outlives a relaunch; setting
-  it leaves the conversation's date alone. A branch copies it, a move to
-  another provider drops it, and a question whose `PUT` lost its answer is
-  put again with it. A gglib reached by address, a Mac that names no
-  servers, one from before the list and one not heard from have no switch.
-  The first three are never told the tools are off, whatever a
-  conversation stores. One not heard from may offer servers, so it is
-  told: a question with Draw whose `PUT` is put again after a relaunch,
-  before the Mac's answer is back, goes with `tools=none&draw=true`, so it
-  never runs the tools the person turned off, and a gglib from before
-  `none` refuses it with the refusal and Retry on the question; without
-  Draw it is a plain run.
-  Which servers the Mac offers is chosen on the Mac, never here: the
-  server-status sheet lists them by the names the Mac gives them, under
-  "Tools offered", with a line saying they are chosen with
-  `gglib remote enable --allow-mcp <server>`, once for each server, and
-  nothing there can be tapped. The section is not there where no tools
-  are offered.
+  the picks are kept, and turning the switch on again names them again.
+  The body is the one it always was. The choice is the conversation's,
+  by the servers' ids on the Mac so a rename keeps a pick, kept in one
+  optional column written only for a choice that is not a new
+  conversation's, every key written, and outlives a relaunch; a pick or
+  the switch leaves the conversation's date alone, and a press that
+  changes nothing writes nothing. A branch copies it, and a move to
+  another provider, or an edit that points the provider at another Mac,
+  re-pairing included, drops it, as an id names a server on one Mac
+  alone. Picks are never pruned, since a Mac that answers with none may
+  have failed to read its own list. A gglib reached by address, a Mac
+  that names no servers, one from before the list and one not heard from
+  have no wrench, and a Mac's own chat keeps its tools on the Mac
+  ([ADR 0014](docs/adr/0014-each-conversation-picks-which-of-the-macs-servers-it-uses.md)).
+  Which servers the Mac offers is chosen on the Mac: the server-status
+  sheet lists them by the names the Mac gives them, one row for each
+  server even when two share a name, under "Tools offered", with a line
+  saying a server is opened on the Mac with
+  `gglib mcp allow-remote <server>` and that each conversation picks the
+  ones it uses from its Tools control, and nothing there can be tapped.
+  The section is not there where no tools are offered.
   <!-- test: ToolsOfferedWireTests.testARunWithToolsIsPutWithThemAndDrawsOnlyWhenItDraws -->
-  <!-- test: AppModelToolsTests.testANewConversationHasTheToolsOnAndTheSwitchTurnsThemOff -->
-  <!-- test: AppModelToolsTests.testOffSendsAPlainRunAndWithDrawOnlyTheDrawingTool -->
+  <!-- test: AppModelToolsTests.testANewConversationIsOnWithNoServerPickedAndTheSwitchTurnsItOff -->
+  <!-- test: AppModelToolsTests.testOffSendsAPlainRunAndWithDrawOnlyTheDrawingToolAndKeepsThePicks -->
   <!-- test: AppModelToolsTests.testAQuestionPutAgainAfterItsAnswerWasLostKeepsTheToolsOff -->
-  <!-- test: AppModelToolsTests.testAGglibThatRefusesNoneLeavesItsSentenceOnTheQuestion -->
-  <!-- test: AppModelToolsTests.testTheSwitchIsHiddenAndOffNeverSentWhereNoToolsAreOffered -->
-  <!-- test: AppModelToolsTests.testARelaunchedPutOfADrawQuestionBeforeTheMacsAnswerKeepsTheToolsOff -->
-  <!-- test: ToolsStoreTests.testTheChoiceOutlivesAReopeningAndAnUnchangedOneMarksNoRow -->
-  <!-- test: ToolsStoreTests.testAStoreOpensAcrossTheToolsColumnInBothDirections -->
+  <!-- test: AppModelToolsTests.testTheMenuIsHiddenWhereNoServerIsOfferedAndAnUnheardMacIsSentThePicksAsKept -->
+  <!-- test: AppModelToolsTests.testARelaunchedPutBeforeTheMacsAnswerNamesThePicksAsKept -->
+  <!-- test: ToolChoiceTests.testTurnedOffNamesNoneAndKeepsThePicks -->
+  <!-- test: ToolChoiceTests.testSeenOutlivesAServerTheMacClosed -->
+  <!-- test: ToolChoiceTests.testItEncodesEveryKeySorted -->
+  <!-- test: ToolsMenuTests.testHiddenWhereTheMacOffersNone -->
+  <!-- test: ToolsMenuTests.testHiddenOnAMacsChatAndByAddress -->
+  <!-- test: ToolsMenuTests.testRowsAreTheMacsServersInItsOrder -->
+  <!-- test: ToolsMenuTests.testASharedNameShowsEachServersID -->
+  <!-- test: ToolsMenuTests.testLabelsAndSymbols -->
+  <!-- test: ToolsMenuTests.testOffKeepsEveryRowAndItsPickAndNamesNone -->
+  <!-- test: ToolsMenuTests.testPickingLeavesUpdatedAtAlone -->
+  <!-- test: ToolsMenuTests.testAPressThatChangesNothingWritesNothing -->
+  <!-- test: ToolsSeenTests.testANewChatIsBadgedAndPicksNone -->
+  <!-- test: ToolsSeenTests.testAChangeFromTheMenuClearsTheBadge -->
+  <!-- test: ToolsSeenTests.testMarkingSeenTwiceWritesOnce -->
+  <!-- test: ToolsSeenTests.testAServerTheMacOpensLaterIsBadgedInEveryChatAndUnpicked -->
+  <!-- test: ToolsSeenTests.testABranchIsNotBadgedForWhatItsSourceSaw -->
+  <!-- test: ToolChoiceTests.testUnseenIsWhatTheMacOffersThatThisChatNeverShowed -->
+  <!-- test: BookPagesTests.testTheThisChatButtonSaysNewToolsAreAvailable -->
+  <!-- test: ToolChoiceStoreTests.testTheToolChoiceOutlivesAReopeningAndAnUnchangedOneMarksNoRow -->
+  <!-- test: ToolChoiceStoreTests.testANonDefaultChoiceRoundTripsEveryKey -->
+  <!-- test: ToolChoiceStoreTests.testAStoreOpensAcrossTheToolChoiceColumnInBothDirections -->
+  <!-- test: ToolChoiceRunTests.testEditingAProviderToAnotherMacForgetsItsChoices -->
   <!-- test: ProxyStatusToolsTests.testTheSheetListsTheServersAMacOffersAndNothingWhereNoneAre -->
   <!-- test: ConversationBranchesTests.testABranchCopiesTheSettingsAndNoRun -->
   <!-- test: QuickActionTests.testAConversationMovedToAnotherProviderTakesItsDefaultModel -->
@@ -1209,8 +1266,11 @@ Each claim names the test that keeps it true.
   at the fold with nothing drawn across it. In that pose the chat's top bar
   is the list button, its title and a panel button: the panel, "This chat",
   takes the list's place on the leading page with the chat's model and
-  provider, Thinking, Tools, system prompt, context counts and server
-  status, the ones the chat offers, and the top bar leaves those out. A
+  provider, Thinking, its tools in a section of their own (the master
+  switch, then a switch for each server the Mac offers, which cannot be
+  turned while it is off), system prompt, context counts and server
+  status, the ones the chat offers, with the servers listed once, not
+  again under the status, and the top bar leaves those out. A
   Mac's chat has its model, Thinking, context and server there, its tools
   and prompt being the Mac's. Laid flat, the chat has the whole screen and
   the list button lays the list beside it at half the width; half opened
@@ -1230,6 +1290,7 @@ Each claim names the test that keeps it true.
   <!-- test: BookPagesTests.testAChatKeptHereShowsEverythingItIsOffered -->
   <!-- test: BookPagesTests.testAChatOfferedNothingStillShowsItsModelAndPrompt -->
   <!-- test: BookPagesTests.testAMacsChatHasNoToolsOrPromptHere -->
+  <!-- test: ToolsMenuTests.testThePanelRowTitlesAreTheMacsServers -->
   <!-- test: BookPagesUITests.testTheChatIsOnTheTrailingPageAndItsPanelOnTheLeading -->
 - Each paired Mac has a section of its own in the list, "On home", with the
   chats gglib keeps there, listed at launch, when its pipe comes up and on a
@@ -2052,7 +2113,12 @@ against the mock.
 - [ADR 0013](docs/adr/0013-tools-are-a-conversation-switch.md): whether a
   question may call a paired Mac's tools is a switch of the conversation,
   on until turned off; which MCP servers the Mac offers is chosen on the
-  Mac and only read here.
+  Mac and only read here. Superseded in part by ADR 0014.
+- [ADR 0014](docs/adr/0014-each-conversation-picks-which-of-the-macs-servers-it-uses.md):
+  each conversation picks, by id, which of the paired Mac's offered MCP
+  servers it uses, under a stored master switch, and a new one picks none;
+  the wrench is badged while the Mac offers a server the conversation has
+  not shown, until a change is made from its menu.
 
 ## Releases
 

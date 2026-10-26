@@ -75,9 +75,10 @@ public final class ConversationRecord {
     /// are drawn with, or nil for the hub's own pick. Optional, for
     /// `systemPrompt`'s reason.
     public var imageModelID: Int?
-    /// Whether the conversation asks without its paired Mac's tools, or nil,
-    /// which reads as no. Optional, for `systemPrompt`'s reason.
-    public var toolsOff: Bool?
+    /// The conversation's `ToolChoice` as JSON, or nil for a new
+    /// conversation's: on, nothing picked, nothing seen. Optional, for
+    /// `systemPrompt`'s reason.
+    public var toolChoiceData: Data?
     @Relationship(deleteRule: .cascade, inverse: \MessageRecord.conversation)
     public var messages: [MessageRecord] = []
 
@@ -85,7 +86,7 @@ public final class ConversationRecord {
         id: UUID, title: String, providerID: UUID?, model: String?, createdAt: Date, updatedAt: Date,
         systemPrompt: String? = nil, hasUnreadReply: Bool? = nil, contextData: Data? = nil,
         thinkingOff: Bool? = nil, branchOf: UUID? = nil, family: UUID? = nil, imageModelID: Int? = nil,
-        toolsOff: Bool? = nil
+        toolChoiceData: Data? = nil
     ) {
         self.uuid = id
         self.title = title
@@ -98,7 +99,7 @@ public final class ConversationRecord {
         self.branchOf = branchOf
         self.family = family
         self.imageModelID = imageModelID
-        self.toolsOff = toolsOff
+        self.toolChoiceData = toolChoiceData
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
