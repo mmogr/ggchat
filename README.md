@@ -460,7 +460,19 @@ Each claim names the test that keeps it true.
   "Tools, none picked", "Tools, 1 server" or "Tools, 2 servers", so the
   state is never the tint alone, and it is filled only while a server
   would be named. On an iPhone the menu stays open while picks are made;
-  on a Mac it closes after each. Off, a question is put as a plain run,
+  on a Mac it closes after each. While the Mac offers a server the
+  conversation has never shown, a new conversation's included, the wrench
+  carries the system's "!" badge, its name ends ", new tools available",
+  since the badge is not read, and the server's row says "New"; a server
+  the Mac opens later badges every conversation and is picked in none. A
+  change made from the menu shows every server offered, in the same write,
+  and clears the badge; opening the menu and closing it with nothing
+  changed leaves it, as a SwiftUI menu says nothing of being opened. On an
+  open iPhone Duo on its side the panel's button carries the badge and its
+  name says so too, and the panel's tools rows coming on screen, or the
+  Mac's offer changing while they are, show the servers, which say "New"
+  for as long as the rows stay. A branch keeps what its conversation has
+  shown. Off, a question is put as a plain run,
   with no query, and one sent with Draw is put as
   `PUT /v1/runs/{id}?kind=chat&tools=none&draw=true`, with the chosen
   image model after it, which leaves it gglib's drawing tool and no other;
@@ -501,6 +513,13 @@ Each claim names the test that keeps it true.
   <!-- test: ToolsMenuTests.testOffKeepsEveryRowAndItsPickAndNamesNone -->
   <!-- test: ToolsMenuTests.testPickingLeavesUpdatedAtAlone -->
   <!-- test: ToolsMenuTests.testAPressThatChangesNothingWritesNothing -->
+  <!-- test: ToolsSeenTests.testANewChatIsBadgedAndPicksNone -->
+  <!-- test: ToolsSeenTests.testAChangeFromTheMenuClearsTheBadge -->
+  <!-- test: ToolsSeenTests.testMarkingSeenTwiceWritesOnce -->
+  <!-- test: ToolsSeenTests.testAServerTheMacOpensLaterIsBadgedInEveryChatAndUnpicked -->
+  <!-- test: ToolsSeenTests.testABranchIsNotBadgedForWhatItsSourceSaw -->
+  <!-- test: ToolChoiceTests.testUnseenIsWhatTheMacOffersThatThisChatNeverShowed -->
+  <!-- test: BookPagesTests.testTheThisChatButtonSaysNewToolsAreAvailable -->
   <!-- test: ToolChoiceStoreTests.testTheToolChoiceOutlivesAReopeningAndAnUnchangedOneMarksNoRow -->
   <!-- test: ToolChoiceStoreTests.testANonDefaultChoiceRoundTripsEveryKey -->
   <!-- test: ToolChoiceStoreTests.testAStoreOpensAcrossTheToolChoiceColumnInBothDirections -->

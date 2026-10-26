@@ -68,7 +68,7 @@ final class ToolsMenuTests: XCTestCase {
             ToolChoice(off: true, picked: [3]), ToolChoice(), ToolChoice(picked: [12]), ToolChoice(picked: [3]),
             ToolChoice(picked: [3, 9]),
         ]
-        let menus = choices.map { ToolsMenu(choice: $0, offered: [tavily, files]) }
+        let menus = choices.map { ToolsMenu(choice: $0.seeing([3, 9]), offered: [tavily, files]) }
         XCTAssertEqual(
             menus.map(\.label),
             ["Tools, off", "Tools, none picked", "Tools, none picked", "Tools, 1 server", "Tools, 2 servers"])
@@ -91,13 +91,13 @@ final class ToolsMenuTests: XCTestCase {
         let (model, _) = try await DrawingRunTests.makeModel(behind: hub(), drawing: .offersTavily, store: store)
         let conversation = try XCTUnwrap(model.selectedConversation)
         model.setServer(3, picked: true, for: conversation.id)
-        XCTAssertEqual(model.selectedConversation?.toolChoice, ToolChoice(picked: [3]))
+        XCTAssertEqual(model.selectedConversation?.toolChoice, ToolChoice(picked: [3], seen: [3]))
         XCTAssertEqual(model.toolsMenu(for: try XCTUnwrap(model.selectedConversation)).label, "Tools, 1 server")
         model.setTools(on: false, for: conversation.id)
-        XCTAssertEqual(model.selectedConversation?.toolChoice, ToolChoice(off: true, picked: [3]))
+        XCTAssertEqual(model.selectedConversation?.toolChoice, ToolChoice(off: true, picked: [3], seen: [3]))
         model.setServer(3, picked: false, for: conversation.id)
         let stored = try XCTUnwrap(try store.loadConversations().first { $0.id == conversation.id })
-        XCTAssertEqual(stored.toolChoice, ToolChoice(off: true))
+        XCTAssertEqual(stored.toolChoice, ToolChoice(off: true, seen: [3]))
         XCTAssertEqual(stored.updatedAt, conversation.updatedAt)
         XCTAssertEqual(model.selectedConversation?.updatedAt, conversation.updatedAt)
     }
@@ -119,7 +119,7 @@ final class ToolsMenuTests: XCTestCase {
     /// The panel's tools Section is the master switch, then the Mac's
     /// servers in its order.
     func testThePanelRowTitlesAreTheMacsServers() {
-        let menu = ToolsMenu(choice: ToolChoice(picked: [3]), offered: [tavily, files])
+        let menu = ToolsMenu(choice: ToolChoice(picked: [3], seen: [3, 9]), offered: [tavily, files])
         XCTAssertEqual(ToolsMenu.panelRowTitles(menu), ["Tools, 1 server", "tavily", "fs"])
     }
 }

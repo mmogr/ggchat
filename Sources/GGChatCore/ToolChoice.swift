@@ -31,6 +31,12 @@ public struct ToolChoice: Codable, Sendable, Equatable, Hashable {
         return picked.intersection(offered.map(\.id)).sorted()
     }
 
+    /// The servers `offered` holds that this conversation has never shown:
+    /// what its wrench is badged for.
+    public func unseen(offered: [OfferedServer]) -> Set<Int64> {
+        Set(offered.map(\.id)).subtracting(seen)
+    }
+
     /// The choice with its master switch on or off, its picks kept.
     public func turned(on: Bool) -> ToolChoice {
         var choice = self

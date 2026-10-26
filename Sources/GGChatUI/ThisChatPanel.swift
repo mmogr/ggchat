@@ -83,11 +83,11 @@ nonisolated enum ThisChatPart: Equatable {
                 }
             }
             if parts.contains(.tools) {
-                ToolsPanelRows(menu: model.toolsMenu(for: conversation)) {
-                    model.setTools(on: $0, for: conversation.id)
-                } pick: { server, picked in
-                    model.setServer(server, picked: picked, for: conversation.id)
-                }
+                ToolsPanelRows(
+                    conversationID: conversation.id, menu: model.toolsMenu(for: conversation),
+                    setOn: { model.setTools(on: $0, for: conversation.id) },
+                    pick: { model.setServer($0, picked: $1, for: conversation.id) },
+                    seen: { model.markToolsSeen(for: conversation.id) })
             }
             if parts.contains(.systemPrompt) {
                 Section {

@@ -39,7 +39,7 @@ final class AppModelToolsTests: XCTestCase {
         XCTAssertTrue(model.offersTools(for: conversation))
         let menu = model.toolsMenu(for: conversation)
         XCTAssertTrue(menu.isOn)
-        XCTAssertEqual(menu.label, "Tools, none picked")
+        XCTAssertEqual(menu.label, "Tools, none picked, new tools available")
         XCTAssertEqual(menu.rows.map(\.picked), [false])
 
         model.setTools(on: false, for: conversation.id)

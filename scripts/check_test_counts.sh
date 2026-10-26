@@ -709,8 +709,16 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # the reply still comes, with other tools or none. These twenty-two are the
 # whole of that guard -- the choice's own rules, its column, its menu and
 # its panel rows, and the runs it names -- so the floors move past them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 909
+#
+# 2026-10-26: 909 -> 916 and 819 -> 826 for the wrench's "!". A badge that
+# never shows, or never clears, fails nothing: the menu still picks. These
+# seven are the whole of its guard -- a new chat badged, a change from the
+# menu clearing it in one write, showing twice writing once, a server
+# opened later badging every chat, a branch keeping what its source saw,
+# what counts as unseen, and the Duo panel button's name -- so the floors
+# move past them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 916
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 30
-floor "README test markers" "${markers:-0}" 819
+floor "README test markers" "${markers:-0}" 826
 
 exit $status

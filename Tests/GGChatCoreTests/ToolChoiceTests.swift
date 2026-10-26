@@ -57,6 +57,17 @@ final class ToolChoiceTests: XCTestCase {
         XCTAssertFalse(choice.isDefault)
     }
 
+    /// What is unseen is what the Mac offers now that the conversation has
+    /// never shown: not a server it showed and the Mac then closed, nor one
+    /// it showed under another name.
+    func testUnseenIsWhatTheMacOffersThatThisChatNeverShowed() {
+        let choice = ToolChoice(seen: [3, 12])
+        XCTAssertEqual(choice.unseen(offered: [tavily, files]), [9])
+        XCTAssertEqual(choice.unseen(offered: [OfferedServer(id: 3, name: "Tavily Web Search")]), [])
+        XCTAssertEqual(ToolChoice().unseen(offered: [tavily, files]), [3, 9])
+        XCTAssertEqual(choice.seeing([9]).unseen(offered: [tavily, files]), [])
+    }
+
     /// A pick is by id, so a server the Mac renames is still picked.
     func testAPickSurvivesARename() {
         let choice = ToolChoice().picking(3, true)
