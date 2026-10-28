@@ -2173,3 +2173,16 @@ opens a PR listing each pin it moved, or says there is nothing to update.
 - No credential in any log line, ever.
 - Time is an argument: nothing in `GGChatCore` reads the clock except
   `Clock.swift`.
+
+## Licence
+
+ggchat is licensed [AGPL-3.0-only](LICENSE), as gglib is. Anyone may use,
+modify and redistribute it, commercially or not, under those terms:
+distributing it, or letting users reach a modified copy over a network,
+means offering them the corresponding source under the same licence.
+
+The author, [@mmogr](https://github.com/mmogr), holds the copyright in
+ggchat and in gglib, and so can also distribute ggchat under terms of
+their own. The builds the author ships on the App Store, or with gglib's
+code linked into them, go out under those terms; the AGPL is what governs
+everyone else's use.
