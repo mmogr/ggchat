@@ -49,10 +49,11 @@ public enum MarkdownBlocks {
     ///
     /// Punctuation reads as typed. Smart punctuation, which swift-markdown
     /// turns on unless told not to, makes `---` an em dash, `--` an en dash,
-    /// `...` an ellipsis and straight quotes curly.
+    /// `...` an ellipsis and straight quotes curly. Math reads as written
+    /// too (`MathSpans`).
     static func children(parsing text: String) -> [any Markup] {
         ParseMeter.current?.add(text.utf8.count)
-        return Array(Document(parsing: text, options: .disableSmartOpts).children)
+        return Array(Document(parsing: MathSpans.protect(text), options: .disableSmartOpts).children)
     }
 
     /// The blocks for a document's top-level children.
@@ -68,7 +69,7 @@ public enum MarkdownBlocks {
             return .heading(level: heading.level, inline(heading))
         case let code as CodeBlock:
             let language = code.language?.trimmingCharacters(in: .whitespaces)
-            var text = code.code
+            var text = MathSpans.unwrap(code.code)
             if text.hasSuffix("\n") { text.removeLast() }
             return .code(language: language.flatMap { $0.isEmpty ? nil : $0 }, text: text)
         case let list as UnorderedList:
@@ -80,11 +81,11 @@ public enum MarkdownBlocks {
         case is ThematicBreak:
             return .thematicBreak
         case let html as HTMLBlock:
-            return .code(language: "html", text: html.rawHTML)
+            return .code(language: "html", text: MathSpans.unwrap(html.rawHTML))
         case let table as Table:
             return .table(self.table(table))
         default:
-            return .paragraph(AttributedString(markup.format()))
+            return .paragraph(AttributedString(MathSpans.unwrap(markup.format())))
         }
     }
 
@@ -116,7 +117,7 @@ public enum MarkdownBlocks {
     private static func listItem(for markup: any Markup) -> AttributedString {
         let pieces = markup.children.map { child -> AttributedString in
             if let paragraph = child as? Paragraph { return inline(paragraph) }
-            return AttributedString(child.format().trimmingCharacters(in: .whitespacesAndNewlines))
+            return AttributedString(MathSpans.unwrap(child.format()).trimmingCharacters(in: .whitespacesAndNewlines))
         }
         var joined = AttributedString()
         for (index, piece) in pieces.enumerated() {
@@ -143,7 +144,8 @@ public enum MarkdownBlocks {
         let source: String = container.detachedFromParent.children.map { $0.format() }.joined()
         let options = AttributedString.MarkdownParsingOptions(
             interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        return (try? AttributedString(markdown: source, options: options)) ?? AttributedString(source)
+        let text = (try? AttributedString(markdown: source, options: options)) ?? AttributedString(source)
+        return MathSpans.unwrap(text)
     }
 }
 

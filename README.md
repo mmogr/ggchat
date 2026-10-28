@@ -1095,6 +1095,22 @@ Each claim names the test that keeps it true.
   <!-- test: MarkdownBlockViewTests.testATableBlockIsDrawnAsATableAndNotAsCode -->
   <!-- test: MarkdownBlockViewTests.testACodeBlockIsStillDrawnAsCode -->
   <!-- test: MarkdownBlockViewTests.testVoiceOverReadsATableARowAtATime -->
+- Math in a reply reads exactly as the model wrote it, `$…$`, `$$…$$`,
+  `\(…\)` and `\[…\]` alike: markdown takes none of its backslashes as
+  escapes and none of its `*` as emphasis, and a `|` in it splits no table
+  cell. A `$` is math only by pandoc's rules, so `$5 and $6` stays money,
+  and `\$` is a dollar sign. Math over several lines reads as one line.
+  <!-- test: MathSpanTests.testBackslashesInMathAreKept -->
+  <!-- test: MathSpanTests.testAsterisksInMathAreNotEmphasis -->
+  <!-- test: MathSpanTests.testMoneyIsNotMath -->
+  <!-- test: MathSpanTests.testAFailedCloseGivesUpOnlyThatDollar -->
+  <!-- test: MathSpanTests.testMathKeepsTheStyleAroundIt -->
+  <!-- test: MathSpanTests.testMathInEveryKindOfBlock -->
+  <!-- test: MathSpanTests.testABarInMathDoesNotSplitATableCell -->
+  <!-- test: MathSpanTests.testMathOverLinesReadsAsOneLine -->
+  <!-- test: MathSpanTests.testALineThatWouldEndTheParagraphLeavesTheMathAlone -->
+  <!-- test: MathSpanTests.testCodeIsLeftAlone -->
+  <!-- test: MathSpanTests.testEmphasisOutsideMathStillApplies -->
 - A reply being streamed, to a conversation here or to a Mac's chat, is
   parsed again only after the blocks no later token can change, so the
   parsing a token costs stays the size of the last block or two however long

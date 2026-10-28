@@ -93,6 +93,19 @@ enum LiveMarkdownSamples {
         "First\n\n\u{FEFF}# Not a heading after a byte-order mark\n\nThird\n",
         "See [a].\n\nMore.\n\n[a\n]: /u\n\nEnd.\n",
         "See [a b c].\n\nMore.\n\n[a\nb\nc]: /u\n\nEnd.\n",
+        #"""
+        **1. The set** $S_n = \{\sigma : \{1, \dots, n\} \to \{1, \dots, n\}\}$, with $f*g$ and $|S_n| = n!$.
+
+        - Rotation by \(\theta\):
+          \[
+            R(\theta) = \begin{pmatrix} \cos\theta & -\sin\theta \\[4pt] \sin\theta & \cos\theta \end{pmatrix}
+          \]
+        - Change: $$C(n) = 20 - 4.50n$$ so it never lands on $0: **$2.00** left.
+
+        | Name | Formula |
+        |---|---|
+        | Order | \(|S_n| = n!\) |
+        """#,
     ]
 
     /// One step of a long reply: a heading, prose, code, a list and a table.
@@ -125,6 +138,7 @@ enum LiveMarkdownSamples {
         "~~~", "  ```", "<!-- c", "-->", "\t tab", "- [ ] task", "- [x] done", "def f() -> list[int]:",
         "> - q item", ">", "   para", "| a |", "|---|", "😀 日本", "**bold** `code`", "1) paren",
         "<custom-tag>", "  continued", "`unclosed", "> ```", "> code", "[a\\]b]: /x", "\\[x]: y",
+        "$x_i$ and $a*b$", #"\(a*b\)"#, "$$", "$$a", #"\["#, #"\]"#, #"  \{x\} \\"#, "costs $5 and $6", "| $|x|$ | y |",
     ]
 
     /// A seeded generator, so a failing document is the same on every run.

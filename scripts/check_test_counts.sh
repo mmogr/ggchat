@@ -722,8 +722,13 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # for a paired Mac that opens a server, that its menu's row picks it, and
 # that the name the toolbar keeps follows; a menu SwiftUI lays out wrong
 # fails nothing else.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 916
+#
+# 2026-10-28: 916 -> 927 and 826 -> 837 for math kept as written. Math that
+# markdown reads as markdown fails nothing else: the reply still shows, with
+# a backslash gone here and a word in italics there. These eleven are the
+# whole of its guard, so the floors move past them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 927
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 31
-floor "README test markers" "${markers:-0}" 826
+floor "README test markers" "${markers:-0}" 837
 
 exit $status
