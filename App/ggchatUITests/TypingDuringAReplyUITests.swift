@@ -1,7 +1,7 @@
 import XCTest
 
 /// The composer while a reply runs, walked on the DEBUG mock slowed to a
-/// word every 300 ms: it takes the caret and the next message mid-reply,
+/// word a second: it takes the caret and the next message mid-reply,
 /// keeps that message unsent until the reply ends, and sends it then.
 final class TypingDuringAReplyUITests: XCTestCase {
     @MainActor

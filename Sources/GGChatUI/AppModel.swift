@@ -140,11 +140,11 @@ public final class AppModel {
     public static let mockBaseURL = URL(string: "http://127.0.0.1:49151/v1")!
 
     #if DEBUG
-        /// The mock's pace: a word every 25 ms, or every 300 under
+        /// The mock's pace: a word every 25 ms, or one a second under
         /// `-ggchat-slow-mock YES`, which the walk of typing during a reply
         /// passes so that the reply is still running while it types.
         static var mockTokenDelay: Duration {
-            UserDefaults.standard.bool(forKey: "ggchat-slow-mock") ? .milliseconds(300) : .milliseconds(25)
+            UserDefaults.standard.bool(forKey: "ggchat-slow-mock") ? .seconds(1) : .milliseconds(25)
         }
     #endif
 
