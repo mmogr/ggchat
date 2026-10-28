@@ -18,20 +18,44 @@ public enum EngineFactory {
     public static func makeEngine() -> any LocalEngine {
         #if DEBUG && os(iOS)
             if let behaviour = mockBehaviour {
-                return MockEngine(behaviour: behaviour, sleeper: ContinuousClockSleeper())
+                return MockEngine(behaviour: behaviour, sleeper: ContinuousClockSleeper(), catalogue: mockCatalogue)
             }
         #endif
         return UnavailableEngine()
     }
 
+    /// The library beside the engine. The mock one is given no directory,
+    /// so it keeps nothing on disk, and a walk launched again starts from
+    /// its behaviour and not from an earlier walk's downloads. Its downloads
+    /// take a second a step, ten in all, so a walk reads a row while it is
+    /// running.
     public static func makeLibrary() -> any ModelLibrary {
         #if DEBUG && os(iOS)
             if let behaviour = mockBehaviour {
-                return MockLibrary(behaviour: behaviour, sleeper: ContinuousClockSleeper())
+                return MockLibrary(
+                    behaviour: behaviour, sleeper: ContinuousClockSleeper(), stepDelay: .seconds(1),
+                    catalogue: mockCatalogue)
             }
         #endif
         return UnavailableLibrary()
     }
+
+    /// Where the models are kept, `ggchat-models` under Application
+    /// Support, wherever this build runs a model, and nil everywhere else, so
+    /// a release build and the Mac make no such directory.
+    static func makeModelsDirectory() -> ModelsDirectory? {
+        #if DEBUG && os(iOS)
+            if mockBehaviour != nil { return ModelsDirectory.applicationSupport() }
+        #endif
+        return nil
+    }
+
+    #if DEBUG && os(iOS)
+        /// The one catalogue the mock engine lists and the mock library
+        /// installs into, so a model the mock downloads joins the engine's
+        /// list.
+        private static let mockCatalogue = MockLibrary.Catalogue(behaviour: mockBehaviour ?? .ready)
+    #endif
 
     #if DEBUG
         /// The default a UI walk sets, `-ggchat-mock-engine ready`, to run a

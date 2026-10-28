@@ -1091,6 +1091,34 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelLibraryTests.testTheWhySheetSaysEachFigureOrThatItIsNotKnown -->
   <!-- test: ScreenGalleryUITests.testAnEmptyPhoneOffersToFindAModel -->
   <!-- test: ScreenGalleryUITests.testABrowsedModelSaysWhetherItFits -->
+- A model chosen in the browser downloads to this iPhone, into
+  `ggchat-models` under Application Support, which is readable by this user
+  alone and marked out of the backup at launch, before each download and
+  again after each one finishes. A download larger than the room the volume
+  has for it, or one with no such directory to go into, is refused under its
+  row before the library hears of it. The row shows a bar, how much of how
+  much has come, and Cancel, which takes the row and the partial file away.
+  Going to the background pauses every download beside the replies, the row
+  saying "Paused, resumes when ggchat is open", and coming back resumes them
+  from the bytes they had; the library hears the pauses and resumes in the
+  order the scenes came. A finished download joins This iPhone's model list,
+  at once if its engine is serving and otherwise when a conversation on it
+  next opens. The browser lists the models installed with their sizes, a
+  swipe deletes one, and Settings says what the models on this iPhone take.
+  A release build and the Mac show none of it.
+  <!-- test: AppModelDownloadTests.testADownloadsBarOnlyGoesUpThroughAPauseAndAResume -->
+  <!-- test: AppModelDownloadTests.testCancelTakesTheRowAndThePartialAway -->
+  <!-- test: AppModelDownloadTests.testAFinishedDownloadJoinsThisIPhonesModels -->
+  <!-- test: AppModelDownloadTests.testADownloadThereIsNoRoomForIsRefused -->
+  <!-- test: ModelsDirectoryTests.testTheDirectoryIsPrivateAndOutOfTheBackup -->
+  <!-- test: ModelsDirectoryTests.testTheLaunchMarksADirectoryMadeWithoutTheMark -->
+  <!-- test: ModelsDirectoryTests.testAFinishedDownloadMarksTheDirectoryAgain -->
+  <!-- test: ModelsDirectoryTests.testTheAppsOwnModelsAreUnderApplicationSupport -->
+  <!-- test: ModelsDirectoryTests.testTheRoomIsTheVolumesFigureForAnImportantDownload -->
+  <!-- test: AppModelScenePhaseTests.testTheDownloadsPauseBesideTheRepliesAndResumeInTurn -->
+  <!-- test: MockLibraryDownloadTests.testAPauseHoldsAWalkAtItsBytesAndAResumeGoesOn -->
+  <!-- test: MockLibraryDownloadTests.testAFinishedDownloadIsInstalledAndListedByTheEngineSharingItsCatalogue -->
+  <!-- test: ScreenGalleryUITests.testADownloadFillsItsBarAndTheModelJoinsTheList -->
 - A bearer token is sent on every request and never reaches a log line.
   <!-- test: OpenAICompatibleProviderTests.testNoCredentialEverReachesALogLine -->
 - No line the app writes as it dials a pipe, loses one or pairs carries a

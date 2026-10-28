@@ -3,9 +3,10 @@ import SwiftUI
 
 /// Finds a model for this iPhone: what gglib suggests for it, a search of
 /// Hugging Face, and a page for each repository saying whether each of its
-/// quantizations fits, and why. One opening reads the device once and says
-/// when; every size and verdict on it is the library's, asked through
-/// `AppModel+Library`, and this computes none.
+/// quantizations fits, and why; with the downloads under way and the models
+/// installed. One opening reads the device once and says when; every size
+/// and verdict on it is the library's, asked through `AppModel+Library`, and
+/// this computes none.
 struct ModelBrowserView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -17,8 +18,10 @@ struct ModelBrowserView: View {
     var body: some View {
         NavigationStack {
             List {
+                DownloadingSection()
                 suggested
                 search
+                InstalledSection()
             }
             .navigationTitle("Find a model")
             .navigationDestination(for: String.self) { repo in
@@ -32,6 +35,9 @@ struct ModelBrowserView: View {
             .task {
                 if browser.suggestions == nil { await model.loadSuggestions(in: browser) }
             }
+            // A task of its own, so the list is not held up by the
+            // suggestions, which go out to Hugging Face.
+            .task { await model.refreshInstalled() }
         }
         #if os(macOS)
             .frame(minWidth: 440, minHeight: 480)

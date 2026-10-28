@@ -50,7 +50,9 @@ final class MockEngineTests: XCTestCase {
         XCTAssertEqual(session.baseURL, MockEngine.baseURL)
         XCTAssertEqual(session.baseURL.host(), "127.0.0.1")
         XCTAssertFalse(session.apiKey.isEmpty)
-        XCTAssertTrue(registry.makeProvider(baseURL: session.baseURL, apiKey: session.apiKey) is MockProvider)
+        let bound = try XCTUnwrap(registry.provider(for: session.baseURL), "serving bound nothing at the address")
+        let listed = try await bound.models()
+        XCTAssertEqual(listed, [MockEngine.model], "what answers at the address is not the mock")
         await session.shutdown()
         XCTAssertNil(registry.provider(for: MockEngine.baseURL))
 
