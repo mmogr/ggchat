@@ -158,6 +158,11 @@ Each claim names the test that keeps it true.
   <!-- test: JumpToLatestTests.testAChatAFewPointsShortOfItsLatestFollowsAReplyAsItGrows -->
   <!-- test: JumpToLatestTests.testAChatScrolledUpOrWithNothingComingIsNotFollowed -->
   <!-- test: JumpToLatestUITests.testAChatScrolledUpOffersAWayBackToItsLatestReply -->
+- The composer stays open while a reply runs, so the next message is
+  written as this one comes; Send waits for the reply to end, and the
+  message is sent with it then. A Mac's chat open here does the same while
+  the Mac writes.
+  <!-- test: TypingDuringAReplyUITests.testTheNextMessageIsWrittenWhileAReplyRuns -->
 - An image joins a draft through the photo picker, a paste or a drop, on
   iOS the paste as a row of the add-image menu, and every one goes through
   one downscale: turned upright by its orientation,

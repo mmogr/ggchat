@@ -727,8 +727,13 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # markdown reads as markdown fails nothing else: the reply still shows, with
 # a backslash gone here and a word in italics there. These eleven are the
 # whole of its guard, so the floors move past them.
+#
+# 2026-10-28: 31 -> 32 and 837 -> 838. The walk is the only check that the
+# composer takes the caret and a message while a reply runs and holds it
+# unsent until the reply ends; a field shut mid-reply fails nothing else:
+# every other walk types between replies.
 floor "package test cases" "$(test_cases "$ROOT/Tests")" 927
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 31
-floor "README test markers" "${markers:-0}" 837
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 32
+floor "README test markers" "${markers:-0}" 838
 
 exit $status

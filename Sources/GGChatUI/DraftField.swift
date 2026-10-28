@@ -88,8 +88,9 @@ struct DraftField: View {
             .lineLimit(1...8)
             .textFieldStyle(.plain)
             .accessibilityIdentifier("composer")
+            // Open while a reply runs, so the next message is written as
+            // this one comes; only Send waits for it.
             .onSubmit(sendIfPossible)
-            .disabled(streaming)
             .pastesImages(take)
     }
 

@@ -123,8 +123,9 @@ struct HubComposer: View {
             .lineLimit(1...8)
             .textFieldStyle(.roundedBorder)
             .accessibilityIdentifier("hub-composer")
+            // Open while the Mac writes, as a chat kept here is; only Send
+            // waits for it.
             .onSubmit(sendIfPossible)
-            .disabled(model.openHubChatIsWriting)
             .pastesImages(take)
     }
 
