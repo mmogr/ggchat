@@ -44,7 +44,7 @@ extension AppModel {
     func resumeRuns() {
         readOnAttempts = [:]
         let pipes = Set(conversations.filter { $0.messages.contains(where: \.isBeingWritten) }.compactMap(\.providerID))
-        for config in providers where config.isPipe && pipes.contains(config.id) && pipeSessions[config.id] == nil {
+        for config in providers where config.hasSession && pipes.contains(config.id) && pipeSessions[config.id] == nil {
             Task { await connectPipe(for: config, quietly: true) }
         }
         readOnDetachedRuns()
@@ -122,7 +122,7 @@ extension AppModel {
     /// The provider as a run hub, when it can be reached without dialling.
     func reachableHub(for config: ProviderConfig) -> (any RunProvider)? {
         let connected = pipeSessions[config.id] != nil && pipeStatuses[config.id]?.isConnected == true
-        guard !config.isPipe || connected else { return nil }
+        guard !config.hasSession || connected else { return nil }
         return makeProvider(for: config) as? any RunProvider
     }
 

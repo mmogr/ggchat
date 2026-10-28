@@ -121,7 +121,7 @@ extension AppModel {
             return nil
         }
         // A pipe that is not connected is waited for, not refused.
-        let waits = config.isPipe && pipeStatuses[config.id]?.isConnected != true
+        let waits = config.hasSession && pipeStatuses[config.id]?.isConnected != true
         let ready = waits ? nil : makeProvider(for: config)
         if !waits, ready == nil { return nil }
         streamErrors[conversation.id] = nil

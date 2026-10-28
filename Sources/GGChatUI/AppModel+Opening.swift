@@ -34,7 +34,7 @@ extension AppModel {
         if let running = opening[config.id] { return running }
         let task = Task { [weak self] in
             guard let self else { return }
-            if config.isPipe, pipeSessions[config.id] == nil {
+            if config.hasSession, pipeSessions[config.id] == nil {
                 await connectPipe(for: config)
             }
             await catchUp(config.id)
@@ -75,7 +75,7 @@ extension AppModel {
     ///     A list that fails keeps the one before.
     func catchUp(_ providerID: UUID, quietly: Bool = false, relisting: Bool = false) async {
         guard let config = providers.first(where: { $0.id == providerID }) else { return }
-        if config.isPipe, pipeSessions[config.id] == nil || pipeStatuses[config.id]?.isConnected != true {
+        if config.hasSession, pipeSessions[config.id] == nil || pipeStatuses[config.id]?.isConnected != true {
             return
         }
         if relisting || models(for: config.id).isEmpty {

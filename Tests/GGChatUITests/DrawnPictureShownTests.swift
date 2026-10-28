@@ -125,7 +125,7 @@ final class DrawnPictureShownTests: XCTestCase {
         let store = InMemoryStore()
         let (model, config) = try await Runs.makeModel(behind: recorder, store: store, direct: true)
         model.proxyStatusAvailability[config.id] = false
-        XCTAssertFalse(model.asksForProgress(config))
+        XCTAssertFalse(model.speaksGGLib(config))
         model.modelsByProvider[config.id] = Self.sees
         let id = try XCTUnwrap(model.selectedConversationID)
         model.select(model: "mock-9b", for: id)

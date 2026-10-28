@@ -34,7 +34,7 @@ final class AppModelImageSendTests: XCTestCase {
     func testOnlyAModelGGLibListsWithoutVisionCannotSee() async throws {
         let (model, config) = try await Runs.makeModel(behind: hub(), direct: true)
         let conversation = try XCTUnwrap(model.selectedConversation)
-        XCTAssertTrue(model.asksForProgress(config))
+        XCTAssertTrue(model.speaksGGLib(config))
 
         list(model, config, capabilities: nil)
         XCTAssertFalse(model.canSee(conversation), "gglib's model without vision was sent images")
@@ -47,7 +47,7 @@ final class AppModelImageSendTests: XCTestCase {
 
         list(model, config, capabilities: nil)
         model.proxyStatusAvailability[config.id] = false
-        XCTAssertFalse(model.asksForProgress(config))
+        XCTAssertFalse(model.speaksGGLib(config))
         XCTAssertTrue(model.canSee(conversation), "a server not known to be gglib was taken to be blind")
     }
 

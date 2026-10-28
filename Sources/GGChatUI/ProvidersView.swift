@@ -79,7 +79,7 @@ struct ProviderRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: provider.isPipe ? "point.3.connected.trianglepath.dotted" : "server.rack")
+            Image(systemName: provider.isPairedMac ? "point.3.connected.trianglepath.dotted" : "server.rack")
                 .foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 2) {
                 Text(provider.name)

@@ -22,6 +22,29 @@ public struct ProviderConfig: Identifiable, Codable, Sendable, Equatable, Hashab
         self.defaultModel = defaultModel
     }
 
+    /// Whether the provider has a session to bring up and tear down: a pipe
+    /// is dialled before anything goes through it, a send waits for it
+    /// (ADR 0006), and it is hung up on the way to the background. A server
+    /// by address has none.
+    public var hasSession: Bool {
+        switch kind {
+        case .openAICompatible: false
+        case .pipe: true
+        }
+    }
+
+    /// Whether the provider is a paired Mac: a gglib hub with chats of its
+    /// own, runs, drawing and MCP servers, which only a device it has paired
+    /// reaches.
+    public var isPairedMac: Bool {
+        switch kind {
+        case .openAICompatible: false
+        case .pipe: true
+        }
+    }
+
+    /// Whether the provider is a modelpipe pipe, dialled with the ticket and
+    /// token `Secrets` keeps under its id.
     public var isPipe: Bool {
         if case .pipe = kind { return true }
         return false

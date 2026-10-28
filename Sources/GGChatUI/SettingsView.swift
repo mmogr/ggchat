@@ -142,7 +142,7 @@ private struct ConnectionsSection: View {
     @Environment(\.calendar) private var calendar
 
     var body: some View {
-        let pipes = model.providers.filter(\.isPipe)
+        let pipes = model.providers.filter(\.isPairedMac)
         if !pipes.isEmpty {
             Section {
                 ForEach(pipes) { provider in

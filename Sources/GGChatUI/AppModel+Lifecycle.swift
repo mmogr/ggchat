@@ -72,7 +72,7 @@ extension AppModel {
     /// give up before it was tried at all (#85).
     func resumeEveryPipe() async {
         let gone = providers.filter { config in
-            config.isPipe && pipeSessions[config.id] == nil && pipeStatuses[config.id] != nil
+            config.hasSession && pipeSessions[config.id] == nil && pipeStatuses[config.id] != nil
         }
         await withTaskGroup(of: Void.self) { group in
             for config in gone {
@@ -127,7 +127,7 @@ extension AppModel {
         for task in inFlight { await task.value }
         // So is a reply a Mac is writing to its chat.
         await detachHubReplies()
-        for config in providers where config.isPipe && pipeStatuses[config.id] != nil {
+        for config in providers where config.hasSession && pipeStatuses[config.id] != nil {
             await disconnectPipe(for: config.id, leaving: .closed, cutShort: cutShort.contains(config.id))
         }
     }
