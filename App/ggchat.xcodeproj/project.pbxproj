@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		16ADEFC09003320C95363413 /* ggchatApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D176E1F0D09146E5E6384D /* ggchatApp.swift */; };
 		1E261CE3A582DEC1F616C4AC /* JumpToLatestUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEDE1A7EEC17E8C4F0B5982A /* JumpToLatestUITests.swift */; };
+		281B7549ACADA120FD98060E /* TypingDuringAReplyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27D848FFB39BF527A53D18C4 /* TypingDuringAReplyUITests.swift */; };
 		2BC2B73C5C5BDAF36DDDA295 /* FirstRunUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FD64D354A297A69A640EC4 /* FirstRunUITests.swift */; };
 		2FB8532287ED257C088A85B5 /* FormScrolling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5828F83DDDB73D7768813BB7 /* FormScrolling.swift */; };
 		5BD7BCA11FDAEB85FCA86A75 /* ToolsMenuUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78C6E0AA1DB221B991ACCF8A /* ToolsMenuUITests.swift */; };
@@ -41,6 +42,7 @@
 		012CA37950E7FD746580F4B9 /* ReduceTransparencyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReduceTransparencyUITests.swift; sourceTree = "<group>"; };
 		157E48045F63BAEE71CF5C31 /* ggchat-iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "ggchat-iOS.entitlements"; sourceTree = "<group>"; };
 		261ADF538454ADA1B24301E8 /* LiveServerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveServerTests.swift; sourceTree = "<group>"; };
+		27D848FFB39BF527A53D18C4 /* TypingDuringAReplyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingDuringAReplyUITests.swift; sourceTree = "<group>"; };
 		3B587441DB44EB8387612415 /* ScreenGalleryUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenGalleryUITests.swift; sourceTree = "<group>"; };
 		56D176E1F0D09146E5E6384D /* ggchatApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ggchatApp.swift; sourceTree = "<group>"; };
 		5828F83DDDB73D7768813BB7 /* FormScrolling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormScrolling.swift; sourceTree = "<group>"; };
@@ -150,6 +152,7 @@
 				3B587441DB44EB8387612415 /* ScreenGalleryUITests.swift */,
 				CAF6B576B3C71108C3136D17 /* ThinkingSwitchUITests.swift */,
 				78C6E0AA1DB221B991ACCF8A /* ToolsMenuUITests.swift */,
+				27D848FFB39BF527A53D18C4 /* TypingDuringAReplyUITests.swift */,
 				A72388942EA2BF180AE457CF /* UITestSupport.swift */,
 			);
 			path = ggchatUITests;
@@ -268,6 +271,7 @@
 				895F021D8EBF53CF1DE2D275 /* ScreenGalleryUITests.swift in Sources */,
 				CE4E3FF304BCD95F38F8A741 /* ThinkingSwitchUITests.swift in Sources */,
 				5BD7BCA11FDAEB85FCA86A75 /* ToolsMenuUITests.swift in Sources */,
+				281B7549ACADA120FD98060E /* TypingDuringAReplyUITests.swift in Sources */,
 				C3CA847E3248F9EEBB33E2FC /* UITestSupport.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
