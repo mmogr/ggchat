@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.12.0](https://github.com/mmogr/ggchat/compare/v0.11.0...v0.12.0) (2026-10-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* **tools:** needs a gglib that reads `tools=none|<ids>` (ADR 0026 there); a gglib that only knows `builtin` refuses every tool run.
+
+### What the app now does
+
+* **tools:** each conversation picks which of the paired Mac's servers it uses, from a menu on the wrench ([#228](https://github.com/mmogr/ggchat/issues/228)) ([b871b23](https://github.com/mmogr/ggchat/commit/b871b230ab21b2f232e76cc78f92cf1fa7251f42))
+
+
+### What the app stopped getting wrong
+
+* **markdown:** math in a reply reads exactly as the model wrote it ([#230](https://github.com/mmogr/ggchat/issues/230)) ([0027b32](https://github.com/mmogr/ggchat/commit/0027b32a1eed330aefd1d5e398b8aeced49064be))
+
 ## [0.11.0](https://github.com/mmogr/ggchat/compare/v0.10.0...v0.11.0) (2026-10-25)
 
 
