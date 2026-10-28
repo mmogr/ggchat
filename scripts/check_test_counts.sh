@@ -749,8 +749,18 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # for each other are guarded nowhere else either. These twenty-eight, the
 # walk and the twenty markers naming them are the whole of that guard, so
 # the floors move past them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 967
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 33
-floor "README test markers" "${markers:-0}" 858
+#
+# 2026-10-29: 967 -> 976, 33 -> 35 and 858 -> 868 for the model browser. That
+# it reads the device once per opening and asks every verdict with that
+# reading, that a quantization too big for this iPhone never reaches the
+# library, that choosing a model adds This iPhone once, that a download
+# whose steps stop short can be chosen again, and the words a chip and the
+# Why sheet say are guarded nowhere else: a browser that read the device per
+# row, or downloaded what cannot run, would pass every test before these.
+# These nine, the two walks, and the ten markers naming the walks and eight
+# of the nine are the whole of that guard, so the floors move past them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 976
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 35
+floor "README test markers" "${markers:-0}" 868
 
 exit $status

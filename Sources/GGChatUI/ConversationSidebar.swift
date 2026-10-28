@@ -134,6 +134,9 @@ struct ConversationSidebar: View {
                         .foregroundStyle(.secondary)
                     if model.providers.isEmpty {
                         Button("Add a provider") { addingProvider = true }
+                        if model.runsModelsHere {
+                            Button("Run a model on this iPhone") { model.openModelBrowser() }
+                        }
                     } else {
                         Button("New conversation") { model.newConversation() }
                     }

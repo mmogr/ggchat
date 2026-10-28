@@ -84,6 +84,12 @@ public struct RootView: View {
         .sheet(isPresented: $showingSettings) {
             SettingsView()
         }
+        // Here, as the enlarged picture is, so every way in opens the same
+        // one: the composer's model list and the panel's, and the empty
+        // screens.
+        .sheet(item: Bindable(model.onDevice).modelBrowser) { browser in
+            ModelBrowserView(browser: browser)
+        }
         // Here and not on the row that opened it: a row is torn down when
         // its chat is read again or it scrolls away, and a sheet on it would
         // take a picture drawn in the editor with it.
@@ -211,7 +217,8 @@ extension RootView {
 #endif
 
 /// What the app says when nothing is selected. On first run it is the way
-/// in: a first-time user is one button from adding their server.
+/// in: a first-time user is one button from adding their server, or, where
+/// this build runs models on this device, from finding one to run here.
 struct EmptyDetailView: View {
     @Environment(AppModel.self) private var model
     @Binding var addingProvider: Bool
@@ -225,6 +232,9 @@ struct EmptyDetailView: View {
             } actions: {
                 Button("Add a provider") { addingProvider = true }
                     .buttonStyle(.borderedProminent)
+                if model.runsModelsHere {
+                    Button("Run a model on this iPhone") { model.openModelBrowser() }
+                }
             }
         } else {
             ContentUnavailableView {

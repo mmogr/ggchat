@@ -1067,6 +1067,30 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelEngineTests.testRemovingThisIPhoneWhileItsEngineStartsLeavesNothingServing -->
   <!-- test: AppModelEngineTests.testAServeWhileTheEngineGoesDownWaitsUntilItIsDown -->
   <!-- test: OnDeviceUITests.testAReplyOnThisIPhoneRaisesTheRing -->
+- A model browser finds a model to run on this iPhone: what gglib suggests
+  for it, a search of Hugging Face, and a page for each repository with a
+  row per quantization, its size, and a chip saying whether it fits,
+  "Fits · 16K", "Short context · 4K", "Too big for this iPhone" or
+  "Can't tell yet", with a sheet saying why in words from the figures gglib
+  judged it by. The browser reads this iPhone's memory once each time it
+  opens, says when, and asks every verdict on it with that one reading; the
+  app computes no size and no verdict. A quantization too big for this
+  iPhone cannot be downloaded. Choosing one adds This iPhone the first time
+  and starts its download, whose progress the row names in a word. The ways
+  in are "Find a model…" in This iPhone's empty model list, the composer's
+  and the panel's, and "Run a model on this iPhone" beside "Add a provider"
+  while there is no provider. None is shown where the build runs no model,
+  so a release build and the Mac show none.
+  <!-- test: AppModelLibraryTests.testTheReadingIsSampledOncePerOpen -->
+  <!-- test: AppModelLibraryTests.testATooBigQuantizationCannotBeDownloaded -->
+  <!-- test: AppModelLibraryTests.testChoosingModelsCreatesThisIPhoneOnce -->
+  <!-- test: AppModelLibraryTests.testTheBrowserSaysWhenItReadTheDevice -->
+  <!-- test: AppModelLibraryTests.testASearchGoesOnAPageAtATime -->
+  <!-- test: AppModelLibraryTests.testWithNoEngineNothingIsBrowsedOrDownloaded -->
+  <!-- test: AppModelLibraryTests.testTheChipSaysEachVerdictInAFewWords -->
+  <!-- test: AppModelLibraryTests.testTheWhySheetSaysEachFigureOrThatItIsNotKnown -->
+  <!-- test: ScreenGalleryUITests.testAnEmptyPhoneOffersToFindAModel -->
+  <!-- test: ScreenGalleryUITests.testABrowsedModelSaysWhetherItFits -->
 - A bearer token is sent on every request and never reaches a log line.
   <!-- test: OpenAICompatibleProviderTests.testNoCredentialEverReachesALogLine -->
 - No line the app writes as it dials a pipe, loses one or pairs carries a
