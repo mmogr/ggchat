@@ -46,7 +46,7 @@ final class AppModelPipeTests: XCTestCase {
         XCTAssertEqual(model.diagnostics.ticketDigests, [Ticket.digest(ticket)])
 
         model.newConversation()
-        XCTAssertEqual(model.pipeStatus(for: try XCTUnwrap(model.selectedConversation)), .direct)
+        XCTAssertEqual(model.sessionStatus(for: try XCTUnwrap(model.selectedConversation)), .pipe(.direct))
         let task = try XCTUnwrap(model.send("hello"))
         await task.value
         XCTAssertEqual(model.selectedConversation?.messages.last?.content, "over the pipe")

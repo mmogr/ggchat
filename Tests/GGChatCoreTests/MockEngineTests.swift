@@ -8,24 +8,38 @@ import XCTest
 final class MockEngineTests: XCTestCase {
     private let reading = DeviceReading(physicalBytes: 12 << 30, availableBytes: 6 << 30, isSimulator: true)
 
-    /// The status is idle first, as a serve with no model loaded is, then
-    /// one step per release of the sleeper to ready with the context the
-    /// mock reports; a late subscriber hears the current state first, and
-    /// shutting down says `stopped` and ends the stream.
+    /// The status is idle, as a serve with no model loaded is, until a chat
+    /// names the model, as gglib loads one for the first request that does;
+    /// then one step per release of the sleeper to ready with the context
+    /// the mock reports, and the reply follows. A late subscriber hears the
+    /// current state first, and shutting down says `stopped` and ends the
+    /// stream.
     func testTheStatusWalksFromIdleToReadyAndEndsStopped() async throws {
         let sleeper = GatedSleeper()
-        let engine = MockEngine(sleeper: sleeper, registry: LoopbackProviderRegistry())
+        let engine = MockEngine(
+            sleeper: sleeper, registry: LoopbackProviderRegistry(), provider: MockProvider(contextSize: 4_096))
         let session = try await engine.serve(reading: reading)
         var iterator = session.status.makeAsyncIterator()
 
         let first = await iterator.next()
         XCTAssertEqual(first, .idle)
         await sleeper.release()
+        XCTAssertEqual((session as? MockEngineSession)?.currentStatus, .idle, "the model loaded with no chat")
+        let provider = engine.registry.makeProvider(baseURL: session.baseURL, apiKey: session.apiKey)
+        let replying = Task {
+            var events: [ChatEvent] = []
+            for await event in provider.stream(ChatRequest(model: MockEngine.model.id, messages: [])) {
+                events.append(event)
+            }
+            return events
+        }
         let second = await iterator.next()
         XCTAssertEqual(second, .loading(model: MockEngine.model.id, fraction: 0.5))
         await sleeper.release()
         let third = await iterator.next()
         XCTAssertEqual(third, .ready(model: MockEngine.model.id, nCtx: 4_096))
+        let events = await replying.value
+        XCTAssertTrue(events.contains { if case .finished = $0 { true } else { false } }, "no reply after the load")
 
         var late = session.status.makeAsyncIterator()
         let lateFirst = await late.next()
@@ -93,8 +107,9 @@ final class MockEngineTests: XCTestCase {
         XCTAssertEqual(ProviderError.whereToLook(forCode: code), .request, "a smaller model is the remedy")
     }
 
-    /// Slow loads in ten steps; fails ends failed and refuses a chat; no
-    /// models lists none and loads nothing.
+    /// Slow loads in ten steps; fails ends failed and refuses a chat, and
+    /// loads again at the next, as gglib tries again; no models lists none
+    /// and loads nothing.
     func testTheOtherBehavioursWalkAndListAsTheyAreNamed() async throws {
         let slow = MockEngine(behaviour: .slow).walk
         XCTAssertEqual(slow.count, 11)
@@ -102,8 +117,21 @@ final class MockEngineTests: XCTestCase {
 
         let fails = MockEngine(behaviour: .fails, registry: LoopbackProviderRegistry())
         guard case .failed? = fails.walk.last else { return XCTFail("fails walked \(fails.walk)") }
-        let refused = try await reply(from: fails)
-        guard case .error? = refused.first else { return XCTFail("a failed load answered \(refused)") }
+        let session = try await fails.serve(reading: reading)
+        let provider = fails.registry.makeProvider(baseURL: session.baseURL, apiKey: session.apiKey)
+        var statuses = session.status.makeAsyncIterator()
+        _ = await statuses.next()
+        for attempt in 1...2 {
+            var refused: [ChatEvent] = []
+            for await event in provider.stream(ChatRequest(model: MockEngine.model.id, messages: [])) {
+                refused.append(event)
+            }
+            guard case .error? = refused.first else { return XCTFail("a failed load answered \(refused)") }
+            let loading = await statuses.next()
+            XCTAssertEqual(loading, .loading(model: MockEngine.model.id, fraction: 0.5), "attempt \(attempt)")
+            guard case .failed? = await statuses.next() else { return XCTFail("attempt \(attempt) did not fail") }
+        }
+        await session.shutdown()
 
         let none = MockEngine(behaviour: .noModels, registry: LoopbackProviderRegistry())
         XCTAssertEqual(none.walk, [])

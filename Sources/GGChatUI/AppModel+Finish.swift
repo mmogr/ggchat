@@ -85,6 +85,7 @@ extension AppModel {
         }
         if let error {
             streamErrors[conversation.id] = error
+            noteEngineRefusal(error, of: live.model, in: conversation)
             log.log(.error, "stream ended with \(error.code ?? "no code"): \(error.whereToLook)")
         }
         update(conversation)

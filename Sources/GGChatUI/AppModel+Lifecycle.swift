@@ -30,6 +30,10 @@ extension AppModel {
     /// the same assertion, and resumed beside the dials rather than after
     /// them, which may wait on a machine that is asleep. The library hears
     /// the pauses and the resumes in turn (`turnDownloads`).
+    ///
+    /// This device's engine is put down once the replies are, inside the
+    /// same assertion (ADR 0015), and coming back starts nothing: the next
+    /// opening of a conversation on it, or the next send, serves it again.
     @discardableResult
     public func scene(_ passage: ScenePassage) -> Task<Void, Never> {
         switch passage {
@@ -39,12 +43,13 @@ extension AppModel {
             // Taken before any await, so the grace covers the whole pass. See
             // `BackgroundAssertion` for what is lost when the system suspends
             // the app part-way through.
-            let assertion = BackgroundAssertion(name: "hang up the pipes")
+            let assertion = BackgroundAssertion(name: "hang up the pipes and put the engine down")
             let previous = hangUpInFlight
             let pausing = turnDownloads(.background)
             let pass = Task {
                 await previous?.value
                 await hangUpEveryPipe()
+                await putEngineDownForTheBackground()
                 await pausing.value
                 assertion.end()
             }

@@ -138,8 +138,8 @@ struct ChatView: View {
 }
 
 /// Observes only the live reply, so each token redraws this row alone. The
-/// model is read only while the reply waits for its pipe, for the line that
-/// names the machine.
+/// model is read only while the reply waits for its pipe or the engine, for
+/// the line that names the provider.
 struct LiveReplyRow: View {
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion

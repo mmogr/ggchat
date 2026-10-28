@@ -48,16 +48,20 @@ final class AppModelEngineTests: XCTestCase {
         return (model, config)
     }
 
-    /// Opening the conversation serves the engine once, lists its model and
-    /// follows its status to ready; opening it again serves nothing more.
+    /// Opening the conversation serves the engine once and lists its model,
+    /// and loads none: the status is idle until a send names the model, which
+    /// it follows to ready. Opening it again serves nothing more.
     func testOpeningThisIPhoneServesItsEngineOnceAndListsItsModel() async throws {
         let (model, config) = try await makeOpenedModel()
         let served = try XCTUnwrap(model.engineSession as? MockEngineSession)
         XCTAssertEqual(served.reading.physicalBytes, ProcessInfo.processInfo.physicalMemory)
         XCTAssertEqual(model.models(for: config.id).map(\.id), [MockEngine.model.id])
+        _ = await waitUntil { model.engineStatus == .idle }
+        XCTAssertEqual(model.engineStatus, .idle, "opening loaded a model")
+
+        try await XCTUnwrap(model.send("hi")).value
         _ = await waitUntil { model.engineStatus == ready }
         XCTAssertEqual(model.engineStatus, ready)
-
         await model.open(config).value
         XCTAssertTrue(model.engineSession as? MockEngineSession === served, "a second opening served again")
     }

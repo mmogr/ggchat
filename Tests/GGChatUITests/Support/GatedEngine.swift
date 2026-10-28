@@ -12,6 +12,10 @@ import Synchronization
 /// on purpose, as `GatedConnector` holds a dial and `HeldShutdownConnector` a
 /// hang-up, and counts what has reached each gate so a test can wait for a
 /// window to open before acting inside it.
+///
+/// Each serve is the mock's with the next of `behaviours`, the last kept for
+/// every serve after, so a test can have a load fail and the next serve's
+/// succeed, as a fresh one may. `behaviours` names one at least.
 final class GatedEngine: LocalEngine {
     private struct State {
         var serves = 0
@@ -20,12 +24,29 @@ final class GatedEngine: LocalEngine {
         var shutdownsHeld: Bool
     }
 
-    private let inner: MockEngine
+    private let inner: [MockEngine]
     private let state: Mutex<State>
 
-    init(registry: LoopbackProviderRegistry, holdingServes: Bool, holdingShutdowns: Bool) {
-        inner = MockEngine(registry: registry)
+    init(
+        registry: LoopbackProviderRegistry, holdingServes: Bool, holdingShutdowns: Bool,
+        behaviours: [MockEngine.Behaviour] = [.ready], sleeper: any Sleeper = ImmediateSleeper(),
+        provider: (any Provider)? = nil
+    ) {
+        precondition(!behaviours.isEmpty, "a GatedEngine serves with one behaviour at least")
+        inner = behaviours.map { behaviour in
+            MockEngine(behaviour: behaviour, sleeper: sleeper, registry: registry, provider: provider)
+        }
         state = Mutex(State(servesHeld: holdingServes, shutdownsHeld: holdingShutdowns))
+    }
+
+    /// How many serves have reached the gate, let through or not.
+    var serves: Int {
+        state.withLock { $0.serves }
+    }
+
+    /// How many sessions have begun going down, let through or not.
+    var shutdowns: Int {
+        state.withLock { $0.shutdowns }
     }
 
     var isAvailable: Bool { true }
@@ -55,9 +76,13 @@ final class GatedEngine: LocalEngine {
     }
 
     func serve(reading: DeviceReading) async throws -> any EngineSession {
-        state.withLock { $0.serves += 1 }
+        let index = state.withLock { state in
+            state.serves += 1
+            return state.serves - 1
+        }
         while state.withLock({ $0.servesHeld }) { await Task.yield() }
-        return GatedEngineSession(inner: try await inner.serve(reading: reading), engine: self)
+        let engine = inner[min(index, inner.count - 1)]
+        return GatedEngineSession(inner: try await engine.serve(reading: reading), engine: self)
     }
 
     fileprivate func shutdownStarted() {

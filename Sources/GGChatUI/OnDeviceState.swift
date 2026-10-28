@@ -3,8 +3,9 @@ import Observation
 
 /// What the app keeps about running models on this device, beside the engine
 /// itself: the model browser open, if one is, shown from the root; each
-/// download chosen in it, as its last step said; and the models installed;
-/// see `AppModel+Library` and `AppModel+Downloads`.
+/// download chosen in it, as its last step said; the models installed; and
+/// the models the engine refused as too big; see `AppModel+Library`,
+/// `AppModel+Downloads` and `AppModel+Engine+Lifecycle`.
 ///
 /// One holder on `AppModel`, observed property by property, so a download's
 /// steps redraw its row and not the root that shows the browser.
@@ -24,6 +25,13 @@ public final class OnDeviceState {
     @ObservationIgnored var turning: Task<Void, Never>?
     /// Where the models are kept, or nil where this build runs none.
     @ObservationIgnored var modelsDirectory = EngineFactory.makeModelsDirectory()
+    /// The models the engine refused as too big for this device since it was
+    /// last served, by id, which the status pill says. A serve reads the
+    /// memory afresh, so it starts with none.
+    public internal(set) var tooBig: Set<String> = []
+    /// Moved on by every shutdown of the engine, so a serve that lands after
+    /// one takes itself down: nothing else would.
+    @ObservationIgnored var engineGeneration = 0
 }
 
 extension DownloadState {

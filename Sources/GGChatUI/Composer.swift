@@ -3,7 +3,8 @@ import SwiftUI
 
 /// The app's three custom glass elements, and only these, inside one
 /// container so they sample the transcript beneath as one system: the
-/// composer, the model pill, and the status pill.
+/// composer, the model pill, and the status pill, which says how a pipe is
+/// or how this device's engine is with the conversation's model.
 struct Composer: View {
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -53,7 +54,7 @@ struct Composer: View {
     /// model pill grows upward into its list.
     @ViewBuilder
     private var pills: some View {
-        let status = model.pipeStatus(for: conversation)
+        let status = model.sessionStatus(for: conversation)
         let reading = model.contextReading(for: conversation)
         if typeSize.isAccessibilitySize {
             VStack(alignment: .leading, spacing: 8) {
@@ -208,47 +209,33 @@ struct Composer: View {
 
     // MARK: - Status pill
 
-    /// Quiet while connected, and a way back at every moment the app is not
-    /// already dialling — including over a pill that reads "Direct", which
-    /// is the state a status goes stale in. `AppModel.canReconnect(_:)`
-    /// carries the reasoning.
-    private func statusPill(_ status: PipeStatus) -> some View {
-        let offered = provider.map { model.canReconnect($0.id) } ?? false
+    /// A pipe's is quiet while connected, and a way back at every moment the
+    /// app is not already dialling — including over a pill that reads
+    /// "Direct", which is the state a status goes stale in;
+    /// `AppModel.canReconnect(_:)` carries the reasoning. The engine's says
+    /// how the conversation's model is, loads it again once it could not be
+    /// loaded, and opens the model browser once it was refused as too big
+    /// (`AppModel.press(_:in:)`).
+    private func statusPill(_ status: SessionStatus) -> some View {
+        let offered = model.offersPress(on: status, in: conversation)
         return Button {
-            guard offered, let provider else { return }
-            Task { await model.reconnectPipe(for: provider) }
+            guard offered else { return }
+            model.press(status, in: conversation)
         } label: {
-            Label(statusText(status), systemImage: statusSymbol(status))
+            Label(status.words, systemImage: status.symbol)
                 .font(.callout)
-                .symbolEffect(.variableColor.iterative, isActive: status == .idle && !reduceMotion)
+                .monospacedDigit()
+                .symbolEffect(.variableColor.iterative, isActive: status.isUnderWay && !reduceMotion)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 7)
         }
         .buttonStyle(.plain)
-        // Only the closed pill is tinted: it is the one asking to be pressed.
-        // The others read as status and are pressable without saying so.
-        .foregroundStyle(status == .closed ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
+        .foregroundStyle(status.asksToBePressed ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
         .disabled(!offered)
         .glassEffect(.regular.interactive(offered), in: .capsule)
         .glassEffectID("status", in: glass)
         .glassEffectTransition(.matchedGeometry)
-        .accessibilityLabel("Connection \(statusText(status))")
-        .accessibilityHint(offered ? "Reconnects" : "")
-    }
-
-    private func statusText(_ status: PipeStatus) -> String {
-        switch status {
-        case .idle: "Connecting"
-        case .direct: "Direct"
-        case .relayed: "Relayed"
-        case .closed: "Reconnect"
-        }
-    }
-
-    private func statusSymbol(_ status: PipeStatus) -> String {
-        switch status {
-        case .idle, .direct, .relayed: "antenna.radiowaves.left.and.right"
-        case .closed: "antenna.radiowaves.left.and.right.slash"
-        }
+        .accessibilityLabel(status.accessibilityLabel)
+        .accessibilityHint(offered ? status.accessibilityHint : "")
     }
 }
