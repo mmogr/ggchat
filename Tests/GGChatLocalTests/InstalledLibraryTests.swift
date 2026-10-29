@@ -56,7 +56,7 @@ final class InstalledLibraryTests: XCTestCase {
     func testAFolderWhoseMarkWasClearedIsOutOfTheBackupAgainAtTheNextOpen() async throws {
         _ = try await GglibLibrary(folders: folders).installed()
         for folder in [folders.data, folders.models] {
-            var url = folder
+            var url = Self.uncached(folder)
             var values = URLResourceValues()
             values.isExcludedFromBackup = false
             try url.setResourceValues(values)
@@ -65,12 +65,19 @@ final class InstalledLibraryTests: XCTestCase {
         _ = try await GglibLibrary(folders: folders).installed()
 
         for folder in [folders.data, folders.models] {
-            var url = folder
-            url.removeAllCachedResourceValues()
+            let url = Self.uncached(folder)
             XCTAssertEqual(
                 try url.resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup, true,
                 folder.lastPathComponent)
         }
+    }
+
+    /// `folder` as a URL made again from its path, with nothing cached, so
+    /// what it reads is the folder now and not what the library's open saw.
+    private static func uncached(_ folder: URL) -> URL {
+        var url = URL(filePath: folder.path(percentEncoded: false), directoryHint: .isDirectory)
+        url.removeAllCachedResourceValues()
+        return url
     }
 
     /// The app's own place for the database is `ggchat-gglib` under
