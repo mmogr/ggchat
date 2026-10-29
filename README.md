@@ -1083,9 +1083,11 @@ Each claim names the test that keeps it true.
 - A model browser finds a model to run on this iPhone: what gglib suggests
   for it, a search of Hugging Face, and a page for each repository with a
   row per quantization, its size, and a chip saying whether it fits,
-  "Fits · 16K", "Short context · 4K", "Too big for this iPhone" or
-  "Can't tell yet", with a sheet saying why in words from the figures gglib
-  judged it by. The browser reads this iPhone's memory once each time it
+  "Fits · 16K", "Short context · 4K", "Too big for this iPhone",
+  "Can't tell yet" or "Can't tell", with a sheet saying why in words from
+  the figures gglib judged it by. Only a verdict gglib could not reach
+  because the first bytes of the file ended before its header did says a
+  download will settle it. The browser reads this iPhone's memory once each time it
   opens, says when, and asks every verdict on it with that one reading; the
   app computes no size and no verdict. A quantization too big for this
   iPhone cannot be downloaded. Choosing one adds This iPhone the first time
@@ -1102,6 +1104,7 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelLibraryTests.testWithNoEngineNothingIsBrowsedOrDownloaded -->
   <!-- test: AppModelLibraryTests.testTheChipSaysEachVerdictInAFewWords -->
   <!-- test: AppModelLibraryTests.testTheWhySheetSaysEachFigureOrThatItIsNotKnown -->
+  <!-- test: AppModelLibraryTests.testOnlyACutOffHeaderPromisesThatADownloadWillTell -->
   <!-- test: ScreenGalleryUITests.testAnEmptyPhoneOffersToFindAModel -->
   <!-- test: ScreenGalleryUITests.testABrowsedModelSaysWhetherItFits -->
 - A model chosen in the browser downloads to this iPhone, into
@@ -1110,7 +1113,9 @@ Each claim names the test that keeps it true.
   again after each one finishes. A download larger than the room the volume
   has for it, or one with no such directory to go into, is refused under its
   row before the library hears of it. The row shows a bar, how much of how
-  much has come, and Cancel, which takes the row and the partial file away.
+  much has come, and Cancel, which takes the row away and stops the
+  download; gglib keeps the bytes it fetched, and choosing it again carries
+  on from them, while the mock deletes its partial file.
   Going to the background pauses every download beside the replies, the row
   saying "Paused, resumes when ggchat is open", and coming back resumes them
   from the bytes they had; the library hears the pauses and resumes in the
@@ -1132,6 +1137,31 @@ Each claim names the test that keeps it true.
   <!-- test: MockLibraryDownloadTests.testAPauseHoldsAWalkAtItsBytesAndAResumeGoesOn -->
   <!-- test: MockLibraryDownloadTests.testAFinishedDownloadIsInstalledAndListedByTheEngineSharingItsCatalogue -->
   <!-- test: ScreenGalleryUITests.testADownloadFillsItsBarAndTheModelJoinsTheList -->
+- On iOS the library behind the browser is gglib's own, through its
+  framework: Hugging Face searched, each quantization judged against the
+  reading the browser took, downloads followed a step at a time, and the
+  models installed listed and removed, files, emptied folder and row. Its
+  database, `gglib.db`, is kept in `ggchat-gglib` under Application Support,
+  readable by this user alone and out of the backup like the models beside
+  it, and it is opened at the first question, so a build that asks none
+  makes neither folder. It asks Hugging Face with no token, so a repository
+  that wants one says it needs a token. A download's steps stay in one
+  stream through a pause and go on after the resume, end after done or
+  failed, and ending the stream first calls gglib's download off. Each of
+  gglib's records and errors becomes the app's own, case for case. No build
+  shows the browser over it yet: outside a DEBUG build launched with
+  `-ggchat-mock-engine`, which walks the mock library, the engine is
+  unavailable, and with it every way in.
+  <!-- test: MappingTests.testEachVerdictCrossesAsTheAppsOwn -->
+  <!-- test: MappingTests.testEachGglibErrorIsTheAppsOwnCase -->
+  <!-- test: GglibLibraryTests.testAFailedOpenIsNotKeptAndTheNextQuestionOpensAgain -->
+  <!-- test: GglibLibraryTests.testPausingAndResumingOpenNothingButReachAnOpenLibrary -->
+  <!-- test: GglibLibraryTests.testEveryQuestionThrowsGglibsRefusalAsTheAppSaysIt -->
+  <!-- test: DownloadStepsTests.testAPauseKeepsTheStreamOpenAndTheResumeGoesOnInIt -->
+  <!-- test: DownloadStepsTests.testAFailureIsSaidWithItsReasonAndEndsTheStream -->
+  <!-- test: DownloadStepsTests.testCancellingTheConsumerCancelsTheWatch -->
+  <!-- test: InstalledLibraryTests.testTheLibraryIsOpenedInPrivateFoldersOutOfTheBackup -->
+  <!-- test: InstalledLibraryTests.testAModelIsListedJudgedAndRemovedWithItsFiles -->
 - This iPhone's engine runs in the foreground only
   ([ADR 0015](docs/adr/0015-the-on-device-engine-is-foreground-only.md)).
   It is served when a conversation on it opens or a send needs it, and
@@ -2074,6 +2104,16 @@ bearer token, which is how it runs against a modelpipe pipe. Every live
 test skips itself when `GGCHAT_LIVE_BASE_URL` is unset, so `make test-live`
 refuses to run without it rather than passing having exercised nothing.
 
+gglib's model library asks Hugging Face itself, through the Mac's slice of
+its framework: a search, and a small repository's quantizations judged
+against a phone's reading, with no download. Those tests skip themselves
+unless `GGCHAT_LIVE_HF=1`, which only this sets, so neither `make ci` nor CI
+reaches the network for them:
+
+```sh
+make test-live-library
+```
+
 `make ci` runs what CI runs: `make fmt-check`, `make lint`, `make analyze`,
 `make boundaries`, `make enforce`, `make build`, `make build-release`,
 `make build-app`, `make build-app-release`, `make test`, `make unused`,
@@ -2251,7 +2291,7 @@ Sources/GGChatUI/     SwiftUI; the app model, views, and SwiftData persistence
 App/                  the xcodegen spec, the generated project, and a @main struct with assets
 Tests/GGChatCoreTests XCTest; fixtures are real captures from gglib, but for the one named contract-*
 Tests/GGChatPipeTests that the binding is linked and its statuses cross unchanged
-Tests/GGChatLocalTests that gglib's framework is linked and is the one its binding names
+Tests/GGChatLocalTests gglib's framework linked as its binding names, and its library over fakes and a folder of its own
 Tests/GGChatUITests   the app model, streaming, the pipe, and the SwiftData store
 App/ggchatUITests     XCUITest that drives the first-run flow on a simulator
 docs/adr/             decisions, each with a kill criterion that names a reading

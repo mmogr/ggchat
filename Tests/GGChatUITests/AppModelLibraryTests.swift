@@ -231,7 +231,7 @@ final class AppModelLibraryTests: XCTestCase {
         XCTAssertEqual(FitChip.words(for: .fits(ctx: 16_384)), "Fits · 16K")
         XCTAssertEqual(FitChip.words(for: .tight(ctx: 4_096)), "Short context · 4K")
         XCTAssertEqual(FitChip.words(for: .tooBig(needBytes: 5 << 30, haveBytes: 3 << 30)), "Too big for this iPhone")
-        XCTAssertEqual(FitChip.words(for: .unknown(missing: .kvShape)), "Can't tell yet")
+        XCTAssertEqual(FitChip.words(for: .unknown(missing: .kvShape, cutOff: true)), "Can't tell yet")
         XCTAssertEqual(FitChip.context(512), "512")
     }
 
@@ -239,19 +239,49 @@ final class AppModelLibraryTests: XCTestCase {
     /// one gglib did not have is not known rather than reading it as zero.
     func testTheWhySheetSaysEachFigureOrThatItIsNotKnown() {
         let known = FitWhySheet.lines(
-            FitWhy(weightsBytes: 1 << 30, kvBytesPerToken: 114_688, budgetBytes: 3 << 30, trainedCtx: 40_960))
+            FitWhy(weightsBytes: 1 << 30, kvBytesPerToken: 114_688, budgetBytes: 3 << 30, trainedCtx: 40_960),
+            verdict: .fits(ctx: 40_960))
         XCTAssertEqual(known.count, 4)
         XCTAssertFalse(known.contains { $0.contains("not known") }, "\(known)")
         XCTAssertTrue(known[0].hasPrefix("The weights take "))
         XCTAssertTrue(known[2].hasPrefix("This iPhone gives a model "))
 
         let partly = FitWhySheet.lines(
-            FitWhy(weightsBytes: 1 << 29, kvBytesPerToken: nil, budgetBytes: 3 << 30, trainedCtx: nil))
+            FitWhy(weightsBytes: 1 << 29, kvBytesPerToken: nil, budgetBytes: 3 << 30, trainedCtx: nil),
+            verdict: .unknown(missing: .trainedContext, cutOff: true))
         XCTAssertEqual(partly.filter { $0.contains("not known") }.count, 2, "\(partly)")
         XCTAssertFalse(partly.contains { $0.contains("Zero") || $0.contains(" 0 ") }, "\(partly)")
 
         XCTAssertTrue(FitWhySheet.verdictLine(.tight(ctx: 4_096)).contains("short context"))
-        XCTAssertTrue(FitWhySheet.verdictLine(.unknown(missing: .kvShape)).contains("layers and attention heads"))
+        XCTAssertTrue(
+            FitWhySheet.verdictLine(.unknown(missing: .kvShape, cutOff: true)).contains("layers and attention heads"))
         XCTAssertTrue(FitWhySheet.verdictLine(.tooBig(needBytes: 5 << 30, haveBytes: 3 << 30)).contains("needs"))
+    }
+
+    /// A verdict gglib could not reach says a download will settle it only
+    /// when the first bytes of the file were cut off before the header said:
+    /// one whose file does not hold the figure, or that wants this iPhone's
+    /// memory, would be a promise nothing keeps.
+    func testOnlyACutOffHeaderPromisesThatADownloadWillTell() {
+        let cutOff = FitVerdict.unknown(missing: .trainedContext, cutOff: true)
+        let unsaid = FitVerdict.unknown(missing: .trainedContext, cutOff: false)
+        let noBudget = FitVerdict.unknown(missing: .budget, cutOff: false)
+
+        XCTAssertTrue(FitWhySheet.verdictLine(cutOff).contains("once the model is downloaded"))
+        XCTAssertFalse(FitWhySheet.verdictLine(unsaid).contains("downloaded"), FitWhySheet.verdictLine(unsaid))
+        XCTAssertFalse(FitWhySheet.verdictLine(noBudget).contains("downloaded"), FitWhySheet.verdictLine(noBudget))
+        XCTAssertTrue(FitWhySheet.verdictLine(noBudget).contains("memory this iPhone gives"))
+
+        XCTAssertEqual(FitChip.words(for: cutOff), "Can't tell yet")
+        XCTAssertEqual(FitChip.words(for: unsaid), "Can't tell")
+        XCTAssertEqual(FitChip.words(for: noBudget), "Can't tell yet")
+
+        let unread = FitWhy(weightsBytes: nil, kvBytesPerToken: nil, budgetBytes: nil, trainedCtx: nil)
+        let promised = FitWhySheet.lines(unread, verdict: cutOff)
+        XCTAssertEqual(promised.filter { $0.hasSuffix("not known yet.") }.count, 2, "\(promised)")
+        for verdict in [unsaid, noBudget] {
+            let lines = FitWhySheet.lines(unread, verdict: verdict)
+            XCTAssertFalse(lines.contains { $0.contains("yet") }, "\(lines)")
+        }
     }
 }

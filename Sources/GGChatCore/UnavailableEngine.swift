@@ -20,9 +20,10 @@ public struct UnavailableEngine: LocalEngine {
     }
 }
 
-/// The model library in a build with no engine. Every call that asks
-/// something throws ``OnDeviceError/engineUnavailable``: a library whose
-/// models nothing can run has nothing worth saying.
+/// The model library wherever gglib's cannot be placed: the Mac, which runs
+/// no model, and an iOS build where Application Support cannot be named.
+/// Every call that asks something throws
+/// ``OnDeviceError/engineUnavailable``: there is no library to answer it.
 public struct UnavailableLibrary: ModelLibrary {
     public init() {}
 

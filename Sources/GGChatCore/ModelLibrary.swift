@@ -37,11 +37,14 @@ public enum FitVerdict: Sendable, Equatable, Hashable {
     /// Not even the smallest context fits: the model needs a budget of
     /// `needBytes` and the device gives `haveBytes`.
     case tooBig(needBytes: UInt64, haveBytes: UInt64)
-    /// gglib could not tell without `missing`.
-    case unknown(missing: MissingInput)
+    /// gglib could not tell without `missing`. `cutOff` says the input was
+    /// to be read from the first bytes of the model's file and those ended
+    /// before its header did, so the whole file, once downloaded, can tell;
+    /// false when nothing gglib read holds it.
+    case unknown(missing: MissingInput, cutOff: Bool)
 }
 
-/// What a ``FitVerdict/unknown(missing:)`` could not do without.
+/// What a ``FitVerdict/unknown(missing:cutOff:)`` could not do without.
 public enum MissingInput: Sendable, Equatable, Hashable {
     /// The model's trained context.
     case trainedContext
