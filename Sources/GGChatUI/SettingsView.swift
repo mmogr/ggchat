@@ -4,8 +4,8 @@ import SwiftUI
 
 /// About, with the gglib and llama.cpp this build carries, when it stops
 /// opening, how many distinct tickets this device has connected to and,
-/// where it runs models, what they take, and then each pipe and what it
-/// says about itself.
+/// where it runs models, what they take, which leads to the model browser,
+/// and then each pipe and what it says about itself.
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.locale) private var locale
@@ -32,8 +32,14 @@ struct SettingsView: View {
                     }
                     LabeledContent("Distinct tickets connected", value: "\(model.diagnostics.ticketDigests.count)")
                     if model.runsModelsHere {
-                        LabeledContent("Models on this iPhone", value: model.installedSize)
-                            .task { await model.refreshInstalled() }
+                        // The way back to the browser from anywhere, pushed
+                        // in this sheet's own stack rather than a sheet over it.
+                        NavigationLink {
+                            ModelBrowserPage()
+                        } label: {
+                            LabeledContent("Models on this iPhone", value: model.installedSize)
+                        }
+                        .task { await model.refreshInstalled() }
                     }
                     Link("Source", destination: URL(string: "https://github.com/mmogr/ggchat")!)
                 }

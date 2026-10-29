@@ -68,7 +68,8 @@ extension AppModel {
     /// What the browser says when this device's memory could not be read.
     static let unreadDevice = "This device's memory could not be read, so nothing can be said about what fits it."
 
-    /// Opens the browser, reading this device once for it.
+    /// Opens the browser in a sheet of its own, reading this device once
+    /// for it.
     public func openModelBrowser() {
         openModelBrowser(sample: DeviceReadingSampler.sample)
     }
@@ -76,8 +77,21 @@ extension AppModel {
     /// Opens the browser with the reading `sample` takes, once, as it opens.
     /// Nothing opens where this build runs no model.
     func openModelBrowser(sample: () -> DeviceReading?) {
-        guard runsModelsHere else { return }
-        onDevice.modelBrowser = ModelBrowser(reading: sample(), checkedAt: now())
+        guard let browser = makeModelBrowser(sample: sample) else { return }
+        onDevice.modelBrowser = browser
+    }
+
+    /// One opening of the browser for a view that shows it in place, as Add
+    /// provider's This iPhone does, reading this device once for it; nil
+    /// where this build runs no model. Nothing is presented for it.
+    public func makeModelBrowser() -> ModelBrowser? {
+        makeModelBrowser(sample: DeviceReadingSampler.sample)
+    }
+
+    /// One opening, with the reading `sample` takes, once, and when.
+    func makeModelBrowser(sample: () -> DeviceReading?) -> ModelBrowser? {
+        guard runsModelsHere else { return nil }
+        return ModelBrowser(reading: sample(), checkedAt: now())
     }
 
     /// "Memory checked at 10:42", or that it could not be read.

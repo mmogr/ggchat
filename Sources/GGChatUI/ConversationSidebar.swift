@@ -132,11 +132,16 @@ struct ConversationSidebar: View {
                     Text(model.providers.isEmpty ? "No providers yet" : "No conversations yet")
                         .font(.callout)
                         .foregroundStyle(.secondary)
+                    // Where Add provider offers This iPhone, first run says
+                    // so, as the detail pane's description does.
+                    if model.providers.isEmpty, model.runsModelsHere {
+                        Text(EmptyDetailView.firstRun(runsModelsHere: true))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
                     if model.providers.isEmpty {
                         Button("Add a provider") { addingProvider = true }
-                        if model.runsModelsHere {
-                            Button("Run a model on this iPhone") { model.openModelBrowser() }
-                        }
                     } else {
                         Button("New conversation") { model.newConversation() }
                     }

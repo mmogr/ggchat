@@ -1,18 +1,20 @@
 import GGChatCore
 import SwiftUI
 
-/// One repository's quantizations, a row each: its size, whether it fits
-/// this iPhone and why, and Download, which one too big for this iPhone does
-/// not offer; once chosen, the download's bar and Cancel. The verdicts are
-/// asked with the opening's one reading, so they agree with the suggestions
-/// it showed.
+/// One repository's quantizations, a row each: its size, the chip saying
+/// whether it fits this iPhone, which opens the sheet saying how gglib judged
+/// it, and a download button, which one too big for this iPhone does not
+/// have; once chosen, the download's bar and Cancel under it, and once done,
+/// a mark saying it is on this iPhone. The verdicts are asked with the
+/// opening's one reading, so they agree with the suggestions it showed, and
+/// the footer says when that was.
 struct ModelBrowserRepoView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.locale) private var locale
     @Environment(\.calendar) private var calendar
     let browser: ModelBrowser
     let repo: String
-    @State private var why: WhyShown?
+    @State private var explaining: FitExplanation?
 
     var body: some View {
         List {
@@ -26,7 +28,9 @@ struct ModelBrowserRepoView: View {
                         row(offer)
                     }
                 } header: {
-                    Text(repo)
+                    // The title is the model; the whole name, owner and
+                    // all, is said once, here, as Hugging Face spells it.
+                    Text(repo).textCase(nil)
                 } footer: {
                     Text(checked)
                 }
@@ -36,12 +40,12 @@ struct ModelBrowserRepoView: View {
                 ProgressView()
             }
         }
-        .navigationTitle(repo.split(separator: "/").last.map(String.init) ?? repo)
+        .navigationTitle(RepoName.model(repo))
         .task {
             if browser.offers[repo] == nil { await model.loadOffers(of: repo, in: browser) }
         }
-        .sheet(item: $why) { shown in
-            FitWhySheet(repo: repo, offer: shown.offer, checked: checked)
+        .sheet(item: $explaining) { explanation in
+            FitWhySheet(explanation: explanation, checked: checked)
         }
     }
 
@@ -53,32 +57,12 @@ struct ModelBrowserRepoView: View {
         let choice = QuantChoice(repo: repo, quantization: offer.name)
         let progress = model.onDevice.downloads[choice]
         return VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(offer.name).font(.headline)
-                Spacer(minLength: 8)
-                FitChip(verdict: offer.verdict)
-            }
-            HStack(spacing: 16) {
-                Text(Self.size(offer))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Spacer(minLength: 8)
-                Button("Why") { why = WhyShown(offer: offer) }
-                    .accessibilityLabel("Why, \(offer.name)")
-                switch progress?.state {
-                case .done?:
-                    Text("Downloaded").font(.subheadline).foregroundStyle(.secondary)
-                case nil, .failed?:
-                    Button("Download") { model.download(offer, of: repo) }
-                        .disabled(!offer.verdict.allowsDownload)
-                        .accessibilityLabel("Download, \(offer.name)")
-                default:
-                    EmptyView()
+            CompactRow(title: Self.title(offer), detail: nil) {
+                HStack(spacing: 12) {
+                    FitChipButton(explanation: FitExplanation(repo: repo, offer: offer)) { explaining = $0 }
+                    control(offer, progress: progress)
                 }
             }
-            // Two buttons in one row: each takes its own taps rather than
-            // the row taking them all.
-            .buttonStyle(.borderless)
             if let progress, progress.state.isUnderWay {
                 DownloadBar(progress: progress, name: offer.name) { model.cancelDownload(choice) }
             } else if case .failed(let reason)? = progress?.state {
@@ -87,15 +71,37 @@ struct ModelBrowserRepoView: View {
         }
     }
 
-    /// "1.07 GB", or "4.29 GB in 2 files" for a split model.
-    private static func size(_ offer: QuantOffer) -> String {
-        let size = Sizes.download(offer.totalBytes)
-        return offer.shardCount > 1 ? "\(size) in \(offer.shardCount) files" : size
+    /// What ends the row: a download button, which one too big for this
+    /// iPhone does not have; a mark once it is on this iPhone; nothing while
+    /// it downloads, whose bar and Cancel are under the row.
+    @ViewBuilder
+    private func control(_ offer: QuantOffer, progress: DownloadProgress?) -> some View {
+        switch progress?.state {
+        case .done?:
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+                .accessibilityLabel("On this iPhone")
+                .accessibilityIdentifier("downloaded")
+        case nil, .failed?:
+            if offer.verdict.allowsDownload {
+                Button {
+                    model.download(offer, of: repo)
+                } label: {
+                    Image(systemName: "arrow.down.circle")
+                        .imageScale(.large)
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Download, \(offer.name)")
+            }
+        default:
+            EmptyView()
+        }
     }
-}
 
-/// The quantization whose Why sheet is up.
-private struct WhyShown: Identifiable {
-    let offer: QuantOffer
-    var id: String { offer.name }
+    /// "Q4_K_M · 1.07 GB", or "Q8_0 · 4.29 GB in 2 files" for a split model.
+    nonisolated static func title(_ offer: QuantOffer) -> String {
+        let size = Sizes.download(offer.totalBytes)
+        let files = offer.shardCount > 1 ? " in \(offer.shardCount) files" : ""
+        return "\(offer.name) · \(size)\(files)"
+    }
 }

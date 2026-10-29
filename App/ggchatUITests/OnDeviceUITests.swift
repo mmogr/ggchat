@@ -109,6 +109,25 @@ final class OnDeviceUITests: XCTestCase {
         XCTAssertTrue(checked.waitForNonExistence(timeout: 10), "the browser did not close after Done")
     }
 
+    /// Settings says what the models on this iPhone take, and the row leads
+    /// to the browser, pushed in Settings' own stack, listing the model on
+    /// this iPhone; with This iPhone there, the model has no Use.
+    @MainActor
+    func testSettingsLeadsToTheModelBrowser() {
+        let app = launchFreshApp(arguments: ["-ggchat-mock-engine", "ready"])
+        let settings = app.buttons["Settings"].firstMatch
+        XCTAssertTrue(waitUntilHittable(settings, timeout: 30), "no way to Settings")
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Models on this iPhone'")).firstMatch
+        XCTAssertTrue(tap(settings, untilExists: row), "Settings has no row for the models on this iPhone")
+        let checked = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Memory checked at"))
+            .firstMatch
+        XCTAssertTrue(tap(row, untilExists: checked), "the row did not open the model browser")
+        let installed = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'mock-phone-1.7b'")).firstMatch
+        XCTAssertTrue(installed.waitForExistence(timeout: 10), "the browser does not list the model on this iPhone")
+        XCTAssertFalse(
+            app.buttons["Use mock-phone-1.7b"].firstMatch.exists, "a model offers Use while This iPhone is there")
+    }
+
     /// Types `text` into the composer and sends it.
     @MainActor
     private func send(_ text: String, in app: XCUIApplication) {

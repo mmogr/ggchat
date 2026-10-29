@@ -229,8 +229,9 @@ extension RootView {
 #endif
 
 /// What the app says when nothing is selected. On first run it is the way
-/// in: a first-time user is one button from adding their server, or, where
-/// this build runs models on this device, from finding one to run here.
+/// in: a first-time user is one button from Add provider, where they add
+/// their server, or, where this build runs models on this device, find one
+/// to run here.
 struct EmptyDetailView: View {
     @Environment(AppModel.self) private var model
     @Binding var addingProvider: Bool
@@ -240,13 +241,10 @@ struct EmptyDetailView: View {
             ContentUnavailableView {
                 Label("No providers", systemImage: "server.rack")
             } description: {
-                Text("Add the server that runs your models, or a modelpipe ticket from one.")
+                Text(Self.firstRun(runsModelsHere: model.runsModelsHere))
             } actions: {
                 Button("Add a provider") { addingProvider = true }
                     .buttonStyle(.borderedProminent)
-                if model.runsModelsHere {
-                    Button("Run a model on this iPhone") { model.openModelBrowser() }
-                }
             }
         } else {
             ContentUnavailableView {
@@ -258,6 +256,16 @@ struct EmptyDetailView: View {
                     .buttonStyle(.borderedProminent)
             }
         }
+    }
+}
+
+extension EmptyDetailView {
+    /// What first run says the providers are: This iPhone among them only
+    /// where Add provider offers it.
+    static func firstRun(runsModelsHere: Bool) -> String {
+        runsModelsHere
+            ? "Add the server that runs your models, a modelpipe ticket from one, or a model to run on this iPhone."
+            : "Add the server that runs your models, or a modelpipe ticket from one."
     }
 }
 

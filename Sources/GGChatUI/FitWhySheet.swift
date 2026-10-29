@@ -1,36 +1,45 @@
 import GGChatCore
 import SwiftUI
 
-/// Why a quantization fits this iPhone or does not, in plain words, from the
-/// figures gglib reached its verdict with (`FitWhy`): the weights, what each
+/// How gglib judged a model for this iPhone, in plain words, from the
+/// figures it reached its verdict with (`FitWhy`): the weights, what each
 /// token of context adds, what this iPhone gives a model, and the context
-/// the model was trained on. A figure gglib did not have is said to be
-/// unknown, never zero. Nothing here is added up: the verdict is gglib's.
+/// the model was trained on; and, for a suggestion, gglib's sentence on why
+/// that one. A figure gglib did not have is said to be unknown, never zero.
+/// Nothing here is added up: the verdict is gglib's. A chip opens it
+/// (`FitChipButton`).
 struct FitWhySheet: View {
     @Environment(\.dismiss) private var dismiss
-    let repo: String
-    let offer: QuantOffer
-    /// When this device's memory was read for the verdict.
+    let explanation: FitExplanation
+    /// When this device's memory was read for the verdict, said under the
+    /// figures, which only a verdict asked with that reading comes with.
     let checked: String
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    FitChip(verdict: offer.verdict)
-                    Text(Self.verdictLine(offer.verdict))
+                    FitChip(verdict: explanation.verdict)
+                    Text(Self.verdictLine(explanation.verdict))
                 } header: {
-                    Text(repo)
+                    if let repo = explanation.repo { Text(repo) }
                 }
-                Section {
-                    ForEach(Self.lines(offer.why, verdict: offer.verdict), id: \.self) { Text($0) }
-                } header: {
-                    Text("From")
-                } footer: {
-                    Text(checked)
+                if let rationale = explanation.rationale {
+                    Section("gglib suggests it") {
+                        Text(rationale)
+                    }
+                }
+                if let why = explanation.why {
+                    Section {
+                        ForEach(Self.lines(why, verdict: explanation.verdict), id: \.self) { Text($0) }
+                    } header: {
+                        Text("From")
+                    } footer: {
+                        Text(checked)
+                    }
                 }
             }
-            .navigationTitle(offer.name)
+            .navigationTitle(explanation.name)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }

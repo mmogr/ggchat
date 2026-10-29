@@ -824,8 +824,29 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # cleared since is restored by the next open, which nothing else checks. Its
 # marker, and the engine's claim that its library is private and out of the
 # backup now naming the test that shows it, are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1039
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 39
-floor "README test markers" "${markers:-0}" 926
+#
+# 2026-10-29: 1039 -> 1044 and 926 -> 931 for This iPhone in Add provider and
+# the browser's compact rows. That This iPhone is a kind only where a model
+# runs here, that its page in Add provider opens no sheet of its own, that a
+# chip's sheet carries gglib's sentence for a suggestion and no figures for
+# an installed model, the line each row says, and "On this iPhone" holding
+# the installed models and the downloads on their way are guarded nowhere
+# else: a Mac offering This iPhone, or the browser's sheet stacked over Add
+# provider, would pass every test before these. These five and the five
+# markers naming them are the whole of that guard, so the floors move past
+# them. The empty phone's walk was renamed for its new way in, not added,
+# so its floor stays.
+#
+# 2026-10-30: 1044 -> 1045, 39 -> 40 and 931 -> 933 for the ways back to the
+# browser. That Use adds This iPhone with a model already on this iPhone
+# only while there is none, and that Settings' "Models on this iPhone" leads
+# to the browser, are guarded nowhere else: a phone whose This iPhone was
+# removed, with models still on it, or one whose This iPhone already has a
+# model while another provider is there, would have no way back in and pass
+# every test before these. The test, the walk and the two markers naming
+# them are the whole of that guard, so the floors move past them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1045
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 40
+floor "README test markers" "${markers:-0}" 933
 
 exit $status

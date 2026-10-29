@@ -137,7 +137,7 @@ extension AppModel {
         await catchUp(config.id, quietly: true, relisting: true)
     }
 
-    /// Reads what is installed, for the browser's Installed section and the
+    /// Reads what is installed, for the browser's "On this iPhone" and the
     /// Settings row. A failure is said in the section.
     public func refreshInstalled() async {
         guard runsModelsHere else { return }

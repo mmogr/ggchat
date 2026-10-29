@@ -235,7 +235,7 @@ final class AppModelLibraryTests: XCTestCase {
         XCTAssertEqual(FitChip.context(512), "512")
     }
 
-    /// The Why sheet has a sentence for each of the four figures, and says
+    /// The chip's sheet has a sentence for each of the four figures, and says
     /// one gglib did not have is not known rather than reading it as zero.
     func testTheWhySheetSaysEachFigureOrThatItIsNotKnown() {
         let known = FitWhySheet.lines(

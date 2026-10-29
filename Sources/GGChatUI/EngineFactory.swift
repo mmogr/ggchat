@@ -14,7 +14,8 @@ import GGChatCore
 /// is a DEBUG build on iOS launched with `-ggchat-mock-engine
 /// <ready|slow|fails|too-big|no-models>`, which gets `MockEngine` and
 /// `MockLibrary` behaving so, as `-ggchat-mock-mcp-servers` shapes the mock
-/// pipe; the walks run on that.
+/// pipe; the walks run on that, with This iPhone added at launch unless
+/// `-ggchat-mock-engine-unadded YES` says otherwise.
 ///
 /// The library on iOS is gglib's own (`GglibLibrary`), but for that case:
 /// the database in `ggchat-gglib` and the models in `ggchat-models`, both
@@ -101,6 +102,14 @@ public enum EngineFactory {
         /// with it chosen, over gglib's own engine. Nil when unset or empty.
         static var liveEngineModel: String? {
             UserDefaults.standard.string(forKey: "ggchat-live-engine-model").flatMap { $0.isEmpty ? nil : $0 }
+        }
+
+        /// Whether a walk launched with `-ggchat-mock-engine-unadded YES`
+        /// asks for the mock without This iPhone added at launch: a first run
+        /// on a phone where no model was chosen yet, whose way in is Add
+        /// provider.
+        static var leavesThisIPhoneOut: Bool {
+            UserDefaults.standard.bool(forKey: "ggchat-mock-engine-unadded")
         }
 
         /// What `-ggchat-mock-engine` asks of the mock; nil when it is unset
