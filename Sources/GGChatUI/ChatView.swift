@@ -9,6 +9,9 @@ struct ChatView: View {
     @State private var showingStatus = false
     @State private var editingPrompt = false
     @State private var editing: Message?
+    /// The height between the top bar and the keyboard or the bottom edge,
+    /// which the composer's model list is sized from.
+    @State private var room: CGFloat = 0
     let conversation: Conversation
 
     private var provider: ProviderConfig? {
@@ -53,7 +56,15 @@ struct ChatView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            Composer(conversation: conversation)
+            Composer(conversation: conversation, room: room)
+        }
+        // Read outside the inset, so the list it is for does not change it:
+        // whatever of the frame lies under the top bar or the keyboard is
+        // taken off, as the frame shrinks or as the insets grow.
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            max(0, proxy.size.height - proxy.safeAreaInsets.top - proxy.safeAreaInsets.bottom)
+        } action: {
+            room = $0
         }
         .navigationTitle(title)
         #if os(iOS)

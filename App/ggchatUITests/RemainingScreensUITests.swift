@@ -1,8 +1,9 @@
 import XCTest
 
 /// The screens left over: gglib's status pane, the reconnect a closed pipe
-/// offers, and the whole app at an accessibility type size. Each one was
-/// written and unit-tested but never looked at.
+/// offers, the model list with two providers, and the whole app at an
+/// accessibility type size. Each one was written and unit-tested but never
+/// looked at.
 final class RemainingScreensUITests: XCTestCase {
     private var app: XCUIApplication!
 
@@ -59,6 +60,50 @@ final class RemainingScreensUITests: XCTestCase {
         XCTAssertFalse(
             app.buttons["Server status"].exists,
             "the status pane is offered for a provider that does not report one")
+    }
+
+    /// The model list with two providers: a section and a chip for each,
+    /// a chip filtering to its provider, and a model on the other provider
+    /// picked in one tap, which moves the conversation there with that
+    /// model. Both mocks list the same two models, so the row is told by its
+    /// provider in its identifier. Nothing in here is titled "Cancel", so
+    /// the waits may sweep.
+    @MainActor
+    func testTheModelListHoldsEveryProvidersModelsAndOneTapMovesTheChat() {
+        launch()
+        openProviderForm(in: app)
+        app.buttons["Cancel"].firstMatch.tap()
+        app.buttons["Providers"].firstMatch.tap()
+        for title in ["Add mock provider", "Add refusing mock provider"] {
+            let add = app.buttons[title].firstMatch
+            XCTAssertTrue(add.waitForExistence(timeout: 10), "DEBUG builds offer \(title)")
+            add.tap()
+        }
+        app.buttons["Done"].firstMatch.tap()
+        let pill = openConversation(in: app)
+
+        let other = app.buttons["model-row-Refusing mock/mock-4b"].firstMatch
+        XCTAssertTrue(tap(pill, untilExists: other), "the list never showed the other provider's models")
+        let own = app.buttons["model-row-Mock/mock-27b"].firstMatch
+        XCTAssertTrue(own.exists, "the list lost the conversation's own provider")
+        XCTAssertTrue(own.isSelected, "the conversation's model is not the one ticked")
+        XCTAssertTrue(app.buttons["model-filter-all"].exists, "two providers and no chips")
+        attach(name: "model-list")
+
+        let chip = app.buttons["model-filter-Refusing mock"].firstMatch
+        XCTAssertTrue(waitUntilHittable(chip, timeout: 10), "no chip for the second provider")
+        chip.tap()
+        XCTAssertTrue(own.waitForNonExistence(timeout: 10), "the chip did not filter the list to its provider")
+        attach(name: "model-list-filtered")
+        app.buttons["model-filter-all"].firstMatch.tap()
+        XCTAssertTrue(own.waitForExistence(timeout: 10), "All did not bring every provider back")
+
+        let moved = app.buttons["Model, mock-4b"].firstMatch
+        XCTAssertTrue(tap(other, untilExists: moved), "a model on the other provider did not become the chat's")
+        XCTAssertTrue(other.waitForNonExistence(timeout: 10), "the list stayed open after a pick")
+        let reopened = app.buttons["model-row-Refusing mock/mock-4b"].firstMatch
+        XCTAssertTrue(tap(moved, untilExists: reopened), "the list did not open again")
+        XCTAssertTrue(reopened.isSelected, "the moved conversation's model is not the one ticked")
     }
 
     /// The prompt is saved from its sheet and is there again when the sheet
