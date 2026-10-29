@@ -84,7 +84,7 @@ extension AppModel {
     /// Whether the conversation's hub cannot draw at all, whatever image
     /// model is chosen: then a question stops asking for its picture.
     func hubCannotDraw(for conversation: Conversation) -> Bool {
-        guard let config = provider(for: conversation), config.isPipe else { return true }
+        guard let config = provider(for: conversation), config.isPairedMac else { return true }
         if case .choice = drawVerdict(on: config, choosing: conversation.imageModelID) { return false }
         return drawRefusal(for: conversation) != nil
     }
@@ -110,7 +110,7 @@ extension AppModel {
     /// Whether the line over the conversation's field asks for an image
     /// model, there being nothing to draw with until one is chosen.
     public func drawAwaitsChoice(for conversation: Conversation) -> Bool {
-        guard let config = provider(for: conversation), config.isPipe else { return false }
+        guard let config = provider(for: conversation), config.isPairedMac else { return false }
         if case .undecided = drawVerdict(on: config, choosing: conversation.imageModelID) { return true }
         return false
     }
@@ -119,21 +119,21 @@ extension AppModel {
     /// cannot draw with, so that the line over the field says so and
     /// offers another.
     public func drawChoiceRefused(for conversation: Conversation) -> Bool {
-        guard let config = provider(for: conversation), config.isPipe else { return false }
+        guard let config = provider(for: conversation), config.isPairedMac else { return false }
         if case .choice = drawVerdict(on: config, choosing: conversation.imageModelID) { return true }
         return false
     }
 
     /// The image model the conversation's next picture is drawn with.
     public func drawsWith(for conversation: Conversation) -> String? {
-        guard let config = provider(for: conversation), config.isPipe else { return nil }
+        guard let config = provider(for: conversation), config.isPairedMac else { return nil }
         return drawsWith(on: config, choosing: conversation.imageModelID)
     }
 
     /// The image-model menu over the field for the conversation: none unless its
     /// provider is a paired Mac that lists its image models.
     public func drawMenu(for conversation: Conversation) -> DrawMenu {
-        guard let config = provider(for: conversation), config.isPipe else { return .none }
+        guard let config = provider(for: conversation), config.isPairedMac else { return .none }
         return DrawMenu(drawings[config.id], chosen: conversation.imageModelID)
     }
 
@@ -208,7 +208,7 @@ extension AppModel {
     /// nor of a hub that lists no image models, which does not know the
     /// word.
     private func judge(_ chosen: UInt64?, on config: ProviderConfig) -> Task<Void, Never>? {
-        guard let chosen, drawings[config.id]?.takesImageModel == true, config.isPipe,
+        guard let chosen, drawings[config.id]?.takesImageModel == true, config.isPairedMac,
             pipeSessions[config.id] != nil, pipeStatuses[config.id]?.isConnected == true,
             let hub = makeProvider(for: config) as? any DrawingProvider
         else { return nil }

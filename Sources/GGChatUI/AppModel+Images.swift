@@ -4,13 +4,13 @@ import GGChatCore
 
 extension AppModel {
     /// Whether the model this conversation talks to can be sent images. A
-    /// gglib server, one asked for progress (`asksForProgress`), lists which
-    /// of its models read images, and a model it lists without `vision`
-    /// cannot. Any other server, and a model gglib's list does not name, is
-    /// not known either way and is sent them: a refusal then comes back by
-    /// name. The attach control and a send both ask here.
+    /// gglib server (`speaksGGLib`) lists which of its models read images,
+    /// and a model it lists without `vision` cannot. Any other server, and a
+    /// model gglib's list does not name, is not known either way and is sent
+    /// them: a refusal then comes back by name. The attach control and a
+    /// send both ask here.
     func canSee(_ conversation: Conversation) -> Bool {
-        guard let config = provider(for: conversation), asksForProgress(config),
+        guard let config = provider(for: conversation), speaksGGLib(config),
             let modelID = conversation.model ?? config.defaultModel,
             let listed = models(for: config.id).first(where: { $0.id == modelID })
         else { return true }

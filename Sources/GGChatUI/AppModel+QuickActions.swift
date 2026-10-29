@@ -56,7 +56,7 @@ extension AppModel {
     /// draw, else the first not asked yet, which is asked when its pipe
     /// comes up. One that said it cannot draw is never it.
     private var drawingProvider: ProviderConfig? {
-        let paired = providers.filter(\.isPipe)
+        let paired = providers.filter(\.isPairedMac)
         return paired.first { drawRefusal(on: $0) == nil } ?? paired.first { drawings[$0.id] == nil }
     }
 }

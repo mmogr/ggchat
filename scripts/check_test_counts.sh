@@ -732,7 +732,14 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # composer takes the caret and a message while a reply runs and holds it
 # unsent until the reply ends; a field shut mid-reply fails nothing else:
 # every other walk types between replies.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 927
+#
+# 2026-10-29: 927 -> 939 for what each kind of provider is and speaks. A
+# pipe answers yes to every one of these questions and an address no, the
+# probe aside, so a site asking the wrong one passes every other test until
+# a kind answers them differently. These twelve are the only place a kind
+# answers each question by name -- a session, a paired Mac, a pipe, gglib,
+# runs and the Draw switch -- so the floor moves past them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 939
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 32
 floor "README test markers" "${markers:-0}" 838
 

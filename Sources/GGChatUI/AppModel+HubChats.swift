@@ -130,7 +130,7 @@ extension AppModel {
     /// The providers with a section of their own: the paired Macs, but for
     /// one whose gglib is too old to have chats.
     public var hubProviders: [ProviderConfig] {
-        providers.filter { $0.isPipe && hubListOutcome[$0.id] != .tooOld }
+        providers.filter { $0.isPairedMac && hubListOutcome[$0.id] != .tooOld }
     }
 
     /// Lists every paired Mac's chats: through a pipe that is up at once, and
@@ -139,7 +139,7 @@ extension AppModel {
     /// gglib may have been updated. The way to the background stops it
     /// between Macs, as it stops `resumeEveryPipe`.
     public func refreshHubChats() async {
-        for config in providers where config.isPipe {
+        for config in providers where config.isPairedMac {
             guard !Task.isCancelled, !isAway else { return }
             if pipeSessions[config.id] == nil {
                 await connectPipe(for: config, quietly: true)
@@ -288,7 +288,7 @@ extension AppModel {
     /// The provider as a hub whose chats can be read now: a paired Mac whose
     /// pipe is up.
     func reachableHubChats(for config: ProviderConfig) -> (any HubChatsProvider)? {
-        guard config.isPipe, hubIsReachable(config.id) else { return nil }
+        guard config.isPairedMac, hubIsReachable(config.id) else { return nil }
         return makeProvider(for: config) as? any HubChatsProvider
     }
 }

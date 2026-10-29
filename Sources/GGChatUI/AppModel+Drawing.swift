@@ -14,7 +14,7 @@ extension AppModel {
     /// that lists its image models is then asked about each one a chat on
     /// screen chose (`judgeImageChoices`).
     func askAboutDrawing(_ config: ProviderConfig) async {
-        guard config.isPipe, let hub = makeProvider(for: config) as? any DrawingProvider else { return }
+        guard config.isPairedMac, let hub = makeProvider(for: config) as? any DrawingProvider else { return }
         do throws(ProviderError) {
             let answer = try await hub.drawing()
             // An edit may have moved the provider while this waited.
@@ -41,9 +41,9 @@ extension AppModel {
     }
 
     /// Whether the conversation's composer has a Draw switch: its provider
-    /// is gglib (`asksForProgress`). Another server has none.
+    /// is gglib (`canDraw`). Another server has none.
     public func offersDrawing(for conversation: Conversation) -> Bool {
-        provider(for: conversation).map(asksForProgress) ?? false
+        provider(for: conversation).map(canDraw) ?? false
     }
 
     /// What the switch says for a gglib reached by its address. gglib
@@ -56,7 +56,7 @@ extension AppModel {
     /// when it chose one (`drawVerdict`).
     public func drawRefusal(for conversation: Conversation) -> String? {
         guard let config = provider(for: conversation) else { return "This conversation has no provider." }
-        guard config.isPipe else { return Self.needsAPairedMac }
+        guard config.isPairedMac else { return Self.needsAPairedMac }
         return drawVerdict(on: config, choosing: conversation.imageModelID)?.sentence
     }
 

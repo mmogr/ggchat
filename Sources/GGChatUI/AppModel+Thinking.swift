@@ -61,11 +61,11 @@ extension AppModel {
     }
 
     /// Whether the conversation is offered the switch: its provider is gglib
-    /// (`asksForProgress`) and gglib's list names its model as one that
+    /// (`speaksGGLib`) and gglib's list names its model as one that
     /// thinks. Another server, a model the list does not name and a list not
     /// read yet all offer none.
     public func offersThinking(for conversation: Conversation) -> Bool {
-        guard let config = provider(for: conversation), asksForProgress(config) else { return false }
+        guard let config = provider(for: conversation), speaksGGLib(config) else { return false }
         return listsAsThinking(conversation.model ?? config.defaultModel, on: config.id) == true
     }
 
@@ -98,7 +98,7 @@ extension AppModel {
     /// Only gglib is sent it, and not for a model its list names as one that
     /// does not think.
     func thinkingBudget(off: Bool, model: String, for config: ProviderConfig) -> Int? {
-        guard off, asksForProgress(config), listsAsThinking(model, on: config.id) != false else { return nil }
+        guard off, speaksGGLib(config), listsAsThinking(model, on: config.id) != false else { return nil }
         return ChatRequest.noThinking
     }
 

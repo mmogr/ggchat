@@ -11,7 +11,7 @@ extension AppModel {
     /// The provider as a hub to start a run on, or nil when this reply goes
     /// the old way: the provider is not gglib, or has said it has no runs.
     func runHub(_ provider: any Provider, for config: ProviderConfig) -> (any RunProvider)? {
-        guard asksForProgress(config), !providersWithoutRuns.contains(config.id) else { return nil }
+        guard hasRuns(config) else { return nil }
         return provider as? any RunProvider
     }
 

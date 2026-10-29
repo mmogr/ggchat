@@ -93,7 +93,7 @@ extension AppModel {
     /// At launch: the replies each paired Mac was writing when the app last
     /// ran. Their text was never kept, so each is read from its start.
     func loadHeldHubRuns() {
-        for config in providers where config.isPipe {
+        for config in providers where config.isPairedMac {
             do {
                 for run in try store.loadHubRuns(forProvider: config.id) {
                     let reply = HubLiveReply(

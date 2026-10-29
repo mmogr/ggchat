@@ -9,7 +9,7 @@ extension AppModel {
     /// whether it runs the Mac's tools follows the Mac's answer as last
     /// heard, which an app just relaunched has not heard yet), the
     /// conversation's Thinking choice (`thinkingBudget`), the tools its
-    /// replies called when the provider is gglib (`asksForProgress`), which
+    /// replies called when the provider is gglib (`speaksGGLib`), which
     /// alone reads them, and whether it draws: it does when the turn it ends
     /// on is a question sent with Draw pressed, which a Continue's partial
     /// reply never is. A question to a paired Mac names, by id, the servers
@@ -31,12 +31,12 @@ extension AppModel {
         model: String, messages: [Message], of conversation: Conversation, for config: ProviderConfig
     ) throws(ImageUnavailable) -> ChatRequest {
         var request = try ChatRequest(
-            model: model, messages: messages, returnProgress: asksForProgress(config), imagesFrom: store)
+            model: model, messages: messages, returnProgress: speaksGGLib(config), imagesFrom: store)
         request.reasoningBudgetTokens = thinkingBudget(off: conversation.thinkingOff, model: model, for: config)
-        request.replaysToolCalls = asksForProgress(config)
+        request.replaysToolCalls = speaksGGLib(config)
         request.draws = messages.last.map { $0.role == .user && $0.draws } ?? false
         request.toolServers =
-            config.isPipe && messages.last?.role == .user
+            config.isPairedMac && messages.last?.role == .user
             ? conversation.toolChoice.servers(offered: drawings[config.id].map { $0.mcpServers ?? [] }) : []
         request.imageModelID = request.draws ? imageModelToSend(conversation.imageModelID, to: config) : nil
         if showsDrawnPicture(to: model, request: request, for: config), let shown = messages.shownPicture,
@@ -53,7 +53,7 @@ extension AppModel {
     /// reached by address, one from before the list and one not heard from
     /// have none.
     func offersTools(_ config: ProviderConfig) -> Bool {
-        config.isPipe && drawings[config.id]?.offersTools == true
+        config.isPairedMac && drawings[config.id]?.offersTools == true
     }
 
     /// Whether a request to `model` shows it the drawn picture: only when

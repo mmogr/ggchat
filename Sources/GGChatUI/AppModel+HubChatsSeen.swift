@@ -77,7 +77,7 @@ extension AppModel {
     /// read costs its section's titles, not the launch.
     func loadSeenHubChats() {
         loadHeldHubRuns()
-        for config in providers where config.isPipe {
+        for config in providers where config.isPairedMac {
             do {
                 guard let seen = try store.loadHubChats(forProvider: config.id) else { continue }
                 hubChats[config.id] = seen.chats.map {

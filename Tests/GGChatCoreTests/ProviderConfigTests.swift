@@ -36,6 +36,48 @@ final class ProviderConfigTests: XCTestCase {
         try secrets.removeAll(for: id)
         XCTAssertNil(try secrets.secret(.apiKey, for: id))
     }
+
+    // MARK: - What each kind is
+
+    // Whether it has a session to bring up and tear down, whether it is a
+    // paired Mac, and whether it is a pipe: one case per question per kind,
+    // so a kind that is added answers each one here.
+
+    private static let address = ProviderConfig(
+        name: "gglib on the Mac", kind: .openAICompatible(baseURL: URL(string: "http://127.0.0.1:8080/v1")!))
+    private static let pipe = ProviderConfig(
+        name: "home",
+        kind: .pipe(ticketDigest: Ticket.digest("pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na")))
+
+    /// A server by address is asked by its requests alone: nothing is
+    /// dialled before one, waited for, or hung up after.
+    func testAnAddressHasNoSession() {
+        XCTAssertFalse(Self.address.hasSession)
+    }
+
+    /// A pipe is dialled before anything goes through it, a send waits for
+    /// it, and it is hung up on the way to the background.
+    func testAPipeHasASession() {
+        XCTAssertTrue(Self.pipe.hasSession)
+    }
+
+    /// A server by address has no chats of its own to list, no runs a Mac
+    /// keeps, and draws nothing: gglib keeps those for a device it paired.
+    func testAnAddressIsNotAPairedMac() {
+        XCTAssertFalse(Self.address.isPairedMac)
+    }
+
+    func testAPipeIsAPairedMac() {
+        XCTAssertTrue(Self.pipe.isPairedMac)
+    }
+
+    func testAnAddressIsNotAPipe() {
+        XCTAssertFalse(Self.address.isPipe)
+    }
+
+    func testAPipeIsAPipe() {
+        XCTAssertTrue(Self.pipe.isPipe)
+    }
 }
 
 final class BaseURLNormalizationTests: XCTestCase {

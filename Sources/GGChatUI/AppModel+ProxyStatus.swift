@@ -8,11 +8,30 @@ extension AppModel {
         proxyStatusAvailability[providerID] ?? false
     }
 
-    /// Whether a chat request to this provider asks for progress while the
-    /// prompt is read. Only gglib is asked: a pipe, or a server that answered
-    /// the status probe. A server not known to be gglib is never sent it.
-    func asksForProgress(_ config: ProviderConfig) -> Bool {
-        config.isPipe || proxyStatusAvailable(for: config.id)
+    /// Whether this provider is known to be gglib: a paired Mac is, and a
+    /// server by address is once it has answered the status probe. Only
+    /// gglib is asked for progress while the prompt is read, asked not to
+    /// think, and sent the tool calls its replies made, and only its list
+    /// says which models read images. A server not known to be gglib is
+    /// never sent any of them.
+    func speaksGGLib(_ config: ProviderConfig) -> Bool {
+        switch config.kind {
+        case .openAICompatible: proxyStatusAvailable(for: config.id)
+        case .pipe: true
+        }
+    }
+
+    /// Whether a reply to this provider is a run (`AppModel+Runs`): gglib's
+    /// is, until it has answered as one without runs.
+    func hasRuns(_ config: ProviderConfig) -> Bool {
+        speaksGGLib(config) && !providersWithoutRuns.contains(config.id)
+    }
+
+    /// Whether a conversation on this provider has a Draw switch: gglib's
+    /// does. Only a paired Mac draws; by address the switch says why not
+    /// (`needsAPairedMac`).
+    func canDraw(_ config: ProviderConfig) -> Bool {
+        speaksGGLib(config)
     }
 
     /// Forgets the probe's answer when an edit moves a provider to another
@@ -58,7 +77,9 @@ extension AppModel {
     /// asks again for a provider a conversation has been opened on.
     public func probeProxyStatus(for config: ProviderConfig) async {
         if proxyStatusAvailability[config.id] != nil { return }
-        if config.isPipe, pipeSessions[config.id] == nil { return }
+        // Only a server is asked: a paired Mac, or one reached by its address.
+        guard config.isPairedMac || !config.hasSession else { return }
+        if config.hasSession, pipeSessions[config.id] == nil { return }
         // A caller can hold a config it read before an await. If an edit has
         // moved the provider since, the old address is not asked, because its
         // answer would be kept for the new one.

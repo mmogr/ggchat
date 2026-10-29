@@ -52,7 +52,7 @@ extension AppModel {
     /// a paired Mac whose pipe is up, which said it can draw or lists an
     /// image model with all its files, since the editor can name one.
     func canRedraw(on config: ProviderConfig) -> Bool {
-        guard config.isPipe, hubIsReachable(config.id), let said = drawings[config.id] else { return false }
+        guard config.isPairedMac, hubIsReachable(config.id), let said = drawings[config.id] else { return false }
         return said.available || said.models?.contains(where: \.complete) == true
     }
 
@@ -108,7 +108,7 @@ extension AppModel {
         guard let config = providers.first(where: { $0.id == providerID }) else {
             throw PictureKeepFailure(words: "This phone no longer has the Mac it was drawn on.")
         }
-        guard config.isPipe, hubIsReachable(config.id), let mac = makeProvider(for: config) else {
+        guard config.isPairedMac, hubIsReachable(config.id), let mac = makeProvider(for: config) else {
             throw PictureKeepFailure(words: "\(config.name) is unreachable.")
         }
         return (mac, config)

@@ -64,7 +64,7 @@ extension AppModel {
     /// connected and not. Kept for a pipe provider still on the list only: a
     /// provider being removed is hung up after it has left it.
     func heard(_ providerID: UUID) {
-        guard let config = providers.first(where: { $0.id == providerID }), config.isPipe else { return }
+        guard let config = providers.first(where: { $0.id == providerID }), config.isPairedMac else { return }
         let stamp = now()
         lastHeardAt[providerID] = stamp
         do {
@@ -111,7 +111,7 @@ extension AppModel {
     /// reads as connected or the provider is gone. Connecting clears it, so a
     /// marked pipe is never a connected one.
     func notAnswering(_ providerID: UUID) {
-        guard providers.first(where: { $0.id == providerID })?.isPipe == true,
+        guard providers.first(where: { $0.id == providerID })?.isPairedMac == true,
             pipeStatuses[providerID]?.isConnected != true
         else { return }
         unanswered.insert(providerID)
