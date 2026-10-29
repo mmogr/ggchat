@@ -18,7 +18,7 @@ public final class AppModel {
     /// The last failure worth telling the user about, as its own sentence.
     public var lastError: String?
     /// The replies in flight, one at most per conversation, by conversation:
-    /// streaming, waiting for a pipe, or reading on from a run.
+    /// streaming, waiting for a pipe or the engine, or reading on from a run.
     public internal(set) var liveReplies: [UUID: LiveReply] = [:]
     var streamErrors: [UUID: ProviderError] = [:]
     var modelsByProvider: [UUID: [ModelInfo]] = [:]
@@ -65,9 +65,9 @@ public final class AppModel {
     /// opening still under way; see `AppModel+Opening`.
     var followed: Set<UUID> = []
     var opening: [UUID: Task<Void, Never>] = [:]
-    /// The sends waiting for their pipes, by conversation; see
-    /// `AppModel+Waiting`.
-    var pipeWaits: [UUID: PipeWait] = [:]
+    /// The sends waiting for their pipes or this device's engine, by
+    /// conversation; see `AppModel+Waiting`.
+    var sessionWaits: [UUID: SessionWait] = [:]
     /// The providers whose pipe a waiting send is dialling now, so a second
     /// send waiting on the same pipe joins that dial instead of starting one;
     /// see `AppModel+Waiting`.
@@ -133,8 +133,8 @@ public final class AppModel {
     var networkTask: Task<Void, Never>?
     /// The engine on this device, the models it can run, the session it is
     /// serving if any, the serve and the shutdown in flight, the task
-    /// following the session's status and what that last said; see
-    /// `AppModel+Engine`.
+    /// following the session's status and what that last said, written only
+    /// by `setEngineStatus`; see `AppModel+Engine`.
     let engine: any LocalEngine
     public let library: any ModelLibrary
     var engineSession: (any EngineSession)?

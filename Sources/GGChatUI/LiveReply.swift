@@ -44,8 +44,9 @@ public final class LiveReply {
     var usage: Usage?
     var finishReason: String?
     var model: String?
-    /// The pipe provider this reply is waiting for, until it connects; nil
-    /// while it streams. See `AppModel+Waiting`.
+    /// The provider whose session this reply is waiting for, a pipe until it
+    /// connects or this device's engine until it serves; nil while it
+    /// streams. See `AppModel+Waiting`.
     public internal(set) var waitingFor: UUID?
     /// The run the hub is writing this reply in, when it is one; see
     /// `AppModel+Runs`.

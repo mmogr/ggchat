@@ -8,9 +8,11 @@
 
     /// Stands in for gglib's engine in a DEBUG build launched with
     /// `-ggchat-mock-engine <behaviour>`, and in tests: serving binds a
-    /// `MockProvider` to ``baseURL`` in the `LoopbackProviderRegistry`, and
-    /// the session walks its status on a `Sleeper`, as `MockPipeConnector`
-    /// walks a pipe's.
+    /// `MockProvider` to ``baseURL`` in the `LoopbackProviderRegistry`. The
+    /// session is idle until a chat arrives, and then loads the model as
+    /// gglib's engine does for the first request that names one, walking its
+    /// status on a `Sleeper`, as `MockPipeConnector` walks a pipe's, before
+    /// the reply streams.
     ///
     /// The provider reports a context of 4096 beside its counts, as the
     /// engine's proxy reports the context it loaded the model with, so a
@@ -19,11 +21,11 @@
         /// What the mock engine does, spelled as `-ggchat-mock-engine` takes
         /// it.
         public enum Behaviour: String, Sendable, CaseIterable {
-            /// Loads its one model at once, and answers.
+            /// Loads its one model in two steps, and answers.
             case ready
             /// Loads it in ten steps, and answers.
             case slow
-            /// Fails to load it, and refuses every chat.
+            /// Fails to load it, and refuses every chat, trying again at each.
             case fails
             /// Refuses every chat as gglib refuses a model too big for the
             /// device: 507, `model_does_not_fit`, before loading anything.
@@ -75,13 +77,14 @@
 
         public var isAvailable: Bool { true }
 
-        /// Binds the provider and hands back a session walking from `idle`.
-        /// The behaviour decides what fits, not the reading, which the
-        /// session keeps for a test to read back.
+        /// Binds the provider and hands back a session that is `idle` until
+        /// the first chat. The behaviour decides what fits, not the reading,
+        /// which the session keeps for a test to read back.
         public func serve(reading: DeviceReading) async throws -> any EngineSession {
-            registry.register(provider ?? answering, at: Self.baseURL)
-            return MockEngineSession(
+            let session = MockEngineSession(
                 reading: reading, walk: walk, sleeper: sleeper, stepDelay: stepDelay, registry: registry)
+            registry.register(LoadingFirst(session: session, replying: provider ?? answering), at: Self.baseURL)
+            return session
         }
 
         /// The behaviour's own provider: the mock's canned reply at a phone's
@@ -107,9 +110,9 @@
             return CatalogueListing(replying: replying, catalogue: catalogue)
         }
 
-        /// The statuses the session walks through after `idle`, one step
-        /// apart. A model too big is refused before it loads, and with no
-        /// model there is nothing to load.
+        /// The statuses a load walks through from `idle` or `failed`, one
+        /// step apart. A model too big is refused before it loads, and with
+        /// no model there is nothing to load.
         var walk: [EngineStatus] {
             let model = Self.model.id
             let ready = EngineStatus.ready(model: model, nCtx: UInt64(Self.contextSize))
@@ -133,6 +136,10 @@
         /// The reading the session was served with.
         public let reading: DeviceReading
         private let relay = StatusRelay<EngineStatus>(initial: .idle)
+        private let walk: [EngineStatus]
+        private let sleeper: any Sleeper
+        private let stepDelay: Duration
+        /// The load under way, while one is.
         private let walking = Mutex<Task<Void, Never>?>(nil)
         private let stopped = Mutex(false)
         private let registry: LoopbackProviderRegistry
@@ -142,16 +149,36 @@
             registry: LoopbackProviderRegistry
         ) {
             self.reading = reading
+            self.walk = walk
+            self.sleeper = sleeper
+            self.stepDelay = stepDelay
             self.registry = registry
-            let relay = self.relay
-            walking.withLock {
-                $0 = Task {
+        }
+
+        /// Loads the model, as gglib's engine loads one for the first request
+        /// that names it, unless it is loaded: walks the statuses, one step
+        /// apart. A load under way is joined, and one that failed is walked
+        /// again, as gglib tries again at the next request. Returns once the
+        /// walk has ended.
+        func load() async {
+            let load: Task<Void, Never>? = walking.withLock { walking in
+                if let walking { return walking }
+                switch relay.current {
+                case .idle, .failed: break
+                case .loading, .ready, .stopped: return nil
+                }
+                guard !stopped.withLock({ $0 }) else { return nil }
+                let started = Task { [self] in
                     for status in walk {
-                        guard (try? await sleeper.sleep(for: stepDelay)) != nil else { return }
+                        guard (try? await sleeper.sleep(for: stepDelay)) != nil else { break }
                         relay.send(status)
                     }
+                    self.walking.withLock { $0 = nil }
                 }
+                walking = started
+                return started
             }
+            await load?.value
         }
 
         public var status: AsyncStream<EngineStatus> {
@@ -179,6 +206,33 @@
     }
 
     extension MockEngine {
+        /// What a mock session binds: the model is loaded before each reply
+        /// streams, as gglib's engine holds a request until the model it
+        /// names is loaded, and the models are listed without loading any.
+        /// DEBUG builds only, for the same reason, and nested so the release
+        /// check finds it by the engine's name.
+        fileprivate struct LoadingFirst: Provider {
+            let session: MockEngineSession
+            let replying: any Provider
+
+            func models() async throws -> [ModelInfo] {
+                try await replying.models()
+            }
+
+            func stream(_ request: ChatRequest) -> AsyncStream<ChatEvent> {
+                let session = session
+                let replying = replying
+                return AsyncStream { continuation in
+                    let task = Task {
+                        await session.load()
+                        for await event in replying.stream(request) { continuation.yield(event) }
+                        continuation.finish()
+                    }
+                    continuation.onTermination = { _ in task.cancel() }
+                }
+            }
+        }
+
         /// A mock provider whose model list is a catalogue's, read at each
         /// listing. DEBUG builds only, for the same reason, and nested so the
         /// release check finds it by the engine's name.

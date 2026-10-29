@@ -247,11 +247,4 @@ extension AppModel {
     public func canChangeProvider(of conversation: Conversation) -> Bool {
         !isStreaming(conversation.id) && !conversation.messages.contains(where: \.isBeingWritten)
     }
-
-    /// The status of the pipe behind this conversation, or nil for a server
-    /// added by address.
-    public func pipeStatus(for conversation: Conversation) -> PipeStatus? {
-        guard let config = provider(for: conversation), config.isPairedMac else { return nil }
-        return pipeStatuses[config.id]
-    }
 }

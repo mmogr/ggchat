@@ -770,8 +770,21 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # each return, or models a backup carried, would pass every test before
 # these. These twelve, the walk and the thirteen markers naming them are the
 # whole of that guard, so the floors move past them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 988
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 36
-floor "README test markers" "${markers:-0}" 881
+#
+# 2026-10-29: 988 -> 999, 36 -> 38 and 881 -> 894 for this iPhone's engine
+# running in the foreground only. That a send waits for the engine and
+# through its load, that the background puts the engine down only after the
+# replies, that a serve landing while the app is away takes itself down,
+# that coming back serves nothing, that a memory warning spares a reply,
+# that a send which joined a serve put down serves the engine again, that
+# Load again serves afresh and asks again, that a refused serve says why
+# under the question, and what the pill says for each state are guarded
+# nowhere else: an engine holding its model through the background would
+# pass every test before these. These eleven, the two walks and the
+# thirteen markers naming them are the whole of that guard, so the floors
+# move past them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 999
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 38
+floor "README test markers" "${markers:-0}" 894
 
 exit $status

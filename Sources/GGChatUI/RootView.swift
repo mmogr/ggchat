@@ -1,5 +1,9 @@
 import SwiftUI
 
+#if os(iOS)
+    import UIKit
+#endif
+
 /// Sidebar of conversations, chat on the right. Stock containers only: the
 /// system draws the glass.
 public struct RootView: View {
@@ -30,6 +34,11 @@ public struct RootView: View {
     #endif
     /// What opening the store had to say.
     private let storeNotice: ShownStoreNotice
+    #if os(iOS)
+        /// Each time the system says it is short of memory.
+        private let memoryWarnings = NotificationCenter.default.publisher(
+            for: UIApplication.didReceiveMemoryWarningNotification)
+    #endif
 
     public init(storeNotice: ShownStoreNotice = ShownStoreNotice(nil)) {
         self.storeNotice = storeNotice
@@ -111,6 +120,9 @@ public struct RootView: View {
                 QuickActionInbox.offer(model.quickActions(hasCamera: CameraCapture.isOffered))
             }
             .onChange(of: QuickActionInbox.shared.pending) { actOnQuickAction() }
+            // The system is short of memory: this device's engine is put
+            // down unless a reply is going through it (ADR 0015).
+            .onReceive(memoryWarnings) { _ in model.memoryWarning() }
         #else
             .task { model.load() }
         #endif

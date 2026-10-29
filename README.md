@@ -1037,9 +1037,10 @@ Each claim names the test that keeps it true.
   to that. No build has gglib's engine yet, so a release build, the Mac and a
   DEBUG build launched without `-ggchat-mock-engine` offer nothing on-device
   and refuse a serve with a sentence about the build. A DEBUG build on iOS
-  launched with it walks the mock engine, which adds the provider at launch
-  and walks idle → loading → ready. Opening a conversation on it serves the
-  engine once; a send goes the chat route with gglib's progress asked for,
+  launched with it walks the mock engine, which adds the provider at launch,
+  is idle once served, and walks loading → ready within the first chat that
+  names its model. Opening a conversation on it serves the engine once; a
+  send goes the chat route with gglib's progress asked for,
   is never a run, has no Draw switch, and raises the ring from the context
   the engine loaded its model with. A model too big for the device is
   refused with `model_does_not_fit`, and the line under the refusal says
@@ -1119,6 +1120,36 @@ Each claim names the test that keeps it true.
   <!-- test: MockLibraryDownloadTests.testAPauseHoldsAWalkAtItsBytesAndAResumeGoesOn -->
   <!-- test: MockLibraryDownloadTests.testAFinishedDownloadIsInstalledAndListedByTheEngineSharingItsCatalogue -->
   <!-- test: ScreenGalleryUITests.testADownloadFillsItsBarAndTheModelJoinsTheList -->
+- This iPhone's engine runs in the foreground only
+  ([ADR 0015](docs/adr/0015-the-on-device-engine-is-foreground-only.md)).
+  It is served when a conversation on it opens or a send needs it, and
+  loads a model within the first request that names one. A send while it is
+  not serving waits for it, as one through a pipe waits for the pipe, with
+  "Waiting for This iPhone to start its engine", and a serve refused puts
+  its sentence under the question. The status pill, a pipe's slot, says how
+  the conversation's model is, with a memory chip: "Not loaded", "Loading
+  40%", "Ready", "Load again" once it could not be loaded, which serves the
+  engine afresh and asks the question again, or "Too big" once the engine
+  refused it, which opens the model browser; VoiceOver hears "Model …".
+  Going to the background puts the replies down first, keeping what arrived
+  with Continue, and then the engine, inside the same grace; a serve that
+  lands while the app is away takes itself down, and coming back starts
+  nothing. A memory warning puts the engine down unless a reply is going
+  through it; a send that was waiting on a serve it put down serves the
+  engine again, and is answered.
+  <!-- test: AppModelEngineLifecycleTests.testASendWaitsForTheEngineThroughItsLoadThenReplies -->
+  <!-- test: AppModelEngineLifecycleTests.testTheBackgroundPutsTheEngineDownOnlyOnceTheReplyHasEnded -->
+  <!-- test: AppModelEngineLifecycleTests.testAServeThatLandsWhileAwayTakesItselfDown -->
+  <!-- test: AppModelEngineLifecycleTests.testComingBackStartsNothingAndTheNextSendServesAgain -->
+  <!-- test: AppModelEngineLifecycleTests.testAMemoryWarningPutsTheEngineDownOnlyWithNoReplyGoingThroughIt -->
+  <!-- test: AppModelEngineLifecycleTests.testASendJoiningAServeAMemoryWarningPutsDownServesAgain -->
+  <!-- test: AppModelEngineLifecycleTests.testLoadAgainServesAfreshAndAsksTheQuestionAgain -->
+  <!-- test: AppModelEngineLifecycleTests.testARefusedServePutsItsSentenceUnderTheWaitingQuestion -->
+  <!-- test: SessionStatusTests.testThePillSaysEachStateInAFewWords -->
+  <!-- test: SessionStatusTests.testOnlyASessionThatCanRunHasAPill -->
+  <!-- test: SessionStatusTests.testATooBigModelSaysSoAndThePillOpensTheBrowser -->
+  <!-- test: OnDeviceUITests.testAFirstSendLoadsTheModelThenReplies -->
+  <!-- test: OnDeviceUITests.testATooBigModelSaysSoInThePill -->
 - A bearer token is sent on every request and never reaches a log line.
   <!-- test: OpenAICompatibleProviderTests.testNoCredentialEverReachesALogLine -->
 - No line the app writes as it dials a pipe, loses one or pairs carries a
@@ -2228,6 +2259,12 @@ against the mock.
   servers it uses, under a stored master switch, and a new one picks none;
   the wrench is badged while the Mac offers a server the conversation has
   not shown, until a change is made from its menu.
+- [ADR 0015](docs/adr/0015-the-on-device-engine-is-foreground-only.md):
+  this iPhone's engine runs in the foreground only; it is served when a
+  conversation on it opens or a send needs it, loads a model with the first
+  request that names one, and is put down on the way to the background,
+  after the replies, and on a memory warning while no reply goes through
+  it.
 
 ## Releases
 

@@ -68,7 +68,7 @@ extension AppModel {
     /// and there is no reply here for that rule to protect.
     ///
     /// A refusal on the question is cleared only once the request is on its
-    /// way, or waiting for its pipe, so a conversation whose provider has
+    /// way, or waiting for its session, so a conversation whose provider has
     /// gone, or that has no model, keeps its sentence and says why nothing
     /// was sent.
     ///
@@ -120,10 +120,10 @@ extension AppModel {
             lastError = error.errorDescription
             return nil
         }
-        // A pipe that is not connected is waited for, not refused. This
-        // device's engine is served when its conversation opens, and a send
-        // that finds it not serving is refused with a sentence.
-        let waits = config.isPipe && pipeStatuses[config.id]?.isConnected != true
+        // A session that is not up is waited for, not refused: a pipe that
+        // is not connected, and this device's engine while it is not serving,
+        // which the wait serves (ADR 0006, ADR 0015).
+        let waits = waitsForSession(config)
         let ready = waits ? nil : makeProvider(for: config)
         if !waits, ready == nil { return nil }
         streamErrors[conversation.id] = nil
@@ -187,11 +187,11 @@ extension AppModel {
         }
     }
 
-    /// The provider to stream through once the pipe is connected, or nil when
+    /// The provider to stream through once the session is up, or nil when
     /// the wait ended another way, in which case the reply is finished here:
-    /// as Stop finishes it, or with the refused dial's sentence.
+    /// as Stop finishes it, or with the refused dial's or serve's sentence.
     private func providerOnceConnected(_ config: ProviderConfig, for live: LiveReply) async -> (any Provider)? {
-        switch await waitForPipe(config, for: live.conversationID) {
+        switch await waitForSession(config, for: live.conversationID) {
         case .connected(let provider):
             live.waitingFor = nil
             return provider

@@ -36,7 +36,7 @@ final class PipeWaitDeletionTests: XCTestCase {
         model.deleteConversation(waiting.id)
         for _ in 0..<200 where model.isStreaming { await Task.yield() }
         XCTAssertFalse(model.isStreaming, "the wait outlived its conversation")
-        XCTAssertTrue(model.pipeWaits.isEmpty, "the wait is still kept")
+        XCTAssertTrue(model.sessionWaits.isEmpty, "the wait is still kept")
         send.cancel()
         await send.value
         XCTAssertFalse(model.conversations.contains { $0.id == waiting.id }, "the ended wait wrote it back")

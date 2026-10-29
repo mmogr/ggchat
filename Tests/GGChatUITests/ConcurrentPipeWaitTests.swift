@@ -60,7 +60,7 @@ final class ConcurrentPipeWaitTests: XCTestCase {
             let messages = model.conversations.first { $0.id == id }?.messages ?? []
             XCTAssertEqual(messages.map(\.role), [.user, .assistant], "a waiting send never streamed")
         }
-        XCTAssertTrue(model.pipeWaits.isEmpty)
+        XCTAssertTrue(model.sessionWaits.isEmpty)
     }
 
     /// A pipe that closed while still installed is hung up before it is

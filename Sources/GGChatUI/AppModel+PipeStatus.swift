@@ -92,7 +92,7 @@ extension AppModel {
     }
 
     /// The replies in flight through this provider, streaming or still
-    /// waiting for its pipe.
+    /// waiting for its session.
     func liveReplies(through providerID: UUID) -> [LiveReply] {
         liveReplies.values.filter { providerID == provider(ofReply: $0) }
     }
