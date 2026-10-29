@@ -96,6 +96,13 @@ struct EditProviderView: View {
                         Text(deviceFooter)
                     }
                 }
+            case .onDevice:
+                Section {
+                    Text("Models run on this iPhone's own engine, and nothing leaves it.")
+                        .foregroundStyle(.secondary)
+                } header: {
+                    Text("On this iPhone")
+                }
             }
         }
         .safeAreaInset(edge: .bottom) {
@@ -176,6 +183,7 @@ struct EditProviderView: View {
         switch provider.kind {
         case .openAICompatible: normalizedURL != nil
         case .pipe: typedPairing == nil || readPairing != nil
+        case .onDevice: true
         }
     }
 
@@ -210,6 +218,10 @@ struct EditProviderView: View {
                 }
                 try model.updateProvider(updated, credentials: [.ticket: readPairing.ticket, .token: token])
                 Task { await model.reconnectPipe(for: updated) }
+            case .onDevice:
+                // The name is all there is to change: the engine's address
+                // and key are its session's.
+                try model.updateProvider(updated, credentials: [:])
             }
         } catch {
             failure = error.localizedDescription

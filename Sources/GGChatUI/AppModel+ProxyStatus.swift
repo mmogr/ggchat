@@ -8,30 +8,38 @@ extension AppModel {
         proxyStatusAvailability[providerID] ?? false
     }
 
-    /// Whether this provider is known to be gglib: a paired Mac is, and a
-    /// server by address is once it has answered the status probe. Only
-    /// gglib is asked for progress while the prompt is read, asked not to
-    /// think, and sent the tool calls its replies made, and only its list
-    /// says which models read images. A server not known to be gglib is
-    /// never sent any of them.
+    /// Whether this provider is known to be gglib: a paired Mac and this
+    /// device's engine are, and a server by address is once it has answered
+    /// the status probe. Only gglib is asked for progress while the prompt
+    /// is read, asked not to think, and sent the tool calls its replies
+    /// made, and only its list says which models read images. A server not
+    /// known to be gglib is never sent any of them.
     func speaksGGLib(_ config: ProviderConfig) -> Bool {
         switch config.kind {
         case .openAICompatible: proxyStatusAvailable(for: config.id)
-        case .pipe: true
+        case .pipe, .onDevice: true
         }
     }
 
     /// Whether a reply to this provider is a run (`AppModel+Runs`): gglib's
-    /// is, until it has answered as one without runs.
+    /// is, until it has answered as one without runs. This device's engine
+    /// streams its replies and keeps no runs.
     func hasRuns(_ config: ProviderConfig) -> Bool {
-        speaksGGLib(config) && !providersWithoutRuns.contains(config.id)
+        switch config.kind {
+        case .openAICompatible, .pipe: speaksGGLib(config) && !providersWithoutRuns.contains(config.id)
+        case .onDevice: false
+        }
     }
 
     /// Whether a conversation on this provider has a Draw switch: gglib's
-    /// does. Only a paired Mac draws; by address the switch says why not
+    /// does, but for this device's engine, which draws nothing. Only a
+    /// paired Mac draws; by address the switch says why not
     /// (`needsAPairedMac`).
     func canDraw(_ config: ProviderConfig) -> Bool {
-        speaksGGLib(config)
+        switch config.kind {
+        case .openAICompatible, .pipe: speaksGGLib(config)
+        case .onDevice: false
+        }
     }
 
     /// Forgets the probe's answer when an edit moves a provider to another

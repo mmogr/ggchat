@@ -79,7 +79,7 @@ struct ProviderRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: provider.isPairedMac ? "point.3.connected.trianglepath.dotted" : "server.rack")
+            Image(systemName: symbol)
                 .foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 2) {
                 Text(provider.name)
@@ -91,12 +91,22 @@ struct ProviderRow: View {
         .accessibilityElement(children: .combine)
     }
 
+    private var symbol: String {
+        switch provider.kind {
+        case .openAICompatible: "server.rack"
+        case .pipe: "point.3.connected.trianglepath.dotted"
+        case .onDevice: "iphone"
+        }
+    }
+
     private var detail: String {
         switch provider.kind {
         case .openAICompatible(let baseURL):
             Redaction.describe(baseURL)
         case .pipe:
             "modelpipe · " + (provider.defaultModel ?? "no model chosen")
+        case .onDevice:
+            "On this iPhone · " + (provider.defaultModel ?? "no model chosen")
         }
     }
 }

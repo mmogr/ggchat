@@ -48,6 +48,7 @@ final class ProviderConfigTests: XCTestCase {
     private static let pipe = ProviderConfig(
         name: "home",
         kind: .pipe(ticketDigest: Ticket.digest("pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na")))
+    private static let thisIPhone = ProviderConfig(name: "This iPhone", kind: .onDevice)
 
     /// A server by address is asked by its requests alone: nothing is
     /// dialled before one, waited for, or hung up after.
@@ -77,6 +78,46 @@ final class ProviderConfigTests: XCTestCase {
 
     func testAPipeIsAPipe() {
         XCTAssertTrue(Self.pipe.isPipe)
+    }
+
+    /// This device's engine is served before anything goes to it.
+    func testThisIPhonesEngineHasASession() {
+        XCTAssertTrue(Self.thisIPhone.hasSession)
+    }
+
+    /// The engine on this device keeps no chats, runs, drawing or MCP
+    /// servers: those are a Mac's.
+    func testThisIPhonesEngineIsNotAPairedMac() {
+        XCTAssertFalse(Self.thisIPhone.isPairedMac)
+    }
+
+    /// Nothing about it is dialled with a ticket and a token.
+    func testThisIPhonesEngineIsNotAPipe() {
+        XCTAssertFalse(Self.thisIPhone.isPipe)
+    }
+
+    // MARK: - How each kind is stored
+
+    /// The kind is stored as JSON in the provider's row (`kindData`), and
+    /// the store decodes every row in one go, so a build that cannot read a
+    /// row loses the whole list. The engine on this device is stored by its
+    /// bare name with nothing in it; a build from before it cannot decode
+    /// that row, so its whole provider load fails, which is accepted: there
+    /// is no backward compatibility for stored data. The two kinds before it
+    /// are stored as they always were.
+    func testEachKindIsStoredAsItWasNamed() throws {
+        let stored: [(ProviderConfig.Kind, String)] = [
+            (
+                .openAICompatible(baseURL: URL(string: "http://127.0.0.1:8080/v1")!),
+                #"{"openAICompatible":{"baseURL":"http:\/\/127.0.0.1:8080\/v1"}}"#
+            ),
+            (.pipe(ticketDigest: "0123456789abcdef"), #"{"pipe":{"ticketDigest":"0123456789abcdef"}}"#),
+            (.onDevice, #"{"onDevice":{}}"#),
+        ]
+        for (kind, json) in stored {
+            XCTAssertEqual(String(decoding: try JSONEncoder().encode(kind), as: UTF8.self), json)
+            XCTAssertEqual(try JSONDecoder().decode(ProviderConfig.Kind.self, from: Data(json.utf8)), kind)
+        }
     }
 }
 
