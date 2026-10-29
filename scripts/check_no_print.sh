@@ -8,8 +8,11 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Not Sources/GGLib, gglib's generated Swift, vendored as released and held to
+# the release by check_gglib_take.sh: the one `print` uniffi writes there is
+# for a handle it cannot find, which never reaches this app's log.
 if hits=$(grep -rnE '(^|[^.[:alnum:]_])((Swift|Foundation)\.)?(print|debugPrint|NSLog|dump)[[:space:]]*\(' \
-    --include='*.swift' "$ROOT/Sources" "$ROOT/App" 2>/dev/null \
+    --include='*.swift' --exclude-dir=GGLib "$ROOT/Sources" "$ROOT/App" 2>/dev/null \
     | grep -vE '^[^:]+:[0-9]+:\s*//' | grep -vE '"[^"]*print\([^"]*"'); then
     echo "print: use a LogSink instead:" >&2
     printf '%s\n' "$hits" >&2

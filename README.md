@@ -1026,6 +1026,18 @@ Each claim names the test that keeps it true.
   <!-- test: SettingsBuildExpiryTests.testTheLineSaysTheDayThisBuildStopsOpeningWhereThePersonIs -->
   <!-- test: SettingsBuildExpiryTests.testABuildWithNoDateHasNoLine -->
   <!-- test: ScreenGalleryUITests.testTheProvidersListAndTheTicketCountInSettings -->
+- Settings names the gglib and the llama.cpp this build carries, say "gglib
+  0.28.0-rc.2 · llama.cpp b11669", as gglib's own framework reports them
+  from `build_info()`, in every build, on the Mac and on iOS. The row is
+  read from the framework the app links, never written down, and the
+  package's tests make the same call through the Mac's framework and hold
+  its answer to the `binding.json` vendored beside the Swift, so a binding
+  and a framework from two releases fail there rather than at uniffi's
+  check on a device.
+  <!-- test: SettingsCarriedVersionsTests.testTheLineNamesGglibsVersionAndTheLlamaCppPin -->
+  <!-- test: SettingsCarriedVersionsTests.testTheRowReadsTheLinkedFramework -->
+  <!-- test: LinkedGGLibTests.testTheLinkedFrameworkIsTheOneTheVendoredBindingNames -->
+  <!-- test: ScreenGalleryUITests.testTheProvidersListAndTheTicketCountInSettings -->
 - The mock is DEBUG-only. A build without one refuses a perfectly good
   ticket with a sentence about the build, instead of mocking a pipe that
   is not there.
@@ -1034,7 +1046,7 @@ Each claim names the test that keeps it true.
 - A provider can run on this iPhone's own engine, "This iPhone", one per
   device, behind a seam shaped as the pipe's is: the engine serves gglib at
   a loopback address with a key of its own, and the ordinary provider talks
-  to that. No build has gglib's engine yet, so a release build, the Mac and a
+  to that. No build runs gglib's engine yet, so a release build, the Mac and a
   DEBUG build launched without `-ggchat-mock-engine` offer nothing on-device
   and refuse a serve with a sentence about the build. A DEBUG build on iOS
   launched with it walks the mock engine, which adds the provider at launch,
@@ -2069,6 +2081,46 @@ refuses to run without it rather than passing having exercised nothing.
 simulator and have their own targets below. `make bootstrap` installs the
 Homebrew tools those need (xcodegen, swiftlint, periphery, actionlint).
 
+gglib's Swift framework, and llama.cpp's framework that it links, come from
+a gglib release, pinned in `Package.swift` by version and by each archive's
+checksum on three lines that exist only to be rewritten, with the Swift
+generated for them vendored in `Sources/GGLib`. Both are dynamic, and the
+app embeds and signs both. A release is taken with
+
+```sh
+scripts/pin_gglib.sh 0.28.0-rc.2
+```
+
+which downloads its `SHA256SUMS` and its three archives, checks each archive
+against its line, and only then rewrites the three lines and replaces
+`Sources/GGLib` with the release's swift archive, `binding.json` included;
+the two are committed together. `scripts/check_gglib_take.sh`, the last of
+`make enforce` and of CI's enforcement job, downloads the pinned release's
+swift archive and fails unless `Sources/GGLib` is that archive byte for byte
+and the pinned checksums are the release's own. It refuses checksums of
+zeros, which pin nothing.
+
+To build against a gglib of your own, build its frameworks in that checkout
+with its own make targets, `phone-llama` and then `ffi-xcframework`, take
+them, and set `GGLIB_FFI_LOCAL_XCFRAMEWORK` for every build:
+
+```sh
+scripts/pin_gglib.sh --local ~/src/gglib
+GGLIB_FFI_LOCAL_XCFRAMEWORK=1 make build test build-app
+```
+
+`--local` copies the checkout's `GglibFFI.xcframework` and the
+`llama.xcframework` at its pin into `build/`, which git ignores, and replaces
+`Sources/GGLib` with the Swift that build generated beside the framework;
+`Package.swift` is left as it is, and `check_gglib_take.sh` fails until a
+release is taken again. Flipping the switch calls for a fresh package
+resolution: SwiftPM and Xcode cache what a manifest evaluated to and the
+artifacts it named, and a cache that missed the flip builds against the
+other framework without a word. After a flip, run `swift package reset`
+before `swift build`, and Reset Package Caches in Xcode, or delete the
+project's DerivedData, before an app build. Xcode sees the switch only in
+the environment it was started from, as `xcodebuild` from that shell does.
+
 `make analyze` runs the rules under `analyzer_rules` in `.swiftlint.yml`.
 They are separate from `make lint` because they need the arguments the
 compiler was given, so the target builds with `-v` first and hands
@@ -2193,10 +2245,13 @@ so its test sets it through Settings and measures the result instead.
 ```
 Sources/GGChatCore/   no SwiftUI; the provider protocol, wire types, SSE, the pipe and pairing seams, mocks
 Sources/GGChatPipe/   the only target that links modelpipe-ffi; no UI framework either
+Sources/GGChatLocal/  the only target that imports gglib's binding; no UI framework either
+Sources/GGLib/        gglib's generated Swift, vendored from the release as it stands
 Sources/GGChatUI/     SwiftUI; the app model, views, and SwiftData persistence
 App/                  the xcodegen spec, the generated project, and a @main struct with assets
 Tests/GGChatCoreTests XCTest; fixtures are real captures from gglib, but for the one named contract-*
 Tests/GGChatPipeTests that the binding is linked and its statuses cross unchanged
+Tests/GGChatLocalTests that gglib's framework is linked and is the one its binding names
 Tests/GGChatUITests   the app model, streaming, the pipe, and the SwiftData store
 App/ggchatUITests     XCUITest that drives the first-run flow on a simulator
 docs/adr/             decisions, each with a kill criterion that names a reading
@@ -2277,9 +2332,9 @@ describes the code on `main` rather than the last release. That build is
 not the one `make docs` and CI's Docs job run -- only it passes
 `--transform-for-static-hosting` and a hosting base path -- so a change
 that breaks the published form is caught by the commit that made it.
-`GGChatCore` and `GGChatUI` are published; `GGChatPipe` is not, so a doc
-comment behind the seam is compiled by `make docs` but does not reach the
-site.
+`GGChatCore` and `GGChatUI` are published; `GGChatPipe` and `GGChatLocal`
+are not, so a doc comment behind either seam is compiled by `make docs` but
+does not reach the site.
 
 Dependabot proposes Swift package and GitHub Actions updates once a week.
 To update the Swift packages now, run Actions → Update dependencies → Run
@@ -2287,6 +2342,9 @@ workflow, or
 `gh workflow run update-deps.yml -R mmogr/ggchat` (add
 `-f package=modelpipe-ffi` for one pin): it runs `swift package update` and
 opens a PR listing each pin it moved, or says there is nothing to update.
+gglib's frameworks are no package dependency, and neither moves them: a
+gglib release is taken with `scripts/pin_gglib.sh`, as Building and testing
+says.
 
 ## House rules
 

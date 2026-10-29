@@ -173,8 +173,8 @@ final class ScreenGalleryUITests: XCTestCase {
     }
 
     /// The providers list with something in it, and settings with its one
-    /// reading. The counters for the criteria both ADRs struck are gone, and
-    /// a simulator build, with no profile, has no day it stops opening.
+    /// reading and its gglib. The counters both ADRs struck are gone, and a
+    /// simulator build, with no profile, has no day it stops opening.
     @MainActor
     func testTheProvidersListAndTheTicketCountInSettings() {
         launch()
@@ -199,6 +199,8 @@ final class ScreenGalleryUITests: XCTestCase {
         }
         let expiry = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'This build stops opening'"))
         XCTAssertFalse(expiry.firstMatch.exists, "a simulator build has no profile, so no day it stops opening")
+        let carried = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'gglib '")).firstMatch
+        XCTAssertTrue(carried.exists && carried.label.contains(" \u{B7} llama.cpp b"), "settings names no gglib")
         attach(name: "settings")
     }
 

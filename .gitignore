@@ -8,3 +8,4 @@ xcuserdata/
 coverage.lcov
 test-results*.xml
 /docs/site/
+/build/

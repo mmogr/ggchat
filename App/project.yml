@@ -89,6 +89,12 @@ targets:
         "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": ggchat/ggchat-macOS.entitlements
         "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]": ggchat/ggchat-iOS.entitlements
         "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": ggchat/ggchat-iOS.entitlements
+        # Where the app looks for the dynamic frameworks it embeds, gglib's
+        # and llama.cpp's. The default, `@executable_path/Frameworks`, is an
+        # iOS app's layout, where they sit beside the executable; a Mac app
+        # keeps them in Contents/Frameworks, beside Contents/MacOS, which the
+        # default does not name.
+        "LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]": ["$(inherited)", "@executable_path/../Frameworks"]
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         INFOPLIST_KEY_NSHumanReadableCopyright: ""

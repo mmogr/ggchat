@@ -7,7 +7,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 EXPECTED=3
 
-sites=$(grep -rn --include='*.swift' -E '\.glassEffect\(' "$ROOT/Sources" "$ROOT/App" 2>/dev/null || true)
+# Not Sources/GGLib: gglib's generated Swift, vendored as released.
+sites=$(grep -rn --include='*.swift' --exclude-dir=GGLib -E '\.glassEffect\(' "$ROOT/Sources" "$ROOT/App" 2>/dev/null \
+    || true)
 count=$(printf '%s' "$sites" | grep -c . || true)
 if [ "$count" -ne "$EXPECTED" ]; then
     echo "glass: expected $EXPECTED .glassEffect sites, found $count" >&2

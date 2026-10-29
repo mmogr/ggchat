@@ -1,7 +1,8 @@
-/// The engine in a build that has none, which is every build until gglib's
-/// engine is linked: a release build, a simulator, the Mac, and a DEBUG
-/// build launched without `-ggchat-mock-engine`. Nothing on-device is
-/// offered where this is the engine, because ``isAvailable`` is false.
+/// The engine in a build that has none, which is every build until
+/// `EngineFactory` picks gglib's engine: a release build, a simulator, the
+/// Mac, and a DEBUG build launched without `-ggchat-mock-engine`. Nothing
+/// on-device is offered where this is the engine, because ``isAvailable``
+/// is false.
 ///
 /// Unlike `UnavailablePipeConnector`, this one is returned. It is also the
 /// sentinel `scripts/check_no_mock_in_release.sh` looks for, to prove it

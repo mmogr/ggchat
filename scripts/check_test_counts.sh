@@ -783,8 +783,18 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # pass every test before these. These eleven, the two walks and the
 # thirteen markers naming them are the whole of that guard, so the floors
 # move past them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 999
+#
+# 2026-10-29: 999 -> 1002 and 894 -> 898 for the gglib this build carries.
+# A binding and a framework from two releases build without a word and trap
+# at the first call, on a device, and a Settings row that named a constant
+# would read true until the next release. The call through the Mac's
+# framework held to the vendored binding.json, the row's words and the row
+# reading the linked framework are guarded nowhere else; these three, and
+# the four markers naming them and the walk that reads the row, are the
+# whole of that guard, so the floors move past them. The walk gained an
+# assertion, not a case, so its floor stays.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1002
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 38
-floor "README test markers" "${markers:-0}" 894
+floor "README test markers" "${markers:-0}" 898
 
 exit $status

@@ -4,7 +4,7 @@ import GGChatCore
 /// The one place the app chooses the engine on this device and its model
 /// library.
 ///
-/// No build has gglib's engine yet, so outside one case both are
+/// No build runs gglib's engine yet, so outside one case both are
 /// unavailable: a release build, the Mac, and a DEBUG build launched without
 /// `-ggchat-mock-engine`, so the walks that never ask for it see nothing
 /// on-device. The case is a DEBUG build on iOS launched with

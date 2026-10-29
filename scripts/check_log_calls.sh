@@ -108,11 +108,16 @@ def closing(text, at):
     return -1
 
 
+# Not Sources/GGLib: gglib's generated Swift, vendored as released and held
+# to the release by check_gglib_take.sh. It logs nothing of this app's.
+vendored = root / "Sources" / "GGLib"
 hits, calls = [], 0
 for folder in ("Sources", "App"):
     if not (root / folder).is_dir():
         sys.exit(f"log: {folder}/ is missing, so there is nothing to read")
     for path in sorted((root / folder).rglob("*.swift")):
+        if vendored in path.parents:
+            continue
         text = path.read_text(encoding="utf-8")
         for m in call.finditer(text):
             calls += 1

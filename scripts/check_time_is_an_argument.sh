@@ -6,21 +6,23 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 pattern='Date\(\)|Date\.now|Task\.sleep|ContinuousClock\(\)|SuspendingClock\(\)|asyncAfter|Thread\.sleep|usleep\('
-# Both targets below the seam. GGChatPipe is where a retry or a settling delay
-# would be written, so it is the one that most needs a `Sleeper` rather than a
-# real clock -- a connector that slept for real would make its own tests slow
-# and non-deterministic.
+# Every target below the seams. GGChatPipe is where a retry or a settling
+# delay would be written, so it is the one that most needs a `Sleeper` rather
+# than a real clock -- a connector that slept for real would make its own
+# tests slow and non-deterministic -- and GGChatLocal, which wraps gglib's
+# binding as GGChatPipe wraps modelpipe's, is held to the same.
 #
 # Each directory is required to exist. `grep` over a missing path exits 2, and
 # the `if` below reads any non-zero as "no hits", so a renamed target would
 # have turned this gate off and still printed "ok".
-for module in GGChatCore GGChatPipe; do
+for module in GGChatCore GGChatPipe GGChatLocal; do
     [ -d "$ROOT/Sources/$module" ] || {
         echo "time: Sources/$module is missing, so this gate would pass vacuously" >&2
         exit 1
     }
 done
-if hits=$(grep -rnE "$pattern" "$ROOT/Sources/GGChatCore" "$ROOT/Sources/GGChatPipe" | grep -v '/Clock.swift:'); then
+if hits=$(grep -rnE "$pattern" "$ROOT/Sources/GGChatCore" "$ROOT/Sources/GGChatPipe" "$ROOT/Sources/GGChatLocal" \
+    | grep -v '/Clock.swift:'); then
     echo "time: a module below the seam reads the clock outside Clock.swift:" >&2
     printf '%s\n' "$hits" >&2
     exit 1
