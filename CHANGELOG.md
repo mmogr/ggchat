@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/mmogr/ggchat/compare/v0.12.0...v0.12.1) (2026-10-28)
+
+
+### What the app stopped getting wrong
+
+* **chat:** the next message is written while a reply runs, and sent once it ends ([#231](https://github.com/mmogr/ggchat/issues/231)) ([8a93062](https://github.com/mmogr/ggchat/commit/8a9306267ea90dad6eab82cd9e0418a066517efd))
+
 ## [0.12.0](https://github.com/mmogr/ggchat/compare/v0.11.0...v0.12.0) (2026-10-28)
 
 
