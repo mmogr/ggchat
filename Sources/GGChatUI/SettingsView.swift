@@ -1,9 +1,11 @@
 import GGChatCore
+import GGChatLocal
 import SwiftUI
 
-/// About, with when this build stops opening, how many distinct tickets this
-/// device has connected to and, where it runs models, what they take, and
-/// then each pipe and what it says about itself.
+/// About, with the gglib and llama.cpp this build carries, when it stops
+/// opening, how many distinct tickets this device has connected to and,
+/// where it runs models, what they take, and then each pipe and what it
+/// says about itself.
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.locale) private var locale
@@ -24,6 +26,7 @@ struct SettingsView: View {
             Form {
                 Section("About") {
                     LabeledContent("Version", value: Self.version)
+                    Text(Self.carriedLine(Self.carried))
                     if let line = Self.expiryLine(buildExpiry, locale: locale, calendar: calendar) {
                         Text(line)
                     }
@@ -111,6 +114,19 @@ struct SettingsView: View {
     /// Read once, from the profile in this app's bundle: it does not change
     /// while the app runs.
     static let installedBuildExpiry = ProvisioningProfile.expirationDate(of: .main)
+
+    /// Read once, from the gglib framework this app links, in every build
+    /// and on every platform: it does not change while the app runs, and
+    /// reading it is the call that proves the framework is linked and its
+    /// binding matches it.
+    static let carried = GGLibBuild.linked()
+
+    /// "gglib 0.28.0-rc.2 · llama.cpp b11669": gglib's version, and the
+    /// llama.cpp release it is pinned to, which is the llama.cpp framework
+    /// embedded beside it.
+    static func carriedLine(_ build: GGLibBuild) -> String {
+        "gglib \(build.gglibVersion) \u{B7} llama.cpp \(build.llamaPin)"
+    }
 
     /// "This build stops opening on 6 Oct 2026": the day in the locale's
     /// medium style, as it falls in `calendar`'s time zone. Nil with no date.

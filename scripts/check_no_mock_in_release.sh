@@ -9,9 +9,10 @@
 # `#if DEBUG`, and this is what holds them there: a release build alone would
 # not, because each mock compiles perfectly well in one.
 #
-# Every target that could carry the symbols is scanned, GGChatPipe included:
-# the loop below is the whole of the search, so a target left out of it is a
-# target certified clean without being opened.
+# Every target that could carry the symbols is scanned, GGChatPipe, GGChatLocal
+# and gglib's vendored binding included: the loop below is the whole of the
+# search, so a target left out of it is a target certified clean without being
+# opened.
 #
 # Symbols, not sources. A grep over the sources would have to strip comments --
 # `PipeConnector.swift` and `UnavailablePipeConnector.swift` both name the mock
@@ -78,7 +79,7 @@ release_objects() {
 SENTINELS='UnavailablePipeConnector UnavailableEngine'
 
 objects=''
-for module in GGChatCore GGChatPipe GGChatUI; do
+for module in GGChatCore GGChatPipe GGLib GGChatLocal GGChatUI; do
     found=$(release_objects "$module")
     if [ -z "$found" ]; then
         echo "release: no objects for $module under the $LAYOUT layout of $ROOT/.build; run 'make build-release'" >&2

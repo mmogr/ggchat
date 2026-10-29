@@ -26,7 +26,8 @@ for dir in Sources App; do
 done
 hits=''
 if [ ${#dirs[@]} -gt 0 ]; then
-    hits=$(grep -rnE --include='*.swift' "$pattern" "${dirs[@]}" 2>/dev/null || true)
+    # Not Sources/GGLib: gglib's generated Swift, vendored as released.
+    hits=$(grep -rnE --include='*.swift' --exclude-dir=GGLib "$pattern" "${dirs[@]}" 2>/dev/null || true)
 fi
 
 captions=0

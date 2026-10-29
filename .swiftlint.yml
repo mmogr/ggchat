@@ -8,6 +8,9 @@ included:
 excluded:
   - .build
   - App/ggchat.xcodeproj
+  # gglib's generated Swift, vendored as released: check_gglib_take.sh holds
+  # it to the release byte for byte, so it is never edited to suit a rule.
+  - Sources/GGLib
 
 # Analyzer rules need the compiler's own arguments, so they run from
 # `make analyze` and never from `make lint`; nothing had ever run them.

@@ -26,7 +26,8 @@ status=0
 for owner in "${OWNERS[@]}"; do
     IFS=: read -r label writer guarded <<<"$owner"
     strays=$(
-        find "$ROOT/Sources" "$ROOT/App" -name '*.swift' -print0 2>/dev/null \
+        # Not Sources/GGLib: gglib's generated Swift, vendored as released.
+        find "$ROOT/Sources" "$ROOT/App" -path "$ROOT/Sources/GGLib" -prune -o -name '*.swift' -print0 2>/dev/null \
             | xargs -0 awk -v writer="$writer" -v guarded="$guarded" '
                 FNR == 1 { fn = "" }
                 # A comment quoting a write is not a write, and does not name

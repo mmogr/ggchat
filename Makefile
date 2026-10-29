@@ -1,7 +1,11 @@
 # Local parity with CI: `make ci` runs what the workflow runs, except the
 # UI-test legs, which need a booted simulator -- `make uitest` and friends run
 # those.
-SWIFT_SOURCES := Sources Tests Package.swift $(wildcard App/ggchat/*.swift) $(wildcard App/ggchatUITests/*.swift)
+# Every target's sources but Sources/GGLib, which is gglib's generated Swift,
+# vendored as released and held to the release by check_gglib_take.sh rather
+# than formatted here.
+SWIFT_SOURCES := $(filter-out Sources/GGLib,$(wildcard Sources/*)) Tests Package.swift \
+	$(wildcard App/ggchat/*.swift) $(wildcard App/ggchatUITests/*.swift)
 
 .PHONY: icon build-app-device phone screenshots project bootstrap fmt fmt-check lint analyze boundaries enforce build build-release build-app build-app-release test test-live uitest uitest-ipad uitest-duo uitest-dark uitest-contrast unused docs ci
 
@@ -46,8 +50,9 @@ analyze:
 	swift build --build-tests --scratch-path $(ANALYZE_PATH) -v > $(ANALYZE_LOG) 2>&1 \
 		|| { tail -40 $(ANALYZE_LOG) >&2; exit 1; }
 	# The gate refuses to pass vacuously: no compile line for a target of
-	# ours means the analyzer had nothing to look at.
-	for module in GGChatCore GGChatPipe GGChatUI; do \
+	# ours means the analyzer had nothing to look at. GGLib is gglib's
+	# generated Swift, which .swiftlint.yml excludes.
+	for module in GGChatCore GGChatPipe GGChatLocal GGChatUI; do \
 		grep -q -- "-module-name $$module" $(ANALYZE_LOG) \
 			|| { echo "analyze: no compile command for $$module, so it was not analysed" >&2; exit 1; }; \
 	done
@@ -71,6 +76,9 @@ enforce:
 	scripts/check_readme_claims.sh
 	scripts/check_test_counts.sh
 	scripts/check_phone_device.sh
+	# Last, because it needs the network and refuses a tree that pins no
+	# release, which every check above can still be read on.
+	scripts/check_gglib_take.sh
 
 build:
 	swift build -Xswiftc -warnings-as-errors
@@ -269,7 +277,7 @@ PERIPHERY_STORE = $(PERIPHERY_PATH)/debug/index/store
 unused:
 	rm -rf $(PERIPHERY_PATH)
 	swift build --build-tests --enable-index-store --scratch-path $(PERIPHERY_PATH)
-	for unit in Ticket ModelpipeConnector RootView; do \
+	for unit in Ticket ModelpipeConnector GGLibBuild+GGLib RootView; do \
 		find $(PERIPHERY_STORE) \( -name "$$unit.o-*" -o -name "$$unit.swift.o-*" \) -print -quit 2>/dev/null | grep -q . \
 			|| { echo "unused: no index unit for $$unit, so periphery would scan nothing" >&2; exit 1; }; \
 	done
@@ -281,6 +289,8 @@ docs:
 		--target GGChatCore --warnings-as-errors --output-path .build/docs/GGChatCore
 	swift package --allow-writing-to-directory .build/docs generate-documentation \
 		--target GGChatPipe --warnings-as-errors --output-path .build/docs/GGChatPipe
+	swift package --allow-writing-to-directory .build/docs generate-documentation \
+		--target GGChatLocal --warnings-as-errors --output-path .build/docs/GGChatLocal
 	swift package --allow-writing-to-directory .build/docs generate-documentation \
 		--target GGChatUI --warnings-as-errors --output-path .build/docs/GGChatUI
 

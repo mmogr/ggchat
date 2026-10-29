@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
 # Module boundaries. Each rule is a sentence the architecture promises:
 #
-#   1. GGChatCore and GGChatPipe import no UI framework. Core so it builds and
-#      tests from the command line and could compile on Linux; Pipe because the
-#      connector behind the seam is `Sendable` and has no business drawing.
+#   1. GGChatCore, GGChatPipe and GGChatLocal import no UI framework. Core so
+#      it builds and tests from the command line and could compile on Linux;
+#      Pipe and Local because what they put behind the seams is `Sendable` and
+#      has no business drawing.
 #   2. Only Secrets.swift talks to the Keychain.
 #   3. Only GGChatPipe imports modelpipe, and nothing imports iroh or a Rust
 #      module directly. The binding is one target's business: everything above
 #      the seam speaks `PipeConnector` and knows nothing about the transport.
 #      No Rust source or Cargo manifest sits in Sources, App, Tests or scripts.
+#      Likewise only GGChatLocal imports gglib's binding, `GGLib`, and only the
+#      binding imports the framework's own module, `GglibFFI`; nothing imports
+#      llama.cpp's, which is there for GglibFFI to load.
 #   4. The app target holds one Swift file, `ggchatApp.swift`. Everything
 #      else lives in the package.
 #   5. Core tests do not import SwiftUI either.
@@ -18,7 +22,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 status=0
 fail() { echo "boundary: $*" >&2; status=1; }
 
-for module in GGChatCore GGChatPipe; do
+for module in GGChatCore GGChatPipe GGChatLocal; do
     if hits=$(grep -rnE '^\s*@?[A-Za-z_]*\s*import (SwiftUI|UIKit|AppKit|SwiftData|Combine|VisionKit|CoreData)\b' \
         "$ROOT/Sources/$module" 2>/dev/null); then
         fail "$module imports a UI framework:"$'\n'"$hits"
@@ -44,6 +48,17 @@ imports=$(grep -rniE '^\s*(@[A-Za-z_]+([(][^)]*[)])?\s+)*import (iroh|modelpipe|
 if stray=$(printf '%s' "$imports" | grep -v '^$' \
     | grep -viE '^[^:]*/(Sources/GGChatPipe|Tests/GGChatPipeTests)/[^:]*:[0-9]+:\s*import Modelpipe\s*$'); then
     fail "only GGChatPipe may import Modelpipe, and nothing may import iroh:"$'\n'"$stray"
+fi
+# gglib's binding is GGChatLocal's alone, as modelpipe's is GGChatPipe's: the
+# generated Swift in GGLib imports the framework's module, GGChatLocal and its
+# tests import GGLib, and nothing else imports either. `llama` is banned
+# outright. The same attribute-proof pattern as above, and the same refusal of
+# an attribute on an allowed line.
+imports=$(grep -rniE '^\s*(@[A-Za-z_]+([(][^)]*[)])?\s+)*import (GGLib|GglibFFI|llama)\b' \
+    "$ROOT/Sources" "$ROOT/App" "$ROOT/Tests" 2>/dev/null || true)
+if stray=$(printf '%s' "$imports" | grep -v '^$' \
+    | grep -viE '^[^:]*/(Sources/GGChatLocal|Sources/GGLib|Tests/GGChatLocalTests)/[^:]*:[0-9]+:\s*import (GGLib|GglibFFI)\s*$'); then
+    fail "only GGChatLocal may import gglib's binding, and nothing may import llama:"$'\n'"$stray"
 fi
 # Rust anywhere this repo keeps code, tests or tooling. Only the directories
 # that exist are handed to find, and what it prints is captured rather than

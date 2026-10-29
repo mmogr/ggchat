@@ -91,16 +91,23 @@ jobs:
         run: scripts/check_test_counts.sh
       - name: make phone picks one iPhone or refuses
         run: scripts/check_phone_device.sh
+      # Last, because it needs the network and refuses a tree that pins no
+      # release, which every check above can still be read on.
+      - name: The vendored gglib binding is the pinned release's
+        run: scripts/check_gglib_take.sh
 
   build:
     name: Build
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
+      # Every package cache is keyed on Package.swift as well: gglib's
+      # frameworks are root binary targets pinned there, which Package.resolved
+      # never records, so a new pin is a new key and its downloads are saved.
       - uses: actions/cache@v6
         with:
           path: .build
-          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved') }}
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}
           restore-keys: spm-${{ runner.os }}-
       - name: Toolchain
         run: xcodebuild -version && swift --version
@@ -137,7 +144,7 @@ jobs:
       - uses: actions/cache@v6
         with:
           path: .build
-          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved') }}
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}
           restore-keys: spm-${{ runner.os }}-
       - name: Lockfile guard
         run: |
@@ -250,7 +257,7 @@ jobs:
       - uses: actions/cache@v6
         with:
           path: .build/xcode-spm
-          key: xcode-spm-${{ runner.os }}-${{ hashFiles('Package.resolved') }}
+          key: xcode-spm-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}
           restore-keys: xcode-spm-${{ runner.os }}-
       - name: Pick a booted simulator
         id: sim
@@ -400,7 +407,7 @@ jobs:
       - uses: actions/cache@v6
         with:
           path: .build
-          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved') }}
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}
           restore-keys: spm-${{ runner.os }}-
       - name: Install periphery
         run: brew install periphery
@@ -415,7 +422,7 @@ jobs:
       - uses: actions/cache@v6
         with:
           path: .build
-          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved') }}
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}
           restore-keys: spm-${{ runner.os }}-
       - name: Build DocC with warnings as errors
         run: make docs

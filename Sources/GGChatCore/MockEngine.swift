@@ -1,7 +1,7 @@
 // The whole file is DEBUG-only, for `MockPipeConnector.swift`'s reason: a
 // release build carries neither the types nor their symbols, and
 // `scripts/check_no_mock_in_release.sh` fails one that does. A release build
-// has `UnavailableEngine` until gglib's engine is linked.
+// has `UnavailableEngine` until `EngineFactory` picks gglib's engine.
 #if DEBUG
     import Foundation
     import Synchronization

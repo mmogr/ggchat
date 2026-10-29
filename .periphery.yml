@@ -11,3 +11,9 @@ retain_codable_properties: true
 # reported, on either toolchain, so the day those three can go, nothing here
 # will say so.
 superfluous_ignore_comments: false
+# gglib's generated Swift, vendored as released and held to the release by
+# scripts/check_gglib_take.sh: uniffi writes helpers this binding's surface
+# never reaches, and none is removed to suit a scan. Still indexed, so what
+# GGChatLocal calls in it is still a use.
+report_exclude:
+  - Sources/GGLib/**
