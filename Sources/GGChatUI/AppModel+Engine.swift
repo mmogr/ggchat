@@ -1,10 +1,6 @@
 import Foundation
 import GGChatCore
 
-#if os(iOS)
-    import os
-#endif
-
 // The engine on this device: the one provider that runs on it, serving it
 // when a conversation on that provider opens, the provider a request goes
 // through, and taking it down. `AppModel.swift` keeps the state these work
@@ -127,21 +123,12 @@ extension AppModel {
         }
     }
 
-    /// This device's memory, read once per serve: its physical memory, and
-    /// on iOS what this process can still allocate. Elsewhere the second is
-    /// the first again; no engine runs there.
+    /// This device's memory, read once per serve: `DeviceReadingSampler`'s
+    /// reading on iOS. Elsewhere the sampler reads nothing and no engine
+    /// runs, so the physical memory stands for what is available too.
     static func readThisDevice() -> DeviceReading {
+        if let reading = DeviceReadingSampler.sample() { return reading }
         let physical = ProcessInfo.processInfo.physicalMemory
-        #if os(iOS)
-            let available = UInt64(os_proc_available_memory())
-        #else
-            let available = physical
-        #endif
-        #if targetEnvironment(simulator)
-            let simulator = true
-        #else
-            let simulator = false
-        #endif
-        return DeviceReading(physicalBytes: physical, availableBytes: available, isSimulator: simulator)
+        return DeviceReading(physicalBytes: physical, availableBytes: physical, isSimulator: false)
     }
 }

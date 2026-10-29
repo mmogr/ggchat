@@ -118,6 +118,16 @@ struct Composer: View {
                         Text("No models listed yet.")
                             .foregroundStyle(.secondary)
                             .padding(10)
+                        // The models found there run on this iPhone, so
+                        // only its own provider's empty list offers them.
+                        if provider.kind == .onDevice, model.runsModelsHere {
+                            Button("Find a model…") {
+                                withAnimation(reduceMotion ? nil : .snappy) { pickingModel = false }
+                                model.openModelBrowser()
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.bottom, 10)
+                        }
                     }
                     ForEach(models) { info in
                         Button {

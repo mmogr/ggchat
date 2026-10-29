@@ -176,6 +176,10 @@ nonisolated enum ThisChatPart: Equatable {
                             let models = model.chatModels(for: provider.id)
                             if models.isEmpty {
                                 Text("No models listed yet.").foregroundStyle(.secondary)
+                                // As the composer's list offers it.
+                                if provider.kind == .onDevice, model.runsModelsHere {
+                                    Button("Find a model…") { model.openModelBrowser() }
+                                }
                             }
                             ForEach(models) { info in
                                 Button {

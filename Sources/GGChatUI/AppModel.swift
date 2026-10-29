@@ -142,6 +142,8 @@ public final class AppModel {
     var engineShuttingDown: Task<Void, Never>?
     var engineFollowing: Task<Void, Never>?
     public internal(set) var engineStatus: EngineStatus?
+    /// The model browser and the downloads chosen in it; see `OnDeviceState`.
+    public let onDevice = OnDeviceState()
     let now: () -> Date
     /// What spaces out reading on from a hub that did not answer.
     let sleeper: any Sleeper

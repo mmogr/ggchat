@@ -7,7 +7,7 @@
 # The simulator is the one of that name on the newest runtime that has it
 # (scripts/simulator_udid.sh), as for `make uitest`.
 #
-# Start gglib first: two of the three images below are taken only by the live
+# Start gglib first: two of the four images below are taken only by the live
 # walks. If yours enforces an API key, set GGCHAT_LIVE_BASE_URL and
 # GGCHAT_LIVE_API_KEY too, or those walks reach a server that refuses them.
 # Each image is an attachment a test takes by name; if a test stops taking
@@ -20,9 +20,10 @@ UDID="$("$ROOT/scripts/simulator_udid.sh" "$SIMULATOR")"
 OUT="$ROOT/docs/screenshots"
 BUNDLE="$(mktemp -d)/ui.xcresult"
 
-# attachment name -> file name in docs/screenshots. Only pipe-connected is
-# hermetic; the other two come from the live walks and need a server.
-WANTED="04-reply-complete-live:iphone-reply pipe-connected:iphone-pipe-connected proxy-status-pane:iphone-server-status"
+# attachment name -> file name in docs/screenshots. pipe-connected and
+# on-device-browser are hermetic, the second walked on the mock engine; the
+# other two come from the live walks and need a server.
+WANTED="04-reply-complete-live:iphone-reply pipe-connected:iphone-pipe-connected proxy-status-pane:iphone-server-status on-device-browser:iphone-on-device-browser"
 LIVE_ONLY="04-reply-complete-live proxy-status-pane"
 
 cd "$ROOT"
