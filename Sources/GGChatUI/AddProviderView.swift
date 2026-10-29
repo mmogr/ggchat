@@ -59,7 +59,7 @@ struct AddProviderView: View {
     }
 
     private var picker: some View {
-        Picker("Kind", selection: Binding(get: { kind }, set: pick)) {
+        Picker("Kind", selection: Binding(get: { kind }, set: { pick($0) })) {
             ForEach(Kind.offered(runsModelsHere: model.runsModelsHere)) { kind in
                 Text(kind.rawValue).tag(kind)
             }
