@@ -127,10 +127,12 @@ final class AppModelLibraryTests: XCTestCase {
         XCTAssertNil(model.providers.first?.defaultModel, "a model not yet installed was named the default")
 
         let both = [fits, short].map { QuantChoice(repo: phoneRepo, quantization: $0.name) }
-        let done = await waitUntil { both.allSatisfy { model.onDevice.downloads[$0] == .done } }
+        let done = await waitUntil { both.allSatisfy { model.onDevice.downloads[$0]?.state == .done } }
         XCTAssertTrue(done, "the downloads did not walk to done: \(model.onDevice.downloads)")
         model.download(fits, of: phoneRepo)
-        XCTAssertEqual(library.downloadsAsked, ["\(phoneRepo):Q4_K_M", "\(phoneRepo):Q8_0"])
+        // Each download reaches the library from a task of its own, so the
+        // two may arrive in either order; each arrives once.
+        XCTAssertEqual(library.downloadsAsked.sorted(), ["\(phoneRepo):Q4_K_M", "\(phoneRepo):Q8_0"])
         XCTAssertEqual(model.providers.count, 1)
     }
 
@@ -147,7 +149,9 @@ final class AppModelLibraryTests: XCTestCase {
         let choice = QuantChoice(repo: phoneRepo, quantization: fits.name)
 
         model.download(fits, of: phoneRepo)
-        let failed = await waitUntil { model.onDevice.downloads[choice] == .failed(reason: AppModel.stoppedShort) }
+        let failed = await waitUntil {
+            model.onDevice.downloads[choice]?.state == .failed(reason: AppModel.stoppedShort)
+        }
         XCTAssertTrue(failed, "a download that stopped short was left at \(model.onDevice.downloads)")
         model.download(fits, of: phoneRepo)
         let again = await waitUntil { library.downloadsAsked.count == 2 }

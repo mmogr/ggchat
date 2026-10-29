@@ -3,8 +3,9 @@ import SwiftUI
 
 /// One repository's quantizations, a row each: its size, whether it fits
 /// this iPhone and why, and Download, which one too big for this iPhone does
-/// not offer. The verdicts are asked with the opening's one reading, so they
-/// agree with the suggestions it showed.
+/// not offer; once chosen, the download's bar and Cancel. The verdicts are
+/// asked with the opening's one reading, so they agree with the suggestions
+/// it showed.
 struct ModelBrowserRepoView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.locale) private var locale
@@ -49,7 +50,8 @@ struct ModelBrowserRepoView: View {
     }
 
     private func row(_ offer: QuantOffer) -> some View {
-        let state = model.onDevice.downloads[QuantChoice(repo: repo, quantization: offer.name)]
+        let choice = QuantChoice(repo: repo, quantization: offer.name)
+        let progress = model.onDevice.downloads[choice]
         return VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(offer.name).font(.headline)
@@ -63,18 +65,23 @@ struct ModelBrowserRepoView: View {
                 Spacer(minLength: 8)
                 Button("Why") { why = WhyShown(offer: offer) }
                     .accessibilityLabel("Why, \(offer.name)")
-                if let words = state.flatMap(Self.words(for:)) {
-                    Text(words).font(.subheadline).foregroundStyle(.secondary)
-                } else {
+                switch progress?.state {
+                case .done?:
+                    Text("Downloaded").font(.subheadline).foregroundStyle(.secondary)
+                case nil, .failed?:
                     Button("Download") { model.download(offer, of: repo) }
                         .disabled(!offer.verdict.allowsDownload)
                         .accessibilityLabel("Download, \(offer.name)")
+                default:
+                    EmptyView()
                 }
             }
             // Two buttons in one row: each takes its own taps rather than
             // the row taking them all.
             .buttonStyle(.borderless)
-            if case .failed(let reason)? = state {
+            if let progress, progress.state.isUnderWay {
+                DownloadBar(progress: progress, name: offer.name) { model.cancelDownload(choice) }
+            } else if case .failed(let reason)? = progress?.state {
                 Text(reason).font(.caption).foregroundStyle(.red)
             }
         }
@@ -84,19 +91,6 @@ struct ModelBrowserRepoView: View {
     private static func size(_ offer: QuantOffer) -> String {
         let size = Sizes.download(offer.totalBytes)
         return offer.shardCount > 1 ? "\(size) in \(offer.shardCount) files" : size
-    }
-
-    /// What a download under way says in Download's place, or nil where
-    /// Download is offered again: never started, or failed.
-    private static func words(for state: DownloadState) -> String? {
-        switch state {
-        case .queued: "Queued"
-        case .running: "Downloading"
-        case .paused: "Paused"
-        case .verifying: "Checking"
-        case .done: "Downloaded"
-        case .failed: nil
-        }
     }
 }
 

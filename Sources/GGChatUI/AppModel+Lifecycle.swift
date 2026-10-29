@@ -25,6 +25,11 @@ extension AppModel {
     /// Now a hang-up calls off the resume in flight, and a resume waits for
     /// the hang-up in flight. Each pass returns its task so a test can wait
     /// on it; the view does not.
+    ///
+    /// The downloads to this device are paused beside the hang-up, inside
+    /// the same assertion, and resumed beside the dials rather than after
+    /// them, which may wait on a machine that is asleep. The library hears
+    /// the pauses and the resumes in turn (`turnDownloads`).
     @discardableResult
     public func scene(_ passage: ScenePassage) -> Task<Void, Never> {
         switch passage {
@@ -36,9 +41,11 @@ extension AppModel {
             // the app part-way through.
             let assertion = BackgroundAssertion(name: "hang up the pipes")
             let previous = hangUpInFlight
+            let pausing = turnDownloads(.background)
             let pass = Task {
                 await previous?.value
                 await hangUpEveryPipe()
+                await pausing.value
                 assertion.end()
             }
             hangUpInFlight = pass
@@ -48,9 +55,11 @@ extension AppModel {
             readTheChatOnScreen()
             resumeInFlight?.cancel()
             let pending = hangUpInFlight
+            let resuming = turnDownloads(.foreground)
             let pass = Task {
                 await pending?.value
                 await resumeEveryPipe()
+                await resuming.value
                 guard !Task.isCancelled else { return }
                 resumeRuns()
             }

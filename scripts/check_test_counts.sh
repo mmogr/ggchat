@@ -759,8 +759,19 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # row, or downloaded what cannot run, would pass every test before these.
 # These nine, the two walks, and the ten markers naming the walks and eight
 # of the nine are the whole of that guard, so the floors move past them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 976
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 35
-floor "README test markers" "${markers:-0}" 868
+#
+# 2026-10-29: 976 -> 988, 35 -> 36 and 868 -> 881 for downloads to this
+# iPhone. That the bar only goes up through a pause and a resume, that Cancel
+# takes the partial file away, that a finished download joins the model
+# list, that one there is no room for never reaches the library, that the
+# models directory is private and out of the backup at launch and after each
+# download, and that the library hears pauses and resumes in the order the
+# scenes came are guarded nowhere else: a download that started again on
+# each return, or models a backup carried, would pass every test before
+# these. These twelve, the walk and the thirteen markers naming them are the
+# whole of that guard, so the floors move past them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 988
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 36
+floor "README test markers" "${markers:-0}" 881
 
 exit $status

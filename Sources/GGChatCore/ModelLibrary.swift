@@ -18,7 +18,8 @@ public protocol ModelLibrary: Sendable {
     func remove(id: Int64) async throws
     /// Downloads one quantization of `repo`. The stream yields its progress,
     /// current first, and ends after `done` or `failed`; ending it before
-    /// that cancels the download.
+    /// that cancels the download. ``pauseAll()`` yields `paused` in it and
+    /// leaves it open, and ``resumeAll()`` goes on in the same stream.
     func download(repo: String, quantization: String) async throws -> AsyncStream<DownloadProgress>
     /// Pauses every download in flight, as the app leaves the foreground.
     func pauseAll() async

@@ -52,11 +52,11 @@ extension FitVerdict {
     }
 }
 
-// The model browser: opening it, asking the library, and choosing a model,
-// which adds This iPhone the first time. The view shows what these leave on
-// the `ModelBrowser` and computes nothing; `OnDeviceState` keeps the browser
-// open and the downloads chosen. A failure is said on the browser, under the
-// section it belongs to, not in an alert the sheet would hide.
+// The model browser: opening it and asking the library. Choosing a model,
+// which adds This iPhone the first time, is `AppModel+Downloads`. The view
+// shows what these leave on the `ModelBrowser` and computes nothing;
+// `OnDeviceState` keeps the browser open. A failure is said on the browser,
+// under the section it belongs to, not in an alert the sheet would hide.
 extension AppModel {
     /// Whether this build runs models on this device, and so offers the
     /// browser at all. False in a release build until gglib's engine is
@@ -150,45 +150,4 @@ extension AppModel {
             browser.offerFailures[repo] = error.localizedDescription
         }
     }
-
-    /// Downloads one quantization of `repo`, adding This iPhone first if it
-    /// is not there: choosing a model is how a device gets its one such
-    /// provider. One gglib found too big for this device is never
-    /// downloaded, and one already under way or done is not started again.
-    ///
-    /// The download is followed to its end whether or not the browser stays
-    /// open, and each step it reports is kept in `onDevice.downloads`. One
-    /// whose steps end short of done or failed is kept as failed, so it can
-    /// be chosen again.
-    public func download(_ offer: QuantOffer, of repo: String) {
-        let choice = QuantChoice(repo: repo, quantization: offer.name)
-        guard runsModelsHere, offer.verdict.allowsDownload else { return }
-        switch onDevice.downloads[choice] {
-        case nil, .failed?: break
-        default: return
-        }
-        do {
-            try addThisIPhone(defaultModel: nil)
-        } catch {
-            onDevice.downloads[choice] = .failed(reason: error.localizedDescription)
-            return
-        }
-        onDevice.downloads[choice] = .queued
-        Task {
-            do {
-                let steps = try await library.download(repo: repo, quantization: offer.name)
-                for await step in steps { onDevice.downloads[choice] = step.state }
-            } catch {
-                onDevice.downloads[choice] = .failed(reason: error.localizedDescription)
-                return
-            }
-            switch onDevice.downloads[choice] {
-            case .done?, .failed?: break
-            default: onDevice.downloads[choice] = .failed(reason: Self.stoppedShort)
-            }
-        }
-    }
-
-    /// What a download whose steps ended before done or failed says.
-    static let stoppedShort = "The download stopped before it finished."
 }

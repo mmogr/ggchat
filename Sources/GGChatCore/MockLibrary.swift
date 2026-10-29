@@ -9,27 +9,35 @@
     /// engine's one model installed (none for `no-models`, and too big for
     /// `too-big`), and a download that walks to done on a `Sleeper`.
     ///
-    /// It keeps nothing: a download adds no model and a removal takes none
-    /// away. The verdicts are fixed, whatever the reading says, because the
-    /// app never computes one; the readings it is handed are kept in
-    /// ``readings`` for a test to read back.
+    /// What it installs is kept in its ``catalogue``, which the mock engine
+    /// lists too, so a finished download joins the engine's models and a
+    /// removal takes one away. The verdicts are fixed, whatever the reading
+    /// says, because the app never computes one; the readings it is handed
+    /// are kept in ``readings`` for a test to read back.
     public struct MockLibrary: ModelLibrary {
         public var behaviour: MockEngine.Behaviour
         public var sleeper: any Sleeper
         public var stepDelay: Duration
+        /// Where a download keeps its partial file and its finished one, as
+        /// gglib keeps them in the models directory; nil keeps nothing on
+        /// disk.
+        public var directory: URL?
         /// Every reading a suggestion or a repository's quantizations were
         /// asked with, in order. A class, for `MockPairings`' reason: a test
         /// reads it back after handing the library to something that copied
         /// it.
         public let readings = MockReadings()
+        public let catalogue: Catalogue
 
         public init(
             behaviour: MockEngine.Behaviour = .ready, sleeper: any Sleeper = ImmediateSleeper(),
-            stepDelay: Duration = .milliseconds(400)
+            stepDelay: Duration = .milliseconds(400), directory: URL? = nil, catalogue: Catalogue? = nil
         ) {
             self.behaviour = behaviour
             self.sleeper = sleeper
             self.stepDelay = stepDelay
+            self.directory = directory
+            self.catalogue = catalogue ?? Catalogue(behaviour: behaviour)
         }
 
         static let gigabyte: UInt64 = 1_073_741_824
@@ -68,10 +76,14 @@
         static let phoneRepo = "mock/phone-1.7b-GGUF"
         static let deskRepo = "mock/desk-27b-GGUF"
 
-        /// A quantization for each verdict there is, of the phone's
-        /// repository; every one of any other is too big.
         public func quantizations(repo: String, reading: DeviceReading) async throws -> [QuantOffer] {
             readings.keep(reading)
+            return offers(of: repo)
+        }
+
+        /// A quantization for each verdict there is, of the phone's
+        /// repository; every one of any other is too big.
+        func offers(of repo: String) -> [QuantOffer] {
             guard repo == Self.phoneRepo else {
                 return [
                     QuantOffer(
@@ -97,45 +109,70 @@
         }
 
         public func installed() async throws -> [InstalledModel] {
-            guard behaviour != .noModels else { return [] }
-            return [
-                InstalledModel(
-                    id: 1, name: MockEngine.model.id, bytes: Self.gigabyte, trainedCtx: 40_960,
-                    capabilities: MockEngine.model.capabilities ?? [],
-                    verdict: behaviour == .tooBig ? Self.tooBig : .fits(ctx: 16_384))
-            ]
+            catalogue.installed
         }
 
-        /// Refuses an id that is not installed, as gglib does; removes
-        /// nothing, since the mock keeps nothing.
+        /// Refuses an id that is not installed, as gglib does, and takes
+        /// the model out of the catalogue and its file off the disk.
         public func remove(id: Int64) async throws {
-            guard try await installed().contains(where: { $0.id == id }) else { throw OnDeviceError.notFound }
+            let name = catalogue.installed.first { $0.id == id }?.name
+            guard let name, catalogue.remove(id: id) else { throw OnDeviceError.notFound }
+            if let directory { try? FileManager.default.removeItem(at: Self.finishedFile(name, in: directory)) }
         }
 
-        /// Queued, four steps of running, verifying, done, one step apart.
-        /// Ending the stream stops the walk.
+        /// Queued, eight steps of running, verifying, done, one step apart,
+        /// with the offer's size as the total; done installs it. See
+        /// `DownloadWalk` for pausing and the files it keeps. Ending the
+        /// stream stops the walk.
         public func download(repo: String, quantization: String) async throws -> AsyncStream<DownloadProgress> {
-            let id = "\(repo):\(quantization)"
-            let total = Self.gigabyte
-            let steps =
-                [DownloadProgress(id: id, bytes: 0, total: total, state: .queued)]
-                + (1...4).map { DownloadProgress(id: id, bytes: total / 4 * UInt64($0), total: total, state: .running) }
-                + [.verifying, .done].map { DownloadProgress(id: id, bytes: total, total: total, state: $0) }
+            let offer =
+                offers(of: repo).first { $0.name == quantization }
+                ?? QuantOffer(
+                    name: quantization, totalBytes: Self.gigabyte, shardCount: 1, verdict: .fits(ctx: 16_384),
+                    why: Self.why)
+            let name = Self.installedName(repo: repo, quantization: quantization)
+            let walk = DownloadWalk(
+                id: "\(repo):\(quantization)", total: offer.totalBytes, sleeper: sleeper, stepDelay: stepDelay,
+                catalogue: catalogue, partial: directory.map { Self.partialFile(name, in: $0) },
+                finished: directory.map { Self.finishedFile(name, in: $0) })
             let (stream, continuation) = AsyncStream.makeStream(of: DownloadProgress.self)
-            let walk = Task { [sleeper, stepDelay] in
-                for (index, step) in steps.enumerated() {
-                    if index > 0, (try? await sleeper.sleep(for: stepDelay)) == nil { break }
-                    continuation.yield(step)
+            let walking = Task { [catalogue] in
+                if await walk.run(saying: { continuation.yield($0) }) {
+                    catalogue.install(offer, of: repo, as: name)
+                    continuation.yield(walk.step(walk.total, .done))
                 }
                 continuation.finish()
             }
-            continuation.onTermination = { _ in walk.cancel() }
+            continuation.onTermination = { _ in walking.cancel() }
             return stream
         }
 
-        public func pauseAll() async {}
+        /// Every walk pauses at its next step and says so.
+        public func pauseAll() async {
+            catalogue.pause()
+        }
 
-        public func resumeAll() async {}
+        /// Every paused walk says it is running and goes on.
+        public func resumeAll() async {
+            catalogue.resume()
+        }
+
+        /// What the engine lists a downloaded quantization as:
+        /// `mock-phone-1.7b-Q4_K_M` for `Q4_K_M` of `mock/phone-1.7b-GGUF`.
+        public static func installedName(repo: String, quantization: String) -> String {
+            let base = repo.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: "-GGUF", with: "")
+            return "\(base)-\(quantization)"
+        }
+
+        /// Where a download of `name` keeps what it has so far.
+        public static func partialFile(_ name: String, in directory: URL) -> URL {
+            directory.appending(path: "\(name).gguf.part")
+        }
+
+        /// Where a finished download of `name` is kept.
+        public static func finishedFile(_ name: String, in directory: URL) -> URL {
+            directory.appending(path: "\(name).gguf")
+        }
     }
 
     /// The readings a ``MockLibrary`` was handed. DEBUG builds only.

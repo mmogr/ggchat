@@ -4,8 +4,10 @@ import XCTest
 /// `-ggchat-mock-engine no-models` adds This iPhone at launch with nothing
 /// installed, so a conversation on it has an empty model list, which is the
 /// way in a walk can reach. The library's verdicts are fixed, one of each,
-/// so the walk reads every chip. Part of the gallery, so the legs that draw
-/// it dark and in increased contrast draw the browser too.
+/// so the walk reads every chip, and its downloads walk to done in about ten
+/// seconds, a second a step, and are listed by the mock engine. Part of the
+/// gallery, so the legs that draw it dark and in increased contrast draw the
+/// browser too.
 ///
 /// The sheets here close with Done, which no sweep reaches for, so the waits
 /// may sweep.
@@ -81,6 +83,47 @@ extension ScreenGalleryUITests {
             XCTAssertTrue(line.waitForExistence(timeout: 10), "the Why sheet does not say \(what)")
         }
         attach(app, name: "on-device-why")
+    }
+
+    /// A download fills its bar, says how much of how much has come with
+    /// Cancel beside it, and once it is done the model joins the list the
+    /// conversation picks a model from, under the name the engine lists it
+    /// by.
+    @MainActor
+    func testADownloadFillsItsBarAndTheModelJoinsTheList() {
+        let app = launchFreshApp(arguments: ["-ggchat-mock-engine", "no-models"])
+        let suggestion = openBrowser(in: app)
+        let download = app.buttons["Download, Q4_K_M"].firstMatch
+        XCTAssertTrue(tap(suggestion, untilExists: download), "the suggestion did not open its repository")
+
+        let bar = app.progressIndicators["download-bar"].firstMatch
+        XCTAssertTrue(tap(download, untilExists: bar), "Download put up no bar")
+        // How much has come shows only while the download runs, for eight
+        // of its ten seconds, so it is looked for first.
+        let soFar = app.staticTexts.matching(NSPredicate(format: "label ENDSWITH %@", " of 1.07 GB")).firstMatch
+        XCTAssertTrue(soFar.waitForExistence(timeout: 10), "the row does not say how much of the download has come")
+        XCTAssertTrue(
+            app.buttons["Cancel download, Q4_K_M"].firstMatch.waitForExistence(timeout: 5),
+            "the download offers no Cancel")
+        attach(app, name: "on-device-download")
+        let downloaded = app.staticTexts["Downloaded"].firstMatch
+        XCTAssertTrue(downloaded.waitForExistence(timeout: 30), "the download never finished")
+        XCTAssertFalse(bar.exists, "the bar stayed after the download was done")
+
+        // Done is on the browser's first page, the way back from this one,
+        // whose title is the last part of the repository's name.
+        let back = app.navigationBars["phone-1.7b-GGUF"].buttons.element(boundBy: 0)
+        let done = app.buttons["Done"].firstMatch
+        XCTAssertTrue(tap(back, untilExists: done), "going back did not reach the browser's first page")
+        XCTAssertTrue(waitUntilHittable(done, timeout: 10), "the browser offers no Done")
+        done.tap()
+        // The pill names the model too once it is the provider's default,
+        // so the witness is a row of the list, which only the open pill shows.
+        let pill = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Model, '")).firstMatch
+        let joined = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS %@ AND NOT (label BEGINSWITH 'Model, ')", "mock-phone-1.7b-Q4_K_M")
+        ).firstMatch
+        XCTAssertTrue(tap(pill, untilExists: joined), "the downloaded model did not join the model list")
     }
 
     /// Opens a conversation on This iPhone, its empty model list, and Find a

@@ -204,6 +204,7 @@ public final class AppModel {
             report(error)
         }
         startWatchingTheNetwork()
+        prepareModelsDirectory()
         resumeRuns()
         Task { await refreshHubChats() }
     }

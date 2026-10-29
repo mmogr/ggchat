@@ -4,7 +4,7 @@ import XCTest
 @testable import GGChatUI
 
 /// Leaving and coming back take turns. Each test names the line in
-/// `AppModel.scene(_:)` or `connectPipe` that fails it.
+/// `AppModel.scene(_:)`, `turnDownloads` or `connectPipe` that fails it.
 final class AppModelScenePhaseTests: XCTestCase {
     private let ticket = "pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na"
 
@@ -178,4 +178,77 @@ final class AppModelScenePhaseTests: XCTestCase {
         XCTAssertNotNil(model.pipeSession(for: config.id), "coming back during the hang-up left the pipe down")
         XCTAssertEqual(model.pipeStatus(for: config.id), .direct)
     }
+
+    /// The downloads to this iPhone are paused beside the replies on the
+    /// way out, and the library hears pauses and resumes in turn. The
+    /// background pass puts the reply through This iPhone down, keeping its
+    /// partial, and does not end until the pause has returned; a return
+    /// while the pause is held resumes only once it has; and a background
+    /// while that resume is held pauses only once it has. Fails when
+    /// `scene(_:)` stops waiting for the pause, or `turnDownloads` stops
+    /// waiting for the turn before.
+    @MainActor
+    func testTheDownloadsPauseBesideTheRepliesAndResumeInTurn() async throws {
+        let registry = LoopbackProviderRegistry()
+        let library = HeldLibrary()
+        let defaults = UserDefaults(suiteName: "AppModelScenePhaseTests.\(UUID().uuidString)")!
+        let model = AppModel(
+            store: InMemoryStore(), secrets: InMemorySecrets(), log: NoopLogSink(), registry: registry,
+            pipeConnector: GatedConnector(registry: registry),
+            engine: MockEngine(registry: registry, provider: HangingProvider()), library: library,
+            diagnostics: Diagnostics(defaults: defaults), now: { Date(timeIntervalSince1970: 1_700_000_000) })
+        let config = try model.addThisIPhone(defaultModel: MockEngine.model.id)
+        model.newConversation()
+        await model.open(config).value
+        let streaming = try XCTUnwrap(model.send("go"))
+        defer { streaming.cancel() }
+        let started = await waitUntil { model.liveReply?.content == "half " }
+        XCTAssertTrue(started, "the reply never started")
+
+        let away = model.scene(.background)
+        let ended = Ended()
+        let watching = Task {
+            await away.value
+            ended.yet = true
+        }
+        let pausing = await waitUntil { library.calls == ["pause"] }
+        XCTAssertTrue(pausing, "the background did not pause the downloads: \(library.calls)")
+        let kept = await waitUntil { model.selectedConversation?.messages.last?.isPartial == true }
+        XCTAssertTrue(kept, "the reply through This iPhone was not put down beside the pause")
+        XCTAssertFalse(ended.yet, "the background pass ended before the pause returned")
+
+        let back = model.scene(.foreground)
+        for _ in 0..<200 { await Task.yield() }
+        XCTAssertEqual(library.calls, ["pause"], "a resume went out while the pause was held")
+        library.release()
+        await watching.value
+        let resumed = await waitUntil { library.calls == ["pause", "resume"] }
+        XCTAssertTrue(resumed, "coming back did not resume the downloads: \(library.calls)")
+
+        let awayAgain = model.scene(.background)
+        for _ in 0..<200 { await Task.yield() }
+        XCTAssertEqual(library.calls, ["pause", "resume"], "a pause went out while the resume was held")
+        library.release()
+        await back.value
+        let pausedAgain = await waitUntil { library.calls == ["pause", "resume", "pause"] }
+        XCTAssertTrue(pausedAgain, "the second background did not pause after the resume: \(library.calls)")
+        library.release()
+        await awayAgain.value
+    }
+
+    /// Waits until `done` holds, on a clock, for
+    /// `AppModelEngineTests.waitUntil`'s reason.
+    @MainActor
+    private func waitUntil(within limit: Duration = .seconds(10), _ done: () -> Bool) async -> Bool {
+        let deadline = ContinuousClock.now + limit
+        while !done(), ContinuousClock.now < deadline { try? await Task.sleep(for: .milliseconds(1)) }
+        return done()
+    }
+}
+
+/// Whether a task the test watches has ended, read and written on the main
+/// actor.
+@MainActor
+private final class Ended {
+    var yet = false
 }

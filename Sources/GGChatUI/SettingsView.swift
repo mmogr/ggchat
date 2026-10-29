@@ -1,9 +1,9 @@
 import GGChatCore
 import SwiftUI
 
-/// About, with when this build stops opening and how many distinct tickets
-/// this device has connected to, and then each pipe and what it says about
-/// itself.
+/// About, with when this build stops opening, how many distinct tickets this
+/// device has connected to and, where it runs models, what they take, and
+/// then each pipe and what it says about itself.
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.locale) private var locale
@@ -28,6 +28,10 @@ struct SettingsView: View {
                         Text(line)
                     }
                     LabeledContent("Distinct tickets connected", value: "\(model.diagnostics.ticketDigests.count)")
+                    if model.runsModelsHere {
+                        LabeledContent("Models on this iPhone", value: model.installedSize)
+                            .task { await model.refreshInstalled() }
+                    }
                     Link("Source", destination: URL(string: "https://github.com/mmogr/ggchat")!)
                 }
                 ConnectionsSection()

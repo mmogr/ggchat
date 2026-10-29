@@ -52,19 +52,25 @@
         /// What answers at ``baseURL``, in place of the behaviour's own mock
         /// provider, for a test that records what was sent.
         public var provider: (any Provider)?
+        /// What the engine lists as its models: the catalogue a `MockLibrary`
+        /// installs into, when the two are handed the same one, as gglib's
+        /// proxy lists what its library installed.
+        public let catalogue: MockLibrary.Catalogue
 
         public init(
             behaviour: Behaviour = .ready,
             sleeper: any Sleeper = ImmediateSleeper(),
             stepDelay: Duration = .milliseconds(400),
             registry: LoopbackProviderRegistry = .shared,
-            provider: (any Provider)? = nil
+            provider: (any Provider)? = nil,
+            catalogue: MockLibrary.Catalogue? = nil
         ) {
             self.behaviour = behaviour
             self.sleeper = sleeper
             self.stepDelay = stepDelay
             self.registry = registry
             self.provider = provider
+            self.catalogue = catalogue ?? MockLibrary.Catalogue(behaviour: behaviour)
         }
 
         public var isAvailable: Bool { true }
@@ -79,9 +85,9 @@
         }
 
         /// The behaviour's own provider: the mock's canned reply at a phone's
-        /// pace, or a refusal before the first token.
-        var answering: MockProvider {
-            let models = behaviour == .noModels ? [] : [Self.model]
+        /// pace, or a refusal before the first token, listing what the
+        /// catalogue holds when it is asked.
+        var answering: any Provider {
             let refusal: ProviderError? =
                 switch behaviour {
                 case .ready, .slow, .noModels: nil
@@ -95,9 +101,10 @@
                         message: "The chat model needs 5.1 GB at its smallest context; this device gives a model "
                             + "3.2 GB. Use a smaller model, or a smaller quantization of this one.")
                 }
-            return MockProvider(
-                models: models, scripts: refusal == nil ? [MockProvider.sampleScript] : [.init(text: "")],
+            let replying = MockProvider(
+                models: [], scripts: refusal == nil ? [MockProvider.sampleScript] : [.init(text: "")],
                 sleeper: sleeper, tokenDelay: .milliseconds(25), failure: refusal, contextSize: Self.contextSize)
+            return CatalogueListing(replying: replying, catalogue: catalogue)
         }
 
         /// The statuses the session walks through after `idle`, one step
@@ -168,6 +175,24 @@
             relay.send(.stopped)
             relay.finish()
             registry.unregister(baseURL)
+        }
+    }
+
+    extension MockEngine {
+        /// A mock provider whose model list is a catalogue's, read at each
+        /// listing. DEBUG builds only, for the same reason, and nested so the
+        /// release check finds it by the engine's name.
+        fileprivate struct CatalogueListing: Provider {
+            let replying: MockProvider
+            let catalogue: MockLibrary.Catalogue
+
+            func models() async throws -> [ModelInfo] {
+                catalogue.listed
+            }
+
+            func stream(_ request: ChatRequest) -> AsyncStream<ChatEvent> {
+                replying.stream(request)
+            }
         }
     }
 #endif
