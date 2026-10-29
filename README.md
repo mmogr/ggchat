@@ -1031,6 +1031,42 @@ Each claim names the test that keeps it true.
   is not there.
   <!-- test: UnavailablePipeTests.testABuildWithNoPipeRefusesAGoodTicketInsteadOfMockingOne -->
   <!-- test: UnavailablePipeTests.testTheRefusalIsASentenceThatBlamesTheBuildAndNotTheUser -->
+- A provider can run on this iPhone's own engine, "This iPhone", one per
+  device, behind a seam shaped as the pipe's is: the engine serves gglib at
+  a loopback address with a key of its own, and the ordinary provider talks
+  to that. No build has gglib's engine yet, so a release build, the Mac and a
+  DEBUG build launched without `-ggchat-mock-engine` offer nothing on-device
+  and refuse a serve with a sentence about the build. A DEBUG build on iOS
+  launched with it walks the mock engine, which adds the provider at launch
+  and walks idle → loading → ready. Opening a conversation on it serves the
+  engine once; a send goes the chat route with gglib's progress asked for,
+  is never a run, has no Draw switch, and raises the ring from the context
+  the engine loaded its model with. A model too big for the device is
+  refused with `model_does_not_fit`, and the line under the refusal says
+  where to pick a smaller one. Removing the provider takes the engine down,
+  a serve still starting included, and a serve asked for while the engine
+  goes down waits until it is down. The kind is stored as
+  `{"onDevice":{}}`, which a build from before it cannot read.
+  <!-- test: ProviderConfigTests.testEachKindIsStoredAsItWasNamed -->
+  <!-- test: ProviderConfigTests.testThisIPhonesEngineHasASession -->
+  <!-- test: ProviderConfigTests.testThisIPhonesEngineIsNotAPairedMac -->
+  <!-- test: SpeaksGGLibTests.testThisIPhonesEngineSpeaksGGLib -->
+  <!-- test: SpeaksGGLibTests.testThisIPhonesEngineHasNoRuns -->
+  <!-- test: SpeaksGGLibTests.testThisIPhonesEngineHasNoDrawSwitch -->
+  <!-- test: UnavailableEngineTests.testABuildWithNoEngineOffersNoneAndRefusesToServe -->
+  <!-- test: MockEngineTests.testTheStatusWalksFromIdleToReadyAndEndsStopped -->
+  <!-- test: MockEngineTests.testTooBigIsRefusedAs507ModelDoesNotFitAndLoadsNothing -->
+  <!-- test: AppModelEngineTests.testOpeningThisIPhoneServesItsEngineOnceAndListsItsModel -->
+  <!-- test: AppModelEngineTests.testASendOnThisIPhoneAsksForProgressAndIsNeverARun -->
+  <!-- test: AppModelEngineTests.testThisIPhoneOffersNoDraw -->
+  <!-- test: AppModelEngineTests.testTheRingLandsFromTheEnginesUsage -->
+  <!-- test: AppModelEngineTests.testATooBigModelIsRefusedWithAdviceForThisIPhone -->
+  <!-- test: AppModelEngineTests.testWithNoEngineASendOnThisIPhoneIsRefusedWithASentence -->
+  <!-- test: AppModelEngineTests.testThisIPhoneIsAddedOnce -->
+  <!-- test: AppModelEngineTests.testRemovingThisIPhoneTakesItsEngineDown -->
+  <!-- test: AppModelEngineTests.testRemovingThisIPhoneWhileItsEngineStartsLeavesNothingServing -->
+  <!-- test: AppModelEngineTests.testAServeWhileTheEngineGoesDownWaitsUntilItIsDown -->
+  <!-- test: OnDeviceUITests.testAReplyOnThisIPhoneRaisesTheRing -->
 - A bearer token is sent on every request and never reaches a log line.
   <!-- test: OpenAICompatibleProviderTests.testNoCredentialEverReachesALogLine -->
 - No line the app writes as it dials a pipe, loses one or pairs carries a
@@ -1957,8 +1993,8 @@ swiftlint that log.
 
 `make build-release` compiles the package in its Release configuration and
 then reads the symbols out of the objects it produced, failing if the
-DEBUG-only mock pipe is among them. A release build on its own would not
-catch it: the mock compiles perfectly well in one. The check finds the
+DEBUG-only mock pipe or mock engine is among them. A release build on its
+own would not catch it: each mock compiles perfectly well in one. The check finds the
 objects under either layout `swift build` writes, the native build
 system's and, from Swift 6.4, swiftbuild's. `make build-app-release`
 compiles the app target in Release and is the only thing that does, but it

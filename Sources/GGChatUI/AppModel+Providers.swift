@@ -112,8 +112,8 @@ extension AppModel {
     ///
     /// The reply in flight through it, streaming or still waiting for its
     /// pipe, is put down as Stop puts it down, and waited for, so what had
-    /// arrived is kept before its pipe is hung up. A reply through another
-    /// provider goes on.
+    /// arrived is kept before its pipe is hung up, or this device's engine
+    /// taken down. A reply through another provider goes on.
     public func removeProvider(_ id: UUID) {
         guard let index = providers.firstIndex(where: { $0.id == id }) else { return }
         let removed = providers.remove(at: index)
@@ -136,6 +136,7 @@ extension AppModel {
         Task {
             for reply in replies { await reply.value }
             await disconnectPipe(for: id)
+            if removed.kind == .onDevice { await shutDownEngine() }
         }
         do {
             try secrets.removeAll(for: id)
@@ -157,6 +158,8 @@ extension AppModel {
             return registry.makeProvider(baseURL: baseURL, apiKey: apiKey, log: log)
         case .pipe:
             return makePipeProvider(for: config)
+        case .onDevice:
+            return makeEngineProvider(for: config)
         }
     }
 

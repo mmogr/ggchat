@@ -131,28 +131,20 @@ public final class AppModel {
     /// passes it on to the pipes; see `startWatchingTheNetwork()`.
     let networkWatcher: any NetworkPathWatching
     var networkTask: Task<Void, Never>?
+    /// The engine on this device, the models it can run, the session it is
+    /// serving if any, the serve and the shutdown in flight, the task
+    /// following the session's status and what that last said; see
+    /// `AppModel+Engine`.
+    let engine: any LocalEngine
+    public let library: any ModelLibrary
+    var engineSession: (any EngineSession)?
+    var engineServing: Task<Void, Never>?
+    var engineShuttingDown: Task<Void, Never>?
+    var engineFollowing: Task<Void, Never>?
+    public internal(set) var engineStatus: EngineStatus?
     let now: () -> Date
     /// What spaces out reading on from a hub that did not answer.
     let sleeper: any Sleeper
-
-    /// Where the in-process mock provider answers in DEBUG builds, the same
-    /// address after every launch so a saved mock provider keeps working.
-    public static let mockBaseURL = URL(string: "http://127.0.0.1:49151/v1")!
-
-    #if DEBUG
-        /// The mock's pace: a word every 25 ms, or one a second under
-        /// `-ggchat-slow-mock YES`, which the walk of typing during a reply
-        /// passes so that the reply is still running while it types.
-        static var mockTokenDelay: Duration {
-            UserDefaults.standard.bool(forKey: "ggchat-slow-mock") ? .seconds(1) : .milliseconds(25)
-        }
-    #endif
-
-    /// Where the DEBUG build's refusing mock answers. Every chat request it
-    /// gets is refused before its first token, with the code and the sentence
-    /// modelpipe's edge wrote to a phone whose key the serving machine had
-    /// forgotten, so the screen that refusal lands on can be walked to.
-    public static let refusingMockBaseURL = URL(string: "http://127.0.0.1:49152/v1")!
 
     public init(
         store: any Store,
@@ -161,6 +153,8 @@ public final class AppModel {
         registry: LoopbackProviderRegistry = .shared,
         pipeConnector: any PipeConnector = PipeConnectorFactory.make(),
         pairingReader: any PairingReader = PipeConnectorFactory.makePairingReader(),
+        engine: any LocalEngine = EngineFactory.makeEngine(),
+        library: any ModelLibrary = EngineFactory.makeLibrary(),
         networkWatcher: any NetworkPathWatching = NWPathNetworkWatcher(),
         diagnostics: Diagnostics = Diagnostics(),
         now: @escaping () -> Date = { Date() },
@@ -172,6 +166,8 @@ public final class AppModel {
         self.registry = registry
         self.pipeConnector = pipeConnector
         self.pairingReader = pairingReader
+        self.engine = engine
+        self.library = library
         self.networkWatcher = networkWatcher
         self.diagnostics = diagnostics
         self.now = now
@@ -194,6 +190,7 @@ public final class AppModel {
     public func load() {
         do {
             providers = try store.loadProviders()
+            addThisIPhoneForAWalk()
             lastHeardAt = try store.loadLastHeard()
             loadSeenHubChats()
             conversations = try store.loadConversations().sorted { $0.updatedAt > $1.updatedAt }

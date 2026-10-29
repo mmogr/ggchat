@@ -113,8 +113,8 @@ extension ProviderError {
         case incompleteRequest = "incomplete_request"
         case invalidPairingCode = "invalid_pairing_code"
 
-        // gglib, `gglib-proxy`'s `ErrorResponse` constructors plus the
-        // `upstream_timeout` it writes into a stream that has already begun.
+        // gglib, `gglib-proxy`'s `ErrorResponse` constructors, the `upstream_timeout`
+        // it writes into a stream already begun, and the 507 a phone's engine refuses with.
         case admissionTimeout = "admission_timeout"
         case contextLengthExceeded = "context_length_exceeded"
         case deviceNotPaired = "device_not_paired"
@@ -127,6 +127,7 @@ extension ProviderError {
         case modelFileNotFound = "model_file_not_found"
         case modelLoading = "model_loading"
         case modelNotFound = "model_not_found"
+        case modelDoesNotFit = "model_does_not_fit"
         case notAnEmbeddingModel = "not_an_embedding_model"
         case pinnedModelMismatch = "pinned_model_mismatch"
         case profileNotFound = "profile_not_found"
@@ -205,7 +206,7 @@ extension ProviderError.Code {
         // none, or to another model, and the one whose fix is on the serving
         // machine says so in its own sentence.
         case .badRequest, .contextLengthExceeded, .embeddingModelCannotChat, .invalidRequest,
-            .loopDetected, .modelNotFound, .notAnEmbeddingModel, .pinnedModelMismatch,
+            .loopDetected, .modelNotFound, .modelDoesNotFit, .notAnEmbeddingModel, .pinnedModelMismatch,
             .profileNotFound, .stagnationDetected, .modelCannotReadImages, .requestTooLarge,
             .imageTooLarge, .unsupportedImage, .attachmentNotFound, .requestImagesTooLarge,
             .imageModelCannotChat, .invalidImageSize, .notAnImageModel:
@@ -277,7 +278,7 @@ extension ProviderError.Code {
         case .badRequest, .badGateway, .backendUnreachable, .incompleteRequest,
             .admissionTimeout, .contextLengthExceeded, .deviceNotPaired, .embeddingModelCannotChat,
             .hostNotAllowed, .internalError, .invalidPairingCode, .invalidRequest, .loopDetected,
-            .mcpNotAllowedOverTunnel, .modelFileNotFound, .modelLoading, .modelNotFound,
+            .mcpNotAllowedOverTunnel, .modelFileNotFound, .modelLoading, .modelNotFound, .modelDoesNotFit,
             .notAnEmbeddingModel, .pinnedModelMismatch, .profileNotFound, .stagnationDetected,
             .upstreamError, .upstreamTimeout, .modelUnavailable, .unavailable:
             nil

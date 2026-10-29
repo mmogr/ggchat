@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# The mock pipe is absent from a release build, not merely unchosen by it.
+# The mock pipe and the mock engine are absent from a release build, not
+# merely unchosen by it.
 #
-# `PipeConnectorFactory` picks `ModelpipeConnector` outside DEBUG, but a mock
-# left unchosen is still in the binary.
-# `MockPipeConnector` and `MockPipeSession` are therefore declared inside an
+# `PipeConnectorFactory` picks `ModelpipeConnector` outside DEBUG, and
+# `EngineFactory` picks `UnavailableEngine`, but a mock left unchosen is still
+# in the binary. `MockPipeConnector`, `MockPipeSession`, `MockEngine`,
+# `MockEngineSession` and `MockLibrary` are therefore declared inside an
 # `#if DEBUG`, and this is what holds them there: a release build alone would
-# not, because the mock compiles perfectly well in one.
+# not, because each mock compiles perfectly well in one.
 #
 # Every target that could carry the symbols is scanned, GGChatPipe included:
 # the loop below is the whole of the search, so a target left out of it is a
@@ -21,7 +23,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BANNED='MockPipeConnector|MockPipeSession'
+BANNED='MockPipeConnector|MockPipeSession|MockEngine|MockLibrary'
 
 # Where a module's release objects are depends on which build system `swift
 # build` ran. The native one writes `.build/release/<Module>.build/<File>.swift.o`;
@@ -66,13 +68,14 @@ release_objects() {
     done
 }
 
-# Compiled in every configuration, so its presence is the proof that the module
-# declaring the mock was really read. Looked for in its own object and not
-# across the union of both targets' symbols: the name also appears in three
-# GGChatUI objects that call the factory, so a union check stays green with
-# GGChatCore's objects deleted -- certifying the mock absent from a module it
-# never opened. Per target for the same reason: each must have yielded objects.
-SENTINEL='UnavailablePipeConnector'
+# Compiled in every configuration, so their presence is the proof that the
+# module declaring the mocks was really read. Each is looked for in its own
+# object and not across the union of the targets' symbols: the names also
+# appear in GGChatUI objects that call the factories, so a union check stays
+# green with GGChatCore's objects deleted -- certifying the mocks absent from
+# a module it never opened. Per target for the same reason: each must have
+# yielded objects. One sentinel per mock's file, beside it in GGChatCore.
+SENTINELS='UnavailablePipeConnector UnavailableEngine'
 
 objects=''
 for module in GGChatCore GGChatPipe GGChatUI; do
@@ -84,36 +87,39 @@ for module in GGChatCore GGChatPipe GGChatUI; do
     objects="$objects$found"$'\n'
 done
 
-# `UnavailablePipeConnector.swift.o` under the native layout,
-# `UnavailablePipeConnector.o` under swiftbuild; exactly one either way.
-SENTINEL_OBJECT=$(release_objects GGChatCore | grep -E "/$SENTINEL(\.swift)?\.o\$" || true)
-if [ "$(printf '%s' "$SENTINEL_OBJECT" | grep -c .)" -ne 1 ]; then
-    echo "release: expected one $SENTINEL object among GGChatCore's, found:" >&2
-    printf '%s\n' "$SENTINEL_OBJECT" >&2
-    echo "release: so GGChatCore was not really read" >&2
-    exit 1
-fi
-# `grep -c` and not `grep -q`: `-q` closes the pipe on its first match and
-# `pipefail` would read nm's SIGPIPE as a failed search.
-if [ "$(nm -a "$SENTINEL_OBJECT" | grep -cE "$SENTINEL" || true)" -eq 0 ]; then
-    echo "release: no $SENTINEL symbol in $SENTINEL_OBJECT, so nothing was really inspected" >&2
-    exit 1
-fi
+# `<Sentinel>.swift.o` under the native layout, `<Sentinel>.o` under
+# swiftbuild; exactly one each.
+for SENTINEL in $SENTINELS; do
+    SENTINEL_OBJECT=$(release_objects GGChatCore | grep -E "/$SENTINEL(\.swift)?\.o\$" || true)
+    if [ "$(printf '%s' "$SENTINEL_OBJECT" | grep -c .)" -ne 1 ]; then
+        echo "release: expected one $SENTINEL object among GGChatCore's, found:" >&2
+        printf '%s\n' "$SENTINEL_OBJECT" >&2
+        echo "release: so GGChatCore was not really read" >&2
+        exit 1
+    fi
+    # `grep -c` and not `grep -q`: `-q` closes the pipe on its first match and
+    # `pipefail` would read nm's SIGPIPE as a failed search.
+    if [ "$(nm -a "$SENTINEL_OBJECT" | grep -cE "$SENTINEL" || true)" -eq 0 ]; then
+        echo "release: no $SENTINEL symbol in $SENTINEL_OBJECT, so nothing was really inspected" >&2
+        exit 1
+    fi
+done
 
 symbols=$(mktemp)
 trap 'rm -f "$symbols"' EXIT
 
-# nm prints a `path/to/file.o:` header per file, and one of those paths is
-# MockPipeConnector.swift.o -- the file is still compiled, it just yields
-# nothing now. Matching a header would fail the very tree this is meant to
-# pass, so the headers go. A file and not a pipe, for the reason just above.
+# nm prints a `path/to/file.o:` header per file, and some of those paths are
+# MockPipeConnector.swift.o and MockEngine.swift.o -- each file is still
+# compiled, it just yields nothing now. Matching a header would fail the very
+# tree this is meant to pass, so the headers go. A file and not a pipe, for
+# the reason just above.
 printf '%s' "$objects" | tr '\n' '\0' | xargs -0 nm -a | grep -v ':$' > "$symbols"
 
 count=$(grep -cE "$BANNED" "$symbols" || true)
 if [ "$count" -ne 0 ]; then
-    echo "release: the mock pipe is in the release build ($count symbols matching $BANNED):" >&2
+    echo "release: a mock is in the release build ($count symbols matching $BANNED):" >&2
     grep -E "$BANNED" "$symbols" | head -5 >&2
     exit 1
 fi
 
-echo "release: ok, no mock pipe in the release build ($LAYOUT layout)"
+echo "release: ok, no mock pipe or engine in the release build ($LAYOUT layout)"

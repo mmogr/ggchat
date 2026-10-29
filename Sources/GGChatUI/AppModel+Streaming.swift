@@ -120,8 +120,10 @@ extension AppModel {
             lastError = error.errorDescription
             return nil
         }
-        // A pipe that is not connected is waited for, not refused.
-        let waits = config.hasSession && pipeStatuses[config.id]?.isConnected != true
+        // A pipe that is not connected is waited for, not refused. This
+        // device's engine is served when its conversation opens, and a send
+        // that finds it not serving is refused with a sentence.
+        let waits = config.isPipe && pipeStatuses[config.id]?.isConnected != true
         let ready = waits ? nil : makeProvider(for: config)
         if !waits, ready == nil { return nil }
         streamErrors[conversation.id] = nil
@@ -203,27 +205,37 @@ extension AppModel {
 
     /// What to do about a failure, from the provider behind this
     /// conversation, or nil when the sentence and the line under it already
-    /// say it. Only `invalid_api_key` has any so far. Its remedy is a new key,
+    /// say it. Two codes have any. `invalid_api_key`'s remedy is a new key,
     /// and where one comes from depends on the kind of provider: a pipe pairs
-    /// again, a server takes its key from whoever runs it. Core cannot tell
-    /// the two apart, and a server's user must never be told to run a gglib
-    /// command.
+    /// again, a server takes its key from whoever runs it, and this device's
+    /// engine makes a new one each time it is served. Core cannot tell them
+    /// apart, and a server's user must never be told to run a gglib command.
+    /// `model_does_not_fit` is this device's engine refusing a model too big
+    /// for it, whose sentence says to use a smaller one; this says where.
     ///
     /// Plain text rather than markdown, because it carries the provider's
     /// name, and a name is not markup. It says "try again" rather than naming
     /// a button, because it is drawn under a partial reply too, where the
     /// button is Continue.
     public func advice(for failure: Failure, in conversation: Conversation) -> String? {
-        guard failure.code == ProviderError.Code.invalidAPIKey.rawValue,
-            let config = provider(for: conversation)
-        else { return nil }
-        switch config.kind {
-        case .pipe:
-            return "If a key changed there, it reaches the tunnel within seconds, so try again first. "
-                + "If it still refuses, run \u{201C}gglib remote invite\u{201D} on that machine and paste what it "
-                + "shows under Providers › \(config.name) › Pairing string."
-        case .openAICompatible:
-            return "Check the API key under Providers › \(config.name)."
+        guard let config = provider(for: conversation) else { return nil }
+        switch failure.code.flatMap(ProviderError.Code.init(rawValue:)) {
+        case .invalidAPIKey?:
+            switch config.kind {
+            case .pipe:
+                return "If a key changed there, it reaches the tunnel within seconds, so try again first. "
+                    + "If it still refuses, run \u{201C}gglib remote invite\u{201D} on that machine and paste what "
+                    + "it shows under Providers › \(config.name) › Pairing string."
+            case .openAICompatible:
+                return "Check the API key under Providers › \(config.name)."
+            case .onDevice:
+                return "\(config.name) gives its engine a new key each time it starts it. Close ggchat and open "
+                    + "it again, then try again."
+            }
+        case .modelDoesNotFit? where config.kind == .onDevice:
+            return "Pick a smaller model for \(config.name) from the model list under the chat."
+        default:
+            return nil
         }
     }
 }

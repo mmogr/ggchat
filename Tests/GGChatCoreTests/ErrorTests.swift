@@ -64,7 +64,7 @@ final class ErrorTests: XCTestCase {
         let gglibOnly: Set<ProviderError.Code> = [
             .admissionTimeout, .contextLengthExceeded, .deviceNotPaired, .embeddingModelCannotChat,
             .hostNotAllowed, .internalError, .invalidRequest, .loopDetected, .mcpNotAllowedOverTunnel,
-            .modelFileNotFound, .modelLoading, .modelNotFound, .notAnEmbeddingModel,
+            .modelFileNotFound, .modelLoading, .modelNotFound, .modelDoesNotFit, .notAnEmbeddingModel,
             .pinnedModelMismatch, .profileNotFound, .stagnationDetected, .upstreamError,
             .upstreamTimeout, .modelCannotReadImages, .requestTooLarge, .imageTooLarge, .unsupportedImage,
             .attachmentNotFound, .requestImagesTooLarge, .imageModelCannotChat, .drawingUnavailable,

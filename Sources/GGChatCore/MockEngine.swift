@@ -1,0 +1,173 @@
+// The whole file is DEBUG-only, for `MockPipeConnector.swift`'s reason: a
+// release build carries neither the types nor their symbols, and
+// `scripts/check_no_mock_in_release.sh` fails one that does. A release build
+// has `UnavailableEngine` until gglib's engine is linked.
+#if DEBUG
+    import Foundation
+    import Synchronization
+
+    /// Stands in for gglib's engine in a DEBUG build launched with
+    /// `-ggchat-mock-engine <behaviour>`, and in tests: serving binds a
+    /// `MockProvider` to ``baseURL`` in the `LoopbackProviderRegistry`, and
+    /// the session walks its status on a `Sleeper`, as `MockPipeConnector`
+    /// walks a pipe's.
+    ///
+    /// The provider reports a context of 4096 beside its counts, as the
+    /// engine's proxy reports the context it loaded the model with, so a
+    /// reply raises the context ring.
+    public struct MockEngine: LocalEngine {
+        /// What the mock engine does, spelled as `-ggchat-mock-engine` takes
+        /// it.
+        public enum Behaviour: String, Sendable, CaseIterable {
+            /// Loads its one model at once, and answers.
+            case ready
+            /// Loads it in ten steps, and answers.
+            case slow
+            /// Fails to load it, and refuses every chat.
+            case fails
+            /// Refuses every chat as gglib refuses a model too big for the
+            /// device: 507, `model_does_not_fit`, before loading anything.
+            case tooBig = "too-big"
+            /// Has no model to list.
+            case noModels = "no-models"
+        }
+
+        /// Where the mock engine answers: one address for every session, so
+        /// a session served again is found where the last one was.
+        public static let baseURL = URL(string: "http://127.0.0.1:49150/v1")!
+        /// The key every mock session hands back. The mock provider admits
+        /// any.
+        public static let apiKey = "mock-engine-key"
+        /// The context the mock loads its model with, and reports.
+        public static let contextSize = 4_096
+        /// The one model the mock engine lists.
+        public static let model = ModelInfo(
+            id: "mock-phone-1.7b", ownedBy: "ggchat", description: "a canned model small enough for a phone",
+            contextWindow: 40_960, capabilities: ["reasoning"])
+
+        public var behaviour: Behaviour
+        public var sleeper: any Sleeper
+        public var stepDelay: Duration
+        public var registry: LoopbackProviderRegistry
+        /// What answers at ``baseURL``, in place of the behaviour's own mock
+        /// provider, for a test that records what was sent.
+        public var provider: (any Provider)?
+
+        public init(
+            behaviour: Behaviour = .ready,
+            sleeper: any Sleeper = ImmediateSleeper(),
+            stepDelay: Duration = .milliseconds(400),
+            registry: LoopbackProviderRegistry = .shared,
+            provider: (any Provider)? = nil
+        ) {
+            self.behaviour = behaviour
+            self.sleeper = sleeper
+            self.stepDelay = stepDelay
+            self.registry = registry
+            self.provider = provider
+        }
+
+        public var isAvailable: Bool { true }
+
+        /// Binds the provider and hands back a session walking from `idle`.
+        /// The behaviour decides what fits, not the reading, which the
+        /// session keeps for a test to read back.
+        public func serve(reading: DeviceReading) async throws -> any EngineSession {
+            registry.register(provider ?? answering, at: Self.baseURL)
+            return MockEngineSession(
+                reading: reading, walk: walk, sleeper: sleeper, stepDelay: stepDelay, registry: registry)
+        }
+
+        /// The behaviour's own provider: the mock's canned reply at a phone's
+        /// pace, or a refusal before the first token.
+        var answering: MockProvider {
+            let models = behaviour == .noModels ? [] : [Self.model]
+            let refusal: ProviderError? =
+                switch behaviour {
+                case .ready, .slow, .noModels: nil
+                case .fails:
+                    .server(
+                        status: 500, code: "internal_error",
+                        message: "The engine could not load \(Self.model.id): the mock was told to fail.")
+                case .tooBig:
+                    .server(
+                        status: 507, code: "model_does_not_fit",
+                        message: "The chat model needs 5.1 GB at its smallest context; this device gives a model "
+                            + "3.2 GB. Use a smaller model, or a smaller quantization of this one.")
+                }
+            return MockProvider(
+                models: models, scripts: refusal == nil ? [MockProvider.sampleScript] : [.init(text: "")],
+                sleeper: sleeper, tokenDelay: .milliseconds(25), failure: refusal, contextSize: Self.contextSize)
+        }
+
+        /// The statuses the session walks through after `idle`, one step
+        /// apart. A model too big is refused before it loads, and with no
+        /// model there is nothing to load.
+        var walk: [EngineStatus] {
+            let model = Self.model.id
+            let ready = EngineStatus.ready(model: model, nCtx: UInt64(Self.contextSize))
+            switch behaviour {
+            case .ready: return [.loading(model: model, fraction: 0.5), ready]
+            case .slow: return (1...10).map { .loading(model: model, fraction: Double($0) / 10) } + [ready]
+            case .fails:
+                return [
+                    .loading(model: model, fraction: 0.5), .failed(model: model, reason: "the mock was told to fail"),
+                ]
+            case .tooBig, .noModels: return []
+            }
+        }
+    }
+
+    /// The session ``MockEngine`` hands back. DEBUG builds only, for the
+    /// same reason.
+    public final class MockEngineSession: EngineSession, Sendable {
+        public let baseURL = MockEngine.baseURL
+        public let apiKey = MockEngine.apiKey
+        /// The reading the session was served with.
+        public let reading: DeviceReading
+        private let relay = StatusRelay<EngineStatus>(initial: .idle)
+        private let walking = Mutex<Task<Void, Never>?>(nil)
+        private let stopped = Mutex(false)
+        private let registry: LoopbackProviderRegistry
+
+        init(
+            reading: DeviceReading, walk: [EngineStatus], sleeper: any Sleeper, stepDelay: Duration,
+            registry: LoopbackProviderRegistry
+        ) {
+            self.reading = reading
+            self.registry = registry
+            let relay = self.relay
+            walking.withLock {
+                $0 = Task {
+                    for status in walk {
+                        guard (try? await sleeper.sleep(for: stepDelay)) != nil else { return }
+                        relay.send(status)
+                    }
+                }
+            }
+        }
+
+        public var status: AsyncStream<EngineStatus> {
+            relay.stream()
+        }
+
+        public var currentStatus: EngineStatus {
+            relay.current
+        }
+
+        /// Stops the walk, says `stopped`, ends the stream and unbinds the
+        /// provider. A second call changes nothing: the address is shared,
+        /// and a later session may be bound to it by then.
+        public func shutdown() async {
+            let first = stopped.withLock { stopped in
+                defer { stopped = true }
+                return !stopped
+            }
+            guard first else { return }
+            walking.withLock { $0?.cancel() }
+            relay.send(.stopped)
+            relay.finish()
+            registry.unregister(baseURL)
+        }
+    }
+#endif

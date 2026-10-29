@@ -19,7 +19,8 @@ import GGChatCore
 /// and a pipe with nothing listed never got a list.
 extension AppModel {
     /// Readies a provider for the conversation on screen: dials its pipe if
-    /// none is up, then catches it up. Returns at once. The work runs in the
+    /// none is up, or serves this device's engine if it is not serving, then
+    /// catches it up. Returns at once. The work runs in the
     /// model's own task, which the caller's cancellation does not reach, and
     /// a second call while it runs adds nothing to it.
     ///
@@ -34,8 +35,10 @@ extension AppModel {
         if let running = opening[config.id] { return running }
         let task = Task { [weak self] in
             guard let self else { return }
-            if config.hasSession, pipeSessions[config.id] == nil {
+            if config.isPipe, pipeSessions[config.id] == nil {
                 await connectPipe(for: config)
+            } else if config.kind == .onDevice {
+                await serveEngine()
             }
             await catchUp(config.id)
             opening[config.id] = nil
@@ -46,7 +49,8 @@ extension AppModel {
 
     /// Lists the provider's models if it has none, or again when `relisting`,
     /// asks about its status pane, and asks a gglib whether it can draw
-    /// (`AppModel+Drawing`), for a provider that can answer now.
+    /// (`AppModel+Drawing`), for a provider that can answer now: one whose
+    /// session is up (`sessionIsUp`).
     ///
     /// A pipe that is not connected is left alone, and its pulse catches it up
     /// instead. `connect` returns once the local port is bound, before the far
@@ -74,10 +78,7 @@ extension AppModel {
     ///     of each decides the Thinking switch and whether images are sent.
     ///     A list that fails keeps the one before.
     func catchUp(_ providerID: UUID, quietly: Bool = false, relisting: Bool = false) async {
-        guard let config = providers.first(where: { $0.id == providerID }) else { return }
-        if config.hasSession, pipeSessions[config.id] == nil || pipeStatuses[config.id]?.isConnected != true {
-            return
-        }
+        guard let config = providers.first(where: { $0.id == providerID }), sessionIsUp(config) else { return }
         if relisting || models(for: config.id).isEmpty {
             await refreshModels(for: config, quietly: quietly)
         }

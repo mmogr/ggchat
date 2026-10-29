@@ -15,6 +15,7 @@ final class SpeaksGGLibTests: XCTestCase {
         kind: .pipe(ticketDigest: Ticket.digest("pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na")))
     private let address = ProviderConfig(
         name: "gglib on the Mac", kind: .openAICompatible(baseURL: URL(string: "http://127.0.0.1:8080/v1")!))
+    private let thisIPhone = ProviderConfig(name: "This iPhone", kind: .onDevice)
 
     private func makeModel() -> AppModel {
         let registry = LoopbackProviderRegistry()
@@ -75,5 +76,30 @@ final class SpeaksGGLibTests: XCTestCase {
         XCTAssertFalse(model.canDraw(address))
         model.proxyStatusAvailability[address.id] = true
         XCTAssertTrue(model.canDraw(address))
+    }
+
+    /// This device's engine is gglib by its kind, and never asked the
+    /// probe.
+    func testThisIPhonesEngineSpeaksGGLib() {
+        let model = makeModel()
+        XCTAssertTrue(model.speaksGGLib(thisIPhone))
+        model.proxyStatusAvailability[thisIPhone.id] = false
+        XCTAssertTrue(model.speaksGGLib(thisIPhone))
+    }
+
+    /// It streams its replies: none is a run, whatever the probe said.
+    func testThisIPhonesEngineHasNoRuns() {
+        let model = makeModel()
+        XCTAssertFalse(model.hasRuns(thisIPhone))
+        model.proxyStatusAvailability[thisIPhone.id] = true
+        XCTAssertFalse(model.hasRuns(thisIPhone))
+    }
+
+    /// It draws nothing, so its conversations have no Draw switch.
+    func testThisIPhonesEngineHasNoDrawSwitch() {
+        let model = makeModel()
+        XCTAssertFalse(model.canDraw(thisIPhone))
+        model.proxyStatusAvailability[thisIPhone.id] = true
+        XCTAssertFalse(model.canDraw(thisIPhone))
     }
 }

@@ -27,6 +27,11 @@ extension AppModel {
             credentials: [
                 .ticket: "pipeadlvvgabqkyqvn6vjp7nhslea45a5yls6pnkmizfv4bbu2hxa5iruaaauhlp2na", .token: "preview",
             ])
+        // Last, so the providers above keep their places; DEBUG only, as the
+        // mock engine whose model it names is.
+        #if DEBUG
+            _ = try? model.addThisIPhone(defaultModel: MockEngine.model.id)
+        #endif
         let conversation = model.newConversation()
         var seeded = conversation
         seeded.messages = [

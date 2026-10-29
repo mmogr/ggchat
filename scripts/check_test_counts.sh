@@ -739,8 +739,18 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # a kind answers them differently. These twelve are the only place a kind
 # answers each question by name -- a session, a paired Mac, a pipe, gglib,
 # runs and the Draw switch -- so the floor moves past them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 939
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 32
-floor "README test markers" "${markers:-0}" 838
+#
+# 2026-10-29: 939 -> 967, 32 -> 33 and 838 -> 858 for the provider that runs
+# on this iPhone's own engine. It is gglib by its kind and keeps no runs and
+# no drawing, and before it no kind said yes to the first and no to the other
+# two, so a predicate that forgot it passes every test written before it;
+# the engine seam, its mock and its sentinel, the stored kind, the advice
+# under a model too big and the order in which a serve and a shutdown wait
+# for each other are guarded nowhere else either. These twenty-eight, the
+# walk and the twenty markers naming them are the whole of that guard, so
+# the floors move past them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 967
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 33
+floor "README test markers" "${markers:-0}" 858
 
 exit $status
