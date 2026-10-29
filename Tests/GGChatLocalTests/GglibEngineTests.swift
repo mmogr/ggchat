@@ -77,10 +77,14 @@ final class GglibEngineTests: XCTestCase {
         let server = FakeServer.make()
         let session = try await engine(FakeLibrary(serving: { server })).serve(reading: reading)
         server.move(to: .loading(model: "tinygemma3", fraction: 0.5))
-        // The stream is taken out here: Xcode 26.6's region checker cannot
-        // follow the session into the task, and a stream is Sendable.
+        // Collected in the task itself: Xcode 26.6's region checker
+        // cannot follow a call to `collect` out of one.
         let status = session.status
-        let following = Task { await Self.collect(status) }
+        let following = Task {
+            var said: [EngineStatus] = []
+            for await state in status { said.append(state) }
+            return said
+        }
         let first = await waitUntil { server.pulls >= 2 }
         XCTAssertTrue(first, "the stream never asked past where the engine stood")
         server.move(to: .ready(model: "tinygemma3", nCtx: 4_096))
@@ -119,7 +123,11 @@ final class GglibEngineTests: XCTestCase {
         let server = FakeServer.make()
         let session = try await engine(FakeLibrary(serving: { server })).serve(reading: reading)
         let status = session.status
-        let following = Task { await Self.collect(status) }
+        let following = Task {
+            var said: [EngineStatus] = []
+            for await state in status { said.append(state) }
+            return said
+        }
         await session.shutdown()
         await session.shutdown()
 
