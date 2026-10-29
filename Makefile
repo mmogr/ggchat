@@ -283,15 +283,16 @@ unused:
 	done
 	periphery scan --quiet --strict --index-store-path $(PERIPHERY_STORE)
 
+# CPATH carries a module map naming GglibFFI by its header, which SwiftPM's
+# native build system cannot otherwise show swift-symbolgraph-extract
+# (scripts/docs_gglib_module.sh says why).
+DOCC = CPATH="$$(scripts/docs_gglib_module.sh)" swift package --allow-writing-to-directory .build/docs generate-documentation
+
 docs:
 	mkdir -p .build/docs
-	swift package --allow-writing-to-directory .build/docs generate-documentation \
-		--target GGChatCore --warnings-as-errors --output-path .build/docs/GGChatCore
-	swift package --allow-writing-to-directory .build/docs generate-documentation \
-		--target GGChatPipe --warnings-as-errors --output-path .build/docs/GGChatPipe
-	swift package --allow-writing-to-directory .build/docs generate-documentation \
-		--target GGChatLocal --warnings-as-errors --output-path .build/docs/GGChatLocal
-	swift package --allow-writing-to-directory .build/docs generate-documentation \
-		--target GGChatUI --warnings-as-errors --output-path .build/docs/GGChatUI
+	$(DOCC) --target GGChatCore --warnings-as-errors --output-path .build/docs/GGChatCore
+	$(DOCC) --target GGChatPipe --warnings-as-errors --output-path .build/docs/GGChatPipe
+	$(DOCC) --target GGChatLocal --warnings-as-errors --output-path .build/docs/GGChatLocal
+	$(DOCC) --target GGChatUI --warnings-as-errors --output-path .build/docs/GGChatUI
 
 ci: fmt-check lint analyze boundaries enforce build build-release build-app build-app-release build-app-device test unused docs

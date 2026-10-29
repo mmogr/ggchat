@@ -48,6 +48,10 @@ jobs:
       - name: Build static DocC for both modules
         run: |
           mkdir -p site
+          # GglibFFI by its header, for SwiftPM's native build system
+          # (scripts/docs_gglib_module.sh says why).
+          CPATH="$(scripts/docs_gglib_module.sh)"
+          export CPATH
           for target in GGChatCore GGChatUI; do
             swift package --allow-writing-to-directory site generate-documentation \
               --target "$target" --warnings-as-errors \
