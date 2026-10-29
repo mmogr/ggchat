@@ -9,13 +9,18 @@ import Synchronization
 /// models installed, removing one, and downloads, each one's steps pulled
 /// from gglib's watch.
 ///
-/// The library is opened at the first call that asks it something, over
+/// The library is opened at the first call that asks it something, or at
+/// the engine's first serve, over
 /// ``LibraryFolders`` made first, with no Hugging Face token: public
 /// repositories only, and one that wants a token says so
 /// (`OnDeviceError.authRequired`). An open that fails is not kept, so the
 /// next call tries again. Pausing and resuming open nothing: a library never
-/// opened has no download to pause, so a build that never browses never
-/// makes its folders.
+/// opened has no download to pause, so a build that neither browses nor
+/// serves gglib's engine never makes its folders.
+///
+/// gglib's engine is served from the library this opens
+/// (``GglibEngine/init(library:)``), never from one of its own: gglib stops
+/// the engine served before at the next serve only within one library.
 ///
 /// Every record and error crosses through `Mapping.swift`, so nothing above
 /// this module names a binding type. The library is held as gglib's
@@ -58,7 +63,9 @@ public final class GglibLibrary: ModelLibrary {
 
     /// The library, opened by the first call that needs it and by one open
     /// at a time. A failed open is forgotten, and thrown as the app says it.
-    private func library() async throws -> any LibraryProtocol {
+    /// `GglibEngine` serves from this same handle, so the process holds one
+    /// library over one `gglib.db`.
+    func library() async throws -> any LibraryProtocol {
         let open = open
         let attempt = opening.withLock { held in
             if let held { return held }

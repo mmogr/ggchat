@@ -1,0 +1,9 @@
+phone-stream.sse is what gglib's proxy streamed in front of its in-process
+engine, recorded by `make record-phone-stream` (PhoneStreamRecording)
+through GglibEngine.serve() on the macOS slice, decoding on the CPU.
+gglib: 0.28.0-rc.2
+llama.cpp: b11669
+uniffi: 0.32.2
+model: tinygemma3-Q8_0.gguf, served as tinygemma3-Q8_0
+request: ggchat's own for a chat on This iPhone, "Say hello.",
+max_tokens 16, with return_progress and include_usage

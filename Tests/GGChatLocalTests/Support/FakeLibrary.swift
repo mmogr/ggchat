@@ -2,8 +2,8 @@ import GGLib
 import Synchronization
 
 /// gglib's library with no folder, no database and no network behind it:
-/// canned answers, or one error every call that can throw throws, and a
-/// count of what it was asked.
+/// canned answers, or one error every call that can throw throws, a serve
+/// that answers what a test hands it, and a count of what it was asked.
 ///
 /// Conforms to the protocol uniffi generates beside the class, as
 /// `GglibLibrary` holds the library by it.
@@ -24,12 +24,15 @@ final class FakeLibrary: LibraryProtocol {
     let models: [GGLib.InstalledModel]
     /// What a download hands back, or nil for none.
     let watch: FakeWatch?
+    /// What every serve answers: a server, or a thrown error.
+    let serving: @Sendable () throws -> Server
     private let asked = Mutex(Asked())
 
     init(
         failure: GglibError? = nil, suggestions: [GGLib.Suggestion] = [],
         page: GGLib.SearchPage = GGLib.SearchPage(hits: [], nextCursor: nil), offers: [GGLib.QuantOffer] = [],
-        models: [GGLib.InstalledModel] = [], watch: FakeWatch? = nil
+        models: [GGLib.InstalledModel] = [], watch: FakeWatch? = nil,
+        serving: @escaping @Sendable () throws -> Server = { throw GglibError.EngineUnavailable }
     ) {
         self.failure = failure
         self.suggestions = suggestions
@@ -37,6 +40,7 @@ final class FakeLibrary: LibraryProtocol {
         self.offers = offers
         self.models = models
         self.watch = watch
+        self.serving = serving
     }
 
     /// What the library has been asked so far.
@@ -85,7 +89,8 @@ final class FakeLibrary: LibraryProtocol {
     }
 
     func serve(reading: GGLib.DeviceReading) async throws -> Server {
-        throw GglibError.EngineUnavailable
+        asked.withLock { $0.readings.append(reading) }
+        return try serving()
     }
 
     func suggested(reading: GGLib.DeviceReading) -> [GGLib.Suggestion] {

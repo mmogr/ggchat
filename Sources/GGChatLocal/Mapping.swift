@@ -1,7 +1,7 @@
 import GGChatCore
 import GGLib
 
-// gglib's library records said in the app's own types, field for field and
+// gglib's library and engine records said in the app's own types, field for field and
 // case for case. The two modules name most of these types alike, so each is
 // spelled with its module. Every switch is exhaustive with no default arm: a
 // gglib release that adds a case or a field fails to build here, in one
@@ -103,6 +103,22 @@ extension GGChatCore.DownloadState {
         case .verifying: self = .verifying
         case .done: self = .done
         case .failed(let reason): self = .failed(reason: reason)
+        }
+    }
+}
+
+extension EngineStatus {
+    /// gglib's engine state, case for case. The model is passed through as
+    /// gglib names it, which is the name its proxy lists the model under in
+    /// `/v1/models`, the id a conversation holds; the status pill finds the
+    /// conversation's model by that.
+    init(_ state: GGLib.EngineState) {
+        switch state {
+        case .idle: self = .idle
+        case .loading(let model, let fraction): self = .loading(model: model, fraction: fraction)
+        case .ready(let model, let nCtx): self = .ready(model: model, nCtx: nCtx)
+        case .failed(let model, let reason): self = .failed(model: model, reason: reason)
+        case .stopped: self = .stopped
         }
     }
 }

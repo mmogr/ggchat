@@ -1046,20 +1046,19 @@ Each claim names the test that keeps it true.
 - A provider can run on this iPhone's own engine, "This iPhone", one per
   device, behind a seam shaped as the pipe's is: the engine serves gglib at
   a loopback address with a key of its own, and the ordinary provider talks
-  to that. No build runs gglib's engine yet, so a release build, the Mac and a
-  DEBUG build launched without `-ggchat-mock-engine` offer nothing on-device
-  and refuse a serve with a sentence about the build. A DEBUG build on iOS
-  launched with it walks the mock engine, which adds the provider at launch,
-  is idle once served, and walks loading → ready within the first chat that
-  names its model. Opening a conversation on it serves the engine once; a
-  send goes the chat route with gglib's progress asked for,
-  is never a run, has no Draw switch, and raises the ring from the context
-  the engine loaded its model with. A model too big for the device is
-  refused with `model_does_not_fit`, and the line under the refusal says
-  where to pick a smaller one. Removing the provider takes the engine down,
-  a serve still starting included, and a serve asked for while the engine
-  goes down waits until it is down. The kind is stored as
-  `{"onDevice":{}}`, which a build from before it cannot read.
+  to that. The simulator launched without `-ggchat-mock-engine` and the Mac
+  run no engine, offer nothing on-device and refuse a serve with a sentence
+  about the build. A DEBUG build on iOS launched with it walks the mock
+  engine, which adds the provider at launch, is idle once served, and walks
+  loading → ready within the first chat that names its model. Opening a
+  conversation on it serves the engine once; a send goes the chat route with
+  gglib's progress asked for, is never a run, has no Draw switch, and raises
+  the ring from the context the engine loaded its model with. A model too
+  big for the device is refused with `model_does_not_fit`, and the line
+  under the refusal says where to pick a smaller one. Removing the provider
+  takes the engine down, a serve still starting included, and a serve asked
+  for while the engine goes down waits until it is down. The kind is stored
+  as `{"onDevice":{}}`, which a build from before it cannot read.
   <!-- test: ProviderConfigTests.testEachKindIsStoredAsItWasNamed -->
   <!-- test: ProviderConfigTests.testThisIPhonesEngineHasASession -->
   <!-- test: ProviderConfigTests.testThisIPhonesEngineIsNotAPairedMac -->
@@ -1095,7 +1094,7 @@ Each claim names the test that keeps it true.
   in are "Find a model…" in This iPhone's empty model list, the composer's
   and the panel's, and "Run a model on this iPhone" beside "Add a provider"
   while there is no provider. None is shown where the build runs no model,
-  so a release build and the Mac show none.
+  so the simulator without the mock and the Mac show none.
   <!-- test: AppModelLibraryTests.testTheReadingIsSampledOncePerOpen -->
   <!-- test: AppModelLibraryTests.testATooBigQuantizationCannotBeDownloaded -->
   <!-- test: AppModelLibraryTests.testChoosingModelsCreatesThisIPhoneOnce -->
@@ -1123,7 +1122,7 @@ Each claim names the test that keeps it true.
   at once if its engine is serving and otherwise when a conversation on it
   next opens. The browser lists the models installed with their sizes, a
   swipe deletes one, and Settings says what the models on this iPhone take.
-  A release build and the Mac show none of it.
+  The simulator without the mock and the Mac show none of it.
   <!-- test: AppModelDownloadTests.testADownloadsBarOnlyGoesUpThroughAPauseAndAResume -->
   <!-- test: AppModelDownloadTests.testCancelTakesTheRowAndThePartialAway -->
   <!-- test: AppModelDownloadTests.testAFinishedDownloadJoinsThisIPhonesModels -->
@@ -1161,6 +1160,7 @@ Each claim names the test that keeps it true.
   <!-- test: DownloadStepsTests.testAFailureIsSaidWithItsReasonAndEndsTheStream -->
   <!-- test: DownloadStepsTests.testCancellingTheConsumerCancelsTheWatch -->
   <!-- test: InstalledLibraryTests.testTheLibraryIsOpenedInPrivateFoldersOutOfTheBackup -->
+  <!-- test: InstalledLibraryTests.testAFolderWhoseMarkWasClearedIsOutOfTheBackupAgainAtTheNextOpen -->
   <!-- test: InstalledLibraryTests.testAModelIsListedJudgedAndRemovedWithItsFiles -->
 - This iPhone's engine runs in the foreground only
   ([ADR 0015](docs/adr/0015-the-on-device-engine-is-foreground-only.md)).
@@ -1188,6 +1188,45 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelEngineLifecycleTests.testLoadAgainServesAfreshAndAsksTheQuestionAgain -->
   <!-- test: AppModelEngineLifecycleTests.testARefusedServePutsItsSentenceUnderTheWaitingQuestion -->
   <!-- test: SessionStatusTests.testThePillSaysEachStateInAFewWords -->
+- On an iPhone, This iPhone runs gglib's own engine, in a release build and
+  in a DEBUG one launched without `-ggchat-mock-engine`: gglib's proxy on a
+  loopback port, with a key new for each serve, in front of llama.cpp
+  running in the app's own process. Its library is `gglib.db` in
+  `ggchat-gglib` and the weights in `ggchat-models`, both under Application
+  Support, readable by this user alone and out of the backup. It is the
+  model library's own: the engine is served from the one library the browser
+  asks, opened at the first question or serve and kept, and opened again
+  only after an open that failed, so the process holds one library over one
+  `gglib.db`. The engine's states are the pill's, each under the name
+  gglib's proxy lists the model by, so the pill finds the conversation's
+  model and reads Ready once it has loaded; its errors are the app's, case
+  for case. The engine's state is followed from where it stands until it
+  says stopped, and following stops when nothing listens. A serve that came
+  up anywhere but this device's loopback address is shut down and refused.
+  The app model serves it, loads the model within the first send and puts it
+  down in the background through gglib's engine as through the mock. A reply
+  gglib's engine streamed through its proxy, recorded on the Mac, reads
+  through the ordinary provider with its text, its prompt progress, its
+  finish and the context the engine loaded the model with, which raises the
+  ring. The simulator and the Mac run no engine. The iOS app asks for the
+  increased memory limit, so a build signed for a phone needs a provisioning
+  profile that carries it.
+  <!-- test: MappingTests.testEachEngineStateIsSaidAsTheAppsOwn -->
+  <!-- test: InstalledLibraryTests.testTheLibraryIsOpenedInPrivateFoldersOutOfTheBackup -->
+  <!-- test: GglibEngineTests.testAServeGglibRefusesIsTheAppsErrorAndTheReadingCrossedAsRead -->
+  <!-- test: GglibEngineTests.testTheSessionIsAtTheServersAddressWithItsKey -->
+  <!-- test: GglibEngineTests.testAServerOffLoopbackIsShutDownAndRefused -->
+  <!-- test: GglibEngineTests.testTheStreamWalksFromWhereTheEngineStandsAndFinishesAfterStopped -->
+  <!-- test: GglibEngineTests.testAConsumerThatStopsListeningStopsThePulling -->
+  <!-- test: GglibEngineTests.testShuttingDownTwiceIsShuttingDown -->
+  <!-- test: GglibEngineTests.testTheEngineIsServedFromTheLibrarysOwnOpen -->
+  <!-- test: GglibEngineTests.testTheEngineIsOfferedOnlyOnADevice -->
+  <!-- test: GglibEngineChoiceTests.testTheMacRunsNoEngine -->
+  <!-- test: AppModelGglibEngineTests.testAFirstSendServesGglibsEngineAndThePillReadsReady -->
+  <!-- test: AppModelGglibEngineTests.testTheBackgroundPutsGglibsEngineDownAndTheNextSendServesAgain -->
+  <!-- test: PhoneStreamContractTests.testAReplyFromGglibsEngineOnThisIPhoneFinishesAndRaisesTheRing -->
+  <!-- test: LiveGglibEngineTests.testOneReplyStreamsFromGglibsEngineAndTheStatusWalksToReady -->
+  <!-- test: OnDeviceLiveUITests.testAReplyOnThisIPhoneComesFromGglibsOwnEngine -->
   <!-- test: SessionStatusTests.testOnlyASessionThatCanRunHasAPill -->
   <!-- test: SessionStatusTests.testATooBigModelSaysSoAndThePillOpensTheBrowser -->
   <!-- test: OnDeviceUITests.testAFirstSendLoadsTheModelThenReplies -->
@@ -2114,6 +2153,26 @@ reaches the network for them:
 make test-live-library
 ```
 
+gglib's own engine is served on the Mac's slice by `make test-live-engine`,
+with tinygemma3, gglib's recorder's tiny model, in a scratch library: the
+model is listed under the name it was added as, one reply streams through
+the ordinary provider, the status walks to ready with that name at the
+context the reply's usage reports, and the shutdown ends it on stopped.
+`make record-phone-stream` records the reply `PhoneStreamContractTests`
+replays, into `Tests/GGChatLocalTests/Fixtures`, with a note of the gglib,
+the llama.cpp and the model that made it. Both need the folder holding
+`tinygemma3-Q8_0.gguf` and gglib's own tool for adding it, since the binding
+has no call that adds a file; neither is in `make ci`:
+
+```sh
+GGLIB_ENGINE_MODELS_DIR=~/models \
+GGLIB_FFI_ADD_MODEL=~/src/gglib/target/debug/gglib-ffi-add-model \
+make test-live-engine
+```
+
+The tool is built in a gglib checkout with `cargo build -p gglib-ffi
+--features smoke --bin gglib-ffi-add-model`.
+
 `make ci` runs what CI runs: `make fmt-check`, `make lint`, `make analyze`,
 `make boundaries`, `make enforce`, `make build`, `make build-release`,
 `make build-app`, `make build-app-release`, `make test`, `make unused`,
@@ -2216,6 +2275,23 @@ out, seven days after the profile was issued, so this is the refresh in one
 command. Run it on or after the day Settings shows: a build made while the
 old profile is still valid may keep its date.
 
+`make uitest-device-engine` walks gglib's own engine on the phone `DEVICE`
+names, as Xcode names it: no simulator runs it, so no other walk can. Its
+walk adds This iPhone at launch with the model `GGCHAT_LIVE_ENGINE_MODEL`
+names, which must already be downloaded to the phone through the model
+browser, under the name its model list shows; sends, and waits for the pill
+to read Ready and the ring to rise; puts the app in the background, comes
+back to a pill that reads Not loaded, and sends again:
+
+```sh
+DEVICE='My iPhone' GGCHAT_LIVE_ENGINE_MODEL=Qwen3-0.6B-Q4_K_M make uitest-device-engine
+```
+
+It is signed for the phone as `make phone` is, so the provisioning profile
+must carry the increased memory limit the iOS app asks for. The walk takes
+an `on-device-reply` screenshot of the reply; it is not in the table above,
+since only a phone can take it.
+
 `make build-app-release` compiles the same two destinations with
 `-configuration Release`. Nothing else compiles the app target that way:
 the scheme's run and test actions are Debug, `xcodebuild build` with no
@@ -2291,7 +2367,7 @@ Sources/GGChatUI/     SwiftUI; the app model, views, and SwiftData persistence
 App/                  the xcodegen spec, the generated project, and a @main struct with assets
 Tests/GGChatCoreTests XCTest; fixtures are real captures from gglib, but for the one named contract-*
 Tests/GGChatPipeTests that the binding is linked and its statuses cross unchanged
-Tests/GGChatLocalTests gglib's framework linked as its binding names, and its library over fakes and a folder of its own
+Tests/GGChatLocalTests gglib's framework linked, its library and its engine over fakes, and a reply it recorded
 Tests/GGChatUITests   the app model, streaming, the pipe, and the SwiftData store
 App/ggchatUITests     XCUITest that drives the first-run flow on a simulator
 docs/adr/             decisions, each with a kill criterion that names a reading

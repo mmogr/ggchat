@@ -50,6 +50,29 @@ final class InstalledLibraryTests: XCTestCase {
         )
     }
 
+    /// The folders are marked out of the backup at every open, not only when
+    /// they are made: a folder whose mark was cleared since, by a restore
+    /// say, is out of the backup again once the library is opened again.
+    func testAFolderWhoseMarkWasClearedIsOutOfTheBackupAgainAtTheNextOpen() async throws {
+        _ = try await GglibLibrary(folders: folders).installed()
+        for folder in [folders.data, folders.models] {
+            var url = folder
+            var values = URLResourceValues()
+            values.isExcludedFromBackup = false
+            try url.setResourceValues(values)
+        }
+
+        _ = try await GglibLibrary(folders: folders).installed()
+
+        for folder in [folders.data, folders.models] {
+            var url = folder
+            url.removeAllCachedResourceValues()
+            XCTAssertEqual(
+                try url.resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup, true,
+                folder.lastPathComponent)
+        }
+    }
+
     /// The app's own place for the database is `ggchat-gglib` under
     /// Application Support, beside the models wherever the app keeps them.
     func testTheAppsOwnLibraryIsUnderApplicationSupport() throws {

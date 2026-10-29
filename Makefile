@@ -7,7 +7,7 @@
 SWIFT_SOURCES := $(filter-out Sources/GGLib,$(wildcard Sources/*)) Tests Package.swift \
 	$(wildcard App/ggchat/*.swift) $(wildcard App/ggchatUITests/*.swift)
 
-.PHONY: icon build-app-device phone screenshots project bootstrap fmt fmt-check lint analyze boundaries enforce build build-release build-app build-app-release test test-live test-live-library uitest uitest-ipad uitest-duo uitest-dark uitest-contrast unused docs ci
+.PHONY: icon build-app-device phone screenshots project bootstrap fmt fmt-check lint analyze boundaries enforce build build-release build-app build-app-release test test-live test-live-library test-live-engine record-phone-stream uitest uitest-device-engine uitest-ipad uitest-duo uitest-dark uitest-contrast unused docs ci
 
 project:
 	cd App && xcodegen generate --quiet
@@ -178,6 +178,26 @@ test-live:
 test-live-library:
 	GGCHAT_LIVE_HF=1 swift test --filter LiveLibraryTests
 
+# gglib's own engine, served on the Mac's slice with tinygemma3: the live
+# test, and the recording PhoneStreamContractTests replays, written into
+# Tests/GGChatLocalTests/Fixtures with a note of what made it. Both need
+# GGLIB_ENGINE_MODELS_DIR, the folder holding tinygemma3-Q8_0.gguf, and
+# GGLIB_FFI_ADD_MODEL, gglib's gglib-ffi-add-model, built in a gglib checkout
+# with `cargo build -p gglib-ffi --features smoke --bin gglib-ffi-add-model`:
+# the binding has no call that adds a file. Neither is in `ci`. The guard is
+# `test-live`'s: unset, the test skips and the target would pass having run
+# nothing.
+LIVE_ENGINE_GUARD = [ -n "$$GGLIB_ENGINE_MODELS_DIR" ] && [ -n "$$GGLIB_FFI_ADD_MODEL" ] \
+	|| { echo '$@: set GGLIB_ENGINE_MODELS_DIR and GGLIB_FFI_ADD_MODEL first, or the test skips and this passes having run nothing' >&2; exit 1; }
+
+test-live-engine:
+	@$(LIVE_ENGINE_GUARD)
+	swift test --filter LiveGglibEngineTests
+
+record-phone-stream:
+	@$(LIVE_ENGINE_GUARD)
+	GGCHAT_RECORD_PHONE_STREAM=1 swift test --filter PhoneStreamRecording
+
 # Which simulator the UI test targets drive. Override on the command line:
 # `make uitest SIMULATOR='iPhone 16'`.
 SIMULATOR ?= iPhone 17 Pro
@@ -245,6 +265,22 @@ duo_udid = $$(scripts/simulator_udid.sh '$(DUO)')
 uitest-duo:
 	udid=$(duo_udid); [ -n "$$udid" ] || { echo 'uitest-duo: no simulator udid' >&2; exit 1; }; \
 	$(UITEST) -skip-testing:ggchatUITests/ReduceTransparencyUITests -destination "id=$$udid"
+
+# gglib's own engine on a real iPhone, the walk OnDeviceLiveUITests takes on
+# the phone named DEVICE, as Xcode names it, with GGCHAT_LIVE_ENGINE_MODEL
+# naming a model already downloaded to it, as its model list names it:
+#
+#   DEVICE='My iPhone' GGCHAT_LIVE_ENGINE_MODEL=Qwen3-0.6B-Q4_K_M make uitest-device-engine
+#
+# Signed for the phone, as `make phone` signs, so the provisioning profile
+# must carry the increased memory limit. No simulator runs gglib's engine and
+# no CI leg has a phone, so this is in no other target.
+uitest-device-engine:
+	@[ -n "$$DEVICE" ] && [ -n "$$GGCHAT_LIVE_ENGINE_MODEL" ] \
+		|| { echo 'uitest-device-engine: set DEVICE and GGCHAT_LIVE_ENGINE_MODEL first, or the walk skips' >&2; exit 1; }
+	TEST_RUNNER_GGCHAT_LIVE_ENGINE_MODEL="$$GGCHAT_LIVE_ENGINE_MODEL" xcodebuild test -project App/ggchat.xcodeproj \
+		-scheme ggchat -destination "platform=iOS,name=$$DEVICE" \
+		-only-testing:ggchatUITests/OnDeviceLiveUITests -allowProvisioningUpdates -quiet
 
 # Dark and Increase Contrast are settings on the device, not launch
 # arguments, so the device is booted and set first. `simctl ui` prints what it

@@ -28,6 +28,9 @@ targets:
         TEST_TARGET_NAME: ggchat
         GENERATE_INFOPLIST_FILE: YES
         CODE_SIGN_STYLE: Automatic
+        # The app's team, for the one walk that runs on a phone
+        # (`make uitest-device-engine`), whose runner is signed for it too.
+        DEVELOPMENT_TEAM: G6QCW84LSM
 
   ggchat:
     type: application
@@ -86,6 +89,10 @@ targets:
         # in a way that reads as intermittent. A Team ID is not a secret --
         # it is in every distributed app bundle -- so it lives here.
         DEVELOPMENT_TEAM: G6QCW84LSM
+        # The iOS entitlements carry com.apple.developer.kernel.increased-memory-limit,
+        # so gglib's engine may hold a model larger than an app's default
+        # limit allows; the provisioning profile a phone build is signed with
+        # must carry the capability too, or the build does not sign.
         "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": ggchat/ggchat-macOS.entitlements
         "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]": ggchat/ggchat-iOS.entitlements
         "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": ggchat/ggchat-iOS.entitlements

@@ -23,15 +23,25 @@ extension AppModel {
         return config
     }
 
-    /// Adds the mock engine's provider at launch in a DEBUG build launched
-    /// with `-ggchat-mock-engine`, which is how a walk is given one, as
-    /// "Add mock provider" gives it a server. Nothing anywhere else: a build
-    /// without an engine offers nothing on-device.
+    /// Adds This iPhone at launch in a DEBUG build launched with
+    /// `-ggchat-mock-engine`, over the mock engine, or with
+    /// `-ggchat-live-engine-model <id>`, over gglib's with that model chosen,
+    /// which is how a walk is given one, as "Add mock provider" gives it a
+    /// server. Nothing anywhere else: a build without an engine offers
+    /// nothing on-device.
     func addThisIPhoneForAWalk() {
         #if DEBUG
-            guard let behaviour = EngineFactory.mockBehaviour, engine.isAvailable else { return }
+            guard engine.isAvailable else { return }
+            let model: String?
+            if let behaviour = EngineFactory.mockBehaviour {
+                model = behaviour == .noModels ? nil : MockEngine.model.id
+            } else if let live = EngineFactory.liveEngineModel {
+                model = live
+            } else {
+                return
+            }
             do {
-                try addThisIPhone(defaultModel: behaviour == .noModels ? nil : MockEngine.model.id)
+                try addThisIPhone(defaultModel: model)
             } catch {
                 report(error)
             }

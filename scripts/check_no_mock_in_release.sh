@@ -3,11 +3,12 @@
 # merely unchosen by it.
 #
 # `PipeConnectorFactory` picks `ModelpipeConnector` outside DEBUG, and
-# `EngineFactory` picks `UnavailableEngine`, but a mock left unchosen is still
-# in the binary. `MockPipeConnector`, `MockPipeSession`, `MockEngine`,
-# `MockEngineSession` and `MockLibrary` are therefore declared inside an
-# `#if DEBUG`, and this is what holds them there: a release build alone would
-# not, because each mock compiles perfectly well in one.
+# `EngineFactory` picks gglib's engine or `UnavailableEngine`, but a mock
+# left unchosen is still in the binary. `MockPipeConnector`,
+# `MockPipeSession`, `MockEngine`, `MockEngineSession` and `MockLibrary` are
+# therefore declared inside an `#if DEBUG`, and this is what holds them
+# there: a release build alone would not, because each mock compiles
+# perfectly well in one.
 #
 # Every target that could carry the symbols is scanned, GGChatPipe, GGChatLocal
 # and gglib's vendored binding included: the loop below is the whole of the

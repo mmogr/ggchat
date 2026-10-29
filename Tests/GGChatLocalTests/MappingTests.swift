@@ -4,7 +4,7 @@ import XCTest
 
 @testable import GGChatLocal
 
-/// Each of gglib's library records and errors crosses into the app's own
+/// Each of gglib's library and engine records and errors crosses into the app's own
 /// type field for field and case for case, so nothing above GGChatLocal ever
 /// reads one of gglib's as another.
 final class MappingTests: XCTestCase {
@@ -118,5 +118,21 @@ final class MappingTests: XCTestCase {
             var description: String { "a buffer could not be read" }
         }
         XCTAssertEqual(OnDeviceError(thrown: Machinery()), .internal(message: "a buffer could not be read"))
+    }
+
+    /// Each of gglib's states is the app's of the same name, with the model
+    /// as gglib names it, the name its proxy lists in `/v1/models`, and the
+    /// fraction, the context and the reason as they came.
+    func testEachEngineStateIsSaidAsTheAppsOwn() {
+        let said: [(GGLib.EngineState, EngineStatus)] = [
+            (.idle, .idle),
+            (.loading(model: "tinygemma3", fraction: 0.25), .loading(model: "tinygemma3", fraction: 0.25)),
+            (.ready(model: "tinygemma3", nCtx: 8_192), .ready(model: "tinygemma3", nCtx: 8_192)),
+            (.failed(model: "tinygemma3", reason: "no Metal"), .failed(model: "tinygemma3", reason: "no Metal")),
+            (.stopped, .stopped),
+        ]
+        for (state, status) in said {
+            XCTAssertEqual(EngineStatus(state), status, "\(state)")
+        }
     }
 }

@@ -11,6 +11,7 @@
 		1E261CE3A582DEC1F616C4AC /* JumpToLatestUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEDE1A7EEC17E8C4F0B5982A /* JumpToLatestUITests.swift */; };
 		281B7549ACADA120FD98060E /* TypingDuringAReplyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27D848FFB39BF527A53D18C4 /* TypingDuringAReplyUITests.swift */; };
 		2BC2B73C5C5BDAF36DDDA295 /* FirstRunUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FD64D354A297A69A640EC4 /* FirstRunUITests.swift */; };
+		2C0788C1FEEC674DB1753B1A /* OnDeviceLiveUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A94B64234EFEFC5988A467C9 /* OnDeviceLiveUITests.swift */; };
 		2FB8532287ED257C088A85B5 /* FormScrolling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5828F83DDDB73D7768813BB7 /* FormScrolling.swift */; };
 		309B608000639E700302887E /* OnDeviceUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B3302D3C5A9F015C5963C57 /* OnDeviceUITests.swift */; };
 		5BD7BCA11FDAEB85FCA86A75 /* ToolsMenuUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78C6E0AA1DB221B991ACCF8A /* ToolsMenuUITests.swift */; };
@@ -55,6 +56,7 @@
 		A0ABE63F6756B69704008146 /* ggchat.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ggchat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A620F205B643A7E1B77C12F3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A72388942EA2BF180AE457CF /* UITestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestSupport.swift; sourceTree = "<group>"; };
+		A94B64234EFEFC5988A467C9 /* OnDeviceLiveUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnDeviceLiveUITests.swift; sourceTree = "<group>"; };
 		A9A4614CA8B91F0DBEFB670B /* BookPagesUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookPagesUITests.swift; sourceTree = "<group>"; };
 		ACFEC7FB129F67C8D31EC44B /* ggchat-macOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "ggchat-macOS.entitlements"; sourceTree = "<group>"; };
 		C3513C1C38B6CD42BBB5ADA4 /* LiveServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveServer.swift; sourceTree = "<group>"; };
@@ -150,6 +152,7 @@
 				DEDE1A7EEC17E8C4F0B5982A /* JumpToLatestUITests.swift */,
 				C3513C1C38B6CD42BBB5ADA4 /* LiveServer.swift */,
 				261ADF538454ADA1B24301E8 /* LiveServerTests.swift */,
+				A94B64234EFEFC5988A467C9 /* OnDeviceLiveUITests.swift */,
 				0B3302D3C5A9F015C5963C57 /* OnDeviceUITests.swift */,
 				012CA37950E7FD746580F4B9 /* ReduceTransparencyUITests.swift */,
 				C57F8EBA75E46EA0DCD65189 /* RefusalUITests.swift */,
@@ -215,6 +218,7 @@
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					0922AB6724F29252F5FECFC9 = {
+						DevelopmentTeam = G6QCW84LSM;
 						ProvisioningStyle = Automatic;
 						TestTargetID = 1D7BB5600CE781C36C8E10FA;
 					};
@@ -271,6 +275,7 @@
 				1E261CE3A582DEC1F616C4AC /* JumpToLatestUITests.swift in Sources */,
 				FAF20668F07257B8B61A72B7 /* LiveServer.swift in Sources */,
 				95328C623F60DECDC145792B /* LiveServerTests.swift in Sources */,
+				2C0788C1FEEC674DB1753B1A /* OnDeviceLiveUITests.swift in Sources */,
 				309B608000639E700302887E /* OnDeviceUITests.swift in Sources */,
 				77CB7E9D19AE522138ADDE31 /* ReduceTransparencyUITests.swift in Sources */,
 				EAC5B2A85F5E64C39AE8383E /* RefusalUITests.swift in Sources */,
@@ -365,6 +370,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = G6QCW84LSM;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -428,6 +434,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = G6QCW84LSM;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
