@@ -60,16 +60,31 @@ final class InstalledLibraryTests: XCTestCase {
             var values = URLResourceValues()
             values.isExcludedFromBackup = false
             try url.setResourceValues(values)
+            XCTAssertEqual(try Self.marked(folder), false, "the clear: \(Self.raw(folder))")
         }
 
         _ = try await GglibLibrary(folders: folders).installed()
 
         for folder in [folders.data, folders.models] {
-            let url = Self.uncached(folder)
-            XCTAssertEqual(
-                try url.resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup, true,
-                folder.lastPathComponent)
+            XCTAssertEqual(try Self.marked(folder), true, "the open: \(Self.raw(folder))")
         }
+        try folders.prepare()
+        for folder in [folders.data, folders.models] {
+            XCTAssertEqual(try Self.marked(folder), true, "prepare again: \(Self.raw(folder))")
+        }
+    }
+
+    /// The mark as Foundation reads it from the disk.
+    private static func marked(_ folder: URL) throws -> Bool? {
+        try uncached(folder).resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup
+    }
+
+    /// The attribute macOS keeps the mark in, read past Foundation, so a
+    /// failure says whether the write or the read went wrong.
+    private static func raw(_ folder: URL) -> String {
+        let size = getxattr(
+            folder.path(percentEncoded: false), "com.apple.metadata:com_apple_backup_excludeItem", nil, 0, 0, 0)
+        return "\(folder.lastPathComponent) attribute " + (size < 0 ? "absent, errno \(errno)" : "present")
     }
 
     /// `folder` as a URL made again from its path, with nothing cached, so
