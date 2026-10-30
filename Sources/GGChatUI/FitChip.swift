@@ -3,8 +3,9 @@ import SwiftUI
 
 /// Whether a quantization fits this iPhone, in a few words, as gglib judged
 /// it: "Fits · 16K", "Short context · 4K", "Too big for this iPhone" or
-/// "Can't tell yet". The figure is the context gglib found room for; nothing
-/// here judges anything.
+/// "Can't tell yet", or "Can't tell" when nothing gglib could read later would
+/// say. The figure is the context gglib found room for; nothing here judges
+/// anything.
 ///
 /// Plain drawing on a plain fill, as the picture editor's hint is: not
 /// glass, and not translucent.
@@ -28,7 +29,7 @@ struct FitChip: View {
         case .fits(let ctx): "Fits · \(context(ctx))"
         case .tight(let ctx): "Short context · \(context(ctx))"
         case .tooBig: "Too big for this iPhone"
-        case .unknown: "Can't tell yet"
+        case .unknown(let missing, let cutOff): cutOff || missing == .budget ? "Can't tell yet" : "Can't tell"
         }
     }
 

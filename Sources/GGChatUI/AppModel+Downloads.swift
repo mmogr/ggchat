@@ -94,8 +94,9 @@ extension AppModel {
     }
 
     /// Calls off a download under way. Its row goes, and ending its steps
-    /// tells the library to stop and delete what it had, so Download is
-    /// offered again.
+    /// tells the library to stop it, so Download is offered again. gglib
+    /// keeps the bytes it fetched, and the next download of it carries on
+    /// from them; the mock deletes its partial file.
     public func cancelDownload(_ choice: QuantChoice) {
         onDevice.following.removeValue(forKey: choice)?.cancel()
         onDevice.downloads[choice] = nil

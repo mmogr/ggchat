@@ -793,8 +793,21 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # the four markers naming them and the walk that reads the row, are the
 # whole of that guard, so the floors move past them. The walk gained an
 # assertion, not a case, so its floor stays.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1002
+#
+# 2026-10-29: 1002 -> 1023 and 898 -> 909 for gglib's own model library.
+# Each of gglib's records and errors read as the app's own, an open that
+# failed tried again and a pause that opens nothing, a download's steps that
+# stay in one stream through a pause and call gglib's download off when the
+# stream ends first, a download asked of the library followed through its
+# watch, the library's folders private and out of the backup, a
+# model listed, judged and removed through the Mac's framework, a search
+# and quantizations against Hugging Face behind GGCHAT_LIVE_HF, and a chip
+# and sheet that promise a download will tell only when it can: none is
+# guarded anywhere else, since every other test drives the mock library.
+# These twenty-one and the eleven markers naming them are the whole of that
+# guard, so the floors move past them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1023
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 38
-floor "README test markers" "${markers:-0}" 898
+floor "README test markers" "${markers:-0}" 909
 
 exit $status

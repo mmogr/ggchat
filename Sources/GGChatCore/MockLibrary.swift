@@ -101,7 +101,8 @@
                 QuantOffer(
                     name: "F16", totalBytes: 4 * Self.gigabyte, shardCount: 2, verdict: Self.tooBig, why: Self.why),
                 QuantOffer(
-                    name: "IQ2_XS", totalBytes: Self.gigabyte / 2, shardCount: 1, verdict: .unknown(missing: .kvShape),
+                    name: "IQ2_XS", totalBytes: Self.gigabyte / 2, shardCount: 1,
+                    verdict: .unknown(missing: .kvShape, cutOff: true),
                     why: FitWhy(
                         weightsBytes: Self.gigabyte / 2, kvBytesPerToken: nil, budgetBytes: Self.budget, trainedCtx: nil
                     )),

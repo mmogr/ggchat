@@ -23,7 +23,7 @@ struct FitWhySheet: View {
                     Text(repo)
                 }
                 Section {
-                    ForEach(Self.lines(offer.why), id: \.self) { Text($0) }
+                    ForEach(Self.lines(offer.why, verdict: offer.verdict), id: \.self) { Text($0) }
                 } header: {
                     Text("From")
                 } footer: {
@@ -50,25 +50,32 @@ struct FitWhySheet: View {
         case .tooBig(let need, let have):
             "Even with the shortest context it needs \(Sizes.memory(need)), "
                 + "and this iPhone gives a model \(Sizes.memory(have))."
-        case .unknown(let missing):
-            "gglib cannot tell until it knows \(words(for: missing)). "
-                + "Once the model is downloaded, gglib reads that from its file."
+        case .unknown(.budget, _):
+            "gglib cannot tell until it knows \(words(for: .budget))."
+        case .unknown(let missing, true):
+            "gglib cannot tell until it knows \(words(for: missing)). The first bytes of the model's file "
+                + "ended before they said; once the model is downloaded, gglib reads it from the whole file."
+        case .unknown(let missing, false):
+            "gglib cannot tell without knowing \(words(for: missing)), and nothing it read about the model says."
         }
     }
 
     /// One sentence for each figure the verdict was reached from, in order:
     /// the weights, each token of context, this iPhone's budget, and the
-    /// trained context.
-    nonisolated static func lines(_ why: FitWhy) -> [String] {
-        [
+    /// trained context. A figure read from the file's header is "not known
+    /// yet" only when that header was cut off, the one case a download
+    /// reads it from the whole file; otherwise nothing later says it.
+    nonisolated static func lines(_ why: FitWhy, verdict: FitVerdict) -> [String] {
+        let later = if case .unknown(_, cutOff: true) = verdict { " yet" } else { "" }
+        return [
             why.weightsBytes.map { "The weights take \(Sizes.memory($0)) of memory." }
-                ?? "How much memory the weights take is not known yet.",
+                ?? "How much memory the weights take is not known.",
             why.kvBytesPerToken.map { "Each token of context takes \(Sizes.memory($0)) more." }
-                ?? "How much memory each token of context takes is not known yet.",
+                ?? "How much memory each token of context takes is not known\(later).",
             why.budgetBytes.map { "This iPhone gives a model \(Sizes.memory($0)) of its memory." }
                 ?? "How much memory this iPhone gives a model is not known.",
             why.trainedCtx.map { "The model was trained on up to \(tokens($0)) tokens of context." }
-                ?? "The context the model was trained on is not known yet.",
+                ?? "The context the model was trained on is not known\(later).",
         ]
     }
 

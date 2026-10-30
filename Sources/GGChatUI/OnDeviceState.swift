@@ -23,7 +23,7 @@ public final class OnDeviceState {
     @ObservationIgnored var following: [QuantChoice: Task<Void, Never>] = [:]
     /// The library's last pause or resume, which the next one waits for.
     @ObservationIgnored var turning: Task<Void, Never>?
-    /// Where the models are kept, or nil where this build runs none.
+    /// Where the models are kept, or nil on the Mac, which keeps none.
     @ObservationIgnored var modelsDirectory = EngineFactory.makeModelsDirectory()
     /// The models the engine refused as too big for this device since it was
     /// last served, by id, which the status pill says. A serve reads the

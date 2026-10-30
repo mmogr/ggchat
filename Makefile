@@ -7,7 +7,7 @@
 SWIFT_SOURCES := $(filter-out Sources/GGLib,$(wildcard Sources/*)) Tests Package.swift \
 	$(wildcard App/ggchat/*.swift) $(wildcard App/ggchatUITests/*.swift)
 
-.PHONY: icon build-app-device phone screenshots project bootstrap fmt fmt-check lint analyze boundaries enforce build build-release build-app build-app-release test test-live uitest uitest-ipad uitest-duo uitest-dark uitest-contrast unused docs ci
+.PHONY: icon build-app-device phone screenshots project bootstrap fmt fmt-check lint analyze boundaries enforce build build-release build-app build-app-release test test-live test-live-library uitest uitest-ipad uitest-duo uitest-dark uitest-contrast unused docs ci
 
 project:
 	cd App && xcodegen generate --quiet
@@ -158,7 +158,8 @@ test:
 
 # Against a running gglib: GGCHAT_LIVE_BASE_URL=http://127.0.0.1:8080/v1 make test-live
 # The filter names both live suites: LiveGGLibTests in the core tests and
-# LiveAppModelTests in the UI tests. Naming only the first, as this did, could
+# LiveAppModelTests in the UI tests. It also matches LiveLibraryTests, which
+# skips itself here without GGCHAT_LIVE_HF (make test-live-library). Naming only the first, as this did, could
 # never select the second, so the README's recipe ran two of the three live
 # cases and never the end-to-end one. Every live test skips itself when the
 # base URL is unset, so without the guard the target passes having exercised
@@ -167,6 +168,15 @@ test-live:
 	@[ -n "$$GGCHAT_LIVE_BASE_URL" ] \
 		|| { echo 'test-live: set GGCHAT_LIVE_BASE_URL first, or every live test skips and this passes having run nothing' >&2; exit 1; }
 	swift test --filter 'Live[A-Za-z]*Tests'
+
+# gglib's model library against Hugging Face itself, through the Mac's slice
+# of the framework: a search, and a repository's quantizations judged against
+# a phone's reading. Public repositories only, and no download. The suite
+# skips itself unless GGCHAT_LIVE_HF=1, which this sets, so neither `make ci`
+# nor CI reaches the network for it. Add GGLIB_FFI_LOCAL_XCFRAMEWORK=1 for a
+# local gglib build, as for `make test`.
+test-live-library:
+	GGCHAT_LIVE_HF=1 swift test --filter LiveLibraryTests
 
 # Which simulator the UI test targets drive. Override on the command line:
 # `make uitest SIMULATOR='iPhone 16'`.

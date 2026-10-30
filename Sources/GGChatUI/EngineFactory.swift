@@ -1,16 +1,27 @@
 import Foundation
 import GGChatCore
 
+#if os(iOS)
+    import GGChatLocal
+#endif
+
 /// The one place the app chooses the engine on this device and its model
 /// library.
 ///
-/// No build runs gglib's engine yet, so outside one case both are
+/// No build runs gglib's engine yet, so outside one case the engine is
 /// unavailable: a release build, the Mac, and a DEBUG build launched without
 /// `-ggchat-mock-engine`, so the walks that never ask for it see nothing
 /// on-device. The case is a DEBUG build on iOS launched with
 /// `-ggchat-mock-engine <ready|slow|fails|too-big|no-models>`, which gets
 /// `MockEngine` and `MockLibrary` behaving so, as `-ggchat-mock-mcp-servers`
 /// shapes the mock pipe.
+///
+/// The library on iOS is gglib's own (`GglibLibrary`), but for that case:
+/// the database in `ggchat-gglib` and the models in `ggchat-models`, both
+/// under Application Support. It is opened at the first question, and every
+/// way to ask it is behind the engine: where the engine is unavailable nothing
+/// is browsed, downloaded or listed, so it is never opened and makes no
+/// folder. The Mac has no library.
 ///
 /// `UnavailableEngine` is also the sentinel
 /// `scripts/check_no_mock_in_release.sh` looks for.
@@ -29,6 +40,10 @@ public enum EngineFactory {
     /// its behaviour and not from an earlier walk's downloads. Its downloads
     /// take a second a step, ten in all, so a walk reads a row while it is
     /// running.
+    ///
+    /// gglib's is handed the very folder `makeModelsDirectory()` names, so
+    /// the room checked before a download and the folder gglib writes it to
+    /// are one.
     public static func makeLibrary() -> any ModelLibrary {
         #if DEBUG && os(iOS)
             if let behaviour = mockBehaviour {
@@ -37,17 +52,25 @@ public enum EngineFactory {
                     catalogue: mockCatalogue)
             }
         #endif
+        #if os(iOS)
+            if let models = makeModelsDirectory(),
+                let folders = LibraryFolders.applicationSupport(models: models.directory)
+            {
+                return GglibLibrary(folders: folders)
+            }
+        #endif
         return UnavailableLibrary()
     }
 
     /// Where the models are kept, `ggchat-models` under Application
-    /// Support, wherever this build runs a model, and nil everywhere else, so
-    /// a release build and the Mac make no such directory.
+    /// Support, on iOS, and nil on the Mac. Naming it makes nothing: the app
+    /// makes and marks it only where the engine is available.
     static func makeModelsDirectory() -> ModelsDirectory? {
-        #if DEBUG && os(iOS)
-            if mockBehaviour != nil { return ModelsDirectory.applicationSupport() }
+        #if os(iOS)
+            return ModelsDirectory.applicationSupport()
+        #else
+            return nil
         #endif
-        return nil
     }
 
     #if DEBUG && os(iOS)
