@@ -60,23 +60,31 @@ final class InstalledLibraryTests: XCTestCase {
             var values = URLResourceValues()
             values.isExcludedFromBackup = false
             try url.setResourceValues(values)
-            XCTAssertFalse(Self.marked(folder), folder.lastPathComponent)
+            let cleared = try await Self.mark(of: folder, settlesOn: false)
+            XCTAssertFalse(cleared, folder.lastPathComponent)
         }
 
         _ = try await GglibLibrary(folders: folders).installed()
 
         for folder in [folders.data, folders.models] {
-            XCTAssertTrue(Self.marked(folder), folder.lastPathComponent)
+            let marked = try await Self.mark(of: folder, settlesOn: true)
+            XCTAssertTrue(marked, folder.lastPathComponent)
         }
     }
 
-    /// Whether `folder` carries the attribute macOS keeps the mark in, read
-    /// past Foundation: on CI's macOS 26, a folder marked on disk was read
-    /// back unmarked through a URL made afresh with nothing cached, in some
-    /// runs, while the attribute was there.
-    private static func marked(_ folder: URL) -> Bool {
-        getxattr(
-            folder.path(percentEncoded: false), "com.apple.metadata:com_apple_backup_excludeItem", nil, 0, 0, 0) >= 0
+    /// The mark on `folder` once it reads `wanted`, or as it reads after ten
+    /// seconds. On CI's macOS 26 the mark set again on a folder whose mark
+    /// was cleared reached the disk a moment after `setResourceValues`
+    /// returned, seen both through Foundation and in the attribute it keeps
+    /// the mark in, as `ModelsDirectoryTests` waits for it too.
+    private static func mark(of folder: URL, settlesOn wanted: Bool) async throws -> Bool {
+        let deadline = ContinuousClock.now + .seconds(10)
+        var read = try uncached(folder).resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup == true
+        while read != wanted, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+            read = try uncached(folder).resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup == true
+        }
+        return read
     }
 
     /// `folder` as a URL made again from its path, with nothing cached, so
