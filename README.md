@@ -1079,22 +1079,41 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelEngineTests.testRemovingThisIPhoneWhileItsEngineStartsLeavesNothingServing -->
   <!-- test: AppModelEngineTests.testAServeWhileTheEngineGoesDownWaitsUntilItIsDown -->
   <!-- test: OnDeviceUITests.testAReplyOnThisIPhoneRaisesTheRing -->
-- A model browser finds a model to run on this iPhone: what gglib suggests
-  for it, a search of Hugging Face, and a page for each repository with a
-  row per quantization, its size, and a chip saying whether it fits,
-  "Fits · 16K", "Short context · 4K", "Too big for this iPhone",
-  "Can't tell yet" or "Can't tell", with a sheet saying why in words from
-  the figures gglib judged it by. Only a verdict gglib could not reach
-  because the first bytes of the file ended before its header did says a
-  download will settle it. The browser reads this iPhone's memory once each time it
-  opens, says when, and asks every verdict on it with that one reading; the
+- A model browser finds a model to run on this iPhone: a search of
+  Hugging Face at the top, then "On this iPhone", the models installed and
+  the downloads on their way, then what gglib suggests for it, one line
+  each, the model, its quantization and size, and a chip saying whether it
+  fits, "Fits · 16K", "Short context · 4K", "Too big for this iPhone",
+  "Can't tell yet" or "Can't tell". A search's results take the
+  suggestions' place, each the model with its owner beside it and its
+  size, context and downloads under them, leaving out what the repository
+  does not say. Each leads to a page for its repository with a row per
+  quantization: its size, its chip and a download button; a suggestion's
+  chip sits beside its link, not in it, so each takes its own taps. Every
+  chip in the browser's lists ends in an info glyph and is a button:
+  pressed, it opens a sheet saying how gglib judged the model, in words
+  from the figures it judged it by, and for a suggestion gglib's own
+  sentence on why that one; VoiceOver hears the chip's words and that it
+  shows how gglib judged it. Only a verdict gglib could not reach because
+  the first bytes of the file ended before its header did says a download
+  will settle it. The browser reads this iPhone's memory once each time it
+  opens, says when under the suggestions and under a repository's
+  quantizations, and asks every verdict on it with that one reading; the
   app computes no size and no verdict. A quantization too big for this
-  iPhone cannot be downloaded. Choosing one adds This iPhone the first time
-  and starts its download, whose progress the row names in a word. The ways
-  in are "Find a model…" in This iPhone's empty model list, the composer's
-  and the panel's, and "Run a model on this iPhone" beside "Add a provider"
-  while there is no provider. None is shown where the build runs no model,
-  so the simulator without the mock and the Mac show none.
+  iPhone has no download button. Choosing one adds This iPhone the first
+  time and starts its download; a model already on this iPhone while there
+  is no This iPhone, as after it was removed, offers Use, which adds This
+  iPhone with that model chosen. The ways in are This iPhone in Add
+  provider, beside Server and Pipe, which shows the browser in place of a
+  form, with nothing to name, since a device has one such provider, and
+  which first run names, on the conversation list and in the detail pane;
+  Settings' "Models on this iPhone", which leads to it; and "Find a
+  model…" in This iPhone's empty model list, the composer's and the
+  panel's, which opens the browser in a sheet of its own. Looking adds
+  nothing. Add provider keeps what is typed in Server and Pipe as the kind
+  changes, and holds the kind while a code is being redeemed. None of it
+  is shown where the build runs no model, so the simulator without the
+  mock and the Mac show Server and Pipe alone.
   <!-- test: AppModelLibraryTests.testTheReadingIsSampledOncePerOpen -->
   <!-- test: AppModelLibraryTests.testATooBigQuantizationCannotBeDownloaded -->
   <!-- test: AppModelLibraryTests.testChoosingModelsCreatesThisIPhoneOnce -->
@@ -1104,7 +1123,13 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelLibraryTests.testTheChipSaysEachVerdictInAFewWords -->
   <!-- test: AppModelLibraryTests.testTheWhySheetSaysEachFigureOrThatItIsNotKnown -->
   <!-- test: AppModelLibraryTests.testOnlyACutOffHeaderPromisesThatADownloadWillTell -->
-  <!-- test: ScreenGalleryUITests.testAnEmptyPhoneOffersToFindAModel -->
+  <!-- test: ModelBrowserLayoutTests.testThisIPhoneIsAKindOnlyWhereModelsRunHere -->
+  <!-- test: ModelBrowserLayoutTests.testAddProvidersBrowserOpensNoSheetOfItsOwn -->
+  <!-- test: ModelBrowserLayoutTests.testAChipsSheetSaysWhatGglibSaidOfTheModel -->
+  <!-- test: ModelBrowserLayoutTests.testEachRowSaysItsLineInFewWords -->
+  <!-- test: ModelBrowserLayoutTests.testUseAddsThisIPhoneWithThatModelOnlyWhileThereIsNone -->
+  <!-- test: OnDeviceUITests.testSettingsLeadsToTheModelBrowser -->
+  <!-- test: ScreenGalleryUITests.testAnEmptyPhoneOffersThisIPhoneInAddProvider -->
   <!-- test: ScreenGalleryUITests.testABrowsedModelSaysWhetherItFits -->
 - A model chosen in the browser downloads to this iPhone, into
   `ggchat-models` under Application Support, which is readable by this user
@@ -1114,14 +1139,18 @@ Each claim names the test that keeps it true.
   row before the library hears of it. The row shows a bar, how much of how
   much has come, and Cancel, which takes the row away and stops the
   download; gglib keeps the bytes it fetched, and choosing it again carries
-  on from them, while the mock deletes its partial file.
+  on from them, while the mock deletes its partial file. Under "On this
+  iPhone" the same download is one line, the model, its bar, how far it
+  has come and a cross that calls it off; once done, its row on the
+  repository's page is marked as on this iPhone.
   Going to the background pauses every download beside the replies, the row
   saying "Paused, resumes when ggchat is open", and coming back resumes them
   from the bytes they had; the library hears the pauses and resumes in the
   order the scenes came. A finished download joins This iPhone's model list,
   at once if its engine is serving and otherwise when a conversation on it
-  next opens. The browser lists the models installed with their sizes, a
-  swipe deletes one, and Settings says what the models on this iPhone take.
+  next opens. The browser's "On this iPhone" lists the models installed with
+  their sizes and chips above the downloads on their way, a swipe deletes
+  an installed one, and Settings says what the models on this iPhone take.
   The simulator without the mock and the Mac show none of it.
   <!-- test: AppModelDownloadTests.testADownloadsBarOnlyGoesUpThroughAPauseAndAResume -->
   <!-- test: AppModelDownloadTests.testCancelTakesTheRowAndThePartialAway -->
@@ -1135,6 +1164,7 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelScenePhaseTests.testTheDownloadsPauseBesideTheRepliesAndResumeInTurn -->
   <!-- test: MockLibraryDownloadTests.testAPauseHoldsAWalkAtItsBytesAndAResumeGoesOn -->
   <!-- test: MockLibraryDownloadTests.testAFinishedDownloadIsInstalledAndListedByTheEngineSharingItsCatalogue -->
+  <!-- test: ModelBrowserLayoutTests.testOnThisIPhoneHoldsTheInstalledAndTheDownloadsOnTheirWay -->
   <!-- test: ScreenGalleryUITests.testADownloadFillsItsBarAndTheModelJoinsTheList -->
 - On iOS the library behind the browser is gglib's own, through its
   framework: Hugging Face searched, each quantization judged against the

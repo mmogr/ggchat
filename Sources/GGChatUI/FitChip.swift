@@ -8,12 +8,14 @@ import SwiftUI
 /// anything.
 ///
 /// Plain drawing on a plain fill, as the picture editor's hint is: not
-/// glass, and not translucent.
+/// glass, and not translucent. One that explains itself (`FitChipButton`)
+/// ends in a small info glyph inside the capsule.
 struct FitChip: View {
     let verdict: FitVerdict
+    var explains = false
 
     var body: some View {
-        Text("\(Image(systemName: Self.symbol(for: verdict))) \(Self.words(for: verdict))")
+        label
             .font(.caption.weight(.medium))
             .foregroundStyle(tint)
             .lineLimit(1)
@@ -22,6 +24,15 @@ struct FitChip: View {
             .background(.quaternary, in: .capsule)
             .accessibilityLabel(Self.words(for: verdict))
     }
+
+    private var label: Text {
+        let words = Text("\(Image(systemName: Self.symbol(for: verdict))) \(Self.words(for: verdict))")
+        guard explains else { return words }
+        return Text("\(words) \(Image(systemName: "info.circle"))")
+    }
+
+    /// What VoiceOver adds to a chip that explains itself.
+    nonisolated static let hint = "Shows how gglib judged it."
 
     /// The chip's words for `verdict`.
     nonisolated static func words(for verdict: FitVerdict) -> String {
@@ -55,6 +66,71 @@ struct FitChip: View {
         case .tooBig: AnyShapeStyle(.red)
         case .unknown: AnyShapeStyle(.secondary)
         }
+    }
+}
+
+/// A chip that explains itself: pressed, it opens the sheet saying how
+/// gglib judged the model (`FitWhySheet`). Its own button in a row with
+/// others, so it takes its own taps rather than the row taking them all.
+struct FitChipButton: View {
+    let explanation: FitExplanation
+    /// What a walk finds it by: `fit-<quantization>` on a repository's page,
+    /// where the repository goes without saying, and `fit-<repo>/<quant>`
+    /// on a suggestion.
+    var identifier: String?
+    let open: (FitExplanation) -> Void
+
+    var body: some View {
+        Button {
+            open(explanation)
+        } label: {
+            FitChip(verdict: explanation.verdict, explains: true)
+        }
+        .buttonStyle(.borderless)
+        .accessibilityLabel(FitChip.words(for: explanation.verdict))
+        .accessibilityHint(FitChip.hint)
+        .accessibilityIdentifier(identifier ?? "fit-\(explanation.name)")
+    }
+}
+
+/// What the sheet behind a chip says of one model: whose it is, its verdict,
+/// the figures gglib reached it from and, for a suggestion, gglib's
+/// sentence on why that one. An installed model comes with its verdict
+/// alone, judged with no reading the browser took, so its sheet says that
+/// verdict and neither figures nor when the device was read.
+struct FitExplanation: Identifiable, Equatable {
+    /// The repository, or nil for an installed model, which does not say.
+    let repo: String?
+    /// The quantization, or the installed model's name.
+    let name: String
+    let verdict: FitVerdict
+    let why: FitWhy?
+    let rationale: String?
+
+    var id: String { "\(repo ?? "")/\(name)" }
+
+    init(repo: String, offer: QuantOffer) {
+        self.repo = repo
+        name = offer.name
+        verdict = offer.verdict
+        why = offer.why
+        rationale = nil
+    }
+
+    init(suggestion: Suggestion) {
+        repo = suggestion.repo
+        name = suggestion.quantization
+        verdict = suggestion.verdict
+        why = suggestion.why
+        rationale = suggestion.rationale.isEmpty ? nil : suggestion.rationale
+    }
+
+    init(installed: InstalledModel) {
+        repo = nil
+        name = installed.name
+        verdict = installed.verdict
+        why = nil
+        rationale = nil
     }
 }
 

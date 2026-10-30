@@ -23,15 +23,31 @@ extension AppModel {
         return config
     }
 
+    /// Adds This iPhone with `installed` as its model, for a model already
+    /// on this device while there is no This iPhone, as after it was
+    /// removed: the browser's Use on the model's row. Nothing where This
+    /// iPhone is there, whose model is chosen in a conversation, or where
+    /// this build runs no model. A failure is said under the browser's
+    /// "On this iPhone".
+    public func useInstalled(_ installed: InstalledModel) {
+        guard runsModelsHere, thisIPhoneID == nil else { return }
+        do {
+            try addThisIPhone(defaultModel: installed.name)
+        } catch {
+            onDevice.installedFailure = error.localizedDescription
+        }
+    }
+
     /// Adds This iPhone at launch in a DEBUG build launched with
     /// `-ggchat-mock-engine`, over the mock engine, or with
     /// `-ggchat-live-engine-model <id>`, over gglib's with that model chosen,
     /// which is how a walk is given one, as "Add mock provider" gives it a
-    /// server. Nothing anywhere else: a build without an engine offers
-    /// nothing on-device.
+    /// server; not with `-ggchat-mock-engine-unadded`, which walks a first
+    /// run. Nothing anywhere else: a build without an engine offers nothing
+    /// on-device.
     func addThisIPhoneForAWalk() {
         #if DEBUG
-            guard engine.isAvailable else { return }
+            guard engine.isAvailable, !EngineFactory.leavesThisIPhoneOut else { return }
             let model: String?
             if let behaviour = EngineFactory.mockBehaviour {
                 model = behaviour == .noModels ? nil : MockEngine.model.id

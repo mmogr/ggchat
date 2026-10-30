@@ -31,7 +31,10 @@ struct ProvidersView: View {
                 if model.providers.isEmpty {
                     ContentUnavailableView(
                         "No providers", systemImage: "server.rack",
-                        description: Text("Add a server by address, or a modelpipe ticket."))
+                        description: Text(
+                            model.runsModelsHere
+                                ? "Add a server by address, a modelpipe ticket, or a model to run on this iPhone."
+                                : "Add a server by address, or a modelpipe ticket."))
                 }
             }
             .navigationTitle("Providers")
