@@ -50,6 +50,51 @@ final class InstalledLibraryTests: XCTestCase {
         )
     }
 
+    /// The folders are marked out of the backup at every open, not only when
+    /// they are made: a folder whose mark was cleared since, by a restore
+    /// say, is out of the backup again once the library is opened again.
+    func testAFolderWhoseMarkWasClearedIsOutOfTheBackupAgainAtTheNextOpen() async throws {
+        _ = try await GglibLibrary(folders: folders).installed()
+        for folder in [folders.data, folders.models] {
+            var url = Self.uncached(folder)
+            var values = URLResourceValues()
+            values.isExcludedFromBackup = false
+            try url.setResourceValues(values)
+            let cleared = try await Self.mark(of: folder, settlesOn: false)
+            XCTAssertFalse(cleared, folder.lastPathComponent)
+        }
+
+        _ = try await GglibLibrary(folders: folders).installed()
+
+        for folder in [folders.data, folders.models] {
+            let marked = try await Self.mark(of: folder, settlesOn: true)
+            XCTAssertTrue(marked, folder.lastPathComponent)
+        }
+    }
+
+    /// The mark on `folder` once it reads `wanted`, or as it reads after ten
+    /// seconds. On CI's macOS 26 the mark set again on a folder whose mark
+    /// was cleared reached the disk a moment after `setResourceValues`
+    /// returned, seen both through Foundation and in the attribute it keeps
+    /// the mark in, as `ModelsDirectoryTests` waits for it too.
+    private static func mark(of folder: URL, settlesOn wanted: Bool) async throws -> Bool {
+        let deadline = ContinuousClock.now + .seconds(10)
+        var read = try uncached(folder).resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup == true
+        while read != wanted, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+            read = try uncached(folder).resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup == true
+        }
+        return read
+    }
+
+    /// `folder` as a URL made again from its path, with nothing cached, so
+    /// what it reads is the folder now and not what the library's open saw.
+    private static func uncached(_ folder: URL) -> URL {
+        var url = URL(filePath: folder.path(percentEncoded: false), directoryHint: .isDirectory)
+        url.removeAllCachedResourceValues()
+        return url
+    }
+
     /// The app's own place for the database is `ggchat-gglib` under
     /// Application Support, beside the models wherever the app keeps them.
     func testTheAppsOwnLibraryIsUnderApplicationSupport() throws {

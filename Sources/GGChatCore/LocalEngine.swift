@@ -2,8 +2,9 @@ import Foundation
 
 /// The seam between the app and the engine that runs models on this device.
 /// `EngineFactory` chooses the one behind it: `MockEngine` in a DEBUG build
-/// launched with `-ggchat-mock-engine`, and `UnavailableEngine` everywhere
-/// else, a release build included, until it picks gglib's engine.
+/// launched with `-ggchat-mock-engine`, gglib's own engine otherwise on an
+/// iPhone, a release build included, and `UnavailableEngine` on the
+/// simulator and the Mac.
 ///
 /// Shaped after the pipe's seam (``PipeConnector``, ``PipeSession``) and
 /// after gglib-ffi's `Library.serve`, call for call, so the binding maps onto

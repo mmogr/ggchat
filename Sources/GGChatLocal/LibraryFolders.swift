@@ -50,6 +50,9 @@ public struct LibraryFolders: Sendable, Equatable {
             try FileManager.default.createDirectory(
                 at: folder, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
             var url = folder
+            // What a URL has cached of the folder can be older than the
+            // folder, as after a restore; the mark is written past it.
+            url.removeAllCachedResourceValues()
             var values = URLResourceValues()
             values.isExcludedFromBackup = true
             try url.setResourceValues(values)

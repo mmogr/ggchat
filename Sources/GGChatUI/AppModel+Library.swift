@@ -59,8 +59,8 @@ extension FitVerdict {
 // under the section it belongs to, not in an alert the sheet would hide.
 extension AppModel {
     /// Whether this build runs models on this device, and so offers the
-    /// browser at all. False in a release build until `EngineFactory`
-    /// picks gglib's engine, and on the Mac.
+    /// browser at all. True on an iPhone, which runs gglib's engine, and
+    /// false on the simulator without the mock, and on the Mac.
     public var runsModelsHere: Bool {
         engine.isAvailable
     }

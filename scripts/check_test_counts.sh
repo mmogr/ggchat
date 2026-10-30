@@ -806,8 +806,26 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # guarded anywhere else, since every other test drives the mock library.
 # These twenty-one and the eleven markers naming them are the whole of that
 # guard, so the floors move past them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1023
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 38
-floor "README test markers" "${markers:-0}" 909
+#
+# 2026-10-29: 1023 -> 1038, 38 -> 39 and 909 -> 924 for gglib's own engine on
+# an iPhone. What each of its states is said as, that the pill's model is the
+# name its proxy lists, that its stream starts where it stands, ends after
+# stopped and stops pulling when nobody listens, that a serve off loopback is
+# refused, that it is served from the model library's own open, that the Mac
+# runs none, that the app model serves and puts it down as it does the mock,
+# and that a reply it streamed raises the ring are guarded nowhere else: an
+# engine whose pill read Not loaded for ever would pass every test before
+# these. These fourteen, the recorder that makes the replayed fixture, the
+# device walk and the fifteen markers naming them are the whole of that
+# guard, so the floors move past them.
+#
+# 2026-10-29: 1038 -> 1039 and 924 -> 926 for the library's folders, which
+# are marked out of the backup at every open and not only when made: a mark
+# cleared since is restored by the next open, which nothing else checks. Its
+# marker, and the engine's claim that its library is private and out of the
+# backup now naming the test that shows it, are the whole of that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1039
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 39
+floor "README test markers" "${markers:-0}" 926
 
 exit $status

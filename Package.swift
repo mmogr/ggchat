@@ -127,9 +127,12 @@ let package = Package(
             name: "GGChatPipeTests",
             dependencies: ["GGChatPipe", "GGChatCore"]
         ),
+        // GGChatUI too, to walk the app model on gglib's engine type, faked
+        // at the binding: only this target may import the binding.
         .testTarget(
             name: "GGChatLocalTests",
-            dependencies: ["GGChatLocal", "GGChatCore"]
+            dependencies: ["GGChatLocal", "GGChatCore", "GGChatUI"],
+            resources: [.copy("Fixtures")]
         ),
         .testTarget(
             name: "GGChatUITests",
