@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The model browser in a sheet of its own, which "Find a model…" in a This
-/// iPhone conversation's model list opens, and the pill's "Too big": the
+/// The model browser in a sheet of its own, which "Find a model…" under
+/// This iPhone in the model list opens, and the pill's "Too big": the
 /// browser's page (`ModelBrowserList`) under "Find a model", with Done.
 struct ModelBrowserView: View {
     @Environment(\.dismiss) private var dismiss

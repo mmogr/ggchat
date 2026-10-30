@@ -845,8 +845,31 @@ markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/n
 # model while another provider is there, would have no way back in and pass
 # every test before these. The test, the walk and the two markers naming
 # them are the whole of that guard, so the floors move past them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1045
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 40
-floor "README test markers" "${markers:-0}" 933
+#
+# 2026-10-30: 1045 -> 1056, 40 -> 41 and 933 -> 945 for the one model list.
+# The line under each model read out of gglib's description, a part it calls
+# unknown left out and any other server's said as it came; a section for each
+# provider in their order, filled without dialling a pipe or serving the
+# engine; a pipe that is down dimmed under what it listed last; a pick on
+# another provider moving the conversation with that model and dropping what
+# the move drops, waiting for a reply in flight, and giving a conversation
+# with no provider one; the chips, the search and when it is offered; and the
+# list walked with two providers on a simulator. A list that offered only the
+# conversation's own provider again would fail none of the tests before
+# these, so these eleven, the walk and the twelve markers naming them are the
+# whole of that guard, and the floors move past them.
+#
+# 2026-10-30: 1056 -> 1060 and 945 -> 949 for the list's own reach. Connect
+# on a pipe that has listed nothing dialling it and its models arriving,
+# opening the list asking a pipe that is up again, and the list sized from
+# the chat's free height so its search stays above the keyboard, with more
+# left at an accessibility text size, where its chips go and its search
+# scrolls with the rows: a list that showed a dead line for such a pipe,
+# never relisted one, or ran under the top bar would fail nothing before
+# these. These four and their markers are the whole of that guard, so the
+# floors move past them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1060
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 41
+floor "README test markers" "${markers:-0}" 949
 
 exit $status

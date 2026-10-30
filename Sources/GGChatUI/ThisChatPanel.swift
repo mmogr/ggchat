@@ -154,11 +154,15 @@ nonisolated enum ThisChatPart: Equatable {
         }
     }
 
-    /// The models a chat kept here can run on, and the providers it can
-    /// move to, as the composer's model pill lists them, pushed on the panel.
+    /// The composer's model list, pushed on the panel: the same sections,
+    /// rows and pick, as a list of its own with the system's search. No
+    /// chips, since every section is in reach on a page this tall.
     private struct ModelChoice: View {
         @Environment(AppModel.self) private var model
         @Environment(\.dismiss) private var dismiss
+        @Environment(\.locale) private var locale
+        @Environment(\.calendar) private var calendar
+        @State private var query = ""
         let conversationID: UUID
 
         /// The conversation as it is now, not as it was when pushed.
@@ -167,71 +171,62 @@ nonisolated enum ThisChatPart: Equatable {
         }
 
         var body: some View {
+            let list = conversation.map {
+                model.modelList(for: $0, filter: nil, query: query, locale: locale, calendar: calendar)
+            }
             List {
-                if let conversation {
-                    let provider = model.provider(for: conversation)
-                    let current = conversation.model ?? provider?.defaultModel
-                    Section("Model") {
-                        if let provider {
-                            let models = model.chatModels(for: provider.id)
-                            if models.isEmpty {
-                                Text("No models listed yet.").foregroundStyle(.secondary)
-                                // As the composer's list offers it.
-                                if provider.kind == .onDevice, model.runsModelsHere {
-                                    Button("Find a model…") { model.openModelBrowser() }
-                                }
-                            }
-                            ForEach(models) { info in
-                                Button {
-                                    model.select(model: info.id, for: conversationID)
-                                    dismiss()
-                                } label: {
-                                    HStack {
-                                        VStack(alignment: .leading, spacing: 1) {
-                                            Text(info.id)
-                                            if let detail = info.description {
-                                                Text(detail).font(.caption).foregroundStyle(.secondary)
-                                            }
-                                        }
-                                        Spacer()
-                                        if info.id == current {
-                                            Image(systemName: "checkmark").foregroundStyle(.tint)
-                                        }
-                                    }
-                                    .contentShape(.rect)
-                                }
-                                .tint(.primary)
-                            }
-                        } else {
-                            Text("Pick a provider for this conversation first.").foregroundStyle(.secondary)
-                        }
+                if let conversation, let list {
+                    let canMove = model.canChangeProvider(of: conversation)
+                    if !canMove, list.sections.contains(where: \.moves) {
+                        Text(ModelList.waitsForTheReply).font(.footnote).foregroundStyle(.secondary)
                     }
-                    // As the pill offers them: when there is more than one,
-                    // and when the conversation has none.
-                    if provider == nil || model.providers.count > 1 {
-                        Section("Provider") {
-                            ForEach(model.providers) { config in
-                                Button {
-                                    model.select(provider: config.id, for: conversationID)
-                                } label: {
-                                    HStack {
-                                        Text(config.name)
-                                        Spacer()
-                                        if config.id == provider?.id {
-                                            Image(systemName: "checkmark").foregroundStyle(.tint)
-                                        }
-                                    }
-                                    .contentShape(.rect)
-                                }
-                                .tint(.primary)
-                                .disabled(!model.canChangeProvider(of: conversation))
-                                .accessibilityLabel("Provider, \(config.name)")
-                            }
+                    if list.foundNothing {
+                        Text("No models match \u{201C}\(list.query)\u{201D}.").foregroundStyle(.secondary)
+                    }
+                    ForEach(list.sections) { section in
+                        Section {
+                            rows(section, canMove: canMove)
+                        } header: {
+                            Label(
+                                section.state.map { "\(section.provider.name) · \($0)" } ?? section.provider.name,
+                                systemImage: section.provider.symbol)
                         }
                     }
                 }
             }
             .navigationTitle("Model")
+            .searchable(text: $query, prompt: "Search models")
+            .onAppear { model.relistModels() }
+        }
+
+        @ViewBuilder
+        private func rows(_ section: ModelListSection, canMove: Bool) -> some View {
+            if section.offersConnect {
+                Button("Connect") { model.connect(fromTheList: section.id) }
+                    .accessibilityHint("Dials \(section.provider.name) to list its models")
+            } else if !section.isListed {
+                Text("Not listed yet").foregroundStyle(.tertiary)
+            } else if section.rows.isEmpty, query.isEmpty {
+                Text(section.provider.kind == .onDevice ? "No models on this iPhone yet." : "No models listed.")
+                    .foregroundStyle(.tertiary)
+            }
+            ForEach(section.rows) { row in
+                let held = section.moves && !canMove
+                Button {
+                    model.pick(model: row.modelID, on: section.id, for: conversationID)
+                    dismiss()
+                } label: {
+                    ModelListRowLabel(row: row, dimmed: section.isStale || held).contentShape(.rect)
+                }
+                .tint(.primary)
+                .disabled(held)
+                .accessibilityAddTraits(row.isCurrent ? .isSelected : [])
+                .accessibilityHint(section.moves ? "Moves this conversation to \(section.provider.name)" : "")
+            }
+            // As the composer's list offers it.
+            if section.provider.kind == .onDevice, model.runsModelsHere {
+                Button("Find a model…") { model.openModelBrowser() }
+            }
         }
     }
 #endif

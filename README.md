@@ -203,11 +203,46 @@ Each claim names the test that keeps it true.
   provider of the one open, a Mac's chat included, and with the first
   provider when none is open or the open one's provider was removed.
   Choosing a model changes that conversation alone, never a provider's
-  default. With more than one provider, or none, the model list also lists
-  the providers: choosing one moves the conversation there with that
-  provider's default model, and drops the Thinking choice, the image
-  model and the servers picked for the one left. A conversation whose
-  reply is still being written stays where it was asked.
+  default. The model pill opens one list of every provider's models, a
+  section for each in the order the providers are listed, headed by its name
+  and how its engine or pipe is ("not loaded", "connected", "last heard
+  08:12"), the conversation's model ticked. Under each model is one line,
+  "27B · Q8_0" read out of gglib's description and any other server's
+  description as it came, and on This iPhone the model's size until its
+  engine has described it. With two providers or more, chips filter the list
+  to one, a choice this device keeps; past eight models a search finds one
+  by its name or its line, and says when nothing matches. Opening the list
+  lists each provider again, quietly, where its session is up: no pipe is
+  dialled and no engine served for it. This iPhone's models are the ones
+  installed on it, read from its library; a pipe that is down keeps the
+  models it listed last, dimmed, and one that has listed none offers
+  Connect, which dials it as the status pill's Reconnect does, its models
+  arriving as it comes up; a server or This iPhone with none says "Not
+  listed yet". The list is sized from the chat's height free of its top bar
+  and the keyboard, so its search stays on screen with the keyboard up; at
+  an accessibility text size it leaves more room for the stacked pills,
+  keeps no chips, and its search scrolls with the rows.
+  Picking a model on another provider moves the conversation there with that
+  model, as a conversation whose provider was removed gets one, and drops
+  the Thinking choice, the image model and the servers picked for the one
+  left. A conversation whose reply is still being written stays where it was
+  asked, its other providers' models dimmed and the list saying why.
+  <!-- test: ModelDetailTests.testGGLibsDescriptionReadsAsItsSizeAndQuantization -->
+  <!-- test: ModelDetailTests.testAPartGGLibCallsUnknownIsLeftOut -->
+  <!-- test: ModelDetailTests.testAnotherDescriptionIsShownOnOneLine -->
+  <!-- test: ModelListTests.testEveryProviderIsASectionInTheirOrderFilledWithoutDiallingOrServing -->
+  <!-- test: ModelListTests.testAPipeThatIsDownShowsWhatItListedLastDimmed -->
+  <!-- test: ModelListTests.testAPickOnAnotherProviderMovesTheConversationWithThatModel -->
+  <!-- test: ModelListTests.testNothingMovesWhileAReplyIsWritten -->
+  <!-- test: ModelListTests.testAConversationWithNoProviderGetsOneByAPick -->
+  <!-- test: ModelListTests.testConnectDialsAPipeWithNothingListedAndItsModelsArrive -->
+  <!-- test: ModelListTests.testOpeningTheListRelistsAPipeThatIsUp -->
+  <!-- test: ModelListFilterTests.testChipsAppearWithTwoProvidersAndFilterToOne -->
+  <!-- test: ModelListFilterTests.testASearchMatchesTheIdOrTheLineWithinTheFilter -->
+  <!-- test: ModelListFilterTests.testASearchIsOfferedPastEightModels -->
+  <!-- test: ModelListFilterTests.testThePanelIsSizedFromTheRoomThereIs -->
+  <!-- test: ModelListFilterTests.testAtAnAccessibilitySizeTheListLeavesMoreAndKeepsNoChips -->
+  <!-- test: RemainingScreensUITests.testTheModelListHoldsEveryProvidersModelsAndOneTapMovesTheChat -->
   <!-- test: QuickActionTests.testANewChatIsWithTheOpenConversationsProvider -->
   <!-- test: QuickActionTests.testANewChatIsWithTheFirstProviderWhenTheOpenOnesIsGone -->
   <!-- test: QuickActionTests.testANewChatIsWithTheMacWhoseChatIsOpen -->
@@ -1108,7 +1143,7 @@ Each claim names the test that keeps it true.
   form, with nothing to name, since a device has one such provider, and
   which first run names, on the conversation list and in the detail pane;
   Settings' "Models on this iPhone", which leads to it; and "Find a
-  model…" in This iPhone's empty model list, the composer's and the
+  model…" under This iPhone in the model list, the composer's and the
   panel's, which opens the browser in a sheet of its own. Looking adds
   nothing. Add provider keeps what is typed in Server and Pipe as the kind
   changes, and holds the kind while a code is being redeemed. None of it
@@ -1146,12 +1181,13 @@ Each claim names the test that keeps it true.
   Going to the background pauses every download beside the replies, the row
   saying "Paused, resumes when ggchat is open", and coming back resumes them
   from the bytes they had; the library hears the pauses and resumes in the
-  order the scenes came. A finished download joins This iPhone's model list,
-  at once if its engine is serving and otherwise when a conversation on it
-  next opens. The browser's "On this iPhone" lists the models installed with
-  their sizes and chips above the downloads on their way, a swipe deletes
-  an installed one, and Settings says what the models on this iPhone take.
-  The simulator without the mock and the Mac show none of it.
+  order the scenes came. A finished download joins This iPhone's model list
+  at once, the list being what the library has installed, and an engine that
+  is serving lists it again too. The browser's "On this iPhone" lists the
+  models installed with their sizes and chips above the downloads on their
+  way, a swipe deletes an installed one, and Settings says what the models
+  on this iPhone take. The simulator without the mock and the Mac show none
+  of it.
   <!-- test: AppModelDownloadTests.testADownloadsBarOnlyGoesUpThroughAPauseAndAResume -->
   <!-- test: AppModelDownloadTests.testCancelTakesTheRowAndThePartialAway -->
   <!-- test: AppModelDownloadTests.testAFinishedDownloadJoinsThisIPhonesModels -->
@@ -1516,10 +1552,12 @@ Each claim names the test that keeps it true.
   there, and the conversation list is on the leading page, the two meeting
   at the fold with nothing drawn across it. In that pose the chat's top bar
   is the list button, its title and a panel button: the panel, "This chat",
-  takes the list's place on the leading page with the chat's model and
-  provider, Thinking, its tools in a section of their own (the master
-  switch, then a switch for each server the Mac offers, which cannot be
-  turned while it is off), system prompt, context counts and server
+  takes the list's place on the leading page with the chat's model, picked
+  from the composer's list of every provider's models with the system's
+  search in place of the chips, and its provider, Thinking, its tools in a
+  section of their own (the master switch, then a switch for each server the
+  Mac offers, which cannot be turned while it is off), system prompt,
+  context counts and server
   status, the ones the chat offers, with the servers listed once, not
   again under the status, and the top bar leaves those out. A
   Mac's chat has its model, Thinking, context and server there, its tools

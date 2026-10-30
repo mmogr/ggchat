@@ -13,7 +13,13 @@ struct Composer: View {
     @Environment(\.calendar) private var calendar
     @Namespace private var glass
     @State private var pickingModel = false
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var sizeClass
+    #endif
     let conversation: Conversation
+    /// The chat's height free of its top bar and the keyboard, which the
+    /// model list is sized from; 0 until it has been measured.
+    var room: CGFloat = 0
 
     private var provider: ProviderConfig? {
         model.provider(for: conversation)
@@ -50,8 +56,10 @@ struct Composer: View {
     /// Side by side when they fit, stacked at accessibility sizes, with the
     /// context ring at the trailing end once a reply has left a reading. The
     /// ring is plain drawing, not glass. The row is aligned on its bottom
-    /// edge, so the ring and the status pill stay where they are while the
-    /// model pill grows upward into its list.
+    /// edge, so the ring stays where it is while the model pill grows upward
+    /// into its list. On a phone the open list takes the status pill's room
+    /// on that row, so it is wide enough to read; its sections say how each
+    /// provider is. A wider window keeps the pill.
     @ViewBuilder
     private var pills: some View {
         let status = model.sessionStatus(for: conversation)
@@ -65,7 +73,7 @@ struct Composer: View {
         } else {
             HStack(alignment: .bottom, spacing: 8) {
                 modelPill
-                if let status { statusPill(status) }
+                if let status, !listTakesTheRow { statusPill(status) }
                 Spacer(minLength: 0)
                 if let reading { ContextRing(reading: reading) }
             }
@@ -85,9 +93,17 @@ struct Composer: View {
     // MARK: - Model pill
 
     /// One glass surface that is a pill when closed and a list when open,
-    /// with one id, so the pill grows into the list.
+    /// with one id, so the pill grows into the list. The list opens above
+    /// the pill, which stays where it was and goes on naming the model, so
+    /// nothing in the list says it again.
     private var modelPill: some View {
         VStack(alignment: .leading, spacing: 0) {
+            if pickingModel {
+                ModelListPanel(conversation: conversation, room: room) {
+                    withAnimation(reduceMotion ? nil : .snappy) { pickingModel = false }
+                }
+                Divider()
+            }
             Button {
                 withAnimation(reduceMotion ? nil : .snappy) { pickingModel.toggle() }
             } label: {
@@ -100,103 +116,24 @@ struct Composer: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Model, \(modelLabel)")
-            .accessibilityHint("Opens the model list")
-            if pickingModel {
-                Divider()
-                modelList
-            }
+            .accessibilityHint(pickingModel ? "Closes the model list" : "Opens the model list")
         }
+        // The open list is as wide as the row allows, to a width that reads
+        // as a list and not a page on an iPad or a Mac.
+        .frame(maxWidth: pickingModel ? 440 : nil, alignment: .leading)
         .glassEffect(.regular.interactive(), in: .rect(cornerRadius: pickingModel ? 18 : 20))
         .glassEffectID("model", in: glass)
     }
 
-    private var modelList: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                if let provider {
-                    let models = model.chatModels(for: provider.id)
-                    if models.isEmpty {
-                        Text("No models listed yet.")
-                            .foregroundStyle(.secondary)
-                            .padding(10)
-                        // The models found there run on this iPhone, so
-                        // only its own provider's empty list offers them.
-                        if provider.kind == .onDevice, model.runsModelsHere {
-                            Button("Find a model…") {
-                                withAnimation(reduceMotion ? nil : .snappy) { pickingModel = false }
-                                model.openModelBrowser()
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.bottom, 10)
-                        }
-                    }
-                    ForEach(models) { info in
-                        Button {
-                            model.select(model: info.id, for: conversation.id)
-                            withAnimation(reduceMotion ? nil : .snappy) { pickingModel = false }
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(info.id)
-                                    if let detail = info.description {
-                                        Text(detail).font(.caption).foregroundStyle(.secondary)
-                                    }
-                                }
-                                Spacer()
-                                if info.id == currentModelID {
-                                    Image(systemName: "checkmark").foregroundStyle(.tint)
-                                }
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .contentShape(.rect)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                } else {
-                    Text("Pick a provider for this conversation first.")
-                        .foregroundStyle(.secondary)
-                        .padding(10)
-                }
-                if provider == nil || model.providers.count > 1 {
-                    providerList
-                }
-            }
-        }
-        .frame(maxHeight: 260)
-    }
-
-    /// The providers this conversation can move to, the one it is on ticked:
-    /// offered when there is more than one, and when it has none, which is
-    /// also how a conversation whose provider was removed gets another.
-    @ViewBuilder
-    private var providerList: some View {
-        Divider()
-        Text("Provider")
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 12)
-            .padding(.top, 8)
-        ForEach(model.providers) { config in
-            Button {
-                model.select(provider: config.id, for: conversation.id)
-                withAnimation(reduceMotion ? nil : .snappy) { pickingModel = false }
-            } label: {
-                HStack {
-                    Text(config.name)
-                    Spacer()
-                    if config.id == provider?.id {
-                        Image(systemName: "checkmark").foregroundStyle(.tint)
-                    }
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .disabled(!model.canChangeProvider(of: conversation))
-            .accessibilityLabel("Provider, \(config.name)")
-        }
+    /// Whether the open list has the pills' row to itself: only in a
+    /// compact width, where beside the status pill it would be too narrow
+    /// to read.
+    private var listTakesTheRow: Bool {
+        #if os(iOS)
+            pickingModel && sizeClass == .compact
+        #else
+            false
+        #endif
     }
 
     private var currentModelID: String? {
