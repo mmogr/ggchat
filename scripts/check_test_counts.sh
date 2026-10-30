@@ -36,7 +36,7 @@ floor() {
     fi
 }
 
-markers=$({ grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' "$ROOT/README.md" 2>/dev/null || true; })
+markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs/contributing.md" 2>/dev/null | grep -coE '<!-- test: [A-Za-z0-9_.]+ -->' || true; })
 
 # 248 -> 243 when the key file's name and its healing moved into the binding
 # (modelpipe-ffi 0.4.0): six cases went down with them, and the status a
