@@ -18,11 +18,11 @@ The app is generic: any OpenAI-compatible provider works.
 
 ![The macOS window, with a conversation open](docs/screenshots/macos-chat.png)
 
-These are photographs of the app, not mock-ups. The four iPhone ones are
-attachments the UI tests take as they walk through it, and `make
-screenshots` regenerates them from a test run, so a picture cannot quietly
-go stale. The first is a real reply from gglib; the fourth is the on-device
-model browser against the mock engine the tests use.
+The four iPhone pictures are attachments the UI tests take as they walk
+through the app, and `make screenshots` regenerates them from a test run,
+so a picture cannot quietly go stale. The first is a real reply from gglib;
+the fourth is the on-device model browser against the mock engine the tests
+use.
 
 ## What it does
 
