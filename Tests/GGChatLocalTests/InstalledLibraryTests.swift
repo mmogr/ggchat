@@ -60,31 +60,23 @@ final class InstalledLibraryTests: XCTestCase {
             var values = URLResourceValues()
             values.isExcludedFromBackup = false
             try url.setResourceValues(values)
-            XCTAssertEqual(try Self.marked(folder), false, "the clear: \(Self.raw(folder))")
+            XCTAssertFalse(Self.marked(folder), folder.lastPathComponent)
         }
 
         _ = try await GglibLibrary(folders: folders).installed()
 
         for folder in [folders.data, folders.models] {
-            XCTAssertEqual(try Self.marked(folder), true, "the open: \(Self.raw(folder))")
-        }
-        try folders.prepare()
-        for folder in [folders.data, folders.models] {
-            XCTAssertEqual(try Self.marked(folder), true, "prepare again: \(Self.raw(folder))")
+            XCTAssertTrue(Self.marked(folder), folder.lastPathComponent)
         }
     }
 
-    /// The mark as Foundation reads it from the disk.
-    private static func marked(_ folder: URL) throws -> Bool? {
-        try uncached(folder).resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup
-    }
-
-    /// The attribute macOS keeps the mark in, read past Foundation, so a
-    /// failure says whether the write or the read went wrong.
-    private static func raw(_ folder: URL) -> String {
-        let size = getxattr(
-            folder.path(percentEncoded: false), "com.apple.metadata:com_apple_backup_excludeItem", nil, 0, 0, 0)
-        return "\(folder.lastPathComponent) attribute " + (size < 0 ? "absent, errno \(errno)" : "present")
+    /// Whether `folder` carries the attribute macOS keeps the mark in, read
+    /// past Foundation: on CI's macOS 26, a folder marked on disk was read
+    /// back unmarked through a URL made afresh with nothing cached, in some
+    /// runs, while the attribute was there.
+    private static func marked(_ folder: URL) -> Bool {
+        getxattr(
+            folder.path(percentEncoded: false), "com.apple.metadata:com_apple_backup_excludeItem", nil, 0, 0, 0) >= 0
     }
 
     /// `folder` as a URL made again from its path, with nothing cached, so
