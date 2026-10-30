@@ -12,69 +12,63 @@ The app is generic: any OpenAI-compatible provider works.
 
 ## What it looks like
 
-| Streaming from gglib | A pipe, connected | gglib's server status |
-|---|---|---|
-| ![A finished reply on an iPhone](docs/screenshots/iphone-reply.png) | ![The model pill beside a status pill reading Direct](docs/screenshots/iphone-pipe-connected.png) | ![Slots, context used, and recent requests](docs/screenshots/iphone-server-status.png) |
+| Streaming from gglib | A pipe, connected | gglib's server status | Whether a model fits this phone |
+|---|---|---|---|
+| ![A finished reply on an iPhone](docs/screenshots/iphone-reply.png) | ![The model pill beside a status pill reading Direct](docs/screenshots/iphone-pipe-connected.png) | ![Slots, context used, and recent requests](docs/screenshots/iphone-server-status.png) | ![A repository's quants, each marked fits, short context, too big, or can't tell yet](docs/screenshots/iphone-on-device-browser.png) |
 
 ![The macOS window, with a conversation open](docs/screenshots/macos-chat.png)
 
-These are photographs of the app, not mock-ups. The three iPhone ones are
+These are photographs of the app, not mock-ups. The four iPhone ones are
 attachments the UI tests take as they walk through it, and `make
 screenshots` regenerates them from a test run, so a picture cannot quietly
-go stale. The first is a real reply from gglib.
+go stale. The first is a real reply from gglib; the fourth is the on-device
+model browser against the mock engine the tests use.
 
 ## Status
 
 Each release is on the [releases page](https://github.com/mmogr/ggchat/releases),
-with what it changed. What exists today is the core package (the provider
-protocol, the OpenAI-compatible implementation, the SSE parser, the pipe
-seam with its mock, its pairing and its reader) and the
-app shell: a sidebar of conversations persisted with SwiftData, a
-providers sheet
-that adds a server by address or a pipe by its pairing string,
-and settings. The transcript streams replies as markdown with copyable code
-blocks, tables drawn as tables, and collapsed reasoning, with a stop button and, when a reply stops
-early, a Continue button, and each conversation can carry a system prompt of
-its own, set from the toolbar and sent ahead of every request without ever
-becoming a row in the transcript; a request refused before anything arrived
-says why under the question, with a Retry button. A server added by address lists its models and
-streams; against gglib, a server status pane shows slots, context in use
-and recent requests, with the MCP servers a paired Mac offers listed one
-by one, and it is
-hidden for servers that do not answer that endpoint. The app has been run: the screens above are photographs of it,
-not mock-ups. A pipe provider is added by pasting the `ticket-code` string
-the other machine showed for it (`gglib remote enable --invite` for the
-first device, `gglib remote invite` for each one after that), or on iOS by
-scanning its QR code: the six-digit code is spent once, through the pipe
-itself, for a key minted for this device alone, so no key is ever read off
-one screen and typed into another — and the pipe it was spent over is the
-one that provider keeps, so a first pairing costs one hole punch and not
-two. A bare ticket, with no code, is for a device that already holds its
-key. Connecting goes through `PipeConnector`: a release build dials and
-pairs with `ModelpipeConnector`, and a DEBUG build uses a mock that walks
-idle → relayed → direct. The status pill
-follows the session, reads "Reconnect" when the pipe closes, and stays
-pressable in every state but a dial in flight, because a connected status
-can be stale. Going
-to the background hangs up every pipe and puts down every reply in flight,
-except a reply to gglib, which the hub goes on writing and the app reads on
-from where it stopped, and coming back dials again. A provider's row opens its settings, so a
-machine that has stopped admitting this device, or whose endpoint identity
-was deleted, is re-paired in place and keeps its conversations. Settings
-shows how many distinct tickets this device has connected to. In DEBUG
-builds a mock provider streams canned replies without a server.
+with what it changed. What exists today:
 
-**A shipped build now dials for real.** `GGChatPipe` is a target of its own
-that links `modelpipe-ffi`, and it is the only place the boundary check
-permits `import Modelpipe`; `ModelpipeConnector` behind it has modelpipe read
-a ticket, dials, and hands back a session whose loopback URL is the far
-machine. The
-mock stays on the DEBUG side of `PipeConnectorFactory` rather than being
-replaced, because it is what the Settings screen's "Force closed" control and
-twenty-odd app-model tests are written against. It is absent from a release
-build, not merely unchosen: `MockPipeConnector` and `MockPipeSession` are
-declared inside an `#if DEBUG`, and `make build-release` fails if either
-symbol is in the release objects.
+- Any OpenAI-compatible server, added by address. It lists its models and
+  streams replies as markdown: copyable code blocks, tables drawn as
+  tables, collapsed reasoning, a stop button, and a Continue button when a
+  reply stops early. Conversations are kept with SwiftData. Each can carry
+  its own system prompt, set from the toolbar, sent ahead of every request
+  and never shown as a row. A request refused before anything arrived says
+  why under the question, with Retry.
+- A pipe to a machine at home. Paste the `ticket-code` string the other
+  machine showed (`gglib remote enable --invite` for the first device,
+  `gglib remote invite` for each one after), or, on an iPhone or iPad, scan
+  its QR code. The six-digit code is spent once, through the pipe itself, for a
+  key minted for this device alone, so no key is ever read off one screen
+  and typed into another, and a first pairing costs one hole punch. A bare
+  ticket, with no code, is for a device that already holds its key. The
+  status pill follows the session and reads "Reconnect" when the pipe
+  closes.
+- gglib's own server status pane, when the server is gglib: slots, context
+  in use, recent requests, and the MCP servers a paired Mac offers. Hidden
+  for servers that do not answer that endpoint.
+- Going to the background hangs up every pipe and puts down every reply in
+  flight, except a reply to gglib, which the hub goes on writing and the
+  app reads on from where it stopped. Coming back dials again.
+- A machine that has stopped admitting this device, or whose endpoint
+  identity was deleted, is re-paired in place from its provider row and
+  keeps its conversations.
+- A shipped build dials for real. `GGChatPipe` is the one target that links
+  `modelpipe-ffi`; a DEBUG build uses a mock that walks idle → relayed →
+  direct, and a mock provider that streams canned replies without a server.
+  `make build-release` fails if the mock's symbols are in the release
+  objects.
+
+What is still missing is on the [issues page](https://github.com/mmogr/ggchat/issues).
+
+## The rest of the set
+
+ggchat is the phone. [gglib](https://github.com/mmogr/gglib) is the server
+it is built around: a library of GGUF models served through llama.cpp as
+one OpenAI-compatible endpoint. [modelpipe](https://github.com/mmogr/modelpipe)
+is the reach: the end-to-end encrypted peer-to-peer connection that puts
+that endpoint on this phone with no VPN and no account.
 
 ## What is true today
 
