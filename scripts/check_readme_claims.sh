@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Every claim in README.md or docs/what-is-true-today.md that can be tested names its test in a marker:
+# Every claim in README.md, docs/what-is-true-today.md or docs/contributing.md that can be tested names its test in a marker:
 #   <!-- test: ClassName.testName -->
 # Each marker must name a test that exists. Each `make <target>` the README
 # mentions must be a Makefile target.
@@ -23,7 +23,7 @@ import os, re, sys
 from pathlib import Path
 
 root = Path(os.environ["ROOT"])
-readme = (root / "README.md").read_text() + (root / "docs/what-is-true-today.md").read_text()
+readme = "".join((root / f).read_text() for f in ("README.md", "docs/what-is-true-today.md", "docs/contributing.md"))
 markers = re.findall(r"<!-- test: ([A-Za-z0-9_.]+) -->", readme)
 
 # A type or extension at column 0 opens a region and closes the previous one.
@@ -81,7 +81,7 @@ while IFS= read -r target; do
         echo "readme: no Makefile target named $target" >&2
         status=1
     fi
-done < <(grep -ohE '`make [a-z-]+`' "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" | sed -E 's/`make ([a-z-]+)`/\1/' | sort -u)
+done < <(grep -ohE '`make [a-z-]+`' "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs/contributing.md" | sed -E 's/`make ([a-z-]+)`/\1/' | sort -u)
 
 [ $status -eq 0 ] && echo "readme: ok"
 exit $status
