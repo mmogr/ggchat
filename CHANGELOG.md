@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.13.0](https://github.com/mmogr/ggchat/compare/v0.12.1...v0.13.0) (2026-10-30)
+
+
+### What the app now does
+
+* **chat:** one model list holds every provider's models, and picking one moves the chat there ([#247](https://github.com/mmogr/ggchat/issues/247)) ([b1b58f0](https://github.com/mmogr/ggchat/commit/b1b58f0324301d679c722e4fb4c4ecb2f143934a))
+* **local:** a chat on This iPhone is answered by gglib's own engine, running on the phone ([#245](https://github.com/mmogr/ggchat/issues/245)) ([01c5d1d](https://github.com/mmogr/ggchat/commit/01c5d1d159587b1f53373d952f128b59ea1cbfc8))
+* **local:** a model browser says whether each quantisation fits this iPhone, and why ([#235](https://github.com/mmogr/ggchat/issues/235)) ([5565b71](https://github.com/mmogr/ggchat/commit/5565b719351a12f786a177ae2505c72914aa2cc2))
+* **local:** a model downloads to this iPhone, kept out of backups, and resumes when ggchat is opened again ([#238](https://github.com/mmogr/ggchat/issues/238)) ([2672dc8](https://github.com/mmogr/ggchat/commit/2672dc83af6b4616935d1757633ff607c65e95b9))
+* **local:** a phone-owned provider runs on this iPhone's own engine, walked by a mock until gglib's lands ([#234](https://github.com/mmogr/ggchat/issues/234)) ([7808a22](https://github.com/mmogr/ggchat/commit/7808a2299f0b3aa2fcda8720d61e13906428c0f5))
+* **local:** the model library on iOS is gglib's own, searching Hugging Face and downloading through it ([#243](https://github.com/mmogr/ggchat/issues/243)) ([a8bbe20](https://github.com/mmogr/ggchat/commit/a8bbe20f87cf5717690b69aa3e7c737d06e8acf5))
+* **local:** the status pill walks the on-device model through loading, and the model is put down when ggchat leaves the foreground ([#239](https://github.com/mmogr/ggchat/issues/239)) ([1d2c80d](https://github.com/mmogr/ggchat/commit/1d2c80de8bf0749f7c73cf6a659dba8eeb277022))
+* **local:** This iPhone is added from Add provider, and the model browser says more in less room ([#246](https://github.com/mmogr/ggchat/issues/246)) ([df240e0](https://github.com/mmogr/ggchat/commit/df240e0e71313a5c3f1f128d3c7cd5ea2dd85e1d))
+
+
+### What the app stopped getting wrong
+
+* **docs:** DocC finds GglibFFI by its header, so the docs build on CI's Xcode again ([#242](https://github.com/mmogr/ggchat/issues/242)) ([e445c81](https://github.com/mmogr/ggchat/commit/e445c810cc968e23e162895c76e43d4cab80b522))
+
+
+### Documentation
+
+* **licence:** ggchat is licensed AGPL-3.0-only, as gglib is ([#232](https://github.com/mmogr/ggchat/issues/232)) ([c4f59da](https://github.com/mmogr/ggchat/commit/c4f59dac69e50089f33b70ac8bb1482d061e77a2))
+* **readme:** fresh screenshots, a Status a reader can scan, and the rest of the set ([#248](https://github.com/mmogr/ggchat/issues/248)) ([c430ba2](https://github.com/mmogr/ggchat/commit/c430ba229383f8fd79cd8055419d85732eb7c1e1))
+* **readme:** seventy lines, and the rest in docs/ ([#249](https://github.com/mmogr/ggchat/issues/249)) ([0fafc23](https://github.com/mmogr/ggchat/commit/0fafc238da21bde1ec2cbf87b87a5475692d5f70))
+
 ## [0.12.1](https://github.com/mmogr/ggchat/compare/v0.12.0...v0.12.1) (2026-10-28)
 
 
