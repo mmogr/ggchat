@@ -12,7 +12,9 @@ public struct GGChatScene: Scene {
 
     /// Runs before the window's first frame, so what it does is marked for
     /// Instruments (`LaunchSignposts`). `KeychainSecrets()` touches nothing
-    /// until a credential is first read.
+    /// until a credential is first read, so `Make the model` is the model's
+    /// own defaults: the pipe connector and its identities, the engine and
+    /// its library's folders, the diagnostics and the network watcher.
     public init() {
         let opened = LaunchSignposts.interval("Open the store") { SwiftDataStore.open() }
         let store = SwiftDataStore(container: opened.container)
