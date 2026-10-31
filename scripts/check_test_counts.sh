@@ -868,8 +868,15 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # never relisted one, or ran under the top bar would fail nothing before
 # these. These four and their markers are the whole of that guard, so the
 # floors move past them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1060
+#
+# 2026-10-31: 1060 -> 1061 and 949 -> 950 for gglib's published code list.
+# One new test reads gglib's `docs/error-codes.json`, vendored at v0.28.0,
+# and fails when gglib publishes a code that is neither in the vocabulary nor
+# filed as not shown here. The hand-typed list it replaces failed nothing when
+# gglib added a code, so this test is the whole of that guard, and the
+# README claim names it.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1061
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 41
-floor "README test markers" "${markers:-0}" 949
+floor "README test markers" "${markers:-0}" 950
 
 exit $status

@@ -29,55 +29,108 @@ final class ErrorTests: XCTestCase {
         XCTAssertEqual(ProviderError.whereToLook(forCode: nil), .unknown)
     }
 
-    /// The vocabulary is modelpipe's published list, `docs/error-codes-v0.json`
-    /// at v0.6.0, vendored byte for byte, plus the codes only gglib writes. The
-    /// two lists are a partition of the vocabulary's provenance, not of who
-    /// can write a code in the wild: `invalid_pairing_code` is in modelpipe's
-    /// list because its edge answers the pairing route from 0.6. gglib's own
-    /// proxy route, `POST /v1/remote/pair`, wrote the same code from v0.16.0
-    /// to v0.18.x. From v0.19.0 (gglib #1087) gglib has no such route, and
-    /// modelpipe's edge writes the code at `POST /modelpipe/pair`. The list
-    /// supplies the vocabulary and nothing else; which side to look at stays
-    /// decided here, because `incomplete_request` is written by the serving
-    /// side and still means "your upload stopped". The digest catches an edit
-    /// by hand; a change upstream shows only when the copy is refreshed on
-    /// purpose.
+    /// The vocabulary is two published lists, each vendored byte for byte and
+    /// pinned by its digest: modelpipe's `docs/error-codes-v0.json` at v0.6.0,
+    /// and gglib's `docs/error-codes.json` at v0.28.0. The lists say where the
+    /// vocabulary's codes come from, not who can write one in the wild:
+    /// `invalid_pairing_code` is in modelpipe's list because its edge answers
+    /// the pairing route from 0.6. gglib's own proxy route,
+    /// `POST /v1/remote/pair`, wrote the same code from v0.16.0 to v0.18.x.
+    /// From v0.19.0 (gglib #1087) gglib has no such route, and modelpipe's
+    /// edge writes the code at `POST /modelpipe/pair`. A list supplies the
+    /// vocabulary and nothing else; which side to look at stays decided here,
+    /// because `incomplete_request` is written by the serving side and still
+    /// means "your upload stopped". The digest catches an edit by hand; a
+    /// change upstream shows only when the copy is refreshed on purpose.
     func testThePublishedHalfOfTheVocabularyIsModelpipesOwnList() throws {
-        let data = try Fixtures.data("modelpipe-error-codes-v0.json")
-        #if canImport(CryptoKit)
-            let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
-            XCTAssertEqual(
-                digest, "3bac9cebc2a933e2f663272e62d6d2cae296b7471358ca306405ebc1c993f5bc",
-                "the vendored list differs from modelpipe v0.6.0's: refresh it from the tag, not by hand")
-        #endif
-
-        struct Published: Decodable {
-            struct Entry: Decodable { let code: String }
-            let codes: [Entry]
-        }
-        let publishedCodes = Set(try JSONDecoder().decode(Published.self, from: data).codes.map(\.code))
-
+        let publishedCodes = try codes(in: "modelpipe-error-codes-v0.json", from: "modelpipe v0.6.0")
         let published: Set<ProviderError.Code> = [
             .invalidAPIKey, .badRequest, .badGateway, .backendUnreachable, .tunnelUnavailable,
             .incompleteRequest, .invalidPairingCode,
         ]
-        let gglibOnly: Set<ProviderError.Code> = [
-            .admissionTimeout, .contextLengthExceeded, .deviceNotPaired, .embeddingModelCannotChat,
-            .hostNotAllowed, .internalError, .invalidRequest, .loopDetected, .mcpNotAllowedOverTunnel,
-            .modelFileNotFound, .modelLoading, .modelNotFound, .modelDoesNotFit, .notAnEmbeddingModel,
-            .pinnedModelMismatch, .profileNotFound, .stagnationDetected, .upstreamError,
-            .upstreamTimeout, .modelCannotReadImages, .requestTooLarge, .imageTooLarge, .unsupportedImage,
-            .attachmentNotFound, .requestImagesTooLarge, .imageModelCannotChat, .drawingUnavailable,
-            .invalidImageSize, .imageGenerationFailed, .imageRenderStalled, .imageRuntimeNotInstalled,
-            .imageModelIncomplete, .imageModelDoesNotFit, .modelUnavailable, .unavailable, .notAnImageModel,
-        ]
         XCTAssertEqual(
             Set(published.map(\.rawValue)), publishedCodes,
             "the published half here is not what modelpipe publishes")
-        XCTAssertTrue(published.isDisjoint(with: gglibOnly), "a code is filed under both lists")
+    }
+
+    /// gglib's half used to be typed in here from memory, so a code gglib
+    /// added failed nothing and reached the person with no line of its own.
+    /// Now every code gglib publishes is in exactly one of three places: the
+    /// vocabulary, the constants other parts of ggchat match it by, or
+    /// `notShownHere`. Every code in the vocabulary is in one published list
+    /// or the other. `invalid_api_key` is in both: modelpipe's bearer check
+    /// and gglib's write it, and both stand on the serving machine.
+    func testGglibsHalfOfTheVocabularyIsGglibsOwnList() throws {
+        let modelpipe = try codes(in: "modelpipe-error-codes-v0.json", from: "modelpipe v0.6.0")
+        let gglib = try codes(in: "gglib-error-codes-v0.json", from: "gglib v0.28.0")
+        let vocabulary = Set(ProviderError.Code.allCases.map(\.rawValue))
+        // Codes ggchat matches by string outside the vocabulary, read from
+        // the constants themselves: the hub's chats routes, its runs routes
+        // and the branching rules each handle theirs on their own path. Those
+        // constants also name `invalid_request`, which the vocabulary holds,
+        // so it is answered there and not counted here.
+        let answeredElsewhere = Set(
+            [HubChatsCode.noModel, HubChatsCode.conversationNotFound, HubChatsCode.deviceNotNamed]
+                + RunCode.all
+                + [BranchRefusal.messageNotFound, .unchanged, .notAReply, .nothingToAnswer, .imagesOnReply].map(\.code)
+        ).subtracting(vocabulary)
+        // Codes gglib writes that nothing in ggchat matches by string: the
+        // daemon's own refusals about runs, chats and folders, the guard a
+        // page on another site meets, and the errors a run ends with. One
+        // that reaches the app reads as `.unknown`, so gglib's sentence is
+        // shown with no hint of its own. Filing a code here is a decision
+        // someone made, not a gap nobody saw.
+        let notShownHere: Set<String> = [
+            // gglib publishes this as 429, "every agent loop slot is in use;
+            // retry later". It stays unmapped on purpose: gglib #1528 may make
+            // a device's run wait instead of refusing, and ggchat #217 tracks
+            // the hint until then.
+            "agent_busy",
+            "agent_error", "chats_unavailable", "folder_missing", "folder_unusable", "log_full", "max_iterations",
+            "not_yours", "origin_not_allowed", "proxy_not_running", "run_panicked", "runs_unavailable",
+            "shutting_down", "too_many_tool_calls", "transcript_not_saved", "turn_too_long",
+        ]
+        for code in gglib.subtracting(vocabulary).subtracting(answeredElsewhere).subtracting(notShownHere).sorted() {
+            XCTFail(
+                "gglib publishes \(code) and nothing here has read it: give it a case in ProviderError.Code "
+                    + "and an answer in whereToLook, or file it in notShownHere with why")
+        }
+        for code in answeredElsewhere.subtracting(gglib).sorted() {
+            XCTFail("ggchat matches \(code) by string and gglib does not publish it: check the constant's spelling")
+        }
+        for code in notShownHere.subtracting(gglib).sorted() {
+            XCTFail("\(code) is filed in notShownHere and gglib no longer publishes it: take it out")
+        }
+        XCTAssertTrue(
+            answeredElsewhere.isDisjoint(with: notShownHere),
+            "a code ggchat matches by string is also filed in notShownHere, which says nothing matches it")
         XCTAssertEqual(
-            published.union(gglibOnly), Set(ProviderError.Code.allCases),
-            "a code in the vocabulary is filed under neither list")
+            vocabulary, modelpipe.union(gglib).subtracting(answeredElsewhere).subtracting(notShownHere),
+            "a code in the vocabulary is in neither published list, or is also matched elsewhere or filed "
+                + "in notShownHere")
+    }
+
+    /// A vendored list's codes, once its digest says it is the copy taken
+    /// from the tag named.
+    private func codes(
+        in fixture: String, from tag: String, file: StaticString = #filePath, line: UInt = #line
+    ) throws -> Set<String> {
+        let data = try Fixtures.data(fixture)
+        #if canImport(CryptoKit)
+            let digests = [
+                "modelpipe-error-codes-v0.json": "3bac9cebc2a933e2f663272e62d6d2cae296b7471358ca306405ebc1c993f5bc",
+                "gglib-error-codes-v0.json": "2cf3b4c6c21dbe6a140ca7d3cbe16feec6a4fc96fe60988f0452fc263faa88a1",
+            ]
+            let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+            XCTAssertEqual(
+                digest, digests[fixture],
+                "the vendored list differs from \(tag)'s: refresh it from the tag, not by hand", file: file, line: line)
+        #endif
+        struct Published: Decodable {
+            struct Entry: Decodable { let code: String }
+            let codes: [Entry]
+        }
+        return Set(try JSONDecoder().decode(Published.self, from: data).codes.map(\.code))
     }
 
     /// The side named is the side that *wrote* the refusal. modelpipe writes
