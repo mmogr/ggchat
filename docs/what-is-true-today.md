@@ -1481,6 +1481,12 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelRunReadOnTests.testAPutWhoseAnswerWasLostIsSentAgainUnderItsID -->
   <!-- test: AppModelRunReadOnTests.testAReturnReadsOnAtAnAddressWithNoPipe -->
   <!-- test: AppModelRunReadOnTests.testNoLogLineNamesARunItsTextOrAnAddress -->
+- A conversation is called the same in the list and over its chat: by the
+  title it was given, else by the first line of its first question, cut at 80
+  characters, or what a first turn of images alone holds, else "New
+  conversation". A system prompt never names it.
+  <!-- test: ConversationTests.testAConversationIsCalledByItsTitleElseItsFirstQuestion -->
+  <!-- test: ConversationTests.testAFirstTurnOfImagesAloneIsCalledWhatItHolds -->
 - The conversation list says, beside a title, "Writing" while a reply is still
   being written, in front or by the hub, and "New" when one finished, failed
   or was given up while its chat was not on screen with the app in front,

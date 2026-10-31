@@ -916,8 +916,12 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # file or left a chat on a model that is gone would fail nothing before
 # these. The eleven, the walk and the twelve markers naming them are the
 # whole of that guard, so the floors move past them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1081
+#
+# 1081 -> 1082 and 971 -> 972 for one shown title. The list and the chat
+# each worked it out until it moved onto the conversation, and nothing else
+# reads it, so this test and its marker are the whole of that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1082
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 971
+floor "README test markers" "${markers:-0}" 972
 
 exit $status
