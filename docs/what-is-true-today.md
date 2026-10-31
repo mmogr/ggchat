@@ -1139,9 +1139,26 @@ Each claim names the test that keeps it true.
   at once, the list being what the library has installed, and an engine that
   is serving lists it again too. The browser's "On this iPhone" lists the
   models installed with their sizes and chips above the downloads on their
-  way, a swipe deletes an installed one, and Settings says what the models
-  on this iPhone take. The simulator without the mock and the Mac show none
-  of it.
+  way, and Settings says what the models on this iPhone take. An installed
+  one is removed by a swipe, by Remove… in the menu a long press on its row
+  opens, or by the section's Edit, and each asks first, naming the model
+  and the room it frees. One no longer listed as installed is refused
+  before anything is touched. The engine is put down before the files go
+  while its status says a model is loading or ready, while a reply goes
+  through it or waits for it, and while a shutdown is already under way,
+  which a second removal joins; a reply through it is kept as Stop keeps
+  it, and the engine serves again at the next request. One that may hold
+  no model goes on serving. While the model is being removed, a send
+  naming it is refused with a sentence. The model leaves This iPhone's
+  list, and every chat on This iPhone that had it, and This iPhone's
+  default if it was the model, are left with none, matched by name, after
+  the listing, so the listing does not make the model left This iPhone's
+  default; a chat left with no model and no default says "Choose a model"
+  and does not send. Chats on other models and other providers keep
+  theirs. A removal the library refuses says why under the section and
+  leaves the files, the list, the chats and the default as they were,
+  though the engine may have been put down by then. The simulator without
+  the mock and the Mac show none of it.
   <!-- test: AppModelDownloadTests.testADownloadsBarOnlyGoesUpThroughAPauseAndAResume -->
   <!-- test: AppModelDownloadTests.testCancelTakesTheRowAndThePartialAway -->
   <!-- test: AppModelDownloadTests.testAFinishedDownloadJoinsThisIPhonesModels -->
@@ -1156,6 +1173,18 @@ Each claim names the test that keeps it true.
   <!-- test: MockLibraryDownloadTests.testAFinishedDownloadIsInstalledAndListedByTheEngineSharingItsCatalogue -->
   <!-- test: ModelBrowserLayoutTests.testOnThisIPhoneHoldsTheInstalledAndTheDownloadsOnTheirWay -->
   <!-- test: ScreenGalleryUITests.testADownloadFillsItsBarAndTheModelJoinsTheList -->
+  <!-- test: AppModelRemovalTests.testARemovedModelLeavesTheChatsAndTheDefaultThatHadItWithNone -->
+  <!-- test: AppModelRemovalTests.testARemovalLeavesTheOtherChatsAlone -->
+  <!-- test: AppModelRemovalTests.testARemovalPutsALoadedEngineDown -->
+  <!-- test: AppModelRemovalTests.testARemovalKeepsWhatAReplyThroughTheEngineHad -->
+  <!-- test: AppModelRemovalTests.testARemovalLeavesAnIdleEngineServing -->
+  <!-- test: AppModelRemovalTests.testARemovalOfAModelNoLongerListedTouchesNothing -->
+  <!-- test: AppModelRemovalTests.testARemovalTheLibraryRefusesKeepsTheFilesTheChatsAndTheDefault -->
+  <!-- test: AppModelRemovalRaceTests.testTheEngineIsDownBeforeTheFilesGo -->
+  <!-- test: AppModelRemovalRaceTests.testASecondRemovalWaitsForTheEngineTheFirstPutsDown -->
+  <!-- test: AppModelRemovalRaceTests.testASendNamingAModelBeingRemovedIsRefused -->
+  <!-- test: ModelBrowserLayoutTests.testTheRemovalQuestionNamesTheModelAndTheRoomItFrees -->
+  <!-- test: OnDeviceUITests.testAModelIsRemovedFromTheMenuOnItsRow -->
 - On iOS the library behind the browser is gglib's own, through its
   framework: Hugging Face searched, each quantization judged against the
   reading the browser took, downloads followed a step at a time, and the
