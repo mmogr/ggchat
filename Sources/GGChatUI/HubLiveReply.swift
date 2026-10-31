@@ -116,7 +116,7 @@ public final class HubLiveReply {
         case .delta(let text): content += text
         case .reasoning(let text): reasoning += text
         case .tool(let line, let writing): toolLines.take(line, writing: writing)
-        case .images(let images): made += images
+        case .images(let images, _): made += images
         case .usage(let counted, let reason):
             usage = counted
             finishReason = reason

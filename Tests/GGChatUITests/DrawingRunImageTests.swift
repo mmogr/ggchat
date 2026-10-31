@@ -17,7 +17,8 @@ final class DrawingRunImageTests: XCTestCase {
     /// A hub whose every run calls the tool, draws `image` and says a word.
     private func hub(holding: Bool = true) -> FakeRunHub {
         let hub = FakeRunHub(frames: [
-            [.tool("Generate Image")], [.toolProgress(Self.step)], [.toolEnded("c1"), .images([Self.image])],
+            [.tool("Generate Image")], [.toolProgress(Self.step)],
+            [.toolEnded("c1"), .images([Self.image], callID: "c1")],
             [.delta("A fox.")],
         ])
         hub.with {

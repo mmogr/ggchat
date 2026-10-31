@@ -32,7 +32,10 @@ final class PictureKeptHereTests: XCTestCase {
             callID: "call_1", name: "builtin:generate_image", arguments: #"{"prompt":"a red fox in snow"}"#)
         let hub = FakeRunHub(frames: [
             [.tool("Generate Image"), .toolCalled(call)],
-            [.toolEnded("call_1"), .toolAnswered(callID: "call_1", text: Self.drew), .images([Self.image])],
+            [
+                .toolEnded("call_1"), .toolAnswered(callID: "call_1", text: Self.drew),
+                .images([Self.image], callID: "call_1"),
+            ],
             [.delta("A fox.")],
         ])
         hub.with { $0.images[Self.image.id] = Self.png }
@@ -132,5 +135,24 @@ final class PictureKeptHereTests: XCTestCase {
         byAddress.update(kept)
         byAddress.drawings[try XCTUnwrap(kept.providerID)] = Fixture.can
         XCTAssertNil(byAddress.drawnPrompt(of: Self.image, in: reply.id, fromHub: false), "a gglib reached by address")
+    }
+
+    /// A reply that drew and then had another tool make a PNG, a chart,
+    /// offers fix or redo on the drawn picture alone: the chart is not
+    /// offered the drawing's words, so no fix of it is kept on the reply,
+    /// where it would be no call's and shown to a model as the drawn one.
+    func testAnotherToolsPictureOnAReplyThatDrewIsNotOffered() async throws {
+        let here = try await drawnHere()
+        let (model, reply) = (here.model, here.reply)
+        let chart = ImageRef(id: "chart", mime: ImageRef.png, width: 640, height: 480)
+        var conversation = try XCTUnwrap(model.selectedConversation)
+        conversation.messages[1].images.append(chart)
+        conversation.messages[1].exchanges.append(
+            ToolExchange(
+                callID: "call_2", name: "plot_chart", arguments: "{}", result: "a chart", images: [chart.id]))
+        model.update(conversation)
+        XCTAssertNil(model.drawnPrompt(of: chart, in: reply.id, fromHub: false), "another tool's PNG was offered")
+        XCTAssertNil(model.pictureEditing(of: chart, in: reply.id, fromHub: false))
+        XCTAssertEqual(model.drawnPrompt(of: Self.image, in: reply.id, fromHub: false), "a red fox in snow")
     }
 }

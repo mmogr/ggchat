@@ -506,19 +506,28 @@ Each claim names the test that keeps it true.
   called and what the tool answered: the call's id, the tool's name, the
   arguments the model wrote as JSON text, the answer word for word, the MCP
   server the tool is one of when `tool_call_start` names one (`server`,
-  which gglib leaves out for its own tools), and whether the tool failed,
-  the opposite of `result.success`, read from the run's `tool_call_start`
-  and `tool_call_complete` events and kept in one optional column. An answer
-  that does not say is not known to have failed or worked, and a list kept
-  before the server and the failure were read still reads, with neither.
+  which gglib leaves out for its own tools), whether the tool failed, the
+  opposite of `result.success`, and the ids of the images it made, from
+  `result.images`, none for a call that made none, read from the run's
+  `tool_call_start` and `tool_call_complete` events and kept in one
+  optional column. An answer that does not say is not known to have failed
+  or worked. A list kept before the images were read does not read, and
+  the reply loads with no calls: its words and pictures stay, but it draws
+  no tool rows, sends no calls again, shows its picture to no model and
+  offers no fix or redo. Its column is left as it was only until the reply
+  is written again: a Continue, or a reading on of a reply still being
+  written when this build came, writes over it the calls the reply has
+  then, so the old ones are gone for good, and a call begun before and
+  answered after keeps neither its answer nor its images.
   The transcript holds the messages it always did, and each call is drawn
   under its reply as a collapsed row, as the item after next says.
   Every later request says it again ahead of the reply's words, in OpenAI's
   shape: an assistant message with the call in `tool_calls` and no content,
   then a `tool` message with the call's id and the answer. The server and
-  the failure are never sent: the request is byte for byte the one it would
-  be without them. gglib reads that as a chat that holds a drawn picture and
-  tells the model so, which is what stops the next reply saying it cannot
+  the failure are never sent, nor the images a call made: the request is
+  byte for byte the one it would be without them. gglib reads that as a
+  chat that holds a drawn picture and tells the model so, which is what
+  stops the next reply saying it cannot
   make images (gglib issue 1387). Only gglib is sent them, a paired Mac or
   one reached by an address that answered as gglib; any other server is
   sent the reply's words alone, as before, since some refuse a tool message
@@ -541,9 +550,11 @@ Each claim names the test that keeps it true.
   <!-- test: DrawnHistoryTests.testTwoPicturesKeepTwoCallsUnderTheirOwnIDs -->
   <!-- test: DrawnHistoryTests.testAnAnswerReadOnALaterReadingFindsItsCall -->
   <!-- test: DrawnHistoryTests.testTheCallsOutliveAReopening -->
-  <!-- test: ToolExchangeWireTests.testAnExchangeKeptBeforeItsServerAndFailureReadsWithNeither -->
+  <!-- test: ToolExchangeWireTests.testANilServerAndFailureAreLeftOutAndReadBack -->
   <!-- test: ToolExchangeWireTests.testAToolsServerAndItsFailureLandOnItsExchange -->
   <!-- test: ToolExchangeWireTests.testTheRequestNeverSaysAToolsServerOrWhetherItFailed -->
+  <!-- test: ToolExchangeWireTests.testEachAnsweredCallKeepsTheImagesItMade -->
+  <!-- test: ToolExchangeWireTests.testAListKeptBeforeTheImagesDoesNotRead -->
   <!-- test: DrawnHistoryTests.testAStoreOpensAcrossTheCallsColumnInBothDirections -->
 - A model that reads images is shown the most recent picture drawn in a
   conversation kept here, as gglib asks of a client that keeps its own
@@ -554,16 +565,18 @@ Each claim names the test that keeps it true.
   most recent picture, the picture as a base64 `data:` URL read from this
   device's store, then the message's own words and images. Only the newest
   picture is shown: the last image of the latest reply that holds an
-  answered call of the drawing tool, so a fix kept on the reply takes the
-  place of the picture it came from, and a newer drawing moves it to the
-  message after that one, which leaves the older message as it was
-  written. A reply that also holds an answered call of any other tool
-  shows none, not even an older picture: a reply's images are every
-  tool's, which call made which is not kept, and so its last image may be
-  another tool's. With a Mac that offers its MCP servers' tools, that is a
-  reply that both drew and, say, searched: the model is then not shown its
-  picture. Every later request carries the picture on the same
-  message. It goes only to gglib, which is sent the draw's call and answer, and only
+  answered call of the drawing tool that no other tool of that reply made,
+  so a fix kept on the reply takes the place of the picture it came from,
+  and a newer drawing moves it to the message after that one, which leaves
+  the older message as it was written. A reply's images are every tool's,
+  and each answered call keeps the ids of the ones it made, so with a Mac
+  that offers its MCP servers' tools a reply that both drew and, say,
+  searched or drew a chart shows its drawn picture: a search made no image
+  and hides nothing, and a chart's image is passed over though it came
+  last. A fix or a redo is no call's, so it is still shown. A reply whose
+  every image another tool made drew none, and the picture before it is
+  shown. Every later request carries the picture on the same message. It
+  goes only to gglib, which is sent the draw's call and answer, and only
   for a model whose entry in gglib's model list says `vision`; any other
   model, and one the list does not name, is sent the chat as before, with
   no picture and no bytes read. A picture whose bytes this device no
@@ -574,12 +587,16 @@ Each claim names the test that keeps it true.
   <!-- test: DrawnPictureShownWireTests.testTheSameMessageCarriesItOnEveryLaterRequest -->
   <!-- test: DrawnPictureShownWireTests.testANewerPictureMovesToTheMessageAfterIt -->
   <!-- test: DrawnPictureShownWireTests.testNoDrawnPictureNoPicture -->
-  <!-- test: DrawnPictureShownWireTests.testAReplyThatDrewAndCalledAnotherToolShowsNoPicture -->
+  <!-- test: DrawnPictureShownWireTests.testAReplyThatDrewAndCalledAnotherToolShowsTheDrawnPicture -->
   <!-- test: DrawnPictureShownWireTests.testAFailedDrawBesideAnotherToolsImageShowsNoPicture -->
   <!-- test: DrawnPictureShownTests.testAModelThatReadsImagesIsShownTheDrawnPicture -->
   <!-- test: DrawnPictureShownTests.testAModelThatDoesNotListVisionIsNotShownIt -->
   <!-- test: DrawnPictureShownTests.testAServerThatIsNotGglibIsNotShownIt -->
   <!-- test: DrawnPictureShownTests.testAPictureWhoseBytesAreGoneIsLeftOut -->
+  <!-- test: DrawnPictureBesideAnotherToolWireTests.testADrawBesideASearchThatMadeNoImageIsShown -->
+  <!-- test: DrawnPictureBesideAnotherToolWireTests.testAnotherToolsImageIsPassedOverAndAKeptFixIsStillShown -->
+  <!-- test: DrawnPictureBesideAnotherToolWireTests.testAReplyWhoseEveryImageAnotherToolMadeShowsThePictureBefore -->
+  <!-- test: DrawnPictureShownTests.testAReplyThatDrewAndSearchedShowsItsDrawnPicture -->
 - Under a finished reply kept here, each tool it called is one row,
   collapsed, in the order it called them: a wrench, the tool's name after
   its first `:`, then whose it is, the MCP server the call named or
@@ -758,8 +775,11 @@ Each claim names the test that keeps it true.
   PNG. In a Mac's chat it is one on the row of a `builtin:generate_image`
   call that has a `prompt`, so a person's own image and another tool's have
   none. In a conversation kept here it is any PNG on a reply that holds
-  exactly one such call that drew: which call made which picture is not
-  kept, so a reply with two has none, and a question's image has none. No
+  exactly one such call that drew, but not one another call of that reply
+  made, such as a chart: its fix would be kept as no call's and shown to a
+  model as the drawn picture. A reply with two drawing calls has none,
+  since which made which picture is not read, and a question's image has
+  none. No
   picture has it while its Mac is out of reach, is reached by its address,
   or has nothing to draw with.
   <!-- test: PictureKeepingTests.testKeepStoresThePictureThenLinksItAndTheChatShowsItLast -->
@@ -771,6 +791,7 @@ Each claim names the test that keeps it true.
   <!-- test: PictureKeptHereTests.testAConversationHereKeepsTheNewerPictureOnItsReply -->
   <!-- test: PictureKeptHereTests.testAConversationHereStartsAtItsOwnImageModel -->
   <!-- test: PictureKeptHereTests.testOnlyAReplysDrawnPictureIsOfferedInAConversationKeptHere -->
+  <!-- test: PictureKeptHereTests.testAnotherToolsPictureOnAReplyThatDrewIsNotOffered -->
   <!-- test: PictureRedrawWireTests.testADrawnPicturesWordsAreItsToolCallsPrompt -->
   <!-- test: PictureRedrawWireTests.testAKeptReplyKnowsItsPicturesWordsFromTheOneCallThatDrew -->
 - A pairing string is read by modelpipe as it is typed and as it is scanned,

@@ -22,8 +22,9 @@ public enum ChatEvent: Sendable, Equatable {
     case toolAnswered(callID: String, text: String, failed: Bool? = nil)
     /// The images a tool the reply called made, in the order it made them,
     /// by reference: the bytes are the hub's, read by id when drawn. Only a
-    /// hub's agent run sends one.
-    case images([ImageRef])
+    /// hub's agent run sends one, and it names the call that made them by
+    /// its id, so a reply keeps which tool made which of its images.
+    case images([ImageRef], callID: String)
     /// How far a tool the reply called has got, while it works. Only a
     /// hub's agent run sends one, and nothing of it is kept.
     case toolProgress(ToolProgress)

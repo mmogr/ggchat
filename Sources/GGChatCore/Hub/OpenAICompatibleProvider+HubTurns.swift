@@ -128,9 +128,9 @@ extension OpenAICompatibleProvider {
 
     /// A finished tool: that its call ended, by `result.tool_call_id`, what
     /// it answered, `result.content`, as it came, with whether it failed,
-    /// the opposite of `result.success`, and then the images it
-    /// made, `result.images`, gglib's `AttachmentInfo`
-    /// each, which gglib leaves out when there are none. Images that cannot
+    /// the opposite of `result.success`, and then the images it made,
+    /// `result.images`, gglib's `AttachmentInfo` each, under the same call
+    /// id, which gglib leaves out when there are none. Images that cannot
     /// be read are passed over and the call has still ended; a result with
     /// no call id means nothing here.
     private static func finishedTool(_ data: Data) -> [ChatEvent] {
@@ -140,7 +140,7 @@ extension OpenAICompatibleProvider {
         let failed = complete.result.success.map { !$0 }
         let answer =
             complete.result.content.map { [ChatEvent.toolAnswered(callID: id, text: $0, failed: failed)] } ?? []
-        return [.toolEnded(id)] + answer + (images.isEmpty ? [] : [.images(images)])
+        return [.toolEnded(id)] + answer + (images.isEmpty ? [] : [.images(images, callID: id)])
     }
 }
 

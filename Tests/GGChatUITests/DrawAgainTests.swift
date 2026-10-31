@@ -15,7 +15,8 @@ final class DrawAgainTests: XCTestCase {
     private static let step = ToolProgress(callID: "c1", stage: .sampling, pass: 1, done: 4, total: 20)
     /// A run that calls the tool, draws `image` and says a word.
     private static let frames: [[ChatEvent]] = [
-        [.tool("Generate Image")], [.toolProgress(step)], [.toolEnded("c1"), .images([image])], [.delta("A fox.")],
+        [.tool("Generate Image")], [.toolProgress(step)], [.toolEnded("c1"), .images([image], callID: "c1")],
+        [.delta("A fox.")],
     ]
 
     private func until(_ what: String, _ condition: () -> Bool) async throws {

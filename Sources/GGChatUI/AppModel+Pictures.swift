@@ -29,9 +29,11 @@ extension AppModel {
     /// A Mac's chat (`fromHub`) knows them from the rows it read, by the
     /// picture's id. A conversation kept here knows them from the reply
     /// `owner` names, when that reply holds the picture and one call that
-    /// drew (`Message.drawnPrompt`). A person's own image, another tool's
-    /// in a Mac's chat, and a picture of a reply still being written have
-    /// none. Nor has one that is not a PNG, which the Mac would refuse, or
+    /// drew (`Message.drawnPrompt`). A person's own image, another tool's,
+    /// and a picture of a reply still being written have none: here
+    /// another tool's is one a call of the reply other than the drawing
+    /// tool's made (`ToolExchange.images`), and its fix would be kept on
+    /// the reply as no call's and so shown to a model as the drawn picture. Nor has one that is not a PNG, which the Mac would refuse, or
     /// any picture while its Mac is out of reach or has nothing to draw
     /// with.
     func drawnPrompt(of image: ImageRef, in owner: UUID?, fromHub: Bool) -> String? {
@@ -43,6 +45,9 @@ extension AppModel {
             return open.drawnPrompts[image.id]
         }
         guard let reply = keptReply(owner), reply.message.images.contains(image),
+            !reply.message.exchanges.contains(where: {
+                $0.name != HubToolCall.drawingTool && $0.images.contains(image.id)
+            }),
             let config = provider(for: reply.conversation), canRedraw(on: config)
         else { return nil }
         return reply.message.drawnPrompt

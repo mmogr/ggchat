@@ -164,7 +164,9 @@ final class HubChatImageRowsTests: XCTestCase {
     /// reply's place the same image on its tool row is not read again.
     func testAToolsImagesAreReadFromTheMacByIdOnceFromReplyToRow() async throws {
         let image = try HubChatImageSendTests.image(width: 64)
-        let hub = FakeChatsHub(reply: [[.tool("Plot Chart")], [.images([image.ref])], [.delta("Here it is.")]])
+        let hub = FakeChatsHub(reply: [
+            [.tool("Plot Chart")], [.images([image.ref], callID: "c1")], [.delta("Here it is.")],
+        ])
         hub.with { $0.images[image.id] = image.data }
         hub.runs.with { $0.holdAt = 3 }
         let (model, _) = try await HubChatContinueTests.opened(hub)

@@ -65,7 +65,7 @@ final class DrawingViewTests: XCTestCase {
         reply.apply(.toolProgress(Self.step))
         XCTAssertEqual(rows(), ["MarkdownBlocksView", "ToolWorkView"])
         reply.apply(.toolEnded("c1"))
-        reply.apply(.images([ImageRef(id: "a1", mime: ImageRef.png, width: 8, height: 8)]))
+        reply.apply(.images([ImageRef(id: "a1", mime: ImageRef.png, width: 8, height: 8)], callID: "c1"))
         XCTAssertEqual(rows(), ["MarkdownBlocksView", "MessageImages"])
     }
 
@@ -137,7 +137,7 @@ final class DrawingViewTests: XCTestCase {
         XCTAssertTrue(live.awaitsFirstToken)
         XCTAssertEqual(under(), [])
         let image = ImageRef(id: "a1", mime: ImageRef.png, width: 8, height: 8)
-        model.apply(.images([image]), to: live)
+        model.apply(.images([image], callID: "c1"), to: live)
         XCTAssertFalse(live.awaitsFirstToken, "the spinner turned beside a picture already made")
         XCTAssertEqual(under(), ["MessageImages"])
         let made = strip(in: LiveReplyWork(live: live).body)

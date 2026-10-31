@@ -43,7 +43,8 @@ final class DrawingPreviewTests: XCTestCase {
         let image = ImageRef(id: "a1", mime: ImageRef.png, width: 1024, height: 1024)
         let step = ToolProgress(callID: "c1", stage: .sampling, pass: 1, done: 4, total: 20)
         let hub = FakeChatsHub(reply: [
-            [.tool("Generate Image")], [.toolProgress(step)], [.toolEnded("c1"), .images([image])], [.delta("A fox.")],
+            [.tool("Generate Image")], [.toolProgress(step)], [.toolEnded("c1"), .images([image], callID: "c1")],
+            [.delta("A fox.")],
         ])
         hub.runs.with {
             $0.holdAt = 2
