@@ -108,8 +108,9 @@ extension AppModel {
     /// the turns before the reply, and the reply itself when it was a
     /// Continue's partial. Nothing had been read into it, so it is as sent.
     /// A fresh question's placeholder holds nothing and is left out; a
-    /// partial that has only thought holds its reasoning and is kept, so a
-    /// Continue is put again as a Continue, with no tools and not drawing.
+    /// partial that has only thought, or holds a picture and no words yet,
+    /// is kept, so a Continue is put again as a Continue, with no tools and
+    /// not drawing, and no second picture is asked for.
     private func sentRequest(
         for message: Message, in conversation: Conversation, config: ProviderConfig
     ) throws(ImageUnavailable) -> ChatRequest? {

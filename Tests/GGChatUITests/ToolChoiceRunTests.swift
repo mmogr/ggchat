@@ -196,8 +196,9 @@ final class ToolChoiceRunTests: XCTestCase {
         try await XCTUnwrap(model.continueReply()).value
         try await Runs.until("the reply to be read on") { Runs.settled(model) }
         let puts = hub.with { $0.starts.map(\.request) }
-        XCTAssertEqual(puts.count, 3, "the lost PUT was not sent again")
-        XCTAssertEqual(puts.last?.messages.last?.id, partial.id)
+        guard puts.count == 3 else { return XCTFail("the lost PUT was not sent again") }
+        XCTAssertEqual(puts[2].messages.map(\.id), puts[1].messages.map(\.id), "not the Continue that was lost")
+        XCTAssertEqual(puts[2].messages.last?.id, partial.id)
         XCTAssertEqual(servers(hub), [[3], [], []])
         XCTAssertEqual(puts.map(\.draws), [true, false, false])
         XCTAssertEqual(hub.with(\.readFrames), [.agent, .openai])
