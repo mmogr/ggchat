@@ -124,10 +124,7 @@ extension AppModel {
             report(error)
             return
         }
-        forgetLastHeard(id)
-        forgetHubChats(id)
-        drawings[id] = nil
-        imageChoiceAnswers[id] = nil
+        forget(id)
         // Replies its hub is still writing away from here are given up, and
         // the one being read is put down as Stop puts it down.
         giveUpRuns(through: removed)
@@ -143,6 +140,25 @@ extension AppModel {
         } catch {
             report(error)
         }
+    }
+
+    /// Everything kept about a provider, by its id, once it is removed: when
+    /// it was heard, its Mac's chats, what it can draw, its models, its
+    /// status pane and runs, and whether it is followed. A conversation
+    /// opening on it is called off. Ids are never reused, so what is left
+    /// behind shows nowhere, but it is kept for as long as the app runs, and
+    /// an answer that arrives later must find nothing to write into.
+    private func forget(_ id: UUID) {
+        forgetLastHeard(id)
+        forgetHubChats(id)
+        drawings[id] = nil
+        imageChoiceAnswers[id] = nil
+        modelsByProvider[id] = nil
+        proxyStatusAvailability[id] = nil
+        providersWithoutRuns.remove(id)
+        probeGeneration[id] = nil
+        followed.remove(id)
+        opening.removeValue(forKey: id)?.cancel()
     }
 
     public func provider(for conversation: Conversation) -> ProviderConfig? {
@@ -191,6 +207,9 @@ extension AppModel {
         guard let provider = makeProvider(for: config) else { return }
         do {
             let models = try await provider.models()
+            // A list that comes back for a provider removed, or moved to
+            // another machine, while it was asked for is not kept.
+            guard providers.first(where: { $0.id == config.id })?.kind == config.kind else { return }
             heard(config.id)
             modelsByProvider[config.id] = models
             // The first that can chat: an image model or an embeddings model
