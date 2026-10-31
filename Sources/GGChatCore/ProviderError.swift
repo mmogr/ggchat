@@ -61,9 +61,9 @@ public enum ProviderError: Error, Sendable, Equatable, LocalizedError {
         }
     }
 
-    /// The vocabulary is closed; the wire is not. A code from neither
-    /// modelpipe nor gglib — a proxy in between, a future release — passes
-    /// through as `.unknown` rather than being guessed at.
+    /// The vocabulary is closed; the wire is not. A code it does not hold —
+    /// one of gglib's that ErrorTests files as not shown here, a proxy in
+    /// between, a future release — passes through as `.unknown`, not guessed at.
     public static func whereToLook(forCode code: String?) -> WhereToLook {
         guard let code, let known = Code(rawValue: code) else { return .unknown }
         return known.whereToLook
@@ -86,7 +86,7 @@ public enum ProviderError: Error, Sendable, Equatable, LocalizedError {
 }
 
 extension ProviderError {
-    /// Every error code modelpipe and gglib write, as a closed vocabulary.
+    /// The codes modelpipe and gglib publish that this app answers, as a closed vocabulary.
     ///
     /// It was a `switch` over string literals with a `default`, which meant a
     /// code nobody had thought about was indistinguishable from a code from
@@ -113,8 +113,8 @@ extension ProviderError {
         case incompleteRequest = "incomplete_request"
         case invalidPairingCode = "invalid_pairing_code"
 
-        // gglib, `gglib-proxy`'s `ErrorResponse` constructors, the `upstream_timeout`
-        // it writes into a stream already begun, and the 507 a phone's engine refuses with.
+        // gglib, published as `docs/error-codes.json` and checked against a vendored
+        // copy by ErrorTests, which also names each code there that is not here.
         case admissionTimeout = "admission_timeout"
         case contextLengthExceeded = "context_length_exceeded"
         case deviceNotPaired = "device_not_paired"
@@ -135,7 +135,7 @@ extension ProviderError {
         case upstreamError = "upstream_error"
         case upstreamTimeout = "upstream_timeout"
 
-        // gglib's image input: `docs/error-codes.json`. A run's chat writes
+        // gglib's image input, from the same list. A run's chat writes
         // the proxy's refusal as the run's error under the same code
         // (`gglib-app-services/src/runs/chat.rs`), and
         // `request_images_too_large` is only ever a run's error.
@@ -146,7 +146,7 @@ extension ProviderError {
         case attachmentNotFound = "attachment_not_found"
         case requestImagesTooLarge = "request_images_too_large"
 
-        // gglib's drawing: `docs/error-codes.json`. A turn or a run that
+        // gglib's drawing, from the same list. A turn or a run that
         // asked to draw is refused with one, or its run ends with one, and
         // so does a chat sent to a model that only draws. The last two are
         // a run's own: gglib now creates a run before its model is loaded,
