@@ -64,18 +64,19 @@ fi
 # that exist are handed to find, and what it prints is captured rather than
 # piped into `grep -q`: under pipefail a missing directory made find exit
 # non-zero, so the pipeline failed -- and the check passed -- even when grep
-# had matched.
+# had matched. find exits 0 when nothing matches, so with no `|| true` it
+# stops the gate only on a folder it cannot read.
 rust_dirs=()
 for dir in Sources App Tests scripts; do
     if [ -d "$ROOT/$dir" ]; then rust_dirs+=("$ROOT/$dir"); fi
 done
 if [ ${#rust_dirs[@]} -gt 0 ]; then
-    rust=$(find "${rust_dirs[@]}" \( -name '*.rs' -o -name 'Cargo.toml' \) 2>/dev/null || true)
+    rust=$(find "${rust_dirs[@]}" \( -name '*.rs' -o -name 'Cargo.toml' \))
     [ -z "$rust" ] || fail "no Rust in this repo:"$'\n'"$rust"
 fi
 
 if [ -d "$ROOT/App/ggchat" ]; then
-    extra=$(find "$ROOT/App/ggchat" -name '*.swift' ! -name 'ggchatApp.swift' || true)
+    extra=$(find "$ROOT/App/ggchat" -name '*.swift' ! -name 'ggchatApp.swift')
     [ -z "$extra" ] || fail "the app target holds Swift beyond ggchatApp.swift:"$'\n'"$extra"
 fi
 
