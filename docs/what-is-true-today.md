@@ -2018,6 +2018,18 @@ Each claim names the test that keeps it true.
   on the next launch that can never connect.
   <!-- test: AppModelProviderTests.testAProviderWhoseRecordWillNotDeleteKeepsItsCredentials -->
   <!-- test: AppModelProviderTests.testRemovingAProviderTakesItsRecordAndItsCredentialsTogether -->
+- A removed provider leaves nothing kept under its id: its models, its
+  status pane, its runs and whether it is followed go, and a conversation
+  opening on it is called off. A model list or a status probe it was waiting
+  for keeps nothing when it comes back, and a server moved to another
+  address forgets the models the old one listed, a late list from it
+  included, which no longer writes the old address back. A rename made
+  while a list is asked for is kept when the list names the default model.
+  <!-- test: ProviderRemovalForgetsTests.testRemovingAProviderLeavesNothingKeptUnderItsID -->
+  <!-- test: ProviderRemovalForgetsTests.testAModelListThatComesBackAfterItsProviderWasRemovedIsNotKept -->
+  <!-- test: ProviderRemovalForgetsTests.testMovingAProviderForgetsTheModelsTheOldMachineListed -->
+  <!-- test: AppModelProxyStatusTests.testAnAnswerThatArrivesAfterItsProviderWasRemovedIsNotKept -->
+  <!-- test: ProviderRemovalForgetsTests.testARenameWhileTheModelsAreListedIsKept -->
 - The count of distinct tickets connected survives a relaunch, and a ticket
   connected twice counts once.
   <!-- test: DiagnosticsTests.testDistinctTicketsSurviveARelaunch -->

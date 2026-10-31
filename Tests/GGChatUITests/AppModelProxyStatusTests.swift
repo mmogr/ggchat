@@ -276,4 +276,24 @@ final class AppModelProxyStatusTests: XCTestCase {
         await model.probeProxyStatus(for: config)
         XCTAssertTrue(model.proxyStatusAvailable(for: config.id), "and the fresh probe after it did not get through")
     }
+
+    /// A probe answered after its provider was removed keeps nothing: the
+    /// removal forgets the generation it was asked under.
+    @MainActor
+    func testAnAnswerThatArrivesAfterItsProviderWasRemovedIsNotKept() async throws {
+        let host = "removed.status.test"
+        let (model, server) = try await addServer(answeringAt: host)
+        let probe = Task { await model.probeProxyStatus(for: server) }
+        for _ in 0..<5_000 where StatusServer.requests(at: host) == 0 {
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        XCTAssertEqual(StatusServer.requests(at: host), 1, "the probe never reached the server")
+
+        model.removeProvider(server.id)
+        StatusServer.release(at: host, with: 200)
+        await probe.value
+
+        XCTAssertNil(model.proxyStatusAvailability[server.id], "an answer for a removed provider was kept")
+        XCTAssertNil(model.probeGeneration[server.id])
+    }
 }
