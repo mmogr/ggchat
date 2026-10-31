@@ -47,55 +47,11 @@ struct EditProviderView: View {
             }
             switch provider.kind {
             case .openAICompatible:
-                Section {
-                    TextField("http://127.0.0.1:8080/v1", text: $address)
-                        .accessibilityIdentifier("edit-address")
-                        .autocorrectionDisabled()
-                        #if os(iOS)
-                            .keyboardType(.URL)
-                            .textInputAutocapitalization(.never)
-                        #endif
-                    SecureField("New API key", text: $apiKey)
-                        .accessibilityIdentifier("edit-key")
-                } header: {
-                    Text("Address")
-                } footer: {
-                    Text(addressFooter)
-                }
+                AddressSection(mode: .editing, idPrefix: "edit", address: $address, apiKey: $apiKey)
             case .pipe:
-                Section {
-                    TextField("pipe…-483920", text: $pairing, axis: .vertical)
-                        .accessibilityIdentifier("edit-ticket")
-                        .lineLimit(3...6)
-                        .font(.body.monospaced())
-                        .autocorrectionDisabled()
-                        #if os(iOS)
-                            .textInputAutocapitalization(.never)
-                        #endif
-                    // A code is redeemed for the token, so asking for one as
-                    // well would be asking for the thing the code fetches.
-                    if readPairing?.hasCode != true {
-                        SecureField("New token", text: $token)
-                            .accessibilityIdentifier("edit-token")
-                    }
-                } header: {
-                    Text("Pairing string")
-                } footer: {
-                    pairingFooter
-                }
-                // Asked for only alongside a code: the name goes out with the
-                // redeem, and a bare ticket redeems nothing.
-                if readPairing?.hasCode == true {
-                    Section {
-                        TextField("Optional", text: $deviceName)
-                            .accessibilityIdentifier("edit-device")
-                            .autocorrectionDisabled()
-                    } header: {
-                        Text("This device")
-                    } footer: {
-                        Text(deviceFooter)
-                    }
-                }
+                PairingSection(
+                    mode: .editing, idPrefix: "edit", pairing: $pairing, token: $token,
+                    deviceName: $deviceName, shape: pairingShape)
             case .onDevice:
                 Section {
                     Text("Models run on this iPhone's own engine, and nothing leaves it.")
@@ -132,57 +88,20 @@ struct EditProviderView: View {
         ProviderConfig.normalizedBaseURL(from: address)
     }
 
-    private var addressFooter: String {
-        guard let url = normalizedURL else { return "That is not an http or https address." }
-        return "Requests go to \(Redaction.describe(url)). Leave the key blank to keep the one stored."
-    }
-
-    /// The field's text once there is something in it. Nil while there is
-    /// not, which here means "keep what is stored" rather than "not typed
-    /// yet" — a stray space is not a new ticket. Same rule as the add form's,
-    /// asked in the same place: ``PairingField/isBlank(_:)``, over modelpipe's
-    /// own whitespace, deciding only whether anything was typed.
-    private var typedPairing: String? {
-        PairingField.isBlank(pairing) ? nil : pairing
-    }
-
-    /// What modelpipe makes of the field, or nil while nothing is typed.
+    /// ``PairingReader/readField(_:)`` of the field, which `PairingSection`
+    /// shows and Save goes by.
     private var pairingShape: Result<ReadPairing, PairingReadError>? {
-        typedPairing.map(model.pairingReader.read)
+        model.pairingReader.readField(pairing)
     }
 
     private var readPairing: ReadPairing? {
-        guard case .success(let readPairing)? = pairingShape else { return nil }
-        return readPairing
-    }
-
-    @ViewBuilder
-    private var pairingFooter: some View {
-        switch pairingShape {
-        case nil:
-            Text("Blank keeps the ticket and token already stored. Paste what `gglib remote invite` shows.")
-        case .success(let readPairing) where readPairing.hasCode:
-            Label(
-                "A ticket and a code. The code is redeemed once, for a key of this device's own.",
-                systemImage: "checkmark.circle")
-        case .success:
-            Label("Looks like a ticket. Leave the token blank to keep the one stored.", systemImage: "checkmark.circle")
-        case .failure(let error):
-            Label(error.errorDescription ?? "", systemImage: "exclamationmark.triangle")
-                .foregroundStyle(.red)
-        }
-    }
-
-    /// The same sentence as `AddProviderView`'s, because it is the same field.
-    private var deviceFooter: String {
-        "What the other machine calls this one in its list of devices, if it keeps one. "
-            + "The name above is what this app calls that machine. Leave blank to send none."
+        try? pairingShape?.get()
     }
 
     private var canSave: Bool {
         switch provider.kind {
         case .openAICompatible: normalizedURL != nil
-        case .pipe: typedPairing == nil || readPairing != nil
+        case .pipe: pairingShape == nil || readPairing != nil
         case .onDevice: true
         }
     }
@@ -233,7 +152,7 @@ struct EditProviderView: View {
     /// Redeeming is a round trip through the pipe, so the form stays up with
     /// Save replaced by a spinner and leaves only once the key is stored.
     /// A refused code may be dead for good, and this is where that has to be
-    /// said — see ``AddProviderView``, which does the same on the way in.
+    /// said — see ``AddPipeForm``, which does the same on the way in.
     private func pair(_ config: ProviderConfig, pairing: String, ticket: String) {
         redeeming = true
         Task {
