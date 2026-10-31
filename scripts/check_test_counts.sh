@@ -926,8 +926,13 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # rest, and a list or a probe answered late wrote into it again, a list
 # writing an edited provider back as it was; nothing shows the leftovers,
 # so these five and their markers are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1087
+#
+# 1087 -> 1089 and 977 -> 979 for a chat with a turn this build cannot read
+# being left out. Nothing else stops such a turn being read as a question,
+# or the chat loaded without it losing it at its next save, so these two and
+# their markers are the whole of that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1089
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 977
+floor "README test markers" "${markers:-0}" 979
 
 exit $status
