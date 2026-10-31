@@ -112,6 +112,7 @@ extension AppModel {
             lastError = "Pick a model first."
             return nil
         }
+        guard !refusesForARemoval(modelID, on: config) else { return nil }
         let request: ChatRequest
         do {
             request = try chatRequest(

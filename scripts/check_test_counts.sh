@@ -902,13 +902,28 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # call's, to be shown to a model as the drawn picture, so this test and its
 # marker are the whole of that guard.
 #
-# 1070 -> 1075 and 959 -> 964 for a removed provider leaving nothing kept
+# 2026-10-31: 1070 -> 1081, 41 -> 42 and 959 -> 971 for removing a model
+# from this iPhone. That a removal leaves the chats and the default that had
+# the model with none, after the listing so it gives This iPhone no other,
+# and keeps them so when This iPhone opens again; leaves other chats alone;
+# puts down an engine that may hold a model, before the files go, with a
+# reply through it or a shutdown already under way, and no other, keeping
+# what a reply through it had; refuses a send naming the model while it
+# goes; touches nothing for a model no longer listed and keeps the files,
+# chats and default when the library refuses; asks first, naming the model
+# and its room; and is reached by a long press: a removal that went back to
+# deleting with no question, left a loaded engine answering from a deleted
+# file or left a chat on a model that is gone would fail nothing before
+# these. The eleven, the walk and the twelve markers naming them are the
+# whole of that guard, so the floors move past them.
+#
+# 1081 -> 1086 and 971 -> 976 for a removed provider leaving nothing kept
 # under its id. Removal cleared some of what a provider keeps and not the
 # rest, and a list or a probe answered late wrote into it again, a list
 # writing an edited provider back as it was; nothing shows the leftovers,
 # so these five and their markers are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1075
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 41
-floor "README test markers" "${markers:-0}" 964
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1086
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
+floor "README test markers" "${markers:-0}" 976
 
 exit $status
