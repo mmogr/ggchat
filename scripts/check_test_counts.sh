@@ -902,11 +902,26 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # call's, to be shown to a model as the drawn picture, so this test and its
 # marker are the whole of that guard.
 #
-# 1070 -> 1071 and 959 -> 960 for one shown title. The list and the chat
+# 2026-10-31: 1070 -> 1081, 41 -> 42 and 959 -> 971 for removing a model
+# from this iPhone. That a removal leaves the chats and the default that had
+# the model with none, after the listing so it gives This iPhone no other,
+# and keeps them so when This iPhone opens again; leaves other chats alone;
+# puts down an engine that may hold a model, before the files go, with a
+# reply through it or a shutdown already under way, and no other, keeping
+# what a reply through it had; refuses a send naming the model while it
+# goes; touches nothing for a model no longer listed and keeps the files,
+# chats and default when the library refuses; asks first, naming the model
+# and its room; and is reached by a long press: a removal that went back to
+# deleting with no question, left a loaded engine answering from a deleted
+# file or left a chat on a model that is gone would fail nothing before
+# these. The eleven, the walk and the twelve markers naming them are the
+# whole of that guard, so the floors move past them.
+#
+# 1081 -> 1082 and 971 -> 972 for one shown title. The list and the chat
 # each worked it out until it moved onto the conversation, and nothing else
 # reads it, so this test and its marker are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1071
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 41
-floor "README test markers" "${markers:-0}" 960
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1082
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
+floor "README test markers" "${markers:-0}" 972
 
 exit $status
