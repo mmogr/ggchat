@@ -27,7 +27,7 @@ for owner in "${OWNERS[@]}"; do
     IFS=: read -r label writer guarded <<<"$owner"
     strays=$(
         # Not Sources/GGLib: gglib's generated Swift, vendored as released.
-        find "$ROOT/Sources" "$ROOT/App" -path "$ROOT/Sources/GGLib" -prune -o -name '*.swift' -print0 2>/dev/null \
+        find "$ROOT/Sources" "$ROOT/App" -path "$ROOT/Sources/GGLib" -prune -o -name '*.swift' -print0 \
             | xargs -0 awk -v writer="$writer" -v guarded="$guarded" '
                 FNR == 1 { fn = "" }
                 # A comment quoting a write is not a write, and does not name
@@ -46,8 +46,13 @@ for owner in "${OWNERS[@]}"; do
                             printf "%s:%d:%s\n", FILENAME, FNR, $0
                         }
                     }
-            ' || true
-    )
+            '
+    ) || {
+        # A file awk cannot read, or a folder find cannot, used to be read
+        # past with `|| true`, and the writes in it went unseen.
+        echo "$label: could not read every file, so this gate read only part of the tree" >&2
+        exit 2
+    }
     if [ -n "$strays" ]; then
         echo "$label: written outside $writer(), so the change it shows goes unheard or unexplained:" >&2
         printf '%s\n' "$strays" >&2

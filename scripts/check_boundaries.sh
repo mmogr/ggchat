@@ -19,20 +19,20 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source-path=SCRIPTDIR source=lib/scan.sh
+. "$ROOT/scripts/lib/scan.sh"
 status=0
 fail() { echo "boundary: $*" >&2; status=1; }
 
 for module in GGChatCore GGChatPipe GGChatLocal; do
-    if hits=$(grep -rnE '^\s*@?[A-Za-z_]*\s*import (SwiftUI|UIKit|AppKit|SwiftData|Combine|VisionKit|CoreData)\b' \
-        "$ROOT/Sources/$module" 2>/dev/null); then
-        fail "$module imports a UI framework:"$'\n'"$hits"
-    fi
+    hits=$(scan -rnE '^\s*@?[A-Za-z_]*\s*import (SwiftUI|UIKit|AppKit|SwiftData|Combine|VisionKit|CoreData)\b' \
+        "$ROOT/Sources/$module")
+    [ -z "$hits" ] || fail "$module imports a UI framework:"$'\n'"$hits"
 done
 
-if hits=$(grep -rlE '^\s*import Security\b|SecItem(Add|Copy|Update|Delete)' "$ROOT/Sources" 2>/dev/null \
-    | grep -v 'GGChatCore/Secrets.swift'); then
-    fail "only Secrets.swift may touch the Keychain:"$'\n'"$hits"
-fi
+found=$(scan -rlE '^\s*import Security\b|SecItem(Add|Copy|Update|Delete)' "$ROOT/Sources")
+hits=$(printf '%s\n' "$found" | grep -v '^$' | grep -v 'GGChatCore/Secrets.swift' || true)
+[ -z "$hits" ] || fail "only Secrets.swift may touch the Keychain:"$'\n'"$hits"
 
 # `iroh` and the low-level `modelpipe_ffiFFI` are banned outright; the
 # `Modelpipe` product is allowed in the one target and the one test target that
@@ -43,8 +43,8 @@ fi
 # which `@preconcurrency import Modelpipe` walks straight past -- so the rule
 # could be disabled anywhere by writing an attribute in front of it, silently
 # and while still reading like a rule.
-imports=$(grep -rniE '^\s*(@[A-Za-z_]+([(][^)]*[)])?\s+)*import (iroh|modelpipe|modelpipeffi|modelpipe_ffiFFI)\b' \
-    "$ROOT/Sources" "$ROOT/App" "$ROOT/Tests" 2>/dev/null || true)
+imports=$(scan -rniE '^\s*(@[A-Za-z_]+([(][^)]*[)])?\s+)*import (iroh|modelpipe|modelpipeffi|modelpipe_ffiFFI)\b' \
+    "$ROOT/Sources" "$ROOT/App" "$ROOT/Tests")
 if stray=$(printf '%s' "$imports" | grep -v '^$' \
     | grep -viE '^[^:]*/(Sources/GGChatPipe|Tests/GGChatPipeTests)/[^:]*:[0-9]+:\s*import Modelpipe\s*$'); then
     fail "only GGChatPipe may import Modelpipe, and nothing may import iroh:"$'\n'"$stray"
@@ -54,8 +54,8 @@ fi
 # tests import GGLib, and nothing else imports either. `llama` is banned
 # outright. The same attribute-proof pattern as above, and the same refusal of
 # an attribute on an allowed line.
-imports=$(grep -rniE '^\s*(@[A-Za-z_]+([(][^)]*[)])?\s+)*import (GGLib|GglibFFI|llama)\b' \
-    "$ROOT/Sources" "$ROOT/App" "$ROOT/Tests" 2>/dev/null || true)
+imports=$(scan -rniE '^\s*(@[A-Za-z_]+([(][^)]*[)])?\s+)*import (GGLib|GglibFFI|llama)\b' \
+    "$ROOT/Sources" "$ROOT/App" "$ROOT/Tests")
 if stray=$(printf '%s' "$imports" | grep -v '^$' \
     | grep -viE '^[^:]*/(Sources/GGChatLocal|Sources/GGLib|Tests/GGChatLocalTests)/[^:]*:[0-9]+:\s*import (GGLib|GglibFFI)\s*$'); then
     fail "only GGChatLocal may import gglib's binding, and nothing may import llama:"$'\n'"$stray"
@@ -79,9 +79,8 @@ if [ -d "$ROOT/App/ggchat" ]; then
     [ -z "$extra" ] || fail "the app target holds Swift beyond ggchatApp.swift:"$'\n'"$extra"
 fi
 
-if hits=$(grep -rnE '^\s*import (SwiftUI|UIKit|AppKit)\b' "$ROOT/Tests" 2>/dev/null); then
-    fail "Core tests import a UI framework:"$'\n'"$hits"
-fi
+hits=$(scan -rnE '^\s*import (SwiftUI|UIKit|AppKit)\b' "$ROOT/Tests")
+[ -z "$hits" ] || fail "Core tests import a UI framework:"$'\n'"$hits"
 
 [ $status -eq 0 ] && echo "boundaries: ok"
 exit $status
