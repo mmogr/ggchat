@@ -10,12 +10,20 @@ public struct GGChatScene: Scene {
     /// What opening the store found to say, as the window shows it.
     @State private var storeNotice: ShownStoreNotice
 
+    /// Runs before the window's first frame, so what it does is marked for
+    /// Instruments (`LaunchSignposts`). `KeychainSecrets()` touches nothing
+    /// until a credential is first read, so `Make the model` is the model's
+    /// own defaults: the pipe connector and its identities, the engine and
+    /// its library's folders, the diagnostics and the network watcher.
     public init() {
-        let opened = SwiftDataStore.open()
+        let opened = LaunchSignposts.interval("Open the store") { SwiftDataStore.open() }
         let store = SwiftDataStore(container: opened.container)
         container = store.container
         _storeNotice = State(initialValue: ShownStoreNotice(opened.notice))
-        _model = State(initialValue: AppModel(store: store, secrets: KeychainSecrets()))
+        let model = LaunchSignposts.interval("Make the model") {
+            AppModel(store: store, secrets: KeychainSecrets())
+        }
+        _model = State(initialValue: model)
     }
 
     public var body: some Scene {
