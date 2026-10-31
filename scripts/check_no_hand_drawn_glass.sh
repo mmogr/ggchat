@@ -12,6 +12,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source-path=SCRIPTDIR source=lib/scan.sh
+. "$ROOT/scripts/lib/scan.sh"
 pattern='\.(ultraThinMaterial|thinMaterial|regularMaterial|thickMaterial|ultraThickMaterial)|\.opacity\(0\.[0-9]+\)\s*$|Color\([^)]*opacity'
 caption_file="$ROOT/Sources/GGChatUI/ScanTicketView.swift"
 caption_line='.background(.regularMaterial, in: .capsule)'
@@ -19,7 +21,8 @@ caption_line='.background(.regularMaterial, in: .capsule)'
 # Only directories that exist, and grep's output captured rather than piped.
 # GNU grep, which CI runs, exits 2 for a missing directory even when it
 # matched elsewhere, and under pipefail that failed the pipeline -- which
-# passed the check.
+# passed the check. A file under them that grep cannot read fails it
+# (`scan`), where `|| true` read past it.
 dirs=()
 for dir in Sources App; do
     if [ -d "$ROOT/$dir" ]; then dirs+=("$ROOT/$dir"); fi
@@ -27,7 +30,7 @@ done
 hits=''
 if [ ${#dirs[@]} -gt 0 ]; then
     # Not Sources/GGLib: gglib's generated Swift, vendored as released.
-    hits=$(grep -rnE --include='*.swift' --exclude-dir=GGLib "$pattern" "${dirs[@]}" 2>/dev/null || true)
+    hits=$(scan -rnE --include='*.swift' --exclude-dir=GGLib "$pattern" "${dirs[@]}")
 fi
 
 captions=0

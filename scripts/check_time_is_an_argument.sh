@@ -5,6 +5,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source-path=SCRIPTDIR source=lib/scan.sh
+. "$ROOT/scripts/lib/scan.sh"
 pattern='Date\(\)|Date\.now|Task\.sleep|ContinuousClock\(\)|SuspendingClock\(\)|asyncAfter|Thread\.sleep|usleep\('
 # Every target below the seams. GGChatPipe is where a retry or a settling
 # delay would be written, so it is the one that most needs a `Sleeper` rather
@@ -12,17 +14,19 @@ pattern='Date\(\)|Date\.now|Task\.sleep|ContinuousClock\(\)|SuspendingClock\(\)|
 # tests slow and non-deterministic -- and GGChatLocal, which wraps gglib's
 # binding as GGChatPipe wraps modelpipe's, is held to the same.
 #
-# Each directory is required to exist. `grep` over a missing path exits 2, and
-# the `if` below reads any non-zero as "no hits", so a renamed target would
-# have turned this gate off and still printed "ok".
+# Each directory is required to exist, so a renamed target is reported as
+# missing. A file grep cannot read fails the gate too (`scan`): the `if` this
+# replaced read a missing path and an unreadable file alike as "no hits", and
+# printed "ok".
 for module in GGChatCore GGChatPipe GGChatLocal; do
     [ -d "$ROOT/Sources/$module" ] || {
         echo "time: Sources/$module is missing, so this gate would pass vacuously" >&2
         exit 1
     }
 done
-if hits=$(grep -rnE "$pattern" "$ROOT/Sources/GGChatCore" "$ROOT/Sources/GGChatPipe" "$ROOT/Sources/GGChatLocal" \
-    | grep -v '/Clock.swift:'); then
+found=$(scan -rnE "$pattern" "$ROOT/Sources/GGChatCore" "$ROOT/Sources/GGChatPipe" "$ROOT/Sources/GGChatLocal")
+hits=$(printf '%s\n' "$found" | grep -v '^$' | grep -v '/Clock.swift:' || true)
+if [ -n "$hits" ]; then
     echo "time: a module below the seam reads the clock outside Clock.swift:" >&2
     printf '%s\n' "$hits" >&2
     exit 1
