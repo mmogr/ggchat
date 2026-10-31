@@ -116,6 +116,8 @@ extension AppModel {
         // then be kept until the next one. The generation does not depend on
         // that timing.
         guard probeGeneration[config.id] == generation, !Task.isCancelled else { return }
+        // Nor for a provider removed, or moved, while it waited.
+        guard providers.first(where: { $0.id == config.id })?.kind == config.kind else { return }
         let available = snapshot != nil
         proxyStatusAvailability[config.id] = available
         log.log(.info, "proxy status \(available ? "available" : "absent") for \(config.name)")

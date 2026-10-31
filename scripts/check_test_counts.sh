@@ -902,13 +902,13 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # call's, to be shown to a model as the drawn picture, so this test and its
 # marker are the whole of that guard.
 #
-# 1070 -> 1074 and 959 -> 963 for a removed provider leaving nothing kept
+# 1070 -> 1075 and 959 -> 964 for a removed provider leaving nothing kept
 # under its id. Removal cleared some of what a provider keeps and not the
-# rest, and a list or a probe answered late wrote into it again; nothing
-# shows the leftovers, so these four and their markers are the whole of that
-# guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1074
+# rest, and a list or a probe answered late wrote into it again, a list
+# writing an edited provider back as it was; nothing shows the leftovers,
+# so these five and their markers are the whole of that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1075
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 41
-floor "README test markers" "${markers:-0}" 963
+floor "README test markers" "${markers:-0}" 964
 
 exit $status

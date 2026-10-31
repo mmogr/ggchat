@@ -54,6 +54,7 @@ final class ProviderRemovalForgetsTests: XCTestCase {
         if model.probeGeneration[id] != nil { kept.append("probe generation") }
         if model.followed.contains(id) { kept.append("followed") }
         if model.opening[id] != nil { kept.append("opening") }
+        if model.dialGeneration[id] != nil { kept.append("dial generation") }
         return kept
     }
 
@@ -66,13 +67,13 @@ final class ProviderRemovalForgetsTests: XCTestCase {
         XCTAssertEqual(kept(model, server.id), ["models", "status pane", "no runs", "probe generation", "followed"])
 
         model.removeProvider(server.id)
+        for _ in 0..<5_000 where !kept(model, server.id).isEmpty { await Task.yield() }
 
         XCTAssertEqual(kept(model, server.id), [], "the removed provider is still kept")
     }
 
     /// A conversation opening on the provider is called off with it, and the
-    /// list it was asking for is not kept when it comes back. Kept, the
-    /// default model it picks would also write the removed provider back.
+    /// list it was asking for is not kept when it comes back.
     func testAModelListThatComesBackAfterItsProviderWasRemovedIsNotKept() async throws {
         let held = HeldModels()
         let (model, server) = try makeModel(serving: held)
@@ -86,19 +87,20 @@ final class ProviderRemovalForgetsTests: XCTestCase {
         await opening.value
 
         XCTAssertNil(model.modelsByProvider[server.id], "a list for a removed provider was kept")
-        XCTAssertEqual(model.providers, [], "the removed provider came back")
         XCTAssertNil(model.lastError)
     }
 
     /// A server moved to another address forgets the models the old one
     /// listed, and a list the old one sends back late is not kept for the
-    /// new one.
+    /// new one. Kept, the default model it picks would also write the old
+    /// address back over the move.
     func testMovingAProviderForgetsTheModelsTheOldMachineListed() async throws {
         let held = HeldModels()
         let (model, server) = try makeModel(serving: held)
         model.modelsByProvider[server.id] = [ModelInfo(id: "old-model")]
         let listing = Task { await model.refreshModels(for: server, quietly: true) }
         for _ in 0..<5_000 where held.asked == 0 { await Task.yield() }
+        XCTAssertEqual(held.asked, 1, "the list was never asked for")
 
         var moved = server
         moved.kind = .openAICompatible(baseURL: try XCTUnwrap(URL(string: "http://127.0.0.1:49980/v1")))
@@ -108,5 +110,26 @@ final class ProviderRemovalForgetsTests: XCTestCase {
         await listing.value
 
         XCTAssertNil(model.modelsByProvider[server.id], "the old machine's late list was kept for the new one")
+        XCTAssertEqual(model.providers.map(\.kind), [moved.kind], "the late list undid the move")
+    }
+
+    /// A rename made while the list was asked for is kept when the list
+    /// comes back and names the default model.
+    func testARenameWhileTheModelsAreListedIsKept() async throws {
+        let held = HeldModels()
+        let (model, server) = try makeModel(serving: held)
+        let listing = Task { await model.refreshModels(for: server, quietly: true) }
+        for _ in 0..<5_000 where held.asked == 0 { await Task.yield() }
+        XCTAssertEqual(held.asked, 1, "the list was never asked for")
+
+        var renamed = server
+        renamed.name = "desk"
+        model.updateProvider(renamed)
+        held.release()
+        await listing.value
+
+        let kept = try XCTUnwrap(model.providers.first)
+        XCTAssertEqual(kept.name, "desk", "the list wrote the old name back")
+        XCTAssertEqual(kept.defaultModel, MockProvider.sampleModels.first(where: \.chats)?.id)
     }
 }
