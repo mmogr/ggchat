@@ -107,6 +107,9 @@ extension AppModel {
     /// The request a run was started with, built again from the conversation:
     /// the turns before the reply, and the reply itself when it was a
     /// Continue's partial. Nothing had been read into it, so it is as sent.
+    /// A fresh question's placeholder holds nothing and is left out; a
+    /// partial that has only thought holds its reasoning and is kept, so a
+    /// Continue is put again as a Continue, with no tools and not drawing.
     private func sentRequest(
         for message: Message, in conversation: Conversation, config: ProviderConfig
     ) throws(ImageUnavailable) -> ChatRequest? {
@@ -114,7 +117,7 @@ extension AppModel {
             let index = conversation.messages.firstIndex(where: { $0.id == message.id })
         else { return nil }
         var sent = conversation
-        sent.messages = Array(conversation.messages[..<index]) + (message.content.isEmpty ? [] : [message])
+        sent.messages = Array(conversation.messages[..<index]) + (message.holdsNothing ? [] : [message])
         return try chatRequest(
             model: modelID, messages: sent.requestMessages, of: conversation, for: config)
     }

@@ -369,8 +369,9 @@ Each claim names the test that keeps it true.
   any it no longer opens; such a run takes one of the Mac's agent slots
   while the wrench is hidden. A question whose answer was lost is sent
   again under its id with the conversation's picks as they are then;
-  gglib keeps a started run's tools. A Continue of a reply with words is
-  sent again with none.
+  gglib keeps a started run's tools. A Continue is sent again as a
+  Continue, with none and not drawing, a reply that has only thought
+  included.
   The Draw switch is off again in the draft a taken send leaves, and a refused
   draft keeps it. The run's answer says how its events are written, `frames`,
   and that picks the decoder: `agent` is read as a Mac's chat's run is, and
@@ -411,6 +412,7 @@ Each claim names the test that keeps it true.
   <!-- test: ToolChoiceRunTests.testAGglibByAddressIsNeverSentAServer -->
   <!-- test: ToolChoiceRunTests.testAQuestionPutAgainAfterItsAnswerWasLostCarriesThePicks -->
   <!-- test: ToolChoiceRunTests.testAContinuePutAgainAfterItsAnswerWasLostRunsNoTools -->
+  <!-- test: ToolChoiceRunTests.testAContinueOfAReplyThatOnlyThoughtIsPutAgainAsAContinue -->
   <!-- test: ToolChoiceRunTests.testAServerTheMacClosedIsNotNamed -->
   <!-- test: ToolChoiceRunTests.testADrawQuestionWithNoPicksIsPutWithNone -->
   <!-- test: ToolChoiceRunTests.testAPickMadeDuringARunReachesOnlyTheNextRequest -->

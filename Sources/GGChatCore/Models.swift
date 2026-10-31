@@ -78,6 +78,15 @@ public struct Message: Identifiable, Codable, Sendable, Equatable, Hashable {
     public var isBeingWritten: Bool {
         runID != nil
     }
+
+    /// Whether the message holds nothing to show: no words, no reasoning and
+    /// no images. Only a run's placeholder is a reply like that, left by a
+    /// question whose run had nothing read into it. A Continue's partial
+    /// always holds something, since a reply is kept as a partial only when
+    /// something arrived.
+    public var holdsNothing: Bool {
+        content.isEmpty && (reasoning?.isEmpty ?? true) && images.isEmpty
+    }
 }
 
 /// Why a turn ended without the model finishing it, kept on the message

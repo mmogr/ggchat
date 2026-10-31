@@ -875,8 +875,16 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # filed as not shown here. The hand-typed list it replaces failed nothing when
 # gglib added a code, so this test is the whole of that guard, and the
 # README claim names it.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1061
+#
+# 2026-10-31: 1061 -> 1062 and 950 -> 951 for a Continue of a reply that has
+# only thought, put again after its PUT lost its answer. It is put again
+# ending on that reply, with no tools and not drawing; dropped as if it were a
+# fresh question's empty placeholder, it would be the question itself again,
+# with the conversation's tools and its Draw. No other test has a reply of
+# reasoning alone put again, so this one and its marker are the whole of
+# that guard, and the floors move past them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1062
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 41
-floor "README test markers" "${markers:-0}" 950
+floor "README test markers" "${markers:-0}" 951
 
 exit $status

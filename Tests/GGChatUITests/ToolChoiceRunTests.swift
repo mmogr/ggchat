@@ -169,6 +169,40 @@ final class ToolChoiceRunTests: XCTestCase {
         XCTAssertEqual(hub.with(\.readFrames).last, .openai)
     }
 
+    /// A Continue of a reply that has only thought, to a question that drew,
+    /// is put again still ending on that reply when its PUT lost its answer:
+    /// with no tools, not drawing, and read as the chat route's chunks. It
+    /// is not taken for a run's empty placeholder and dropped, which would
+    /// put the question itself again.
+    func testAContinueOfAReplyThatOnlyThoughtIsPutAgainAsAContinue() async throws {
+        let hub = FakeRunHub(frames: FakeRunHub.frames(ofText: Runs.text, reasoning: Runs.reasoning))
+        hub.with { $0.holdAt = 2 }
+        let (model, config) = try await Runs.makeModel(behind: hub, sleeper: ReadOnSleeper(immediate: true))
+        model.drawings[config.id] = .offersTavily
+        try pick(3, in: model)
+        XCTAssertTrue(model.send("a fox in snow", images: [], draws: true))
+        try await Runs.until("two thoughts") { model.liveReply?.cursor == 2 }
+        model.stop()
+        try await Runs.until("the stop") { Runs.settled(model) }
+        let partial = try Runs.last(model)
+        XCTAssertTrue(partial.isPartial)
+        XCTAssertEqual(partial.content, "")
+        XCTAssertFalse(partial.reasoning?.isEmpty ?? true)
+        XCTAssertTrue(try question(model).draws)
+        hub.with {
+            $0.holdAt = nil
+            $0.putsLost = 1
+        }
+        try await XCTUnwrap(model.continueReply()).value
+        try await Runs.until("the reply to be read on") { Runs.settled(model) }
+        let puts = hub.with { $0.starts.map(\.request) }
+        XCTAssertEqual(puts.count, 3, "the lost PUT was not sent again")
+        XCTAssertEqual(puts.last?.messages.last?.id, partial.id)
+        XCTAssertEqual(servers(hub), [[3], [], []])
+        XCTAssertEqual(puts.map(\.draws), [true, false, false])
+        XCTAssertEqual(hub.with(\.readFrames), [.agent, .openai])
+    }
+
     /// A pick the Mac no longer offers is kept, and not named.
     func testAServerTheMacClosedIsNotNamed() async throws {
         let hub = hub()
