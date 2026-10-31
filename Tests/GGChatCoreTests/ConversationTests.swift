@@ -72,5 +72,9 @@ final class ConversationTests: XCTestCase {
         XCTAssertEqual(asked.displayTitle, "Trip")
         let empty = Conversation(messages: [], systemPrompt: "Answer in French.", createdAt: stamp, updatedAt: stamp)
         XCTAssertEqual(empty.displayTitle, "New conversation")
+        let long = Conversation(
+            messages: [Message(role: .user, content: String(repeating: "a", count: 81), createdAt: stamp)],
+            createdAt: stamp, updatedAt: stamp)
+        XCTAssertEqual(long.displayTitle, String(repeating: "a", count: 80), "a first line is cut at 80 characters")
     }
 }
