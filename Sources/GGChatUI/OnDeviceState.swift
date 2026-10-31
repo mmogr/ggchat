@@ -29,6 +29,9 @@ public final class OnDeviceState {
     /// last served, by id, which the status pill says. A serve reads the
     /// memory afresh, so it starts with none.
     public internal(set) var tooBig: Set<String> = []
+    /// The names of the models being removed, one entry per removal under
+    /// way, which a send naming one is refused for (`AppModel+Removal`).
+    @ObservationIgnored var removing: [String] = []
     /// Moved on by every shutdown of the engine, so a serve that lands after
     /// one takes itself down: nothing else would.
     @ObservationIgnored var engineGeneration = 0

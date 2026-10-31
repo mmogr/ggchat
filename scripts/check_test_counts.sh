@@ -902,7 +902,22 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # call's, to be shown to a model as the drawn picture, so this test and its
 # marker are the whole of that guard.
 #
-# 2026-10-31: 1070 -> 1073 and 959 -> 962 for a chat read held a chunk at a
+# 2026-10-31: 1070 -> 1081, 41 -> 42 and 959 -> 971 for removing a model
+# from this iPhone. That a removal leaves the chats and the default that had
+# the model with none, after the listing so it gives This iPhone no other,
+# and keeps them so when This iPhone opens again; leaves other chats alone;
+# puts down an engine that may hold a model, before the files go, with a
+# reply through it or a shutdown already under way, and no other, keeping
+# what a reply through it had; refuses a send naming the model while it
+# goes; touches nothing for a model no longer listed and keeps the files,
+# chats and default when the library refuses; asks first, naming the model
+# and its room; and is reached by a long press: a removal that went back to
+# deleting with no question, left a loaded engine answering from a deleted
+# file or left a chat on a model that is gone would fail nothing before
+# these. The eleven, the walk and the twelve markers naming them are the
+# whole of that guard, so the floors move past them.
+#
+# 2026-10-31: 1081 -> 1084 and 971 -> 974 for a chat read held a chunk at a
 # time. The stub sent every chunk and the finish inside `startLoading`, so no
 # test had a chunk come after the reader waited for it, nor a chat reader
 # stopped with its request still open. A redraw's reader that leaves already
@@ -911,8 +926,8 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # `onTermination`, which cancels the reading when its consumer stops, could
 # be removed and fail nothing. These three and their markers are the whole of
 # that guard, and the floors move past them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1073
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 41
-floor "README test markers" "${markers:-0}" 962
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1084
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
+floor "README test markers" "${markers:-0}" 974
 
 exit $status

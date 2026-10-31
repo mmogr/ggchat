@@ -7,7 +7,9 @@ import XCTest
 /// form and no dial, and a reply raises the ring from the context the
 /// engine loaded its model with. There is no Draw switch. The status pill
 /// beside the model says how the model is: not loaded until the first send,
-/// which loads it, and too big once the engine has refused it as that.
+/// which loads it, and too big once the engine has refused it as that. A
+/// model is removed from the menu on its row in the browser, after a
+/// question.
 ///
 /// The sheets here close with Done, which no sweep reaches for, so the waits
 /// may sweep.
@@ -126,6 +128,39 @@ final class OnDeviceUITests: XCTestCase {
         XCTAssertTrue(installed.waitForExistence(timeout: 10), "the browser does not list the model on this iPhone")
         XCTAssertFalse(
             app.buttons["Use mock-phone-1.7b"].firstMatch.exists, "a model offers Use while This iPhone is there")
+    }
+
+    /// A model is removed from the menu a long press on its row opens, once
+    /// the question that names it and the room it frees is answered Remove:
+    /// the row goes, and the section says no model is on this iPhone. The
+    /// question's own Cancel is what a sweep reaches for, so the waits from
+    /// the menu on do not sweep.
+    @MainActor
+    func testAModelIsRemovedFromTheMenuOnItsRow() {
+        let app = launchFreshApp(arguments: ["-ggchat-mock-engine", "ready"])
+        let settings = app.buttons["Settings"].firstMatch
+        XCTAssertTrue(waitUntilHittable(settings, timeout: 30), "no way to Settings")
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Models on this iPhone'")).firstMatch
+        XCTAssertTrue(tap(settings, untilExists: row), "Settings has no row for the models on this iPhone")
+        let installed = app.staticTexts["mock-phone-1.7b"].firstMatch
+        XCTAssertTrue(tap(row, untilExists: installed), "the browser does not list the model on this iPhone")
+
+        installed.press(forDuration: 1.2)
+        let remove = app.buttons["Remove\u{2026}"].firstMatch
+        XCTAssertTrue(remove.waitForExistence(timeout: 10), "the row's menu offers no Remove\u{2026}")
+        remove.tap()
+        let question = app.staticTexts["Remove mock-phone-1.7b?"].firstMatch
+        XCTAssertTrue(question.waitForExistence(timeout: 10), "Remove\u{2026} asked nothing first")
+        XCTAssertTrue(
+            app.staticTexts["This frees 1.07 GB on this iPhone."].firstMatch.exists,
+            "the question does not say the room the removal frees")
+        let confirm = app.buttons["Remove"].firstMatch
+        XCTAssertTrue(waitUntilHittable(confirm, timeout: 10, sweeping: false), "the question offers no Remove")
+        confirm.tap()
+
+        let empty = app.staticTexts["No model is on this iPhone yet."].firstMatch
+        XCTAssertTrue(empty.waitForExistence(timeout: 30), "the section does not say the model has gone")
+        XCTAssertFalse(installed.exists, "the removed model is still listed")
     }
 
     /// Types `text` into the composer and sends it.

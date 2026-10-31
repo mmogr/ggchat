@@ -23,6 +23,11 @@ struct ModelBrowserList<Top: View>: View {
     let top: Top?
     @State private var searching = false
     @State private var explaining: FitExplanation?
+    #if os(iOS)
+        /// Whether the list is being edited, which "On this iPhone"'s Edit
+        /// turns on to remove its models; held here so it is the list's.
+        @State private var editing: EditMode = .inactive
+    #endif
 
     init(browser: ModelBrowser, @ViewBuilder top: () -> Top) {
         self.browser = browser
@@ -44,6 +49,9 @@ struct ModelBrowserList<Top: View>: View {
                 suggested
             }
         }
+        #if os(iOS)
+            .environment(\.editMode, $editing)
+        #endif
         .navigationDestination(for: String.self) { repo in
             ModelBrowserRepoView(browser: browser, repo: repo)
         }
