@@ -2,8 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>com.apple.developer.kernel.increased-memory-limit</key>
-	<true/>
+	<!-- No com.apple.developer.kernel.increased-memory-limit, which the iOS
+	     entitlements carry: Apple documents it for iOS and iPadOS, where an
+	     app's memory is capped. A Mac app has no such cap to raise, and the
+	     ad-hoc signed Mac build (`make build-app`) refuses the key. -->
 	<key>com.apple.security.app-sandbox</key>
 	<true/>
 	<key>com.apple.security.network.client</key>
