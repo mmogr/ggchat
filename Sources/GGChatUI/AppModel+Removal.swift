@@ -24,7 +24,7 @@ extension AppModel {
     /// share, so it is put down whichever it holds. The next request serves
     /// it again; an engine that may hold nothing is left serving. While the
     /// removal is under way a send naming the model is refused
-    /// (``refusesForARemoval(_:on:)``), so nothing loads it again.
+    /// (`refusesForARemoval(_:on:)`), so nothing loads it again.
     ///
     /// Any removal also forgets which downloads finished: an installed model
     /// does not say which repository and quantization it came from, so the
