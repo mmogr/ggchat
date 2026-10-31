@@ -902,20 +902,35 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # call's, to be shown to a model as the drawn picture, so this test and its
 # marker are the whole of that guard.
 #
-# 2026-10-31: 1070 -> 1071 for a shipped dial keeping the binding's own
+# 2026-10-31: 1070 -> 1081, 41 -> 42 and 959 -> 971 for removing a model
+# from this iPhone. That a removal leaves the chats and the default that had
+# the model with none, after the listing so it gives This iPhone no other,
+# and keeps them so when This iPhone opens again; leaves other chats alone;
+# puts down an engine that may hold a model, before the files go, with a
+# reply through it or a shutdown already under way, and no other, keeping
+# what a reply through it had; refuses a send naming the model while it
+# goes; touches nothing for a model no longer listed and keeps the files,
+# chats and default when the library refuses; asks first, naming the model
+# and its room; and is reached by a long press: a removal that went back to
+# deleting with no question, left a loaded engine answering from a deleted
+# file or left a chat on a model that is gone would fail nothing before
+# these. The eleven, the walk and the twelve markers naming them are the
+# whole of that guard, so the floors move past them.
+#
+# 2026-10-31: 1081 -> 1082 for a shipped dial keeping the binding's own
 # defaults. The connector's dial options exist so a test can turn discovery,
 # port mapping and the public relays off, and nothing else notices a
 # `.shipped` that turned one of them off for the app as well, so this test is
 # the whole of that guard.
 #
-# 2026-10-31: 1071 -> 1072 and 959 -> 961 for a real pipe. One test dials a
+# 2026-10-31: 1082 -> 1083 and 971 -> 973 for a real pipe. One test dials a
 # `modelpipe serve` on this machine through the shipped connector and has a
 # request carried to the far edge and back; it is the only test that pairs
 # with a ticket a serve printed, so a binding that could no longer do so
 # fails nothing else, so the package floor moves past it. The claim it backs
 # names it and the shipped-defaults test, so the marker floor moves by two.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1072
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 41
-floor "README test markers" "${markers:-0}" 961
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1083
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
+floor "README test markers" "${markers:-0}" 973
 
 exit $status
