@@ -61,4 +61,20 @@ final class ConversationTests: XCTestCase {
         XCTAssertEqual(titled("what is this\nand this", [image]), "what is this")
         XCTAssertEqual(titled("", []), "")
     }
+
+    /// The list and the chat both show this one name: the title it was given
+    /// wins, a conversation with no question yet is a new one, and the
+    /// system prompt is never what it is called.
+    func testAConversationIsCalledByItsTitleElseItsFirstQuestion() {
+        var asked = conversation(prompt: "Answer in French.")
+        XCTAssertEqual(asked.displayTitle, "hi")
+        asked.title = "Trip"
+        XCTAssertEqual(asked.displayTitle, "Trip")
+        let empty = Conversation(messages: [], systemPrompt: "Answer in French.", createdAt: stamp, updatedAt: stamp)
+        XCTAssertEqual(empty.displayTitle, "New conversation")
+        let long = Conversation(
+            messages: [Message(role: .user, content: String(repeating: "a", count: 81), createdAt: stamp)],
+            createdAt: stamp, updatedAt: stamp)
+        XCTAssertEqual(long.displayTitle, String(repeating: "a", count: 80), "a first line is cut at 80 characters")
+    }
 }
