@@ -189,7 +189,18 @@ public final class AppModel {
         conversations.first { $0.id == selectedConversationID }
     }
 
+    /// Reads every provider and every conversation with all its messages,
+    /// on the main actor, as the window's first task: marked for Instruments
+    /// as `Load the store` (`LaunchSignposts`).
     public func load() {
+        LaunchSignposts.interval("Load the store") { loadFromTheStore() }
+        startWatchingTheNetwork()
+        prepareModelsDirectory()
+        resumeRuns()
+        Task { await refreshHubChats() }
+    }
+
+    private func loadFromTheStore() {
         do {
             providers = try store.loadProviders()
             addThisIPhoneForAWalk()
@@ -203,10 +214,6 @@ public final class AppModel {
         } catch {
             report(error)
         }
-        startWatchingTheNetwork()
-        prepareModelsDirectory()
-        resumeRuns()
-        Task { await refreshHubChats() }
     }
 
     // MARK: - Conversations

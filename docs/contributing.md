@@ -161,6 +161,19 @@ out, seven days after the profile was issued, so this is the refresh in one
 command. Run it on or after the day Settings shows: a build made while the
 old profile is still valid may keep its date.
 
+A launch can be timed on the phone. Before the window draws anything,
+ggchat opens its store and makes its model, and then, as the window's first
+task, loads every conversation. Each step is an interval under the `launch`
+category of `com.mattogrady.ggchat`, in Release builds as well:
+
+1. `make phone`.
+2. Delete the app from the phone and install it again with `make phone`, so
+   the launch is a first one.
+3. In Instruments, choose the App Launch template and the phone, and record
+   ggchat's launch.
+4. Read `Open the store`, `Make the model` and `Load the store` under
+   Points of Interest > launch, beside the time to the first frame.
+
 `make uitest-device-engine` walks gglib's own engine on the phone `DEVICE`
 names, as Xcode names it: no simulator runs it, so no other walk can. Its
 walk adds This iPhone at launch with the model `GGCHAT_LIVE_ENGINE_MODEL`
