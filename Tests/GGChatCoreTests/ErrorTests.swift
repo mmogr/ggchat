@@ -55,38 +55,59 @@ final class ErrorTests: XCTestCase {
 
     /// gglib's half used to be typed in here from memory, so a code gglib
     /// added failed nothing and reached the person with no line of its own.
-    /// Now every code gglib publishes is either in the vocabulary or filed in
-    /// `notShownHere`, and every code in the vocabulary is in one list or the
-    /// other. `invalid_api_key` is in both: modelpipe's bearer check and
-    /// gglib's write it, and both stand on the serving machine.
+    /// Now every code gglib publishes is in exactly one of three places: the
+    /// vocabulary, the constants other parts of ggchat match it by, or
+    /// `notShownHere`. Every code in the vocabulary is in one published list
+    /// or the other. `invalid_api_key` is in both: modelpipe's bearer check
+    /// and gglib's write it, and both stand on the serving machine.
     func testGglibsHalfOfTheVocabularyIsGglibsOwnList() throws {
         let modelpipe = try codes(in: "modelpipe-error-codes-v0.json", from: "modelpipe v0.6.0")
         let gglib = try codes(in: "gglib-error-codes-v0.json", from: "gglib v0.28.0")
-        // Codes gglib writes that this app gives no line of its own: the
-        // daemon's refusals about chats, runs and their messages, the guards
-        // a page on another site or a device with no name meets, and the
-        // errors a run ends with. One that reaches the app reads as
-        // `.unknown`, so gglib's sentence is shown with no hint of its own.
-        // Filing a code here is a decision someone made, not a gap nobody saw.
-        let notShownHere: Set<String> = [
-            "agent_busy", "agent_error", "chats_unavailable", "conflict", "conversation_not_found",
-            "device_not_named", "folder_missing", "folder_unusable", "log_full", "max_iterations",
-            "message_not_found", "no_model", "not_a_reply", "not_found", "not_yours", "nothing_to_answer",
-            "origin_not_allowed", "proxy_not_running", "run_panicked", "runs_unavailable", "shutting_down",
-            "too_many_runs", "too_many_tool_calls", "transcript_not_saved", "turn_too_long", "unchanged",
-        ]
         let vocabulary = Set(ProviderError.Code.allCases.map(\.rawValue))
-        for code in gglib.subtracting(vocabulary).subtracting(notShownHere).sorted() {
+        // Codes ggchat matches by string outside the vocabulary, read from
+        // the constants themselves: the hub's chats routes, its runs routes
+        // and the branching rules each handle theirs on their own path. Those
+        // constants also name `invalid_request`, which the vocabulary holds,
+        // so it is answered there and not counted here.
+        let answeredElsewhere = Set(
+            [HubChatsCode.noModel, HubChatsCode.conversationNotFound, HubChatsCode.deviceNotNamed]
+                + RunCode.all
+                + [BranchRefusal.messageNotFound, .unchanged, .notAReply, .nothingToAnswer, .imagesOnReply].map(\.code)
+        ).subtracting(vocabulary)
+        // Codes gglib writes that nothing in ggchat matches by string: the
+        // daemon's own refusals about runs, chats and folders, the guard a
+        // page on another site meets, and the errors a run ends with. One
+        // that reaches the app reads as `.unknown`, so gglib's sentence is
+        // shown with no hint of its own. Filing a code here is a decision
+        // someone made, not a gap nobody saw.
+        let notShownHere: Set<String> = [
+            // gglib publishes this as 429, "every agent loop slot is in use;
+            // retry later". It stays unmapped on purpose: gglib #1528 may make
+            // a device's run wait instead of refusing, and ggchat #217 tracks
+            // the hint until then.
+            "agent_busy",
+            "agent_error", "chats_unavailable", "folder_missing", "folder_unusable", "log_full", "max_iterations",
+            "not_yours", "origin_not_allowed", "proxy_not_running", "run_panicked", "runs_unavailable",
+            "shutting_down", "too_many_tool_calls", "transcript_not_saved", "turn_too_long",
+        ]
+        for code in gglib.subtracting(vocabulary).subtracting(answeredElsewhere).subtracting(notShownHere).sorted() {
             XCTFail(
                 "gglib publishes \(code) and nothing here has read it: give it a case in ProviderError.Code "
                     + "and an answer in whereToLook, or file it in notShownHere with why")
         }
+        for code in answeredElsewhere.subtracting(gglib).sorted() {
+            XCTFail("ggchat matches \(code) by string and gglib does not publish it: check the constant's spelling")
+        }
         for code in notShownHere.subtracting(gglib).sorted() {
             XCTFail("\(code) is filed in notShownHere and gglib no longer publishes it: take it out")
         }
+        XCTAssertTrue(
+            answeredElsewhere.isDisjoint(with: notShownHere),
+            "a code ggchat matches by string is also filed in notShownHere, which says nothing matches it")
         XCTAssertEqual(
-            vocabulary, modelpipe.union(gglib).subtracting(notShownHere),
-            "a code in the vocabulary is in neither published list, or is also filed in notShownHere")
+            vocabulary, modelpipe.union(gglib).subtracting(answeredElsewhere).subtracting(notShownHere),
+            "a code in the vocabulary is in neither published list, or is also matched elsewhere or filed "
+                + "in notShownHere")
     }
 
     /// A vendored list's codes, once its digest says it is the copy taken

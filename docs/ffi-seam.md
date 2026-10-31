@@ -135,10 +135,12 @@ Each is what `MockPipeConnector` and `MockPipeSession` do today and what
 7. **Errors from the pipe arrive as HTTP.** When the pipe is up but the
    other side is not, requests to `baseURL` return modelpipe's JSON error
    body (`tunnel_unavailable`, `bad_gateway`, …) with the documented
-   status codes. The app maps every code modelpipe and gglib write,
+   status codes. The app maps every code it knows from modelpipe and gglib,
    gglib's `device_not_paired` included, to a where-to-look hint
    (`ProviderError.whereToLook(forCode:)`). The codes are an enum, so a new
-   one does not compile without an answer.
+   one does not compile without an answer, and each half is checked against
+   the list modelpipe or gglib publishes: a code gglib adds fails a test
+   until it is given an answer or filed as one not shown.
 8. **No credential in any log line.** The ffi's logging, if it surfaces
    through the app's `LogSink`, must never include the ticket or the
    token. The binding sends nothing to `LogSink` itself; its one
