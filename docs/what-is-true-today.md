@@ -1405,14 +1405,15 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelStreamingTests.testSendStreamsAReplyIntoTheConversation -->
   <!-- test: AppModelStreamingTests.testADroppedStreamKeepsThePartialAndContinueCarriesOn -->
 - A reply sent as a chat request is read through URLSession as its chunks
-  come: a chunk that comes after the reader has waited for it is passed on
-  after the ones before it, and an event split across two chunks is read
-  whole. Stopping the reply cancels its reading, which stops the request
-  once, whether it was mid-event or between chunks; nothing is passed on
-  after it, and no error is passed on or logged.
+  come: a chunk that comes after the reader has waited for it, holding the
+  rest of an event, is passed on after the ones before it, the event read
+  whole. Stopping the reply cancels its reading, which stops its request
+  once, whether half an event had come or the stop fell between chunks, and
+  no second request is made. The provider's reading then ends without
+  logging an error.
   <!-- test: HeldChatStreamTests.testAChunkThatComesAfterTheReaderWaitedIsPassedOnAfterTheOnesBefore -->
-  <!-- test: HeldChatStreamTests.testCancellingTheReaderMidStreamStopsTheRequestOnceAndPassesNothingAfter -->
-  <!-- test: HeldChatStreamTests.testAStopBetweenChunksEndsTheStreamWithoutAnError -->
+  <!-- test: HeldChatStreamTests.testCancellingTheReaderMidEventStopsTheRequestOnce -->
+  <!-- test: HeldChatStreamTests.testAStopBetweenChunksStopsTheRequestAndLogsNoError -->
 - A reply to gglib is a run the hub owns, under an id minted on the phone, so
   locking the phone mid-reply loses none of it. Going to the background, or a
   connection dropping, stops reading and keeps what arrived with the run's id

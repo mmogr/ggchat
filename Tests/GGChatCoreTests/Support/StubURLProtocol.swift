@@ -14,8 +14,8 @@ final class StubURLProtocol: URLProtocol, @unchecked Sendable {
         var headers: [String: String] = ["Content-Type": "application/json"]
         var chunks: [Data]
         /// Sends each chunk only when `release(host:)` lets it through, and
-        /// finishes at the release after the last. A request that is stopped
-        /// is sent nothing more.
+        /// finishes with the last. A request that is stopped is sent nothing
+        /// more.
         var held = false
     }
 
@@ -43,17 +43,20 @@ final class StubURLProtocol: URLProtocol, @unchecked Sendable {
     /// held answer is sent and where `stopLoading` is called.
     private var loop: CFRunLoop?
 
+    /// Serves `stub` at `path` on `host`. A held stub starts with nothing
+    /// released and no stops counted at `host`.
     static func register(host: String, path: String, _ stub: Stub) {
         stubs.withLock { $0[host, default: [:]][path] = stub }
+        if stub.held { holds.withLock { $0[host] = Hold() } }
     }
 
     static func requests(host: String) -> [URLRequest] {
         seen.withLock { $0.filter { $0.url?.host() == host } }
     }
 
-    /// Lets the next chunk of the held answer at `host` through or, once
-    /// every chunk is through, its finish. A release before the request has
-    /// started is kept for it.
+    /// Lets the next chunk of the held answer at `host` through, and its
+    /// finish with the last. A release before the request has started is
+    /// kept for it.
     static func release(host: String) {
         let load = holds.withLock { holds in
             holds[host, default: Hold()].released += 1
@@ -120,8 +123,9 @@ final class StubURLProtocol: URLProtocol, @unchecked Sendable {
         CFRunLoopWakeUp(loop)
     }
 
-    /// Sends each chunk released and not yet sent, then the finish once it
-    /// is released. A load that was stopped or has finished sends nothing.
+    /// Sends each chunk released and not yet sent, then the finish in the
+    /// same pass as the last chunk, before a stop can come between them. A
+    /// load that was stopped or has finished sends nothing.
     private func sendReleased() {
         while let next = nextReleased() {
             if let chunk = next {
@@ -132,13 +136,14 @@ final class StubURLProtocol: URLProtocol, @unchecked Sendable {
         }
     }
 
-    /// The next released chunk, `.some(nil)` for the finish, or nil when
-    /// nothing released is left to send.
+    /// The next released chunk, `.some(nil)` for the finish once every chunk
+    /// has gone, or nil when nothing released is left to send.
     private func nextReleased() -> Data?? {
         guard let host = sending.withLock({ $0?.host }) else { return nil }
         let released = Self.holds.withLock { $0[host]?.released ?? 0 }
         let next = sending.withLock { sending -> Data?? in
-            guard let current = sending, current.sent < released else { return nil }
+            guard let current = sending, current.sent < released || current.sent == current.chunks.count
+            else { return nil }
             guard current.sent < current.chunks.count else {
                 sending = nil
                 return .some(nil)
