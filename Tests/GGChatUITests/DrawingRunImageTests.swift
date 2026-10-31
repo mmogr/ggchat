@@ -183,4 +183,36 @@ final class DrawingRunImageTests: XCTestCase {
         XCTAssertEqual(try Runs.last(other).role, .assistant)
         XCTAssertEqual(try Runs.last(other).images, [Self.image])
     }
+
+    /// A Continue of a reply of a picture alone is put again still ending
+    /// on that reply when its PUT lost its answer: not drawing, and read as
+    /// the chat route's chunks. It is not taken for a run's empty
+    /// placeholder and dropped, which would put the question itself again
+    /// and draw a second picture.
+    func testAContinueOfAReplyOfAPictureAloneIsPutAgainAsAContinue() async throws {
+        let hub = hub()
+        hub.with { $0.holdAt = 3 }
+        let (model, config) = try await Runs.makeModel(behind: hub, sleeper: ReadOnSleeper(immediate: true))
+        model.drawings[config.id] = DrawingRunTests.can
+        draw(model)
+        try await Runs.until("the picture") { model.liveReply?.made == [Self.image] }
+        model.stop()
+        try await Runs.until("the stop") { Runs.settled(model) }
+        let partial = try Runs.last(model)
+        XCTAssertTrue(partial.isPartial)
+        XCTAssertEqual(partial.content, "")
+        XCTAssertEqual(partial.images, [Self.image])
+        hub.with {
+            $0.holdAt = nil
+            $0.putsLost = 1
+        }
+        try await XCTUnwrap(model.continueReply()).value
+        try await Runs.until("the reply to be read on") { Runs.settled(model) }
+        let puts = hub.with { $0.starts.map(\.request) }
+        guard puts.count == 3 else { return XCTFail("the lost PUT was not sent again") }
+        XCTAssertEqual(puts[2].messages.map(\.id), puts[1].messages.map(\.id), "not the Continue that was lost")
+        XCTAssertEqual(puts[2].messages.last?.id, partial.id)
+        XCTAssertEqual(puts.map(\.draws), [true, false, false], "a second picture was asked for")
+        XCTAssertEqual(hub.with(\.readFrames), [.agent, .openai])
+    }
 }

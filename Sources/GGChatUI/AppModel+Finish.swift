@@ -107,9 +107,7 @@ extension AppModel {
         message.runFrames = ending.frames
         message.images += ending.images.filter { image in !message.images.contains { $0.id == image.id } }
         message.exchanges.merge(ending.exchanges)
-        guard ending.run == nil, !ending.finished, message.content.isEmpty, message.reasoning?.isEmpty ?? true,
-            message.images.isEmpty
-        else {
+        guard ending.run == nil, !ending.finished, message.holdsNothing else {
             conversation.messages[index] = message
             return
         }
