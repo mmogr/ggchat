@@ -47,10 +47,12 @@ extension AppModel {
     /// answer was about the old one, and a server that is not gglib must not
     /// be asked for progress. The image model and the servers each of its
     /// conversations chose go too: an id names a model or a server on the
-    /// old machine alone, and re-pairing is such a move. The generation drops
-    /// a probe still in flight.
+    /// old machine alone, and re-pairing is such a move. So does its list of
+    /// models, which the next catch-up lists again. The generation drops a
+    /// probe still in flight.
     func forgetProxyStatus(ifMovedFrom previous: ProviderConfig, to config: ProviderConfig) {
         guard previous.kind != config.kind else { return }
+        modelsByProvider[config.id] = nil
         proxyStatusAvailability[config.id] = nil
         providersWithoutRuns.remove(config.id)
         drawings[config.id] = nil
@@ -114,6 +116,8 @@ extension AppModel {
         // then be kept until the next one. The generation does not depend on
         // that timing.
         guard probeGeneration[config.id] == generation, !Task.isCancelled else { return }
+        // Nor for a provider removed, or moved, while it waited.
+        guard providers.first(where: { $0.id == config.id })?.kind == config.kind else { return }
         let available = snapshot != nil
         proxyStatusAvailability[config.id] = available
         log.log(.info, "proxy status \(available ? "available" : "absent") for \(config.name)")

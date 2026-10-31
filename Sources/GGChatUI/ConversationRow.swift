@@ -13,7 +13,7 @@ struct ConversationRow: View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 if conversation.branchOf != nil { BranchMark() }
-                Text(title)
+                Text(conversation.displayTitle)
                     .fontWeight(mark == .unread ? .semibold : nil)
                     .lineLimit(1)
                 if let mark {
@@ -27,12 +27,6 @@ struct ConversationRow: View {
                 .lineLimit(1)
         }
         .accessibilityElement(children: .combine)
-    }
-
-    private var title: String {
-        if !conversation.title.isEmpty { return conversation.title }
-        let derived = conversation.derivedTitle
-        return derived.isEmpty ? "New conversation" : derived
     }
 
     private var subtitle: String {

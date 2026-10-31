@@ -917,12 +917,22 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # these. The eleven, the walk and the twelve markers naming them are the
 # whole of that guard, so the floors move past them.
 #
-# 1081 -> 1083 and 971 -> 973 for a chat with a turn this build cannot read
+# 1081 -> 1082 and 971 -> 972 for one shown title. The list and the chat
+# each worked it out until it moved onto the conversation, and nothing else
+# reads it, so this test and its marker are the whole of that guard.
+#
+# 1082 -> 1087 and 972 -> 977 for a removed provider leaving nothing kept
+# under its id. Removal cleared some of what a provider keeps and not the
+# rest, and a list or a probe answered late wrote into it again, a list
+# writing an edited provider back as it was; nothing shows the leftovers,
+# so these five and their markers are the whole of that guard.
+#
+# 1087 -> 1089 and 977 -> 979 for a chat with a turn this build cannot read
 # being left out. Nothing else stops such a turn being read as a question,
 # or the chat loaded without it losing it at its next save, so these two and
 # their markers are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1083
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1089
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 973
+floor "README test markers" "${markers:-0}" 979
 
 exit $status

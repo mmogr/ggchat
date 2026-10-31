@@ -259,4 +259,12 @@ public struct Conversation: Identifiable, Codable, Sendable, Equatable, Hashable
         }
         return String(line.prefix(80))
     }
+
+    /// What the list and the chat call it: the title it was given, else the
+    /// one its first question gives it, else "New conversation".
+    public var displayTitle: String {
+        if !title.isEmpty { return title }
+        let derived = derivedTitle
+        return derived.isEmpty ? "New conversation" : derived
+    }
 }
