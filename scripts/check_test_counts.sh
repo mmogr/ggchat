@@ -917,20 +917,45 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # these. The eleven, the walk and the twelve markers naming them are the
 # whole of that guard, so the floors move past them.
 #
-# 2026-10-31: 1081 -> 1082 for a shipped dial keeping the binding's own
+# 1081 -> 1082 and 971 -> 972 for one shown title. The list and the chat
+# each worked it out until it moved onto the conversation, and nothing else
+# reads it, so this test and its marker are the whole of that guard.
+#
+# 1082 -> 1087 and 972 -> 977 for a removed provider leaving nothing kept
+# under its id. Removal cleared some of what a provider keeps and not the
+# rest, and a list or a probe answered late wrote into it again, a list
+# writing an edited provider back as it was; nothing shows the leftovers,
+# so these five and their markers are the whole of that guard.
+#
+# 1087 -> 1089 and 977 -> 979 for a chat with a turn this build cannot read
+# being left out. Nothing else stops such a turn being read as a question,
+# or the chat loaded without it losing it at its next save, so these two and
+# their markers are the whole of that guard.
+#
+# 2026-10-31: 1089 -> 1092 and 979 -> 982 for a chat read held a chunk at a
+# time. The stub sent every chunk and the finish inside `startLoading`, so no
+# test had a chunk come after the reader waited for it, nor a chat reader
+# stopped with its request still open. A redraw's reader that leaves already
+# closes its request in PictureRedrawWireTests, which guards the
+# `onTermination` of `eventStream`; the chat `stream()`'s own
+# `onTermination`, which cancels the reading when its consumer stops, could
+# be removed and fail nothing. These three and their markers are the whole of
+# that guard, and the floors move past them.
+#
+# 2026-10-31: 1092 -> 1093 for a shipped dial keeping the binding's own
 # defaults. The connector's dial options exist so a test can turn discovery,
 # port mapping and the public relays off, and nothing else notices a
 # `.shipped` that turned one of them off for the app as well, so this test is
 # the whole of that guard.
 #
-# 2026-10-31: 1082 -> 1083 and 971 -> 973 for a real pipe. One test dials a
+# 2026-10-31: 1093 -> 1094 and 982 -> 984 for a real pipe. One test dials a
 # `modelpipe serve` on this machine through the shipped connector and has a
 # request carried to the far edge and back; it is the only test that pairs
 # with a ticket a serve printed, so a binding that could no longer do so
 # fails nothing else, so the package floor moves past it. The claim it backs
 # names it and the shipped-defaults test, so the marker floor moves by two.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1083
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1094
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 973
+floor "README test markers" "${markers:-0}" 984
 
 exit $status

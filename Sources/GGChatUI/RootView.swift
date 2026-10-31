@@ -80,8 +80,9 @@ public struct RootView: View {
                         }
                     }
                 #endif
-            if !storeNotice.lines.isEmpty {
-                StoreNoticeView(notice: storeNotice)
+            let noticeLines = storeNotice.lines(hidingChats: model.hiddenChats)
+            if !noticeLines.isEmpty {
+                StoreNoticeView(notice: storeNotice, lines: noticeLines)
             }
         }
         .sheet(isPresented: $showingProviders) {

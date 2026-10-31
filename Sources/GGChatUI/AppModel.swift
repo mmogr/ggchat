@@ -9,6 +9,9 @@ import Observation
 public final class AppModel {
     public internal(set) var providers: [ProviderConfig] = []
     public private(set) var conversations: [Conversation] = []
+    /// The chats the store left out at launch, because a later build wrote
+    /// a turn in them this one cannot read (`Store.hiddenChats`).
+    public private(set) var hiddenChats = 0
     public var selectedConversationID: UUID?
     /// The conversation whose chat the view last said it showed, whether or
     /// not the app is in front; see `AppModel+ListMarks`. Selecting is not
@@ -189,13 +192,25 @@ public final class AppModel {
         conversations.first { $0.id == selectedConversationID }
     }
 
+    /// Reads every provider and every conversation with all its messages,
+    /// on the main actor, as the window's first task: marked for Instruments
+    /// as `Load the store` (`LaunchSignposts`).
     public func load() {
+        LaunchSignposts.interval("Load the store") { loadFromTheStore() }
+        startWatchingTheNetwork()
+        prepareModelsDirectory()
+        resumeRuns()
+        Task { await refreshHubChats() }
+    }
+
+    private func loadFromTheStore() {
         do {
             providers = try store.loadProviders()
             addThisIPhoneForAWalk()
             lastHeardAt = try store.loadLastHeard()
             loadSeenHubChats()
             conversations = try store.loadConversations().sorted { $0.updatedAt > $1.updatedAt }
+            hiddenChats = store.hiddenChats
             // Reopening the app returns you to the conversation you left.
             if selectedConversationID == nil {
                 selectedConversationID = conversations.first?.id
@@ -203,10 +218,6 @@ public final class AppModel {
         } catch {
             report(error)
         }
-        startWatchingTheNetwork()
-        prepareModelsDirectory()
-        resumeRuns()
-        Task { await refreshHubChats() }
     }
 
     // MARK: - Conversations

@@ -66,7 +66,7 @@ struct ChatView: View {
         } action: {
             room = $0
         }
-        .navigationTitle(title)
+        .navigationTitle(conversation.displayTitle)
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -139,12 +139,6 @@ struct ChatView: View {
     /// Filled while a prompt is set, since the transcript never shows it.
     private var promptSymbol: String {
         conversation.hasSystemPrompt ? "person.text.rectangle.fill" : "person.text.rectangle"
-    }
-
-    private var title: String {
-        if !conversation.title.isEmpty { return conversation.title }
-        let derived = conversation.derivedTitle
-        return derived.isEmpty ? "New conversation" : derived
     }
 }
 
