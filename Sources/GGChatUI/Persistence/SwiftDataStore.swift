@@ -121,7 +121,9 @@ public final class SwiftDataStore: Store {
     /// later build wrote, is left out whole and counted in `hiddenChats`.
     /// Read as a question, that turn would be shown and sent as one; and a
     /// chat loaded without it would lose it, since a save deletes the rows a
-    /// conversation no longer holds. Left out, it is never saved over.
+    /// conversation no longer holds. Left out, it is never saved over. So
+    /// every row's role is read here, even if a list one day loads without
+    /// the messages.
     public func loadConversations() throws -> [Conversation] {
         let records = try context.fetch(FetchDescriptor<ConversationRecord>())
         var hidden = 0

@@ -49,7 +49,8 @@ final class StoreUnknownRoleTests: XCTestCase {
 
     /// Read as a question, the `tool` turn would be shown and sent as one;
     /// loaded without it, the chat would lose it at its next save. Left out,
-    /// it is still in the store after another chat is saved and loaded again.
+    /// it stays out across another chat's save and a second load, and its
+    /// rows are as they were.
     func testAChatHoldingATurnThisBuildCannotReadIsLeftOutAndKept() throws {
         let made = try makeStore()
         let (store, laterID) = (made.store, made.laterID)

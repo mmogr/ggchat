@@ -72,9 +72,11 @@ public final class ShownStoreNotice {
 /// covered. Seen, not tested, on iOS 27 simulators (an iPhone 16 and an
 /// 11-inch iPad Pro): it covered none of the model pill, the composer or
 /// Send, with the keyboard down or up. With both lines up at the largest
-/// accessibility text size, the iPhone cut each sentence short. Not an alert:
-/// the red line has no button to close it, and the line about an older store
-/// has one. Plain text in the system's styles, with no glass of its own.
+/// accessibility text size, the iPhone cut each sentence short; the line
+/// about hidden chats came later and has not been seen beside them. Not an
+/// alert: the red line and the hidden chats' have no button to close them,
+/// and the line about an older store has one. Plain text in the system's
+/// styles, with no glass of its own.
 struct StoreNoticeView: View {
     let notice: ShownStoreNotice
     let lines: [StoreNotice.Line]
