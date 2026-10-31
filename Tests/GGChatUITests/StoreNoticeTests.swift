@@ -12,7 +12,7 @@ final class StoreNoticeTests: XCTestCase {
         let shown = ShownStoreNotice(StoreNotice(keptInMemory: true, olderStoreLeftBehind: true))
 
         XCTAssertEqual(
-            shown.lines.map(\.sentence),
+            shown.lines().map(\.sentence),
             [
                 "ggchat could not open your saved conversations. They have not been deleted. "
                     + "Conversations and providers you add now will not be saved.",
@@ -28,15 +28,15 @@ final class StoreNoticeTests: XCTestCase {
         let both = ShownStoreNotice(StoreNotice(keptInMemory: true, olderStoreLeftBehind: true))
         let red = ShownStoreNotice(StoreNotice(keptInMemory: true, olderStoreLeftBehind: false))
         let older = ShownStoreNotice(StoreNotice(keptInMemory: false, olderStoreLeftBehind: true))
-        XCTAssertEqual(older.lines, [.olderStore])
+        XCTAssertEqual(older.lines(), [.olderStore])
 
         for shown in [both, red, older] {
             shown.closeOlderStoreLine()
         }
 
-        XCTAssertEqual(both.lines, [.keptInMemory])
-        XCTAssertEqual(red.lines, [.keptInMemory])
-        XCTAssertEqual(older.lines, [])
-        XCTAssertEqual(ShownStoreNotice(nil).lines, [])
+        XCTAssertEqual(both.lines(), [.keptInMemory])
+        XCTAssertEqual(red.lines(), [.keptInMemory])
+        XCTAssertEqual(older.lines(), [])
+        XCTAssertEqual(ShownStoreNotice(nil).lines(), [])
     }
 }

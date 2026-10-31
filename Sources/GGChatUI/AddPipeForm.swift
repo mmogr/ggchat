@@ -36,45 +36,9 @@ struct AddPipeForm<Top: View>: View {
         Form {
             top
             AddProviderNameSection(name: $draft.name)
-            Section {
-                TextField("pipe…-483920", text: $draft.pairing, axis: .vertical)
-                    .accessibilityIdentifier("provider-ticket")
-                    .lineLimit(3...6)
-                    .font(.body.monospaced())
-                    .autocorrectionDisabled()
-                    #if os(iOS)
-                        .textInputAutocapitalization(.never)
-                    #endif
-                // A code is redeemed for the token, so asking for one as
-                // well would be asking for the thing the code exists to
-                // fetch.
-                if readPairing?.hasCode != true {
-                    SecureField("Token", text: $draft.token)
-                        .accessibilityIdentifier("provider-token")
-                }
-                #if os(iOS)
-                    if ScanTicketView.isSupported {
-                        Button("Scan ticket", systemImage: "qrcode.viewfinder") { scanning = true }
-                    }
-                #endif
-            } header: {
-                Text("Pairing string")
-            } footer: {
-                pairingFooter
-            }
-            // Asked for only alongside a code: the name goes out with the
-            // redeem, and a bare ticket redeems nothing.
-            if readPairing?.hasCode == true {
-                Section {
-                    TextField("Optional", text: $draft.deviceName)
-                        .accessibilityIdentifier("provider-device")
-                        .autocorrectionDisabled()
-                } header: {
-                    Text("This device")
-                } footer: {
-                    Text(deviceFooter)
-                }
-            }
+            PairingSection(
+                mode: .adding, idPrefix: "provider", pairing: $draft.pairing, token: $draft.token,
+                deviceName: $draft.deviceName, shape: pairingShape, scan: scan)
         }
         .addProviderChrome(failure: draft.failure, busy: draft.redeeming, canAdd: canAdd, add: add)
         #if os(iOS)
@@ -87,51 +51,24 @@ struct AddPipeForm<Top: View>: View {
         #endif
     }
 
-    /// The field's text once there is something in it, or nil while there is
-    /// not — a field nobody has filled in yet, which is not a mistake and
-    /// gets the guidance below rather than a refusal.
-    ///
-    /// ``PairingField/isBlank(_:)`` decides that, over modelpipe's own
-    /// whitespace and no other set, so this view holds no opinion about which
-    /// spaces count. And it decides only that: what goes to the reader is the
-    /// text exactly as typed, with the trimming left to modelpipe.
-    private var typedPairing: String? {
-        PairingField.isBlank(draft.pairing) ? nil : draft.pairing
-    }
-
-    /// What modelpipe makes of the field, or nil while nothing is typed. The
-    /// same read `mpPair` will make of it when Add is pressed, so nothing
-    /// the form accepts is refused a moment later by the pairing.
+    /// ``PairingReader/readField(_:)`` of the field, which `PairingSection`
+    /// shows and Add goes by.
     private var pairingShape: Result<ReadPairing, PairingReadError>? {
-        typedPairing.map(model.pairingReader.read)
+        model.pairingReader.readField(draft.pairing)
     }
 
     private var readPairing: ReadPairing? {
-        guard case .success(let readPairing)? = pairingShape else { return nil }
-        return readPairing
+        try? pairingShape?.get()
     }
 
-    @ViewBuilder
-    private var pairingFooter: some View {
-        switch pairingShape {
-        case nil:
-            Text("Paste or scan what `gglib remote enable --invite` shows. A bare ticket works once the key is stored.")
-        case .success(let readPairing) where readPairing.hasCode:
-            Label(
-                "A ticket and a code. The code is redeemed once, for a key of this device's own.",
-                systemImage: "checkmark.circle")
-        case .success:
-            Label("Looks like a ticket. The token is separate.", systemImage: "checkmark.circle")
-        case .failure(let error):
-            Label(error.errorDescription ?? "", systemImage: "exclamationmark.triangle")
-                .foregroundStyle(.red)
-        }
-    }
-
-    /// The same sentence as `EditProviderView`'s, because it is the same field.
-    private var deviceFooter: String {
-        "What the other machine calls this one in its list of devices, if it keeps one. "
-            + "The name above is what this app calls that machine. Leave blank to send none."
+    /// Scan ticket's action, on a device that can scan, and nil elsewhere.
+    private var scan: (() -> Void)? {
+        #if os(iOS)
+            guard ScanTicketView.isSupported else { return nil }
+            return { scanning = true }
+        #else
+            return nil
+        #endif
     }
 
     private var canAdd: Bool {
