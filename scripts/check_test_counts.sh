@@ -907,8 +907,15 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # port mapping and the public relays off, and nothing else notices a
 # `.shipped` that turned one of them off for the app as well, so this test is
 # the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1071
+#
+# 2026-10-31: 1071 -> 1072 and 959 -> 961 for a real pipe. One test dials a
+# `modelpipe serve` on this machine through the shipped connector and has a
+# request carried to the far edge and back; it is the only test that pairs
+# with a ticket a serve printed, so a binding that could no longer do so
+# fails nothing else, so the package floor moves past it. The claim it backs
+# names it and the shipped-defaults test, so the marker floor moves by two.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1072
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 41
-floor "README test markers" "${markers:-0}" 959
+floor "README test markers" "${markers:-0}" 961
 
 exit $status
