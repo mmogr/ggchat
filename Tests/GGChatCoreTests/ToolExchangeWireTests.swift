@@ -5,8 +5,9 @@ import XCTest
 /// What a reply keeps of each tool it called beyond the call and its answer:
 /// the MCP server the tool is one of, from `tool_call_start`'s `server`,
 /// whether it failed, from `tool_call_complete`'s `result.success`, and the
-/// ids of the images it made, from its `result.images`. None is sent back,
-/// and a list kept before any of them still reads.
+/// ids of the images it made, from its `result.images`. None is sent back.
+/// A list kept before the server and the failure still reads, and one kept
+/// before the images does not.
 final class ToolExchangeWireTests: XCTestCase {
     /// The exchanges the recorded agent run leaves, as a reply being read
     /// gathers them.
@@ -20,19 +21,18 @@ final class ToolExchangeWireTests: XCTestCase {
         return exchanges
     }
 
-    /// A list kept before the three fields, which has none of their keys,
-    /// reads with no server, not known to have failed and its images not
-    /// known, rather than failing to read and being kept as none. One kept
-    /// with them reads them back.
+    /// A list kept before the two fields, which has neither key, reads with
+    /// no server and not known to have failed, rather than failing to read
+    /// and being kept as none. One kept with them reads them back.
     func testAnExchangeKeptBeforeItsServerAndFailureReadsWithNeither() throws {
-        let kept = #"[{"callID":"c1","name":"builtin:generate_image","arguments":"{}","result":"Drew 1 image"}]"#
+        let kept =
+            #"[{"callID":"c1","name":"builtin:generate_image","arguments":"{}","result":"Drew 1 image","images":[]}]"#
         let read = try JSONDecoder().decode([ToolExchange].self, from: Data(kept.utf8))
         XCTAssertEqual(
             read,
             [ToolExchange(callID: "c1", name: "builtin:generate_image", arguments: "{}", result: "Drew 1 image")])
         XCTAssertNil(read.first?.server)
         XCTAssertNil(read.first?.failed)
-        XCTAssertNil(read.first?.images)
 
         let later = [
             ToolExchange(
@@ -67,7 +67,7 @@ final class ToolExchangeWireTests: XCTestCase {
     /// be if none of that were known: the call is its id, name and
     /// arguments, and the answer its words.
     func testTheRequestNeverSaysAToolsServerOrWhetherItFailed() throws {
-        func request(server: String?, failed: Bool?, images: [String]? = nil) -> ChatRequest {
+        func request(server: String?, failed: Bool?, images: [String] = []) -> ChatRequest {
             var reply = Message(role: .assistant, content: "Pin the version.", createdAt: .distantPast)
             reply.exchanges = [
                 ToolExchange(
@@ -94,18 +94,16 @@ final class ToolExchangeWireTests: XCTestCase {
 
     /// Each answered call keeps the ids of the images it made, from its
     /// `tool_call_complete`, and one that made none keeps none, so a
-    /// reply's images say which call made which. A call never answered
-    /// does not say. Images are put on the call they name, each once and
-    /// after any it has; ones for a call that is not held, or named for no
-    /// call, change nothing; and a later reading of a call that does not
-    /// say keeps what it was known to have made.
+    /// reply's images say which call made which; a call never answered made
+    /// none. Images are put on the call they name, each once and after any
+    /// it has, and ones for a call that is not held, or named for no call,
+    /// change nothing.
     func testEachAnsweredCallKeepsTheImagesItMade() throws {
         let exchanges = try recorded()
         XCTAssertEqual(exchanges.map(\.callID), ["c1", "c2", "c3", "c4"])
         XCTAssertEqual(
             exchanges.map(\.images),
-            [[], nil, ["0a7441cf32e72812c1c5010b095a68b98c2384d127a42c4158c805032a47b6fe"], []],
-            "c2 was never answered")
+            [[], [], ["0a7441cf32e72812c1c5010b095a68b98c2384d127a42c4158c805032a47b6fe"], []])
 
         func image(_ id: String) -> ImageRef { ImageRef(id: id, mime: ImageRef.png, width: 8, height: 8) }
         var held = [ToolExchange(callID: "c1", name: "draw", arguments: "{}")]
@@ -117,11 +115,14 @@ final class ToolExchangeWireTests: XCTestCase {
         XCTAssertEqual(held.first?.images, ["a1", "a2", "a3"])
         held.take(.toolAnswered(callID: "c1", text: "Drew 3 images"))
         XCTAssertEqual(held.first?.images, ["a1", "a2", "a3"], "a second answer forgot the images")
+    }
 
-        held.merge([ToolExchange(callID: "c1", name: "draw", arguments: #"{"again":true}"#)])
-        XCTAssertEqual(held.first?.arguments, #"{"again":true}"#)
-        XCTAssertEqual(held.first?.images, ["a1", "a2", "a3"], "a later reading that does not say dropped them")
-        held.merge([ToolExchange(callID: "c1", name: "draw", arguments: "{}", result: "Drew", images: ["a9"])])
-        XCTAssertEqual(held.first?.images, ["a9"])
+    /// A list kept before calls kept their images has no `images` key, and
+    /// it does not read: it is not read as calls that made none, which
+    /// would pass another tool's image off as the drawn picture. A store
+    /// keeps such a list as none (`DrawnHistoryTests`).
+    func testAListKeptBeforeTheImagesDoesNotRead() {
+        let kept = #"[{"callID":"c1","name":"3:tavily_search","arguments":"{}","result":"found some"}]"#
+        XCTAssertThrowsError(try JSONDecoder().decode([ToolExchange].self, from: Data(kept.utf8)))
     }
 }

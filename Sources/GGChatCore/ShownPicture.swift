@@ -32,24 +32,16 @@ extension [Message] {
     /// passed over. A fix or a redo kept here is appended to its reply's
     /// images and is no call's, so it is that last image. Nil when no reply
     /// drew one, or no `user` message follows it yet. Whether the model
-    /// reads images is the caller's to ask.
-    ///
-    /// A reply whose every image another tool made drew none, as one whose
-    /// draw failed and made no image, and the picture before it is shown.
-    /// Nil when that reply holds an answered call of another tool kept
-    /// before calls kept their images: which call made which of its images
-    /// is not known, so its last image may be another tool's. An older
-    /// drawn picture is not shown in its place, as one in that reply may be
-    /// newer.
+    /// reads images is the caller's to ask. A reply whose every image
+    /// another tool made drew none, as one whose draw failed and made no
+    /// image, and the picture before it is shown.
     public var shownPicture: ShownPicture? {
         for drawn in indices.reversed() {
             let message = self[drawn]
             guard message.role == .assistant, !message.images.isEmpty,
                 message.exchanges.contains(where: { $0.name == HubToolCall.drawingTool && $0.result != nil })
             else { continue }
-            let others = message.exchanges.filter { $0.name != HubToolCall.drawingTool && $0.result != nil }
-            guard !others.contains(where: { $0.images == nil }) else { return nil }
-            let theirs = Set(others.flatMap { $0.images ?? [] })
+            let theirs = Set(message.exchanges.filter { $0.name != HubToolCall.drawingTool }.flatMap(\.images))
             guard let image = message.images.last(where: { !theirs.contains($0.id) }) else { continue }
             guard let at = self[(drawn + 1)...].firstIndex(where: { $0.role == .user }) else { return nil }
             return ShownPicture(at: at, image: image)

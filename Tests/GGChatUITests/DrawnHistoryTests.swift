@@ -173,6 +173,15 @@ final class DrawnHistoryTests: XCTestCase {
         let unread = try XCTUnwrap(try store.loadConversations().first)
         XCTAssertEqual(unread.messages.map(\.exchanges), [[], []])
         XCTAssertEqual(unread.messages.map(\.content), ["a fox in snow", "A fox."])
+
+        let beforeImages = #"[{"callID":"call_1","name":"builtin:generate_image","arguments":"{}","result":"Drew"}]"#
+        rows[1].exchangesData = Data(beforeImages.utf8)
+        try store.context.save()
+        let older = try XCTUnwrap(try store.loadConversations().first)
+        XCTAssertEqual(older.messages.map(\.exchanges), [[], []], "a list kept before the images was read")
+        XCTAssertEqual(older.messages[1].images, [Self.image])
+        try store.write(older)
+        XCTAssertEqual(rows[1].exchangesData, Data(beforeImages.utf8), "a write that changed nothing rewrote it")
     }
 
     private static func conversation() -> Conversation {

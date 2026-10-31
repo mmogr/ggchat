@@ -511,8 +511,11 @@ Each claim names the test that keeps it true.
   `result.images`, none for a call that made none, read from the run's
   `tool_call_start` and `tool_call_complete` events and kept in one
   optional column. An answer that does not say is not known to have failed
-  or worked, and a list kept before the server, the failure and the images
-  were read still reads, with none of them.
+  or worked, and a list kept before the server and the failure were read
+  still reads, with neither. A list kept before the images were read does
+  not read, and the reply loads with no calls: its words and pictures
+  stay, but it draws no tool rows, sends no calls again, shows its picture
+  to no model and offers no fix or redo. Its column is left as it was.
   The transcript holds the messages it always did, and each call is drawn
   under its reply as a collapsed row, as the item after next says.
   Every later request says it again ahead of the reply's words, in OpenAI's
@@ -547,6 +550,7 @@ Each claim names the test that keeps it true.
   <!-- test: ToolExchangeWireTests.testAToolsServerAndItsFailureLandOnItsExchange -->
   <!-- test: ToolExchangeWireTests.testTheRequestNeverSaysAToolsServerOrWhetherItFailed -->
   <!-- test: ToolExchangeWireTests.testEachAnsweredCallKeepsTheImagesItMade -->
+  <!-- test: ToolExchangeWireTests.testAListKeptBeforeTheImagesDoesNotRead -->
   <!-- test: DrawnHistoryTests.testAStoreOpensAcrossTheCallsColumnInBothDirections -->
 - A model that reads images is shown the most recent picture drawn in a
   conversation kept here, as gglib asks of a client that keeps its own
@@ -567,11 +571,7 @@ Each claim names the test that keeps it true.
   and hides nothing, and a chart's image is passed over though it came
   last. A fix or a redo is no call's, so it is still shown. A reply whose
   every image another tool made drew none, and the picture before it is
-  shown. A reply kept before calls kept their images, which also holds an
-  answered call of any other tool, still shows none, not even an older
-  picture: which call made which of its images is not known, and its last
-  image may be another tool's. Every later request carries the picture on
-  the same message. It goes only to gglib, which is sent the draw's call and answer, and only
+  shown. Every later request carries the picture on the same message. It goes only to gglib, which is sent the draw's call and answer, and only
   for a model whose entry in gglib's model list says `vision`; any other
   model, and one the list does not name, is sent the chat as before, with
   no picture and no bytes read. A picture whose bytes this device no
@@ -582,7 +582,7 @@ Each claim names the test that keeps it true.
   <!-- test: DrawnPictureShownWireTests.testTheSameMessageCarriesItOnEveryLaterRequest -->
   <!-- test: DrawnPictureShownWireTests.testANewerPictureMovesToTheMessageAfterIt -->
   <!-- test: DrawnPictureShownWireTests.testNoDrawnPictureNoPicture -->
-  <!-- test: DrawnPictureShownWireTests.testAReplyThatDrewAndCalledAnotherToolShowsNoPicture -->
+  <!-- test: DrawnPictureShownWireTests.testAReplyThatDrewAndCalledAnotherToolShowsTheDrawnPicture -->
   <!-- test: DrawnPictureShownWireTests.testAFailedDrawBesideAnotherToolsImageShowsNoPicture -->
   <!-- test: DrawnPictureShownTests.testAModelThatReadsImagesIsShownTheDrawnPicture -->
   <!-- test: DrawnPictureShownTests.testAModelThatDoesNotListVisionIsNotShownIt -->
@@ -591,7 +591,6 @@ Each claim names the test that keeps it true.
   <!-- test: DrawnPictureBesideAnotherToolWireTests.testADrawBesideASearchThatMadeNoImageIsShown -->
   <!-- test: DrawnPictureBesideAnotherToolWireTests.testAnotherToolsImageIsPassedOverAndAKeptFixIsStillShown -->
   <!-- test: DrawnPictureBesideAnotherToolWireTests.testAReplyWhoseEveryImageAnotherToolMadeShowsThePictureBefore -->
-  <!-- test: DrawnPictureBesideAnotherToolWireTests.testAReplyKeptBeforeCallsKeptTheirImagesStillShowsNone -->
   <!-- test: DrawnPictureShownTests.testAReplyThatDrewAndSearchedShowsItsDrawnPicture -->
 - Under a finished reply kept here, each tool it called is one row,
   collapsed, in the order it called them: a wrench, the tool's name after

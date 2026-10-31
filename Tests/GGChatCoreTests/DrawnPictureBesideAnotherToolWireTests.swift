@@ -5,8 +5,7 @@ import XCTest
 /// A reply that drew and called another tool too, a web search or a chart,
 /// shows a model that reads images its drawn picture: each answered call
 /// keeps the ids of the images it made (``ToolExchange/images``), so the
-/// other tool's are passed over. Only a reply kept before calls kept their
-/// images, where which call made which is not known, still shows none.
+/// other tool's are passed over.
 final class DrawnPictureBesideAnotherToolWireTests: XCTestCase {
     private static let drew = "Drew 1 image, 1024x1024 PNG, with flux-dev in 76 s; the user can see it, you cannot."
     private static let fox = Data("A PICTURE OF A FOX".utf8)
@@ -23,18 +22,18 @@ final class DrawnPictureBesideAnotherToolWireTests: XCTestCase {
     }
 
     /// An answered call of the drawing tool under `id` that made `made`.
-    private static func draw(_ id: String = "call_1", made: [Data]? = [fox]) -> ToolExchange {
+    private static func draw(_ id: String = "call_1", made: [Data] = [fox]) -> ToolExchange {
         ToolExchange(
             callID: id, name: HubToolCall.drawingTool, arguments: #"{"prompt":"a fox"}"#, result: drew,
-            images: made.map { $0.map { ref($0).id } })
+            images: made.map { ref($0).id })
     }
 
-    /// An answered call of an MCP server's tool that made `made`: none for
-    /// a search, and nil for one kept before calls kept their images.
-    private static func other(_ name: String = "3:tavily_search", made: [Data]?) -> ToolExchange {
+    /// An answered call of an MCP server's tool that made `made`, none for
+    /// a search.
+    private static func other(_ name: String = "3:tavily_search", made: [Data] = []) -> ToolExchange {
         ToolExchange(
             callID: "call_" + name, name: name, arguments: "{}", result: "found some", server: "Tavily Web Search",
-            images: made.map { $0.map { ref($0).id } })
+            images: made.map { ref($0).id })
     }
 
     /// A question sent with Draw, then the reply holding `pictures` and
@@ -112,19 +111,5 @@ final class DrawnPictureBesideAnotherToolWireTests: XCTestCase {
             turn([Self.older], [Self.draw(made: [Self.older])]) + [said(.user, "and a chart?")]
             + turn([Self.chart], [failed, Self.other("plot_chart", made: [Self.chart])]) + [said(.user, "thanks")]
         XCTAssertEqual(messages.shownPicture, ShownPicture(at: 2, image: Self.ref(Self.older)))
-    }
-
-    /// A reply kept before calls kept their images, whose other tool
-    /// answered, still shows none, not even an older picture: its last
-    /// image may be that tool's, and one in it may be newer. A draw kept
-    /// then beside no other tool is shown as it always was.
-    func testAReplyKeptBeforeCallsKeptTheirImagesStillShowsNone() {
-        let unknown = turn([Self.fox], [Self.draw(made: nil), Self.other(made: nil)])
-        XCTAssertNil((unknown + [said(.user, "thanks")]).shownPicture)
-        let before = turn([Self.older], [Self.draw(made: [Self.older])]) + [said(.user, "another")]
-        XCTAssertNil((before + unknown + [said(.user, "thanks")]).shownPicture, "an older picture was shown")
-
-        let alone = turn([Self.fox], [Self.draw(made: nil)])
-        XCTAssertEqual((alone + [said(.user, "thanks")]).shownPicture, ShownPicture(at: 2, image: Self.ref(Self.fox)))
     }
 }

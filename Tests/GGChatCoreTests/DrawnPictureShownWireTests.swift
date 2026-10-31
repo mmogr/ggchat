@@ -165,23 +165,26 @@ final class DrawnPictureShownWireTests: XCTestCase {
         XCTAssertThrowsError(try ChatCompletionRequest(missing))
     }
 
-    /// A reply kept before calls kept their images, that drew and then had
-    /// another tool answer, holds both tools' images, and which call made
-    /// which is not known: its last image may be the other tool's. So no
-    /// picture is shown, not even an older drawn one, which the line would
-    /// call the most recent while a newer may be in that reply. A call the
-    /// other tool never answered delivered no image, so it hides nothing.
-    /// One kept since is `DrawnPictureBesideAnotherToolWireTests`'.
-    func testAReplyThatDrewAndCalledAnotherToolShowsNoPicture() throws {
+    /// A reply that drew and then had another tool answer with an image
+    /// holds both tools' images, and the other tool's is passed over though
+    /// it came last: the drawn picture is shown, and neither the other's
+    /// nor an older drawn one is sent. A call the other tool never answered
+    /// made none, so the reply's last image is no call's, as a kept fix is,
+    /// and it is the one shown.
+    func testAReplyThatDrewAndCalledAnotherToolShowsTheDrawnPicture() throws {
         var reply = said(.assistant, "A fox, and a photo.", images: [Self.fox, Self.photo])
         reply.exchanges = [
             ToolExchange(callID: "call_2", name: HubToolCall.drawingTool, arguments: "{}", result: Self.drew),
-            ToolExchange(callID: "call_3", name: "mcp:camera", arguments: "{}", result: "took one"),
+            ToolExchange(
+                callID: "call_3", name: "mcp:camera", arguments: "{}", result: "took one",
+                images: [Self.ref(Self.photo).id]),
         ]
         let messages = drawn([Self.bluer]) + [said(.user, "a fox"), reply, said(.user, "thanks")]
-        XCTAssertNil(messages.shownPicture, "another tool's image was shown as the drawn picture")
+        XCTAssertEqual(
+            messages.shownPicture, ShownPicture(at: 4, image: Self.ref(Self.fox)),
+            "another tool's image was shown as the drawn picture")
         let sent = try contents(request(messages))
-        XCTAssertEqual(sent.last, ["thanks"])
+        XCTAssertEqual(sent.last, ["text:" + ShownPicture.line, Self.url(Self.fox), "text:thanks"])
         XCTAssertEqual(sent.filter { $0.contains(Self.url(Self.photo)) || $0.contains(Self.url(Self.bluer)) }, [])
 
         var pending = reply
@@ -191,16 +194,17 @@ final class DrawnPictureShownWireTests: XCTestCase {
             unanswered.shownPicture, ShownPicture(at: 4, image: Self.ref(Self.photo)), "an unanswered call hid it")
     }
 
-    /// A draw that failed beside another tool that answered with an image,
-    /// kept before calls kept their images, leaves that image the reply's
-    /// only one, and it is not shown.
+    /// A draw that failed beside another tool that answered with an image
+    /// leaves that image the reply's only one, and it is not shown.
     func testAFailedDrawBesideAnotherToolsImageShowsNoPicture() throws {
         var reply = said(.assistant, "No fox, but a photo.", images: [Self.photo])
         reply.exchanges = [
             ToolExchange(
                 callID: "call_1", name: HubToolCall.drawingTool, arguments: "{}",
                 result: "image_generation_failed: lost"),
-            ToolExchange(callID: "call_2", name: "mcp:camera", arguments: "{}", result: "took one"),
+            ToolExchange(
+                callID: "call_2", name: "mcp:camera", arguments: "{}", result: "took one",
+                images: [Self.ref(Self.photo).id]),
         ]
         let messages = [said(.user, "a fox"), reply, said(.user, "thanks")]
         XCTAssertNil(messages.shownPicture, "another tool's image was shown beside a failed draw")

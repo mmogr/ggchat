@@ -890,8 +890,8 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # another tool. Each answered call keeping the images it made, a draw beside
 # a search shown, another tool's image passed over while a kept fix is still
 # shown, a reply whose every image another tool made leaving the picture
-# before it, a reply kept before calls kept their images still showing none,
-# and the reply that drew, searched and charted walked to the request: a
+# before it, a list kept before the images not reading as calls that made
+# none, and the reply that drew, searched and charted walked to the request: a
 # picture that went back to being hidden beside any other tool sends the
 # chat that worked before and fails nothing else, so these six and their
 # markers are the whole of that guard, and the floors move past them.

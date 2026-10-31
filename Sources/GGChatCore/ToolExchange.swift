@@ -15,14 +15,16 @@ import Foundation
 /// it, and nil for gglib's own tools and from a gglib that does not say.
 /// `failed` is whether the tool said it failed: nil until it has answered,
 /// and nil for an answer that does not say, which is not known to have
-/// failed and is not known to have worked. `images` is the ids of the
-/// images the call made, from `tool_call_complete`'s `result.images`, in
-/// the order it made them: nil until it has answered, and empty for one
-/// that answered with none. It is how a reply's images, which are every
-/// tool's, say which call made which; nil on an answered call is one kept
-/// before it, whose images are not known. None of the three is sent back
-/// with the reply. All are optional so that a list kept before them still
-/// reads: a list that cannot be read is kept as none.
+/// failed and is not known to have worked. Neither is sent back with the
+/// reply. Both are optional so that a list kept before them still reads:
+/// a list that cannot be read is kept as none.
+///
+/// `images` is the ids of the images the call made, from
+/// `tool_call_complete`'s `result.images`, in the order it made them, and
+/// none until it has answered with some. It is how a reply's images, which
+/// are every tool's, say which call made which. It is not sent back either,
+/// and it is not optional: a list kept before it does not read, and is kept
+/// as none.
 public struct ToolExchange: Codable, Sendable, Equatable, Hashable {
     public var callID: String
     public var name: String
@@ -30,11 +32,11 @@ public struct ToolExchange: Codable, Sendable, Equatable, Hashable {
     public var result: String?
     public var server: String?
     public var failed: Bool?
-    public var images: [String]?
+    public var images: [String]
 
     public init(
         callID: String, name: String, arguments: String, result: String? = nil, server: String? = nil,
-        failed: Bool? = nil, images: [String]? = nil
+        failed: Bool? = nil, images: [String] = []
     ) {
         self.callID = callID
         self.name = name
@@ -49,10 +51,9 @@ public struct ToolExchange: Codable, Sendable, Equatable, Hashable {
 extension [ToolExchange] {
     /// Takes one event of a run: a call is added, in place of one already
     /// held under its id, and an answer is put on the call it answers, with
-    /// whether it failed and as one that has made no image yet; the images
-    /// a call made are put on it after its answer, each once. An answer or
-    /// images for a call that is not held, images no call is named for, and
-    /// any other event, change nothing.
+    /// whether it failed; the images a call made are put on it, each once.
+    /// An answer or images for a call that is not held, images no call is
+    /// named for, and any other event, change nothing.
     public mutating func take(_ event: ChatEvent) {
         switch event {
         case .toolCalled(let call): self.merge([call])
@@ -60,10 +61,9 @@ extension [ToolExchange] {
             guard let index = lastIndex(where: { $0.callID == callID }) else { return }
             self[index].result = text
             self[index].failed = failed
-            self[index].images = self[index].images ?? []
         case .images(let images, let callID?):
             guard let index = lastIndex(where: { $0.callID == callID }) else { return }
-            var made = self[index].images ?? []
+            var made = self[index].images
             for image in images where !made.contains(image.id) { made.append(image.id) }
             self[index].images = made
         default: break
@@ -71,15 +71,11 @@ extension [ToolExchange] {
     }
 
     /// Adds `later`, each in place of the one held under its call's id when
-    /// one is: the later reading of a call knows its answer. The images the
-    /// held one is known to have made are kept when the later one does not
-    /// say, as a call read again before its answer does not.
+    /// one is: the later reading of a call knows its answer.
     public mutating func merge(_ later: [ToolExchange]) {
         for exchange in later {
             if let index = lastIndex(where: { $0.callID == exchange.callID }) {
-                let made = self[index].images
                 self[index] = exchange
-                if exchange.images == nil { self[index].images = made }
             } else {
                 append(exchange)
             }
