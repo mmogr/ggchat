@@ -18,10 +18,11 @@ public struct ModelpipeConnector: PipeConnector {
     /// keys in, or `nil` to let modelpipe mint one for this process alone.
     /// A directory and not a file: the binding names the file itself, from
     /// the ticket it is about to dial. A path rather than a whole
-    /// `MpConnectOptions` because it is the only field of that record this
-    /// app chooses; the rest are left at the documented defaults, which is a
-    /// thing to assert about the real closure rather than a thing to pass
-    /// through a fake.
+    /// `MpConnectOptions` because it is the only field of that record that
+    /// changes from one dial to the next; the rest are `DialOptions`, fixed
+    /// when `live(sleeper:grace:identities:options:)` builds the real
+    /// closure, which is a thing to assert about that closure rather than a
+    /// thing to pass through a fake.
     public typealias Dial = @Sendable (String, String?) async throws -> any MpPipeProtocol
 
     /// Who reads a ticket before it is dialled. Stateless — no stored
@@ -47,34 +48,73 @@ public struct ModelpipeConnector: PipeConnector {
     }
 
     /// The connector exactly as it ships, keeping its keys wherever it is told
-    /// to.
+    /// to and dialling with whatever ``DialOptions`` it is handed.
     ///
     /// Internal, and apart from the public initialiser, so that a test can
-    /// point the real closures at a directory of its own: the two calls below
-    /// are the ones a shipped build makes, and a test that built its own
-    /// version of them would prove only that it agreed with itself.
+    /// point the real closures at a directory of its own and at a network of
+    /// its own: the two calls below are the ones a shipped build makes, and a
+    /// test that built its own version of them would prove only that it
+    /// agreed with itself. The options exist for one such test.
+    /// `RealPipeTests` dials a `modelpipe serve` on this machine with
+    /// discovery, port mapping and the public relays all off, so the pairing
+    /// forms over the ticket's own addresses and nothing past this machine is
+    /// asked, and keeps its key in a scratch directory rather than the app's;
+    /// apart from those two choices, it runs the shipped path.
     static func live(
         sleeper: any Sleeper = ContinuousClockSleeper(),
         grace: Duration = .milliseconds(1200),
-        identities: PipeIdentityFiles?
+        identities: PipeIdentityFiles?,
+        options: DialOptions = .shipped
     ) -> ModelpipeConnector {
-        // Every other field of `MpConnectOptions` is defaulted and the
-        // defaults are the documented right answer. Spelled with its label
-        // because uniffi emits the memberwise initialiser in Rust declaration
-        // order, so a reordered record silently reorders the arguments here.
         ModelpipeConnector(
             sleeper: sleeper, grace: grace, identities: identities,
             dial: { ticket, identityDir in
-                try await mpConnect(
-                    ticket: ticket, options: MpConnectOptions(identityDir: identityDir))
+                try await mpConnect(ticket: ticket, options: options.connectOptions(identityDir: identityDir))
             },
             pairing: { pairing, label, identityDir in
                 let paired = try await mpPair(
                     pairing: pairing, label: label,
-                    options: MpConnectOptions(identityDir: identityDir),
+                    options: options.connectOptions(identityDir: identityDir),
                     reachWithinMs: Self.reachWithinMs)
                 return Paired(pipe: paired.pipe, apiKey: paired.apiKey, device: paired.device)
             })
+    }
+
+    /// What a dial asks of the network beyond the ticket it was handed.
+    ///
+    /// Three fields of `MpConnectOptions` and not the record itself: the
+    /// identity directory is the connector's to fill in per dial, and the
+    /// fields left out are ones nothing here has a reason to choose.
+    struct DialOptions: Sendable, Equatable {
+        /// Resolve the far machine through n0's discovery service.
+        var discovery: Bool
+        /// Ask the router to map a port.
+        var portMapping: Bool
+        /// A relay of this side's own, or `nil` for the public ones.
+        var relayURL: String?
+
+        /// What a shipped build dials with, which is whatever the binding
+        /// defaults to: read from a default `MpConnectOptions` rather than
+        /// written out here, so a release of the binding that changes a
+        /// default changes it for the app as well, as it did before these
+        /// options existed.
+        static var shipped: DialOptions {
+            let defaults = MpConnectOptions()
+            return DialOptions(
+                discovery: defaults.discovery, portMapping: defaults.portMapping, relayURL: defaults.relayUrl)
+        }
+
+        /// The record `mpConnect` and `mpPair` take. Each field is set by
+        /// name: uniffi emits the memberwise initialiser in Rust declaration
+        /// order, so a reordered record would silently reorder positional
+        /// arguments here.
+        func connectOptions(identityDir: String?) -> MpConnectOptions {
+            var options = MpConnectOptions(identityDir: identityDir)
+            options.discovery = discovery
+            options.portMapping = portMapping
+            options.relayUrl = relayURL
+            return options
+        }
     }
 
     /// Internal, and `identities` defaults to none: a test that drives a fake

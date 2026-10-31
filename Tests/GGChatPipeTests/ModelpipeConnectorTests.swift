@@ -197,4 +197,24 @@ final class ModelpipeConnectorTests: XCTestCase {
             XCTFail("an MpError escaped the connector: \(error)")
         }
     }
+
+    /// A shipped build dials with the binding's own defaults, and the record a
+    /// test's options become differs from them in exactly the three fields
+    /// the options name. The real closure takes whatever `live` is handed, so
+    /// without this a `.shipped` that quietly turned discovery off would pass
+    /// every other test here and stop a phone reaching a desktop that had
+    /// changed network.
+    func testTheShippedDialOptionsAreTheBindingsOwnDefaults() {
+        XCTAssertEqual(
+            ModelpipeConnector.DialOptions.shipped.connectOptions(identityDir: "/keys"),
+            MpConnectOptions(identityDir: "/keys"))
+
+        let hermetic = ModelpipeConnector.DialOptions(
+            discovery: false, portMapping: false, relayURL: "https://127.0.0.1:1/")
+        var expected = MpConnectOptions(identityDir: "/keys")
+        expected.discovery = false
+        expected.portMapping = false
+        expected.relayUrl = "https://127.0.0.1:1/"
+        XCTAssertEqual(hermetic.connectOptions(identityDir: "/keys"), expected)
+    }
 }

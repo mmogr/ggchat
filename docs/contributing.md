@@ -59,6 +59,19 @@ make test-live-engine
 The tool is built in a gglib checkout with `cargo build -p gglib-ffi
 --features smoke --bin gglib-ffi-add-model`.
 
+`make test-pipe` dials a real `modelpipe serve` on this machine through the
+shipped connector, with discovery, port mapping and the public relays off, and
+checks that a request crosses the pipe to the far edge and back. It needs the
+`modelpipe` binary, built from crates.io at the version `MODELPIPE_CLI_VERSION`
+names in `.github/workflows/pipe.yml`, the one the binding's modelpipe is at.
+The test skips itself when `MODELPIPE_BIN` is unset, and this target refuses to
+run without it, and fails if the test did not run and pass:
+
+```sh
+cargo install modelpipe-cli --version <MODELPIPE_CLI_VERSION> --locked --root /tmp/modelpipe
+MODELPIPE_BIN=/tmp/modelpipe/bin/modelpipe make test-pipe
+```
+
 `make ci` runs what CI runs: `make fmt-check`, `make lint`, `make analyze`,
 `make boundaries`, `make enforce`, `make build`, `make build-release`,
 `make build-app`, `make build-app-release`, `make test`, `make unused`,

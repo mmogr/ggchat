@@ -865,6 +865,20 @@ Each claim names the test that keeps it true.
   <!-- test: BindingTests.testTheBindingIsLinkedAndAnswersAcrossTheBoundary -->
   <!-- test: BindingTests.testEveryPipeStatusCrossesUnchanged -->
   <!-- test: BindingTests.testARelayedPipeCountsAsConnected -->
+- The connector as it ships dials a real `modelpipe serve` and carries a
+  request through the pipe to the far edge and back. Run by `make test-pipe`
+  and the Pipe workflow on a serve on the same machine, with discovery, port
+  mapping and the public relays off on both sides, so the pairing forms over
+  the addresses the ticket carries: a wrong bearer is refused `401` by the far
+  edge, which this side never checks, and the right one reaches a backend that
+  is not there and is answered `502` with serve's own `backend_unreachable`,
+  not the `tunnel_unavailable` this side writes when it has no pipe. The dial
+  keeps this device's key as the app does, in a scratch directory rather than
+  the app's own. Apart from those three network options and where the key is
+  kept, it is a shipped dial, and a shipped dial keeps the binding's own
+  defaults. Skipped by `swift test` without `MODELPIPE_BIN`.
+  <!-- test: RealPipeTests.testADialledPipeCarriesARequestToTheFarEdgeAndItsAnswerBack -->
+  <!-- test: ModelpipeConnectorTests.testTheShippedDialOptionsAreTheBindingsOwnDefaults -->
 - A real connector has modelpipe read the ticket before it dials, with the
   same call the form reads what is typed with, so a ticket that is not one and
   an empty token each cost nothing — which matters for the bare ticket a

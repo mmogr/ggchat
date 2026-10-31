@@ -1,0 +1,85 @@
+name: Pipe
+
+# ModelpipeConnector dialling a real `modelpipe serve` on the runner, through
+# the shipped connector, with discovery, port mapping and the public relays
+# off on both sides: `make test-pipe`. A workflow of its own rather than a job
+# in ci.yml because a `paths:` filter applies to a whole workflow, and this
+# one needs a Rust toolchain and a cargo-built binary the other jobs do not.
+# Only a change that could move the pipe runs it, and it is not a required
+# check.
+on:
+  push:
+    branches: [main]
+    paths:
+      - Sources/GGChatPipe/**
+      - Tests/GGChatPipeTests/**
+      - Package.swift
+      - Package.resolved
+      # The job's way in is `make test-pipe`.
+      - Makefile
+      - .github/workflows/pipe.yml
+  pull_request:
+    paths:
+      - Sources/GGChatPipe/**
+      - Tests/GGChatPipeTests/**
+      - Package.swift
+      - Package.resolved
+      - Makefile
+      - .github/workflows/pipe.yml
+
+concurrency:
+  group: pipe-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+env:
+  # The modelpipe the binding is built on: modelpipe-ffi 0.4.2's Cargo.lock
+  # pins modelpipe 0.8.1, so the serve this dials is the same library as the
+  # connect side. Move it with the binding.
+  MODELPIPE_CLI_VERSION: 0.8.1
+
+jobs:
+  pipe:
+    name: Real pipe
+    runs-on: macos-26
+    # A cold run is about four minutes, most of it the cargo install. A
+    # stalled serve is stopped by the test itself; this is the backstop.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/cache@v6
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}
+          restore-keys: spm-${{ runner.os }}-
+      - name: Toolchain
+        run: xcodebuild -version && swift --version
+      # Restored and saved as two steps rather than one `actions/cache`, whose
+      # save waits for the end of a job that passed: a cold install is the
+      # expensive part, and a test that fails should not make the next run
+      # pay for it again.
+      - name: Restore modelpipe
+        id: modelpipe
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.cargo/bin/modelpipe
+          key: modelpipe-cli-${{ env.MODELPIPE_CLI_VERSION }}-${{ runner.os }}-${{ runner.arch }}
+      - name: Install Rust
+        if: steps.modelpipe.outputs.cache-hit != 'true'
+        run: rustup toolchain install stable --profile minimal && rustup default stable && cargo --version
+      - name: Build modelpipe ${{ env.MODELPIPE_CLI_VERSION }}
+        if: steps.modelpipe.outputs.cache-hit != 'true'
+        run: time cargo install modelpipe-cli --version "$MODELPIPE_CLI_VERSION" --locked
+      - name: Save modelpipe
+        if: steps.modelpipe.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ~/.cargo/bin/modelpipe
+          key: ${{ steps.modelpipe.outputs.cache-primary-key }}
+      - name: Dial a real modelpipe serve
+        run: |
+          export MODELPIPE_BIN="$HOME/.cargo/bin/modelpipe"
+          "$MODELPIPE_BIN" --version
+          make test-pipe

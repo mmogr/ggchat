@@ -941,8 +941,21 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # `onTermination`, which cancels the reading when its consumer stops, could
 # be removed and fail nothing. These three and their markers are the whole of
 # that guard, and the floors move past them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1092
+#
+# 2026-10-31: 1092 -> 1093 for a shipped dial keeping the binding's own
+# defaults. The connector's dial options exist so a test can turn discovery,
+# port mapping and the public relays off, and nothing else notices a
+# `.shipped` that turned one of them off for the app as well, so this test is
+# the whole of that guard.
+#
+# 2026-10-31: 1093 -> 1094 and 982 -> 984 for a real pipe. One test dials a
+# `modelpipe serve` on this machine through the shipped connector and has a
+# request carried to the far edge and back; it is the only test that pairs
+# with a ticket a serve printed, so a binding that could no longer do so
+# fails nothing else, so the package floor moves past it. The claim it backs
+# names it and the shipped-defaults test, so the marker floor moves by two.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1094
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 982
+floor "README test markers" "${markers:-0}" 984
 
 exit $status
