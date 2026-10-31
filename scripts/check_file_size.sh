@@ -13,14 +13,14 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CODE_LIMIT=250
 LINE_LIMIT=400
-files=$(find "$ROOT/Sources" "$ROOT/Tests" "$ROOT/App" -name '*.swift' -not -path '*/.build/*' \
+files=$(find "$ROOT/Sources" "$ROOT/Tests" "$ROOT/App" -type f -name '*.swift' -not -path '*/.build/*' \
     -not -path "$ROOT/Sources/GGLib/*")
 if [ -z "$files" ]; then
     echo "size: no Swift files under $ROOT" >&2
     exit 1
 fi
-# One count per file. A file awk cannot read fails the gate, through
-# `set -e`, rather than counting as empty.
+# One count per file. A file awk cannot read fails the gate rather than
+# counting as empty.
 over=$(printf '%s\n' "$files" | tr '\n' '\0' | xargs -0 awk -v code_limit="$CODE_LIMIT" -v line_limit="$LINE_LIMIT" '
     function report() {
         if (name != "" && (code > code_limit || lines > line_limit))
@@ -30,7 +30,10 @@ over=$(printf '%s\n' "$files" | tr '\n' '\0' | xargs -0 awk -v code_limit="$CODE
     { lines++ }
     /^[[:space:]]*$/ || /^[[:space:]]*\/\// { next }
     { code++ }
-    END { report() }')
+    END { report() }') || {
+    echo "size: could not read every file, so this gate read only part of the tree" >&2
+    exit 2
+}
 if [ -n "$over" ]; then
     echo "size: files over $CODE_LIMIT lines of code or $LINE_LIMIT lines:" >&2
     printf '%s\n' "$over" >&2
