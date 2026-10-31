@@ -23,6 +23,7 @@ final class DrawnHistoryTests: XCTestCase {
     private static func answered(_ id: String) -> ToolExchange {
         var call = call(id)
         call.result = drew
+        call.images = [image.id]
         return call
     }
 
@@ -32,7 +33,7 @@ final class DrawnHistoryTests: XCTestCase {
         [
             [.tool("Generate Image"), .toolCalled(call(id))],
             [.toolProgress(ToolProgress(callID: id, stage: .sampling, pass: 1, done: 4, total: 20))],
-            [.toolEnded(id), .toolAnswered(callID: id, text: drew), .images([image])],
+            [.toolEnded(id), .toolAnswered(callID: id, text: drew), .images([image], callID: id)],
             [.delta("A fox.")],
         ]
     }

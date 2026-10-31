@@ -1,3 +1,4 @@
+import SwiftData
 import XCTest
 
 @testable import GGChatCore
@@ -6,7 +7,8 @@ import XCTest
 /// A conversation kept on this phone shows its drawn picture to a model
 /// gglib lists as one that reads images, and to no other: the request after
 /// the draw carries the picture's bytes from this device's store, on the
-/// first message after it, and a kept fix replaces it.
+/// first message after it, a kept fix replaces it, and another tool's image
+/// in the same reply is passed over.
 @MainActor
 final class DrawnPictureShownTests: XCTestCase {
     private typealias Runs = AppModelRunTests
@@ -15,6 +17,8 @@ final class DrawnPictureShownTests: XCTestCase {
     private static let fixed = Data("THE FOX, FIXED".utf8)
     private static let fix = ImageRef(id: ImageRef.id(of: fixed), mime: ImageRef.png, width: 1024, height: 1024)
     private static let drew = "Drew 1 image, 1024x1024 PNG, with flux-dev in 76 s; the user can see it, you cannot."
+    private static let charted = Data("A CHART OF FOXES".utf8)
+    private static let chart = ImageRef(id: ImageRef.id(of: charted), mime: ImageRef.png, width: 640, height: 480)
 
     private struct Drawn {
         let model: AppModel
@@ -22,21 +26,28 @@ final class DrawnPictureShownTests: XCTestCase {
         let store: InMemoryStore
     }
 
-    /// A conversation here whose reply drew `image` through a run, the
-    /// next reply set to be words alone, and `listed` as the hub's models.
-    private func drawn(listing listed: [ModelInfo]) async throws -> Drawn {
+    /// A conversation here whose reply drew `image` through a run and then
+    /// read `besides`, the next reply set to be words alone, and `listed` as
+    /// the hub's models.
+    private func drawn(listing listed: [ModelInfo], besides: [[ChatEvent]] = []) async throws -> Drawn {
         let call = ToolExchange(
             callID: "call_1", name: "builtin:generate_image", arguments: #"{"prompt":"a red fox in snow"}"#)
-        let hub = FakeRunHub(frames: [
-            [.tool("Generate Image"), .toolCalled(call)],
-            [.toolEnded("call_1"), .toolAnswered(callID: "call_1", text: Self.drew), .images([Self.image])],
-            [.delta("A fox.")],
-        ])
-        hub.with { $0.images[Self.image.id] = Self.png }
+        let hub = FakeRunHub(
+            frames: [
+                [.tool("Generate Image"), .toolCalled(call)],
+                [
+                    .toolEnded("call_1"), .toolAnswered(callID: "call_1", text: Self.drew),
+                    .images([Self.image], callID: "call_1"),
+                ],
+            ] + besides + [[.delta("A fox.")]])
+        hub.with {
+            $0.images[Self.image.id] = Self.png
+            $0.images[Self.chart.id] = Self.charted
+        }
         let store = InMemoryStore()
         let (model, config) = try await DrawingRunTests.makeModel(behind: hub, store: store)
         try await send(model, "a fox in snow", draws: true, until: 2)
-        XCTAssertEqual(try Runs.last(model).images, [Self.image])
+        XCTAssertEqual(try Runs.last(model).images.first, Self.image)
         model.modelsByProvider[config.id] = listed
         hub.with { $0.frames = FakeRunHub.frames(ofText: "You are welcome.", reasoning: "") }
         return Drawn(model: model, hub: hub, store: store)
@@ -93,6 +104,49 @@ final class DrawnPictureShownTests: XCTestCase {
         sent = try lastSent(hub)
         XCTAssertEqual(sent.shownPicture, ShownPicture(at: 2, image: Self.fix))
         XCTAssertEqual(sent.images, [Self.fix.id: Self.fixed], "the older picture's bytes were read")
+    }
+
+    /// A reply that drew, then searched the web and drew a chart, keeps
+    /// which call made each of its images, through a save and a reading
+    /// back. A model that reads images is shown the drawn picture, not the
+    /// chart that came after it, and the search, which made none, hides
+    /// nothing.
+    func testAReplyThatDrewAndSearchedShowsItsDrawnPicture() async throws {
+        let search = ToolExchange(
+            callID: "call_2", name: "3:tavily_search", arguments: #"{"query":"arctic foxes"}"#,
+            server: "Tavily Web Search")
+        let plot = ToolExchange(callID: "call_3", name: "plot_chart", arguments: #"{"title":"foxes"}"#)
+        let drawn = try await drawn(
+            listing: Self.sees,
+            besides: [
+                [.tool("Tavily Search: arctic foxes"), .toolCalled(search)],
+                [.toolEnded("call_2"), .toolAnswered(callID: "call_2", text: "They live in snow.", failed: false)],
+                [.tool("Plot Chart: foxes"), .toolCalled(plot)],
+                [
+                    .toolEnded("call_3"), .toolAnswered(callID: "call_3", text: "[image 640x480 PNG stored]"),
+                    .images([Self.chart], callID: "call_3"),
+                ],
+            ])
+        let (model, hub) = (drawn.model, drawn.hub)
+        let reply = try Runs.last(model)
+        XCTAssertEqual(reply.images, [Self.image, Self.chart])
+        XCTAssertEqual(reply.exchanges.map(\.images), [[Self.image.id], [], [Self.chart.id]])
+
+        let container = SwiftDataStore.inMemoryContainer()
+        try SwiftDataStore(container: container).save(conversation: try XCTUnwrap(model.selectedConversation))
+        let read = try XCTUnwrap(try SwiftDataStore(container: container).loadConversations().first)
+        XCTAssertEqual(read.messages.last?.exchanges, reply.exchanges, "a reopening lost which call made which")
+
+        model.select(model: "mock-9b", for: try XCTUnwrap(model.selectedConversationID))
+        try await send(model, "thanks", until: 4)
+        let sent = try lastSent(hub)
+        XCTAssertEqual(sent.shownPicture, ShownPicture(at: 2, image: Self.image))
+        XCTAssertEqual(sent.images, [Self.image.id: Self.png], "the chart's bytes were read for the model")
+        let parts = try XCTUnwrap(try lastContent(sent) as? [[String: Any]])
+        XCTAssertEqual(parts.first?["text"] as? String, ShownPicture.line)
+        XCTAssertEqual(
+            (parts[1]["image_url"] as? [String: Any])?["url"] as? String,
+            "data:image/png;base64," + Self.png.base64EncodedString())
     }
 
     /// A model gglib lists without `vision`, and one its list does not

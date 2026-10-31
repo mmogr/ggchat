@@ -81,7 +81,7 @@ extension AppModel {
     /// bytes are not the ones its id names, is passed over: the reply names
     /// it, and it is drawn as one this device does not have.
     func keepImages(named events: [ChatEvent], from hub: any RunProvider) async -> Bool {
-        for case .images(let images) in events {
+        for case .images(let images, _) in events {
             for image in images where (try? store.loadImage(id: image.id)) == nil {
                 let data: Data
                 do throws(HubChatsFailure) {

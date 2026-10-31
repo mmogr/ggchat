@@ -165,7 +165,8 @@ extension AppModel {
     /// servers, also says what each tool was called with and answered,
     /// which `finish` keeps with the reply; one that draws also says how far
     /// its picture has got (`ToolWork`) and names the images it made, whose
-    /// bytes `keepImages` has stored by the time they are named here.
+    /// bytes `keepImages` has stored by the time they are named here, and
+    /// which call made them, which is kept on that call's exchange.
     func apply(_ event: ChatEvent, to live: LiveReply) {
         live.work.apply(event)
         switch event {
@@ -179,8 +180,9 @@ extension AppModel {
         case .finished(let reason, let usage):
             live.usage = usage
             live.finishReason = reason
-        case .images(let images):
+        case .images(let images, _):
             live.made += images.filter { image in !live.made.contains { $0.id == image.id } }
+            live.exchanges.take(event)
         case .tool(let line, let writing): live.toolLines.take(line, writing: writing)
         case .toolCalled, .toolAnswered: live.exchanges.take(event)
         case .toolProgress, .toolEnded, .waiting: break

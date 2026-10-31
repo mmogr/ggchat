@@ -92,12 +92,14 @@ final class DrawnHistoryWireTests: XCTestCase {
     }
 
     /// The recorded frames of a picture leave one exchange: the call's id,
-    /// the tool's name and the arguments the model wrote, as JSON text, and
-    /// the tool's answer word for word, which it said worked.
+    /// the tool's name and the arguments the model wrote, as JSON text, the
+    /// tool's answer word for word, which it said worked, and the id of the
+    /// picture it made.
     func testTheRecordedFramesOfAPictureLeaveItsCallAndItsAnswer() throws {
         var answered = Self.call
         answered.result = Self.drew
         answered.failed = false
+        answered.images = [Self.picture.id]
         XCTAssertEqual(try recorded(), [answered])
     }
 

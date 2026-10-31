@@ -15,9 +15,14 @@ import Foundation
 /// it, and nil for gglib's own tools and from a gglib that does not say.
 /// `failed` is whether the tool said it failed: nil until it has answered,
 /// and nil for an answer that does not say, which is not known to have
-/// failed and is not known to have worked. Neither is sent back with the
-/// reply. Both are optional so that a list kept before them still reads:
-/// a list that cannot be read is kept as none.
+/// failed and is not known to have worked. `images` is the ids of the
+/// images the call made, from `tool_call_complete`'s `result.images`, in
+/// the order it made them: nil until it has answered, and empty for one
+/// that answered with none. It is how a reply's images, which are every
+/// tool's, say which call made which; nil on an answered call is one kept
+/// before it, whose images are not known. None of the three is sent back
+/// with the reply. All are optional so that a list kept before them still
+/// reads: a list that cannot be read is kept as none.
 public struct ToolExchange: Codable, Sendable, Equatable, Hashable {
     public var callID: String
     public var name: String
@@ -25,10 +30,11 @@ public struct ToolExchange: Codable, Sendable, Equatable, Hashable {
     public var result: String?
     public var server: String?
     public var failed: Bool?
+    public var images: [String]?
 
     public init(
         callID: String, name: String, arguments: String, result: String? = nil, server: String? = nil,
-        failed: Bool? = nil
+        failed: Bool? = nil, images: [String]? = nil
     ) {
         self.callID = callID
         self.name = name
@@ -36,14 +42,17 @@ public struct ToolExchange: Codable, Sendable, Equatable, Hashable {
         self.result = result
         self.server = server
         self.failed = failed
+        self.images = images
     }
 }
 
 extension [ToolExchange] {
     /// Takes one event of a run: a call is added, in place of one already
     /// held under its id, and an answer is put on the call it answers, with
-    /// whether it failed. An answer to a call that is not held, and any other
-    /// event, change nothing.
+    /// whether it failed and as one that has made no image yet; the images
+    /// a call made are put on it after its answer, each once. An answer or
+    /// images for a call that is not held, images no call is named for, and
+    /// any other event, change nothing.
     public mutating func take(_ event: ChatEvent) {
         switch event {
         case .toolCalled(let call): self.merge([call])
@@ -51,16 +60,26 @@ extension [ToolExchange] {
             guard let index = lastIndex(where: { $0.callID == callID }) else { return }
             self[index].result = text
             self[index].failed = failed
+            self[index].images = self[index].images ?? []
+        case .images(let images, let callID?):
+            guard let index = lastIndex(where: { $0.callID == callID }) else { return }
+            var made = self[index].images ?? []
+            for image in images where !made.contains(image.id) { made.append(image.id) }
+            self[index].images = made
         default: break
         }
     }
 
     /// Adds `later`, each in place of the one held under its call's id when
-    /// one is: the later reading of a call knows its answer.
+    /// one is: the later reading of a call knows its answer. The images the
+    /// held one is known to have made are kept when the later one does not
+    /// say, as a call read again before its answer does not.
     public mutating func merge(_ later: [ToolExchange]) {
         for exchange in later {
             if let index = lastIndex(where: { $0.callID == exchange.callID }) {
+                let made = self[index].images
                 self[index] = exchange
+                if exchange.images == nil { self[index].images = made }
             } else {
                 append(exchange)
             }
@@ -100,8 +119,8 @@ extension Message {
     /// What a reply's picture was drawn from: the `prompt` of the one call
     /// of gglib's drawing tool the reply holds that drew, which is one
     /// answered "Drew …", as gglib reads it. Nil for a reply that holds no
-    /// such call, or several: which call made which picture is not kept, so
-    /// with several a picture's own words are not known.
+    /// such call, or several: which call made which picture is not read
+    /// here, so with several a picture's own words are not known.
     public var drawnPrompt: String? {
         let drew = exchanges.filter { $0.name == HubToolCall.drawingTool && $0.result?.hasPrefix("Drew ") == true }
         guard drew.count == 1,

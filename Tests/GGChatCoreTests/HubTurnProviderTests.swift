@@ -161,7 +161,7 @@ final class HubTurnProviderTests: XCTestCase {
                 .tool("Plot Chart: build times"),
                 .toolCalled(ToolExchange(callID: "c3", name: "plot_chart", arguments: #"{"title":"build times"}"#)),
                 .toolEnded("c3"), .toolAnswered(callID: "c3", text: "[image 640x480 PNG stored]", failed: false),
-                .images([Self.chart]), .tool("Tavily Search: cargo lock v4"),
+                .images([Self.chart], callID: "c3"), .tool("Tavily Search: cargo lock v4"),
                 .toolCalled(
                     ToolExchange(
                         callID: "c4", name: "3:tavily_search", arguments: #"{"query":"cargo lock v4"}"#,
@@ -187,9 +187,10 @@ final class HubTurnProviderTests: XCTestCase {
         height: 480)
 
     /// A finished tool's `result.images` are the images it made, each with
-    /// its id, type and size, in order, after the word that its call ended
-    /// and what it answered. A result without them, with none, or with
-    /// images that cannot be read is the call's end and its answer alone.
+    /// its id, type and size, in order, under the id of the call that made
+    /// them, after the word that its call ended and what it answered. A
+    /// result without them, with none, or with images that cannot be read
+    /// is the call's end and its answer alone.
     func testAFinishedToolsImagesAreReadAndOneWithoutMeansNothing() {
         func complete(_ images: String) -> [ChatEvent] {
             OpenAICompatibleProvider.agentEvents(
@@ -206,7 +207,7 @@ final class HubTurnProviderTests: XCTestCase {
             complete(
                 #","images":[{"id":"\#(Self.chart.id)","mime":"image/png","width":640,"height":480},"#
                     + #"{"id":"\#(second.id)","mime":"image/jpeg","width":1024,"height":768}]"#),
-            ended + [.images([Self.chart, second])])
+            ended + [.images([Self.chart, second], callID: "c3")])
         XCTAssertEqual(complete(""), ended)
         XCTAssertEqual(complete(#","images":[]"#), ended)
         XCTAssertEqual(complete(#","images":null"#), ended)

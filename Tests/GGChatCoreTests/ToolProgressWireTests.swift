@@ -53,7 +53,7 @@ final class ToolProgressWireTests: XCTestCase {
                 [
                     .toolEnded(Self.call),
                     .toolAnswered(callID: Self.call, text: DrawnHistoryWireTests.drew, failed: false),
-                    .images([image]),
+                    .images([image], callID: Self.call),
                 ],
             ])
     }

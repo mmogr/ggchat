@@ -165,12 +165,13 @@ final class DrawnPictureShownWireTests: XCTestCase {
         XCTAssertThrowsError(try ChatCompletionRequest(missing))
     }
 
-    /// A reply that drew and then had another tool answer holds both tools'
-    /// images, and which call made which is not kept: its last image may be
-    /// the other tool's. So no picture is shown, not even an older drawn
-    /// one, which the line would call the most recent while a newer may
-    /// be in that reply. A call the other tool never answered delivered no
-    /// image, so it hides nothing.
+    /// A reply kept before calls kept their images, that drew and then had
+    /// another tool answer, holds both tools' images, and which call made
+    /// which is not known: its last image may be the other tool's. So no
+    /// picture is shown, not even an older drawn one, which the line would
+    /// call the most recent while a newer may be in that reply. A call the
+    /// other tool never answered delivered no image, so it hides nothing.
+    /// One kept since is `DrawnPictureBesideAnotherToolWireTests`'.
     func testAReplyThatDrewAndCalledAnotherToolShowsNoPicture() throws {
         var reply = said(.assistant, "A fox, and a photo.", images: [Self.fox, Self.photo])
         reply.exchanges = [
@@ -190,8 +191,9 @@ final class DrawnPictureShownWireTests: XCTestCase {
             unanswered.shownPicture, ShownPicture(at: 4, image: Self.ref(Self.photo)), "an unanswered call hid it")
     }
 
-    /// A draw that failed beside another tool that answered with an image
-    /// leaves that image the reply's only one, and it is not shown.
+    /// A draw that failed beside another tool that answered with an image,
+    /// kept before calls kept their images, leaves that image the reply's
+    /// only one, and it is not shown.
     func testAFailedDrawBesideAnotherToolsImageShowsNoPicture() throws {
         var reply = said(.assistant, "No fox, but a photo.", images: [Self.photo])
         reply.exchanges = [
