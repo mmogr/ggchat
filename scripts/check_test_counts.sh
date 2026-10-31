@@ -901,8 +901,13 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # offered the drawing's words and its fix being kept on the reply as no
 # call's, to be shown to a model as the drawn picture, so this test and its
 # marker are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1070
+#
+# 1070 -> 1072 and 959 -> 961 for a chat with a turn this build cannot read
+# being left out. Nothing else stops such a turn being read as a question,
+# or the chat loaded without it losing it at its next save, so these two and
+# their markers are the whole of that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1072
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 41
-floor "README test markers" "${markers:-0}" 959
+floor "README test markers" "${markers:-0}" 961
 
 exit $status

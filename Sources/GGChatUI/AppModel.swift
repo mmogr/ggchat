@@ -9,6 +9,9 @@ import Observation
 public final class AppModel {
     public internal(set) var providers: [ProviderConfig] = []
     public private(set) var conversations: [Conversation] = []
+    /// The chats the store left out at launch, because a later build wrote
+    /// a turn in them this one cannot read (`Store.hiddenChats`).
+    public private(set) var hiddenChats = 0
     public var selectedConversationID: UUID?
     /// The conversation whose chat the view last said it showed, whether or
     /// not the app is in front; see `AppModel+ListMarks`. Selecting is not
@@ -196,6 +199,7 @@ public final class AppModel {
             lastHeardAt = try store.loadLastHeard()
             loadSeenHubChats()
             conversations = try store.loadConversations().sorted { $0.updatedAt > $1.updatedAt }
+            hiddenChats = store.hiddenChats
             // Reopening the app returns you to the conversation you left.
             if selectedConversationID == nil {
                 selectedConversationID = conversations.first?.id

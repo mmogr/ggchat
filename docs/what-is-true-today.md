@@ -1399,6 +1399,12 @@ Each claim names the test that keeps it true.
   <!-- test: StoreNoticeTests.testTheRedLineComesFirstAndEachLineReadsAsWritten -->
   <!-- test: StoreNoticeTests.testClosingHidesTheOlderStoresLineAndNeverTheRedOne -->
   <!-- test: StoreResetTests.testTheResetClearsTheStoreFromBothPlaces -->
+- A chat holding a turn whose role this build does not know, one a newer
+  build wrote, is left out of the list whole rather than read with that turn
+  as a question, and the window says how many were left out and that they
+  have not been deleted. Saving another chat leaves its rows as they were.
+  <!-- test: StoreUnknownRoleTests.testAChatHoldingATurnThisBuildCannotReadIsLeftOutAndKept -->
+  <!-- test: StoreUnknownRoleTests.testTheWindowSaysHowManyChatsWereLeftOut -->
 - Sending streams the reply, with reasoning kept separately, into the
   conversation; a dropped stream keeps the partial reply on screen and
   Continue extends that same message rather than starting a new one.

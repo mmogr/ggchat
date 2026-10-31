@@ -27,8 +27,16 @@ public protocol Store: ImageStore {
     /// with no row keeps nothing, and deleting the row forgets them.
     func save(hubRuns: [HeldHubRun], forProvider id: UUID) throws
     func loadConversations() throws -> [Conversation]
+    /// How many chats the last `loadConversations` left out, because one of
+    /// their turns has a role this build does not know.
+    var hiddenChats: Int { get }
     func save(conversation: Conversation) throws
     func deleteConversation(id: UUID) throws
+}
+
+extension Store {
+    /// A store that holds only what this build wrote leaves nothing out.
+    public var hiddenChats: Int { 0 }
 }
 
 /// Where the bytes of the images messages name are kept on this device, by

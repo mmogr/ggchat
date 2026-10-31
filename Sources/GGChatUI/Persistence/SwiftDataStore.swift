@@ -7,6 +7,7 @@ import SwiftData
 public final class SwiftDataStore: Store {
     public let container: ModelContainer
     let context: ModelContext
+    public private(set) var hiddenChats = 0
 
     public init(container: ModelContainer) {
         self.container = container
@@ -116,14 +117,27 @@ public final class SwiftDataStore: Store {
 
     // MARK: - Conversations
 
+    /// A chat holding a turn whose role this build does not know, one a
+    /// later build wrote, is left out whole and counted in `hiddenChats`.
+    /// Read as a question, that turn would be shown and sent as one; and a
+    /// chat loaded without it would lose it, since a save deletes the rows a
+    /// conversation no longer holds. Left out, it is never saved over.
     public func loadConversations() throws -> [Conversation] {
         let records = try context.fetch(FetchDescriptor<ConversationRecord>())
-        return records.map { record in
-            Conversation(
+        var hidden = 0
+        defer { hiddenChats = hidden }
+        return records.compactMap { record in
+            let stored = record.messages.sorted { $0.order < $1.order }
+            let roles = stored.compactMap { Role(rawValue: $0.role) }
+            guard roles.count == stored.count else {
+                hidden += 1
+                return nil
+            }
+            return Conversation(
                 id: record.uuid, title: record.title, providerID: record.providerID, model: record.model,
-                messages: record.messages.sorted { $0.order < $1.order }.map { message in
+                messages: zip(stored, roles).map { message, role in
                     Message(
-                        id: message.uuid, role: Role(rawValue: message.role) ?? .user, content: message.content,
+                        id: message.uuid, role: role, content: message.content,
                         reasoning: message.reasoning, isPartial: message.isPartial,
                         failure: Self.failure(from: message.failureData), createdAt: message.createdAt,
                         runID: message.runID, runCursor: message.runCursor.flatMap(UInt32.init(exactly:)),
