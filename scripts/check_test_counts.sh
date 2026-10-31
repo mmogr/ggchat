@@ -902,12 +902,27 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # call's, to be shown to a model as the drawn picture, so this test and its
 # marker are the whole of that guard.
 #
-# 1070 -> 1072 and 959 -> 961 for a chat with a turn this build cannot read
+# 2026-10-31: 1070 -> 1081, 41 -> 42 and 959 -> 971 for removing a model
+# from this iPhone. That a removal leaves the chats and the default that had
+# the model with none, after the listing so it gives This iPhone no other,
+# and keeps them so when This iPhone opens again; leaves other chats alone;
+# puts down an engine that may hold a model, before the files go, with a
+# reply through it or a shutdown already under way, and no other, keeping
+# what a reply through it had; refuses a send naming the model while it
+# goes; touches nothing for a model no longer listed and keeps the files,
+# chats and default when the library refuses; asks first, naming the model
+# and its room; and is reached by a long press: a removal that went back to
+# deleting with no question, left a loaded engine answering from a deleted
+# file or left a chat on a model that is gone would fail nothing before
+# these. The eleven, the walk and the twelve markers naming them are the
+# whole of that guard, so the floors move past them.
+#
+# 1081 -> 1083 and 971 -> 973 for a chat with a turn this build cannot read
 # being left out. Nothing else stops such a turn being read as a question,
 # or the chat loaded without it losing it at its next save, so these two and
 # their markers are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1072
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 41
-floor "README test markers" "${markers:-0}" 961
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1083
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
+floor "README test markers" "${markers:-0}" 973
 
 exit $status

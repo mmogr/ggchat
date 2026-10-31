@@ -3,11 +3,11 @@ import GGChatCore
 
 // Downloading a model chosen in the browser and what follows: room for it,
 // each step kept for its row, Cancel, and a finished one marked out of the
-// backup and joined to This iPhone's models; the models installed, and
-// removing one; and the downloads paused while the app is away. The library
-// does the downloading; `OnDeviceState` keeps what these leave. A failure is
-// said under the row or the section it belongs to, for `AppModel+Library`'s
-// reason.
+// backup and joined to This iPhone's models; the models installed, which
+// `AppModel+Removal` removes one of; and the downloads paused while the app
+// is away. The library does the downloading; `OnDeviceState` keeps what
+// these leave. A failure is said under the row or the section it belongs
+// to, for `AppModel+Library`'s reason.
 extension AppModel {
     /// Downloads one quantization of `repo`, adding This iPhone first if it
     /// is not there: choosing a model is how a device gets its one such
@@ -132,7 +132,7 @@ extension AppModel {
 
     /// Lists This iPhone's models again, if its engine is serving; see
     /// `catchUp`, which asks nothing of one that is not.
-    private func relistThisIPhone() async {
+    func relistThisIPhone() async {
         guard let config = providers.first(where: { $0.kind == .onDevice }) else { return }
         await catchUp(config.id, quietly: true, relisting: true)
     }
@@ -148,25 +148,6 @@ extension AppModel {
             guard !Task.isCancelled else { return }
             onDevice.installedFailure = error.localizedDescription
         }
-    }
-
-    /// Deletes an installed model's files and its row, then reads what is
-    /// installed again and lists This iPhone's models again.
-    ///
-    /// Any removal also forgets which downloads finished: an installed model
-    /// does not say which repository and quantization it came from, so the
-    /// browser offers each of them again rather than calling one downloaded
-    /// that may be gone.
-    public func removeInstalled(_ installed: InstalledModel) async {
-        do {
-            try await library.remove(id: installed.id)
-        } catch {
-            onDevice.installedFailure = error.localizedDescription
-            return
-        }
-        onDevice.downloads = onDevice.downloads.filter { $0.value.state != .done }
-        await refreshInstalled()
-        await relistThisIPhone()
     }
 
     /// What the Settings row says the models on this device take: "2.15 GB",
