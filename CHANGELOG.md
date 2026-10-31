@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.14.0](https://github.com/mmogr/ggchat/compare/v0.13.0...v0.14.0) (2026-10-31)
+
+
+### ⚠ BREAKING CHANGES
+
+* **chat:** a drawn picture is shown to the model when the same reply also searched ([#258](https://github.com/mmogr/ggchat/issues/258))
+
+### What the app now does
+
+* **app:** the macOS build asks for the increased memory limit too, as the iOS build does ([#251](https://github.com/mmogr/ggchat/issues/251)) ([816904c](https://github.com/mmogr/ggchat/commit/816904c155a5023e2a14bbd0f6b3673d711577c7))
+* **local:** a model on this iPhone is removed from a menu on its row or with Edit, after asking ([#261](https://github.com/mmogr/ggchat/issues/261)) ([ade2749](https://github.com/mmogr/ggchat/commit/ade27491511b6f6def3c4aba1cacfd7006f0a210)), closes [#260](https://github.com/mmogr/ggchat/issues/260)
+
+
+### What the app stopped getting wrong
+
+* **app:** the macOS build signs ad hoc again, without the iOS memory-limit entitlement ([#257](https://github.com/mmogr/ggchat/issues/257)) ([6bff0ba](https://github.com/mmogr/ggchat/commit/6bff0babac528aa3f4d6a42d538f1f98b7503078))
+* **chat:** a drawn picture is shown to the model when the same reply also searched ([#258](https://github.com/mmogr/ggchat/issues/258)) ([ae3a1e9](https://github.com/mmogr/ggchat/commit/ae3a1e983e15978510511c0c34a0641f5ec8c07f))
+* **ci:** a gate that cannot read a file fails rather than saying ok ([#254](https://github.com/mmogr/ggchat/issues/254)) ([f65ad84](https://github.com/mmogr/ggchat/commit/f65ad84ee23f7a1031816f0841e7c858e74ca8d1))
+* **ci:** the size gate counts code, not comments and blank lines ([#253](https://github.com/mmogr/ggchat/issues/253)) ([9a7b9cf](https://github.com/mmogr/ggchat/commit/9a7b9cf62b125a076d49456ee30030a373d475f9))
+* **docs:** the removal docs name the internal send check as code, not a link DocC cannot resolve ([#270](https://github.com/mmogr/ggchat/issues/270)) ([10c4850](https://github.com/mmogr/ggchat/commit/10c485052be4ffcbbc1254a78644ba58c2c5e70d))
+* **providers:** removing a provider forgets its models, probes and opening chats ([#263](https://github.com/mmogr/ggchat/issues/263)) ([df80247](https://github.com/mmogr/ggchat/commit/df802472a5df306f5104be48c0b9b8dde0dee5e0))
+* **runs:** a Continue of a reply that only thought is put again as a Continue ([#255](https://github.com/mmogr/ggchat/issues/255)) ([942914b](https://github.com/mmogr/ggchat/commit/942914b1d9c1b3764f44816f0fcbd52670b3cee1))
+* **store:** a chat holding a message this build cannot read is left out, not rewritten as yours ([#264](https://github.com/mmogr/ggchat/issues/264)) ([939477b](https://github.com/mmogr/ggchat/commit/939477b00e6582d9c8595ea63db7d5bebd668b26))
+
 ## [0.13.0](https://github.com/mmogr/ggchat/compare/v0.12.1...v0.13.0) (2026-10-30)
 
 
