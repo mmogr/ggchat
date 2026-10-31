@@ -5,9 +5,8 @@ import XCTest
 /// What a reply keeps of each tool it called beyond the call and its answer:
 /// the MCP server the tool is one of, from `tool_call_start`'s `server`,
 /// whether it failed, from `tool_call_complete`'s `result.success`, and the
-/// ids of the images it made, from its `result.images`. None is sent back.
-/// A list kept before the server and the failure still reads, and one kept
-/// before the images does not.
+/// ids of the images it made, from its `result.images`. None is sent back,
+/// and a list kept before the images does not read.
 final class ToolExchangeWireTests: XCTestCase {
     /// The exchanges the recorded agent run leaves, as a reply being read
     /// gathers them.
@@ -21,16 +20,16 @@ final class ToolExchangeWireTests: XCTestCase {
         return exchanges
     }
 
-    /// A list kept before the two fields, which has neither key, reads with
-    /// no server and not known to have failed, rather than failing to read
-    /// and being kept as none. One kept with them reads them back.
-    func testAnExchangeKeptBeforeItsServerAndFailureReadsWithNeither() throws {
-        let kept =
-            #"[{"callID":"c1","name":"builtin:generate_image","arguments":"{}","result":"Drew 1 image","images":[]}]"#
-        let read = try JSONDecoder().decode([ToolExchange].self, from: Data(kept.utf8))
-        XCTAssertEqual(
-            read,
-            [ToolExchange(callID: "c1", name: "builtin:generate_image", arguments: "{}", result: "Drew 1 image")])
+    /// A call of gglib's own tool, whose answer did not say whether it
+    /// failed, is kept with neither key and reads back with no server and
+    /// not known to have failed. One kept with both reads them back.
+    func testANilServerAndFailureAreLeftOutAndReadBack() throws {
+        let unsaid = [ToolExchange(callID: "c1", name: "builtin:generate_image", arguments: "{}", result: "Drew")]
+        let kept = try JSONEncoder().encode(unsaid)
+        let keys = try XCTUnwrap((try JSONSerialization.jsonObject(with: kept) as? [[String: Any]])?.first?.keys)
+        XCTAssertEqual(Set(keys), ["callID", "name", "arguments", "result", "images"])
+        let read = try JSONDecoder().decode([ToolExchange].self, from: kept)
+        XCTAssertEqual(read, unsaid)
         XCTAssertNil(read.first?.server)
         XCTAssertNil(read.first?.failed)
 
@@ -96,8 +95,7 @@ final class ToolExchangeWireTests: XCTestCase {
     /// `tool_call_complete`, and one that made none keeps none, so a
     /// reply's images say which call made which; a call never answered made
     /// none. Images are put on the call they name, each once and after any
-    /// it has, and ones for a call that is not held, or named for no call,
-    /// change nothing.
+    /// it has, and ones for a call that is not held change nothing.
     func testEachAnsweredCallKeepsTheImagesItMade() throws {
         let exchanges = try recorded()
         XCTAssertEqual(exchanges.map(\.callID), ["c1", "c2", "c3", "c4"])
@@ -111,7 +109,6 @@ final class ToolExchangeWireTests: XCTestCase {
         held.take(.images([image("a1"), image("a2")], callID: "c1"))
         held.take(.images([image("a2"), image("a3")], callID: "c1"))
         held.take(.images([image("b1")], callID: "c9"))
-        held.take(.images([image("b2")]))
         XCTAssertEqual(held.first?.images, ["a1", "a2", "a3"])
         held.take(.toolAnswered(callID: "c1", text: "Drew 3 images"))
         XCTAssertEqual(held.first?.images, ["a1", "a2", "a3"], "a second answer forgot the images")

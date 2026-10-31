@@ -23,9 +23,9 @@ final class HubChatToolImagesTests: XCTestCase {
         let reply = reply()
         let (first, second, third) = (ref("a1"), ref("b2"), ref("c3"))
         reply.apply(.tool("Plot Chart: build times"))
-        reply.apply(.images([first]))
+        reply.apply(.images([first], callID: "c1"))
         reply.apply(.tool("Plot Chart: test times"))
-        reply.apply(.images([second, third]))
+        reply.apply(.images([second, third], callID: "c2"))
         reply.apply(.delta("Two charts."))
         XCTAssertEqual(reply.made, [first, second, third])
         XCTAssertEqual(reply.tools, ["Plot Chart: build times", "Plot Chart: test times"])
@@ -48,7 +48,7 @@ final class HubChatToolImagesTests: XCTestCase {
     func testTheImagesAToolMadeAreDrawnAsTheMacs() {
         let reply = reply()
         XCTAssertNil(strip(in: HubLiveReplyRows(reply: reply, rows: .read([])).body), "a strip with nothing in it")
-        reply.apply(.images([ref("a1")]))
+        reply.apply(.images([ref("a1")], callID: "c1"))
         for words in ["", "A chart."] {
             reply.apply(.delta(words))
             let drawn = strip(in: HubLiveReplyRows(reply: reply, rows: .read([])).body)
@@ -81,7 +81,7 @@ final class HubChatToolImagesTests: XCTestCase {
         XCTAssertEqual(order(.assistant), ["MarkdownBlocksView", "MessageImages"])
         XCTAssertEqual(order(.user), ["MessageImages", "MarkdownBlocksView"])
         let live = reply()
-        live.apply(.images([ref("a1")]))
+        live.apply(.images([ref("a1")], callID: "c1"))
         live.apply(.delta("Words."))
         XCTAssertEqual(drawn(names, in: HubLiveReplyRows(reply: live, rows: .read([])).body), order(.assistant))
     }

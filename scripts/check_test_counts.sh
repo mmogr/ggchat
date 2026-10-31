@@ -895,8 +895,14 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # picture that went back to being hidden beside any other tool sends the
 # chat that worked before and fails nothing else, so these six and their
 # markers are the whole of that guard, and the floors move past them.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1069
+#
+# 1069 -> 1070 and 958 -> 959 for fix and redo refusing another tool's
+# picture on a reply that drew. Nothing else stops a chart there from being
+# offered the drawing's words and its fix being kept on the reply as no
+# call's, to be shown to a model as the drawn picture, so this test and its
+# marker are the whole of that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1070
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 41
-floor "README test markers" "${markers:-0}" 958
+floor "README test markers" "${markers:-0}" 959
 
 exit $status

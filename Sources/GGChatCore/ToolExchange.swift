@@ -16,8 +16,7 @@ import Foundation
 /// `failed` is whether the tool said it failed: nil until it has answered,
 /// and nil for an answer that does not say, which is not known to have
 /// failed and is not known to have worked. Neither is sent back with the
-/// reply. Both are optional so that a list kept before them still reads:
-/// a list that cannot be read is kept as none.
+/// reply.
 ///
 /// `images` is the ids of the images the call made, from
 /// `tool_call_complete`'s `result.images`, in the order it made them, and
@@ -52,8 +51,8 @@ extension [ToolExchange] {
     /// Takes one event of a run: a call is added, in place of one already
     /// held under its id, and an answer is put on the call it answers, with
     /// whether it failed; the images a call made are put on it, each once.
-    /// An answer or images for a call that is not held, images no call is
-    /// named for, and any other event, change nothing.
+    /// An answer or images for a call that is not held, and any other
+    /// event, change nothing.
     public mutating func take(_ event: ChatEvent) {
         switch event {
         case .toolCalled(let call): self.merge([call])
@@ -61,7 +60,7 @@ extension [ToolExchange] {
             guard let index = lastIndex(where: { $0.callID == callID }) else { return }
             self[index].result = text
             self[index].failed = failed
-        case .images(let images, let callID?):
+        case .images(let images, let callID):
             guard let index = lastIndex(where: { $0.callID == callID }) else { return }
             var made = self[index].images
             for image in images where !made.contains(image.id) { made.append(image.id) }
