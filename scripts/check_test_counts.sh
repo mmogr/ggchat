@@ -931,8 +931,18 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # being left out. Nothing else stops such a turn being read as a question,
 # or the chat loaded without it losing it at its next save, so these two and
 # their markers are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1089
+#
+# 2026-10-31: 1089 -> 1092 and 979 -> 982 for a chat read held a chunk at a
+# time. The stub sent every chunk and the finish inside `startLoading`, so no
+# test had a chunk come after the reader waited for it, nor a chat reader
+# stopped with its request still open. A redraw's reader that leaves already
+# closes its request in PictureRedrawWireTests, which guards the
+# `onTermination` of `eventStream`; the chat `stream()`'s own
+# `onTermination`, which cancels the reading when its consumer stops, could
+# be removed and fail nothing. These three and their markers are the whole of
+# that guard, and the floors move past them.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1092
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 979
+floor "README test markers" "${markers:-0}" 982
 
 exit $status
