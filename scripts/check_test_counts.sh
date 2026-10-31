@@ -901,7 +901,13 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # offered the drawing's words and its fix being kept on the reply as no
 # call's, to be shown to a model as the drawn picture, so this test and its
 # marker are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1070
+#
+# 2026-10-31: 1070 -> 1071 for a shipped dial keeping the binding's own
+# defaults. The connector's dial options exist so a test can turn discovery,
+# port mapping and the public relays off, and nothing else notices a
+# `.shipped` that turned one of them off for the app as well, so this test is
+# the whole of that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1071
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 41
 floor "README test markers" "${markers:-0}" 959
 
