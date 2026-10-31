@@ -44,6 +44,9 @@ jobs:
   pipe:
     name: Real pipe
     runs-on: macos-26
+    # A cold run is about four minutes, most of it the cargo install. A
+    # stalled serve is stopped by the test itself; this is the backstop.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/cache@v6

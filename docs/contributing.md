@@ -62,13 +62,13 @@ The tool is built in a gglib checkout with `cargo build -p gglib-ffi
 `make test-pipe` dials a real `modelpipe serve` on this machine through the
 shipped connector, with discovery, port mapping and the public relays off, and
 checks that a request crosses the pipe to the far edge and back. It needs the
-`modelpipe` binary, built from crates.io at the version the Pipe workflow pins
-in `.github/workflows/pipe.yml`, the one the binding's modelpipe is at. The
-test skips itself when `MODELPIPE_BIN` is unset, and this target refuses to run
-without it:
+`modelpipe` binary, built from crates.io at the version `MODELPIPE_CLI_VERSION`
+names in `.github/workflows/pipe.yml`, the one the binding's modelpipe is at.
+The test skips itself when `MODELPIPE_BIN` is unset, and this target refuses to
+run without it, and fails if the test did not run and pass:
 
 ```sh
-cargo install modelpipe-cli --version 0.8.1 --locked --root /tmp/modelpipe
+cargo install modelpipe-cli --version <MODELPIPE_CLI_VERSION> --locked --root /tmp/modelpipe
 MODELPIPE_BIN=/tmp/modelpipe/bin/modelpipe make test-pipe
 ```
 

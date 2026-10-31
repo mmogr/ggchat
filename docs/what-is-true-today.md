@@ -872,8 +872,10 @@ Each claim names the test that keeps it true.
   the addresses the ticket carries: a wrong bearer is refused `401` by the far
   edge, which this side never checks, and the right one reaches a backend that
   is not there and is answered `502` with serve's own `backend_unreachable`,
-  not the `tunnel_unavailable` this side writes when it has no pipe. Only those
-  three options differ from a shipped dial, which keeps the binding's own
+  not the `tunnel_unavailable` this side writes when it has no pipe. The dial
+  keeps this device's key as the app does, in a scratch directory rather than
+  the app's own. Apart from those three network options and where the key is
+  kept, it is a shipped dial, and a shipped dial keeps the binding's own
   defaults. Skipped by `swift test` without `MODELPIPE_BIN`.
   <!-- test: RealPipeTests.testADialledPipeCarriesARequestToTheFarEdgeAndItsAnswerBack -->
   <!-- test: ModelpipeConnectorTests.testTheShippedDialOptionsAreTheBindingsOwnDefaults -->

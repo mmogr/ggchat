@@ -204,12 +204,18 @@ record-phone-stream:
 # built with `cargo install modelpipe-cli --version <the binding's modelpipe>
 # --locked`; .github/workflows/pipe.yml pins which. The guard is
 # `test-live`'s, and GGCHAT_PIPE_REQUIRED=1 makes the test itself fail rather
-# than skip, so neither can pass having dialled nothing. Not in `ci`: it
-# needs a Rust toolchain, and the Pipe workflow runs it instead.
+# than skip. `swift test --filter` that matches nothing exits 0, so the output
+# is kept and the target fails unless a RealPipeTests case is seen to pass: a
+# renamed class or a filter typo cannot pass having dialled nothing either.
+# Not in `ci`: it needs a Rust toolchain, and the Pipe workflow runs it.
+PIPE_FILTER = RealPipeTests
 test-pipe:
 	@[ -n "$$MODELPIPE_BIN" ] \
 		|| { echo 'test-pipe: set MODELPIPE_BIN to a modelpipe binary first, or the test skips and this passes having run nothing' >&2; exit 1; }
-	GGCHAT_PIPE_REQUIRED=1 swift test --filter RealPipeTests
+	@log=$$(mktemp); trap 'rm -f "$$log"' EXIT; set -o pipefail; \
+	GGCHAT_PIPE_REQUIRED=1 swift test --filter '$(PIPE_FILTER)' 2>&1 | tee "$$log" || exit 1; \
+	grep -qE "^Test Case .-\[GGChatPipeTests\.RealPipeTests test[A-Za-z0-9_]*\]. passed" "$$log" \
+		|| { echo 'test-pipe: no RealPipeTests case passed, so this dialled nothing' >&2; exit 1; }
 
 # Which simulator the UI test targets drive. Override on the command line:
 # `make uitest SIMULATOR='iPhone 16'`.

@@ -54,11 +54,12 @@ public struct ModelpipeConnector: PipeConnector {
     /// point the real closures at a directory of its own and at a network of
     /// its own: the two calls below are the ones a shipped build makes, and a
     /// test that built its own version of them would prove only that it
-    /// agreed with itself. The options are the one thing such a test has to
-    /// change. `RealPipeTests` dials a `modelpipe serve` on this machine with
+    /// agreed with itself. The options exist for one such test.
+    /// `RealPipeTests` dials a `modelpipe serve` on this machine with
     /// discovery, port mapping and the public relays all off, so the pairing
     /// forms over the ticket's own addresses and nothing past this machine is
-    /// asked; everything else it runs is the shipped path.
+    /// asked, and keeps its key in a scratch directory rather than the app's;
+    /// apart from those two choices, it runs the shipped path.
     static func live(
         sleeper: any Sleeper = ContinuousClockSleeper(),
         grace: Duration = .milliseconds(1200),

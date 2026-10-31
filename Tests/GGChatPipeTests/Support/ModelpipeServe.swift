@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 import XCTest
 
 /// A `modelpipe serve` on this machine, run by the binary `MODELPIPE_BIN`
@@ -28,11 +29,17 @@ struct ModelpipeServe {
     /// than a suite that hangs.
     static let patience: Duration = .seconds(40)
 
+    /// How long serve has to end after each signal. The first asks for a
+    /// graceful shutdown, which serve may spend draining; the second, a
+    /// `SIGKILL`, is not one it can refuse.
+    static let grace: Duration = .seconds(5)
+
     /// What this serve prints, and so what a dial goes to.
     let ticket: String
     /// The bearer token this serve requires.
     let token: String
     private let process: Process
+    private let stdout: FileHandle
     private let stderr: URL
 
     /// The binary to run: a skip when none is named, so `swift test` and the
@@ -78,61 +85,127 @@ struct ModelpipeServe {
         process.standardError = try FileHandle(forWritingTo: stderr)
         try process.run()
 
-        guard let ticket = await firstTicket(on: output.fileHandleForReading, from: process) else {
-            stop(process)
+        let stdout = output.fileHandleForReading
+        let outcome = await firstTicket(on: stdout)
+        guard case .ticket(let ticket) = outcome else {
+            let ending = await ending(of: process, after: outcome)
+            stdout.readabilityHandler = nil
             let said = (try? String(contentsOf: stderr, encoding: .utf8)) ?? ""
             try? FileManager.default.removeItem(at: stderr)
-            throw Refusal.noTicket(status: process.terminationStatus, said: said)
+            throw Refusal.noTicket(ending: ending, said: said)
         }
-        return ModelpipeServe(ticket: ticket, token: token, process: process, stderr: stderr)
+        return ModelpipeServe(ticket: ticket, token: token, process: process, stdout: stdout, stderr: stderr)
     }
 
     /// Ends serve, by the process this test started and nothing else, and
     /// takes its log away.
-    func stop() {
-        Self.stop(process)
+    func stop() async {
+        await Self.stop(process)
+        stdout.readabilityHandler = nil
         try? FileManager.default.removeItem(at: stderr)
     }
 
-    private static func stop(_ process: Process) {
-        if process.isRunning { process.terminate() }
-        process.waitUntilExit()
+    /// `SIGTERM`, and `SIGKILL` if serve is still there after ``grace``. Never
+    /// a bare `waitUntilExit()`: serve's first signal starts a graceful
+    /// shutdown, and one that stalls would hang the teardown with it.
+    private static func stop(_ process: Process) async {
+        guard process.isRunning else { return }
+        process.terminate()
+        if await exited(process, within: grace) { return }
+        kill(process.processIdentifier, SIGKILL)
+        _ = await exited(process, within: grace)
     }
 
-    /// The text after `ticket: ` on the first line that starts with it, or
-    /// `nil` when serve ends or runs out of ``patience`` first.
+    /// Whether `process` has ended, asked until `limit` runs out. Polled, so
+    /// that nothing blocks a thread the test's other tasks may need.
+    private static func exited(_ process: Process, within limit: Duration) async -> Bool {
+        let deadline = ContinuousClock.now + limit
+        while process.isRunning {
+            guard ContinuousClock.now < deadline else { return false }
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        return true
+    }
+
+    /// How serve came to print no ticket, said once it is no longer running.
+    /// A serve that ended on its own is reported by its own status, not by
+    /// the signal this side would otherwise send it.
+    private static func ending(of process: Process, after outcome: Outcome) async -> String {
+        if case .ended = outcome { _ = await exited(process, within: grace) }
+        if !process.isRunning { return "ended with status \(process.terminationStatus)" }
+        await stop(process)
+        if case .ended = outcome { return "closed its stdout without ending, and was stopped" }
+        return "printed nothing that was a ticket within \(patience), and was stopped at that limit"
+    }
+
+    /// What reading serve's stdout came to.
+    enum Outcome: Sendable {
+        case ticket(String)
+        /// Its stdout reached its end.
+        case ended
+        case outOfPatience
+    }
+
+    /// The first `ticket: ` line on serve's stdout, the stream's end, or
+    /// ``patience`` running out, whichever comes first.
     ///
-    /// Serve that has printed a ticket goes on to run until it is stopped, so
-    /// stdout is read while it runs rather than to its end. On running out of
-    /// patience serve is stopped, which ends the stream the reader is blocked
-    /// on; without that the group would wait on the reader for ever.
-    private static func firstTicket(on stdout: FileHandle, from process: Process) async -> String? {
-        await withTaskGroup(of: String?.self) { group in
-            group.addTask {
-                do {
-                    for try await line in stdout.bytes.lines where line.hasPrefix("ticket: ") {
+    /// Read through `readabilityHandler` rather than a task blocked on the
+    /// stream, so the limit returns on time even when something — a child of
+    /// serve's, say — holds stdout open. The handler goes on draining after a
+    /// ticket, so a serve that keeps talking never blocks on a full pipe.
+    private static func firstTicket(on stdout: FileHandle) async -> Outcome {
+        let (outcomes, events) = AsyncStream.makeStream(of: Outcome.self)
+        let lines = LineBuffer()
+        stdout.readabilityHandler = { handle in
+            let chunk = handle.availableData
+            guard !chunk.isEmpty else {
+                handle.readabilityHandler = nil
+                events.yield(.ended)
+                return
+            }
+            if let ticket = lines.ticket(after: chunk) { events.yield(.ticket(ticket)) }
+        }
+        let timer = Task {
+            try? await Task.sleep(for: patience)
+            events.yield(.outOfPatience)
+        }
+        defer {
+            timer.cancel()
+            events.finish()
+        }
+        for await outcome in outcomes { return outcome }
+        return .outOfPatience
+    }
+
+    /// What serve has written so far that is not yet a whole line, and
+    /// whether a ticket has already been found in it.
+    private final class LineBuffer: Sendable {
+        private let state = Mutex((pending: Data(), found: false))
+
+        /// The ticket on the first whole `ticket: ` line `chunk` completes, or
+        /// `nil`; after one is found, every later chunk is dropped.
+        func ticket(after chunk: Data) -> String? {
+            state.withLock { state in
+                guard !state.found else { return nil }
+                state.pending.append(chunk)
+                while let newline = state.pending.firstIndex(of: UInt8(ascii: "\n")) {
+                    let line = String(decoding: state.pending[..<newline], as: UTF8.self)
+                    state.pending.removeSubrange(...newline)
+                    if line.hasPrefix("ticket: ") {
+                        state.found = true
+                        state.pending = Data()
                         return String(line.dropFirst("ticket: ".count))
                     }
-                } catch {
-                    return nil
                 }
                 return nil
             }
-            group.addTask {
-                try? await Task.sleep(for: patience)
-                return nil
-            }
-            let first = await group.next().flatMap { $0 }
-            if first == nil { stop(process) }
-            group.cancelAll()
-            return first
         }
     }
 
     enum Refusal: Error, CustomStringConvertible {
         case unnamed
         case noLog(String)
-        case noTicket(status: Int32, said: String)
+        case noTicket(ending: String, said: String)
 
         var description: String {
             switch self {
@@ -140,9 +213,8 @@ struct ModelpipeServe {
                 "GGCHAT_PIPE_REQUIRED=1 and MODELPIPE_BIN is not set, so the real pipe would be skipped"
             case .noLog(let path):
                 "could not make \(path) for serve's notes"
-            case .noTicket(let status, let said):
-                "modelpipe serve printed no ticket before it ended or \(patience) ran out, "
-                    + "and ended with status \(status); it said:\n\(said)"
+            case .noTicket(let ending, let said):
+                "modelpipe serve printed no ticket: it \(ending). It said:\n\(said)"
             }
         }
     }

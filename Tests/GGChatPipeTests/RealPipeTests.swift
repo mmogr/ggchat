@@ -10,9 +10,12 @@ import XCTest
 /// Every other connector test drives a fake dial, and `BindingTests` dials
 /// tickets that name nobody, so a release of the binding that could no longer
 /// pair with a real serve would pass them all. This is the one place a ticket
-/// a serve really printed is dialled, through `ModelpipeConnector.live`, with
-/// only the network turned down: discovery, port mapping and the public
-/// relays off on both sides, as ``ModelpipeServe`` says.
+/// a serve really printed is dialled, through `ModelpipeConnector.live`. Two
+/// things differ from a shipped dial. The network is turned down: discovery,
+/// port mapping and the public relays are off on both sides, as
+/// ``ModelpipeServe`` says. And this device's key is kept in a scratch
+/// directory rather than under Application Support, so a key really is kept
+/// and dialled with, as the app keeps one, without touching the app's own.
 ///
 /// What crosses the pipe is judged by what only the far edge can say. A
 /// wrong bearer is refused `401` by serve, which checks the token before it
@@ -33,14 +36,21 @@ final class RealPipeTests: XCTestCase {
 
     func testADialledPipeCarriesARequestToTheFarEdgeAndItsAnswerBack() async throws {
         let serve = try await ModelpipeServe.start(requiring: "ggchat-real-pipe-\(UUID().uuidString)")
-        addTeardownBlock { serve.stop() }
+        addTeardownBlock { await serve.stop() }
+        let keys = FileManager.default.temporaryDirectory.appending(path: "ggchat-real-pipe-\(UUID().uuidString)")
+        addTeardownBlock { try? FileManager.default.removeItem(at: keys) }
+        let identities = PipeIdentityFiles(directory: keys)
         let connector = ModelpipeConnector.live(
-            identities: nil,
+            identities: identities,
             options: .init(discovery: false, portMapping: false, relayURL: ModelpipeServe.deadRelay))
 
         let session = try await connector.connect(ticket: serve.ticket, token: serve.token)
         addTeardownBlock { await session.shutdown() }
         XCTAssertEqual(session.baseURL.host(), "127.0.0.1")
+        let directory = try XCTUnwrap(identities.directoryPath())
+        XCTAssertEqual(
+            try FileManager.default.contentsOfDirectory(atPath: directory).count, 1,
+            "the dial kept no key in \(directory)")
         let carrying = await Self.firstConnected(session.status, within: Self.pairing)
         _ = try XCTUnwrap(carrying, "the pipe did not reach \(serve.ticket) within \(Self.pairing)")
 
