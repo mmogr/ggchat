@@ -7,8 +7,9 @@ import XCTest
 /// How the browser is reached and what its rows say: This iPhone is a kind
 /// in Add provider only where this build runs models here, and its page
 /// presents no sheet of its own; a chip opens the sheet with what gglib said
-/// of the model; each row's line, in few words; and "On this iPhone" holding
-/// the models installed and those on their way.
+/// of the model; each row's line, in few words; "On this iPhone" holding
+/// the models installed and those on their way; and the question asked
+/// before one is removed.
 @MainActor
 final class ModelBrowserLayoutTests: XCTestCase {
     private let none = FitWhy(weightsBytes: nil, kvBytesPerToken: nil, budgetBytes: nil, trainedCtx: nil)
@@ -163,6 +164,16 @@ final class ModelBrowserLayoutTests: XCTestCase {
             OnThisIPhoneRow.rows(installed: nil, downloads: [running: step(.queued)]),
             [.downloading(running, step(.queued))])
         XCTAssertTrue(OnThisIPhoneRow.rows(installed: [], downloads: [:]).isEmpty)
+    }
+
+    /// Every way of removing a model asks first, naming the model and the
+    /// room its removal frees.
+    func testTheRemovalQuestionNamesTheModelAndTheRoomItFrees() {
+        let item = InstalledModel(
+            id: 1, name: "mock-phone-1.7b", bytes: 1_073_741_824, trainedCtx: nil, capabilities: [],
+            verdict: .fits(ctx: 4_096))
+        XCTAssertEqual(OnThisIPhoneSection.removalQuestion(for: item), "Remove mock-phone-1.7b?")
+        XCTAssertEqual(OnThisIPhoneSection.removalDetail(for: item), "This frees 1.07 GB on this iPhone.")
     }
 
     /// A model already on this iPhone while there is no This iPhone, as
