@@ -70,6 +70,9 @@ struct ChatView: View {
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
         #endif
+        // The title is plain, with no menu: a title menu widens it enough on
+        // an iPhone's bar that the bar's own controls fold into a More button.
+        // A chat is renamed from its row in the list.
         .toolbar {
             // On an open Duo on its side these are in the chat's panel.
             if !controlsOnPage {

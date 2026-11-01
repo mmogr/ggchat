@@ -27,6 +27,7 @@
 		CE4E3FF304BCD95F38F8A741 /* ThinkingSwitchUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAF6B576B3C71108C3136D17 /* ThinkingSwitchUITests.swift */; };
 		EAC5B2A85F5E64C39AE8383E /* RefusalUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C57F8EBA75E46EA0DCD65189 /* RefusalUITests.swift */; };
 		ECF98E598E431213FBA52015 /* ContextRingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89A5B151C23B46CE0B51A157 /* ContextRingUITests.swift */; };
+		F27413BDEBA0841B86A2861C /* RenameUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E57382FDF23BB62891F940CF /* RenameUITests.swift */; };
 		FAF20668F07257B8B61A72B7 /* LiveServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3513C1C38B6CD42BBB5ADA4 /* LiveServer.swift */; };
 		FFC99CA1BA319689370A7776 /* BranchingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E91528AC0293EFD6DA4E2A5C /* BranchingUITests.swift */; };
 /* End PBXBuildFile section */
@@ -67,6 +68,7 @@
 		D6AD07AA03CC2B5B94885481 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		DAF72E349B4862F0CFBCFFDF /* ggchat */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ggchat; path = ..; sourceTree = SOURCE_ROOT; };
 		DEDE1A7EEC17E8C4F0B5982A /* JumpToLatestUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JumpToLatestUITests.swift; sourceTree = "<group>"; };
+		E57382FDF23BB62891F940CF /* RenameUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenameUITests.swift; sourceTree = "<group>"; };
 		E8525D55CC4C5971CAEB1E81 /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		E91528AC0293EFD6DA4E2A5C /* BranchingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BranchingUITests.swift; sourceTree = "<group>"; };
 		EFA7D812A49BFE4BB0007F8F /* ggchatUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ggchatUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -157,6 +159,7 @@
 				012CA37950E7FD746580F4B9 /* ReduceTransparencyUITests.swift */,
 				C57F8EBA75E46EA0DCD65189 /* RefusalUITests.swift */,
 				8887D474A25D1148508A1A8A /* RemainingScreensUITests.swift */,
+				E57382FDF23BB62891F940CF /* RenameUITests.swift */,
 				3B587441DB44EB8387612415 /* ScreenGalleryUITests.swift */,
 				C69AC7B3D98931EF1ABA408D /* ScreenGalleryUITests+ModelBrowser.swift */,
 				CAF6B576B3C71108C3136D17 /* ThinkingSwitchUITests.swift */,
@@ -280,6 +283,7 @@
 				77CB7E9D19AE522138ADDE31 /* ReduceTransparencyUITests.swift in Sources */,
 				EAC5B2A85F5E64C39AE8383E /* RefusalUITests.swift in Sources */,
 				725081788612B911C82443FD /* RemainingScreensUITests.swift in Sources */,
+				F27413BDEBA0841B86A2861C /* RenameUITests.swift in Sources */,
 				69300469D9BD979A0541797F /* ScreenGalleryUITests+ModelBrowser.swift in Sources */,
 				895F021D8EBF53CF1DE2D275 /* ScreenGalleryUITests.swift in Sources */,
 				CE4E3FF304BCD95F38F8A741 /* ThinkingSwitchUITests.swift in Sources */,
