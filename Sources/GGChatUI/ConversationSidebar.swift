@@ -92,6 +92,9 @@ struct ConversationSidebar: View {
     /// room for its title and one button: Providers and Settings go to a bar
     /// at its foot. A phone's list, a screen of its own, keeps all three up top.
     var beside = false
+    /// The chat whose Rename was chosen from its row's menu, while it is
+    /// being named.
+    @State private var renaming: UUID?
 
     var body: some View {
         @Bindable var model = model
@@ -100,6 +103,12 @@ struct ConversationSidebar: View {
                 ForEach(model.conversations) { conversation in
                     ConversationRow(conversation: conversation)
                         .tag(SidebarSelection.local(conversation.id))
+                        .contextMenu {
+                            Button("Rename", systemImage: "pencil") { renaming = conversation.id }
+                        }
+                        // The row is one element to VoiceOver, so its menu's
+                        // action is offered on it too.
+                        .accessibilityAction(named: "Rename") { renaming = conversation.id }
                 }
                 .onDelete { offsets in
                     for index in offsets {
@@ -124,6 +133,7 @@ struct ConversationSidebar: View {
             }
         }
         .refreshable { await model.refreshHubChats() }
+        .renamingChat($renaming)
         .overlay {
             if model.conversations.isEmpty, model.hubProviders.isEmpty {
                 // The way in on a phone, where the detail pane and its call
