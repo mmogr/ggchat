@@ -1526,6 +1526,7 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelRenameTests.testARenamedChatIsCalledByItsNameAndKeepsItsPlace -->
   <!-- test: AppModelRenameTests.testAClearedNameGivesBackTheFirstQuestionsTitle -->
   <!-- test: AppModelRenameTests.testTheTitleAlreadyShownAndAChatNotHereChangeNothing -->
+  <!-- test: RenameUITests.testAChatIsRenamedFromItsRowAndClearedFromItsTitle -->
 - The conversation list says, beside a title, "Writing" while a reply is still
   being written, in front or by the hub, and "New" when one finished, failed
   or was given up while its chat was not on screen with the app in front,
