@@ -41,4 +41,25 @@ final class PromptReadingTests: XCTestCase {
         model.apply(.progress(progress), to: worded)
         XCTAssertNil(worded.promptBeingRead, "the bar took the place of the words")
     }
+
+    /// A Mac's reply holds its progress by the same rule, and none once its
+    /// run has ended.
+    @MainActor
+    func testAMacsReplyIsReadingItsPromptUntilSomethingElseArrivesOrItsRunEnds() {
+        let reply = HubLiveReply(providerID: UUID(), chatID: 12, runID: "r", question: nil)
+        XCTAssertNil(reply.promptBeingRead, "reading with no progress")
+        reply.apply(.progress(progress))
+        XCTAssertEqual(reply.promptBeingRead, progress)
+        reply.apply(.tool("Read File"))
+        XCTAssertNil(reply.promptBeingRead, "a full bar outlived the tool the call went on to")
+        reply.apply(.progress(progress))
+        XCTAssertEqual(reply.promptBeingRead, progress, "the next call's reading was not shown")
+        reply.ended = true
+        XCTAssertNil(reply.promptBeingRead, "the bar outlived the run")
+
+        let thinking = HubLiveReply(providerID: UUID(), chatID: 12, runID: "r", question: nil)
+        thinking.apply(.reasoning("We"))
+        thinking.apply(.progress(progress))
+        XCTAssertNil(thinking.promptBeingRead, "the bar took the place of the reasoning")
+    }
 }

@@ -33,6 +33,9 @@ public final class HubLiveReply {
     let imageModel: UInt64?
     public internal(set) var content = ""
     public internal(set) var reasoning = ""
+    /// How much of the prompt has been read, when that is the latest the
+    /// reply has heard (`ChatEvent.promptProgress`), never kept.
+    var progress: PromptProgress?
     /// A line for each tool the reply called, and for one the model is
     /// still writing until that call's own line (`ToolLines`).
     public var tools: [String] { toolLines.lines }
@@ -99,19 +102,28 @@ public final class HubLiveReply {
         content.isEmpty && !ended && work.isEmpty
     }
 
+    /// How much of the prompt has been read, while it is (`PromptReading`):
+    /// nil before the first progress frame, once any text or reasoning has
+    /// arrived, and once the run has ended.
+    var promptBeingRead: PromptProgress? {
+        content.isEmpty && reasoning.isEmpty && !ended ? progress : nil
+    }
+
     /// Whether nothing of a reply has arrived: no word, no thought, no tool
     /// called and no image made.
     var isEmpty: Bool {
         content.isEmpty && reasoning.isEmpty && tools.isEmpty && made.isEmpty
     }
 
-    /// Adds one event of the run to the reply. Its text, its reasoning, its
-    /// tool calls and the images they made are drawn, with how far a tool at
-    /// work has got and what the reply waits for (`ToolWork`), and what a
-    /// finished call counted is kept, the last one over any before it; the
-    /// run's last report says how it ended.
+    /// Adds one event of the run to the reply. How much of its prompt has
+    /// been read, its text, its reasoning, its tool calls and the images
+    /// they made are drawn, with how far a tool at work has got and what the
+    /// reply waits for (`ToolWork`), and what a finished call counted is
+    /// kept, the last one over any before it; the run's last report says how
+    /// it ended.
     func apply(_ event: ChatEvent) {
         work.apply(event)
+        progress = event.promptProgress
         switch event {
         case .delta(let text): content += text
         case .reasoning(let text): reasoning += text

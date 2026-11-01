@@ -24,7 +24,9 @@ struct HubLiveReplyRows: View {
             ForEach(Array(reply.tools.enumerated()), id: \.offset) { _, line in
                 ToolLine(line: line)
             }
-            if reply.awaitsFirstToken {
+            if let progress = reply.promptBeingRead {
+                PromptReading(progress: progress)
+            } else if reply.awaitsFirstToken {
                 ProgressView()
                     .controlSize(.small)
                     .accessibilityLabel("Waiting for the first token")

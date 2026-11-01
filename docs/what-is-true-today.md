@@ -1948,7 +1948,8 @@ Each claim names the test that keeps it true.
   only while that is the latest the reply has heard. Only gglib is asked for
   that progress, over a pipe or from a server that answered the status probe
   at its current address, and none of it is kept. A run with tools sends it
-  as an agent event of its own, read the same.
+  as an agent event of its own, read the same, and a Mac's own chat carried
+  on here shows the same bar.
   <!-- test: PromptProgressTests.testAProviderTheRegistryBuildsStreamsOnASessionThatWaitsTenMinutes -->
   <!-- test: PromptProgressTests.testAChatStreamsOnTheStreamingSessionAndNothingElseDoes -->
   <!-- test: PromptProgressTests.testTheRequestAsksForProgressWhenToldAndHasNoSuchKeyOtherwise -->
@@ -1962,6 +1963,8 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelPromptProgressTests.testTheLiveReplyHoldsTheLatestProgressAndNothingOfItIsKept -->
   <!-- test: PromptReadingTests.testTheCountUnderTheBarIsInTheLocalesDigits -->
   <!-- test: PromptReadingTests.testAReplyIsReadingItsPromptUntilSomethingElseArrives -->
+  <!-- test: PromptReadingTests.testAMacsReplyIsReadingItsPromptUntilSomethingElseArrivesOrItsRunEnds -->
+  <!-- test: DrawingViewTests.testAMacsReplyDrawsTheWorkInPlaceOfTheSpinner -->
 - Exactly three custom glass surfaces exist, all in one file inside one
   `GlassEffectContainer`; `scripts/check_glass_sites.sh` counts them, and
   `scripts/check_no_hand_drawn_glass.sh` refuses any material or

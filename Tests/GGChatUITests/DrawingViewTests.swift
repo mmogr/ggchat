@@ -42,15 +42,18 @@ final class DrawingViewTests: XCTestCase {
         }
     }
 
-    /// A Mac's reply with no words shows the spinner until a picture is
-    /// being drawn or waited for, then the work in its place; the spinner is
-    /// back once the tool has ended with no words yet. With words, the work
-    /// is drawn under them, and the picture made under both.
+    /// A Mac's reply with no words shows the spinner, the prompt being read
+    /// in its place while it is, until a picture is being drawn or waited
+    /// for, then the work in its place; the spinner is back once the tool
+    /// has ended with no words yet. With words, the work is drawn under
+    /// them, and the picture made under both.
     func testAMacsReplyDrawsTheWorkInPlaceOfTheSpinner() {
-        let names = ["ProgressView", "ToolWorkView", "MarkdownBlocksView", "MessageImages"]
+        let names = ["ProgressView", "PromptReading", "ToolWorkView", "MarkdownBlocksView", "MessageImages"]
         let reply = HubLiveReply(providerID: UUID(), chatID: 12, runID: "r", question: nil)
         func rows() -> [String] { drawn(names, in: HubLiveReplyRows(reply: reply, rows: .read([])).body) }
         XCTAssertEqual(rows(), ["ProgressView"])
+        reply.apply(.progress(PromptProgress(processed: 42, total: 57)))
+        XCTAssertEqual(rows(), ["PromptReading"])
 
         reply.apply(.waiting(RunWait(reason: .imageRender, step: 3, total: 20, position: 1)))
         XCTAssertEqual(rows(), ["MarkdownBlocksView", "ToolWorkView"])
