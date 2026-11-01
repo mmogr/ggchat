@@ -13,12 +13,16 @@ struct Composer: View {
     @Environment(\.calendar) private var calendar
     @Namespace private var glass
     @State private var pickingModel = false
+    /// Whether the message field has the caret, which opening the model
+    /// list takes away on an iPhone or an iPad.
+    @FocusState private var drafting: Bool
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
     #endif
     let conversation: Conversation
-    /// The chat's height free of its top bar and the keyboard, which the
-    /// model list is sized from; 0 until it has been measured.
+    /// The chat's height between its top bar and the keyboard, or the home
+    /// indicator while the keyboard is down, which the model list is sized
+    /// from; 0 until it has been measured.
     var room: CGFloat = 0
 
     private var provider: ProviderConfig? {
@@ -85,7 +89,7 @@ struct Composer: View {
     /// The field, its images and Send, in `DraftField`; the glass is drawn
     /// here, with the other two.
     private var composer: some View {
-        DraftField(conversation: conversation)
+        DraftField(conversation: conversation, drafting: $drafting)
             .padding(8)
             .glassEffect(.regular, in: .rect(cornerRadius: 24))
     }
@@ -95,7 +99,10 @@ struct Composer: View {
     /// One glass surface that is a pill when closed and a list when open,
     /// with one id, so the pill grows into the list. The list opens above
     /// the pill, which stays where it was and goes on naming the model, so
-    /// nothing in the list says it again.
+    /// nothing in the list says it again. On an iPhone or an iPad, opening
+    /// the list puts the keyboard away, since picking a model is not typing
+    /// and the keyboard would take most of the list's room; the list's own
+    /// search brings it back.
     private var modelPill: some View {
         VStack(alignment: .leading, spacing: 0) {
             if pickingModel {
@@ -105,6 +112,9 @@ struct Composer: View {
                 Divider()
             }
             Button {
+                #if os(iOS)
+                    if !pickingModel { drafting = false }
+                #endif
                 withAnimation(reduceMotion ? nil : .snappy) { pickingModel.toggle() }
             } label: {
                 Label(modelLabel, systemImage: "cpu")

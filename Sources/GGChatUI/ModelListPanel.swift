@@ -17,7 +17,7 @@ struct ModelListPanel: View {
     @AppStorage("ggchat-model-list-filter") private var filter = ""
     @State private var query = ""
     let conversation: Conversation
-    /// The chat's height free of its top bar and the keyboard; see
+    /// The chat's height between its top bar and the keyboard; see
     /// `ModelList.panelHeight(room:)`.
     let room: CGFloat
     /// Closes the list, after a pick or Find a model….
