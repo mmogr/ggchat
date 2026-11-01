@@ -2,8 +2,9 @@
 public enum ChatEvent: Sendable, Equatable {
     case delta(String)
     case reasoning(String)
-    /// How much of the prompt has been read, sent before the first word by
-    /// gglib when the request asks for it.
+    /// How much of the prompt has been read, sent by gglib before a model
+    /// call's first word: in a chat stream when the request asks for it, and
+    /// in an agent run before each of its calls.
     case progress(PromptProgress)
     /// A tool the reply called, as one line: its name and what it was given.
     /// With `writing`, a call the model is still writing, as its name and
@@ -42,4 +43,11 @@ public enum ChatEvent: Sendable, Equatable {
     case usage(Usage, reason: String?)
     case finished(reason: String?, usage: Usage?)
     case error(ProviderError)
+}
+
+extension ChatEvent {
+    /// The progress this event says, and nil for any other.
+    public var promptProgress: PromptProgress? {
+        if case .progress(let progress) = self { progress } else { nil }
+    }
 }

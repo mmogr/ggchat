@@ -70,8 +70,9 @@ extension OpenAICompatibleProvider {
         }
     }
 
-    /// What one of an agent run's events means for the reply: its text, its
-    /// reasoning, a line for a tool it calls and the call itself, how far that
+    /// What one of an agent run's events means for the reply: how much of
+    /// the prompt has been read, its text, its reasoning, a line for a tool
+    /// it calls and the call itself, how far that
     /// tool has got, that it finished, what it answered and the images it
     /// made, a wait for something else, what a
     /// finished model call counted, and an error it reports. The rest, and an
@@ -104,6 +105,7 @@ extension OpenAICompatibleProvider {
             guard let writing = read(ToolCallWriting.self, data) else { return [] }
             return [.tool(writingLine(writing.displayName, tokens: writing.tokens, in: locale), writing: true)]
         case "tool_call_complete": return finishedTool(data)
+        case "prompt_progress": return read(PromptProgress.self, data).map { [.progress($0)] } ?? []
         case "tool_progress": return read(ToolProgress.self, data).map { [.toolProgress($0)] } ?? []
         case "waiting": return read(RunWait.self, data).map { [.waiting($0)] } ?? []
         case "error": return [.error(.stream(code: nil, message: agent.message ?? "the reply failed"))]

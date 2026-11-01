@@ -12,8 +12,10 @@ public final class LiveReply {
     public let continuingMessageID: UUID?
     public var content = ""
     public var reasoning = ""
-    /// The latest word on how much of the prompt has been read. It lives here
-    /// only: `finish` never reads it, so it is never stored.
+    /// How much of the prompt has been read, only while that is the latest
+    /// event the reply has heard: a run that reads its prompt, calls a tool
+    /// and reads again leaves no full count up while the tool runs. It
+    /// lives here only: `finish` never reads it, so it is never stored.
     public var progress: PromptProgress?
     public var error: ProviderError?
     /// How far a picture being drawn has got, the latest look at it, and

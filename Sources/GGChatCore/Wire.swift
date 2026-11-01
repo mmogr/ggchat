@@ -187,24 +187,15 @@ struct ChatCompletionChunk: Decodable {
 }
 
 /// How much of the prompt the server has read, from gglib's
-/// `prompt_progress`: `processed` of `total` tokens, `cache` of them from its
-/// cache, in `timeMs` so far. It is shown while a reply waits and never kept.
+/// `prompt_progress`: `processed` of `total` tokens, those read from its cache
+/// among them. It is shown while a reply waits and never kept.
 public struct PromptProgress: Decodable, Sendable, Equatable {
     public var processed: Int
     public var total: Int
-    public var cache: Int?
-    public var timeMs: Int?
 
-    public init(processed: Int, total: Int, cache: Int? = nil, timeMs: Int? = nil) {
+    public init(processed: Int, total: Int) {
         self.processed = processed
         self.total = total
-        self.cache = cache
-        self.timeMs = timeMs
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case processed, total, cache
-        case timeMs = "time_ms"
     }
 }
 

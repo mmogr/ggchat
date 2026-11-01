@@ -69,9 +69,9 @@ final class PromptProgressTests: XCTestCase {
         XCTAssertEqual(
             frames,
             [
-                PromptProgress(processed: 42, total: 57, cache: 42, timeMs: 32),
-                PromptProgress(processed: 53, total: 57, cache: 42, timeMs: 459),
-                PromptProgress(processed: 57, total: 57, cache: 42, timeMs: 587),
+                PromptProgress(processed: 42, total: 57),
+                PromptProgress(processed: 53, total: 57),
+                PromptProgress(processed: 57, total: 57),
             ])
     }
 
@@ -98,6 +98,16 @@ final class PromptProgressTests: XCTestCase {
             OpenAICompatibleProvider(
                 baseURL: URL(string: "http://odd-progress.test/v1")!, session: StubURLProtocol.makeSession()))
         XCTAssertEqual(events, [.delta("hi"), .finished(reason: nil, usage: nil)])
+    }
+
+    /// An agent run's `prompt_progress` whose counts cannot be read means
+    /// nothing; one that reads is in `HubTurnProviderTests`' recorded run.
+    func testAnAgentRunsPromptProgressThatCannotBeReadMeansNothing() {
+        func read(_ fields: String) -> [ChatEvent] {
+            OpenAICompatibleProvider.agentEvents(SSEEvent(data: #"{"type":"prompt_progress"\#(fields)}"#))
+        }
+        XCTAssertEqual(read(#","processed":"many","total":11000"#), [])
+        XCTAssertEqual(read(#","processed":8200"#), [])
     }
 
     /// Built once, and waiting longer than gglib does: its own limit on

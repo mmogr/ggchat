@@ -132,7 +132,8 @@ final class HubTurnProviderTests: XCTestCase {
         }
     }
 
-    /// The run's events are read as an agent's: text, reasoning, a line per
+    /// The run's events are read as an agent's: how much of the prompt has
+    /// been read, text, reasoning, a line per
     /// tool call and the call itself, with the MCP server it is one of when
     /// the frame names one, what a finished tool answered, whether it said
     /// it failed, and the images it made, and what a finished model
@@ -153,7 +154,8 @@ final class HubTurnProviderTests: XCTestCase {
         XCTAssertEqual(
             chat,
             [
-                .reasoning("The lock file"), .reasoning(" moved."), .tool("Read File: Cargo.lock"),
+                .progress(PromptProgress(processed: 57, total: 57)), .reasoning("The lock file"),
+                .reasoning(" moved."), .tool("Read File: Cargo.lock"),
                 .toolCalled(
                     ToolExchange(callID: "c1", name: "builtin_read_file", arguments: #"{"path":"Cargo.lock"}"#)),
                 .toolEnded("c1"), .toolAnswered(callID: "c1", text: "version = 3", failed: false), .tool("List Dir"),
