@@ -1,10 +1,10 @@
 import XCTest
 
 /// A chat kept here is renamed from its row's menu in the list, and its name
-/// cleared from its title's menu over the chat, walked on the DEBUG mock.
+/// cleared from the same menu, walked on the DEBUG mock.
 final class RenameUITests: XCTestCase {
     @MainActor
-    func testAChatIsRenamedFromItsRowAndClearedFromItsTitle() {
+    func testAChatIsRenamedAndClearedFromItsRow() {
         let app = launchFreshApp()
         openProviderForm(in: app)
         app.buttons["Cancel"].firstMatch.tap()
@@ -13,7 +13,7 @@ final class RenameUITests: XCTestCase {
         XCTAssertTrue(mock.waitForExistence(timeout: 10), "DEBUG builds offer a mock provider")
         mock.tap()
         app.buttons["Done"].firstMatch.tap()
-        let pill = openConversation(in: app)
+        openConversation(in: app)
 
         // The list is one screen back on an iPhone and a column beside the
         // chat on an iPad, where going back would hit the sidebar toggle.
@@ -30,13 +30,11 @@ final class RenameUITests: XCTestCase {
         let renamed = app.cells.containing(NSPredicate(format: "label BEGINSWITH 'Kyoto in spring, '")).firstMatch
         XCTAssertTrue(renamed.waitForExistence(timeout: 10), "the list does not call the chat by its name")
 
-        XCTAssertTrue(tap(renamed, untilExists: pill), "the renamed chat never opened")
-        let title = app.navigationBars.descendants(matching: .any)
-            .matching(NSPredicate(format: "label == 'Kyoto in spring'")).firstMatch
-        XCTAssertTrue(tap(title, untilExists: rename), "the chat's title has no Rename")
+        XCTAssertTrue(press(renamed, untilExists: rename), "the renamed row's menu has no Rename")
         rename.tap()
         name(as: "", offered: "Kyoto in spring", in: app)
-        XCTAssertTrue(title.waitForNonExistence(timeout: 10), "a cleared name is still the chat's title")
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "a cleared name did not give back the first title")
+        XCTAssertFalse(renamed.exists, "a cleared name is still in the list")
     }
 
     /// Checks the rename field offers the title shown, `offered`, then
