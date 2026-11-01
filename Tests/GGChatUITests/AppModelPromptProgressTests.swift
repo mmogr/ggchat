@@ -264,21 +264,4 @@ final class AppModelPromptProgressTests: XCTestCase {
             return message
         }
     }
-
-    /// Processed of total, grouped as the locale groups digits, until the
-    /// first reasoning or the first word; nothing before the first frame.
-    @MainActor
-    func testTheReadingLineCountsInTheLocalesDigitsUntilSomethingElseArrives() {
-        let live = LiveReply(conversationID: UUID(), continuingMessageID: nil)
-        let english = Locale(identifier: "en_US")
-        XCTAssertNil(live.readingLine(in: english), "a line with no progress")
-        live.progress = PromptProgress(processed: 8200, total: 11000)
-        XCTAssertEqual(live.readingLine(in: english), "Reading 8,200 of 11,000 tokens")
-        XCTAssertEqual(live.readingLine(in: Locale(identifier: "de_DE")), "Reading 8.200 of 11.000 tokens")
-        live.reasoning = "We"
-        XCTAssertNil(live.readingLine(in: english), "the line outlived the first reasoning")
-        live.reasoning = ""
-        live.content = "Hi"
-        XCTAssertNil(live.readingLine(in: english), "the line outlived the first word")
-    }
 }

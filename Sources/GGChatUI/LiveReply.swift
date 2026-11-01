@@ -87,13 +87,10 @@ public final class LiveReply {
         content.isEmpty && reasoning.isEmpty && work.isEmpty && made.isEmpty
     }
 
-    /// "Reading 8,200 of 11,000 tokens", in `locale`'s digits, while the
-    /// prompt is read: nil before the first progress frame, and once any text
-    /// or reasoning has arrived.
-    public func readingLine(in locale: Locale) -> String? {
-        guard content.isEmpty, reasoning.isEmpty, let progress else { return nil }
-        let processed = progress.processed.formatted(.number.locale(locale))
-        let total = progress.total.formatted(.number.locale(locale))
-        return "Reading \(processed) of \(total) tokens"
+    /// How much of the prompt has been read, while it is (`PromptReading`):
+    /// nil before the first progress frame, and once any text or reasoning
+    /// has arrived.
+    var promptBeingRead: PromptProgress? {
+        content.isEmpty && reasoning.isEmpty ? progress : nil
     }
 }
