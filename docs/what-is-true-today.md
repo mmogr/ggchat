@@ -1943,11 +1943,12 @@ Each claim names the test that keeps it true.
   <!-- test: OpenAICompatibleProviderTests.testAnUnreadableChunkThatCarriesAnErrorStillEndsTheReply -->
   <!-- test: OpenAICompatibleProviderTests.testAReplyThatSkippedAChunkAndGotNoTextOrReasoningFails -->
 - A reply gives up only after ten minutes of silence, and while gglib reads a
-  long prompt the reply shows "Reading 8,200 of 11,000 tokens" until its first
-  thought or word, and only while that is the latest the reply has heard.
-  Only gglib is asked for that progress, over a pipe or from a server that
-  answered the status probe at its current address, and none of it is kept.
-  A run with tools sends it as an agent event of its own, read the same.
+  long prompt the reply shows a bar filled by the tokens read, with "Reading
+  8,200 of 11,000 tokens" under it, until its first thought or word, and
+  only while that is the latest the reply has heard. Only gglib is asked for
+  that progress, over a pipe or from a server that answered the status probe
+  at its current address, and none of it is kept. A run with tools sends it
+  as an agent event of its own, read the same.
   <!-- test: PromptProgressTests.testAProviderTheRegistryBuildsStreamsOnASessionThatWaitsTenMinutes -->
   <!-- test: PromptProgressTests.testAChatStreamsOnTheStreamingSessionAndNothingElseDoes -->
   <!-- test: PromptProgressTests.testTheRequestAsksForProgressWhenToldAndHasNoSuchKeyOtherwise -->
@@ -1959,8 +1960,8 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelPromptProgressTests.testOnlyAPipeOrAServerThatAnsweredTheStatusProbeIsAskedForProgress -->
   <!-- test: AppModelPromptProgressTests.testAServerMovedAwayFromGGLibIsNotAskedForProgress -->
   <!-- test: AppModelPromptProgressTests.testTheLiveReplyHoldsTheLatestProgressAndNothingOfItIsKept -->
-  <!-- test: AppModelPromptProgressTests.testTheReadingLineCountsInTheLocalesDigitsUntilSomethingElseArrives -->
-  <!-- test: PromptReadingTests.testAReplyHoldsItsProgressOnlyUntilAnythingElseArrives -->
+  <!-- test: PromptReadingTests.testTheCountUnderTheBarIsInTheLocalesDigits -->
+  <!-- test: PromptReadingTests.testAReplyIsReadingItsPromptUntilSomethingElseArrives -->
 - Exactly three custom glass surfaces exist, all in one file inside one
   `GlassEffectContainer`; `scripts/check_glass_sites.sh` counts them, and
   `scripts/check_no_hand_drawn_glass.sh` refuses any material or

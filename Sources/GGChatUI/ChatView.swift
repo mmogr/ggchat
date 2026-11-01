@@ -167,12 +167,8 @@ struct LiveReplyRow: View {
                 Text(waiting)
                     .font(.callout)
                     .foregroundStyle(.secondary)
-            } else if let reading = live.readingLine(in: locale) {
-                // Plain text, which VoiceOver reads as it is shown.
-                Text(reading)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
+            } else if let progress = live.promptBeingRead {
+                PromptReading(progress: progress)
             } else if live.awaitsFirstToken {
                 ProgressView()
                     .controlSize(.small)
