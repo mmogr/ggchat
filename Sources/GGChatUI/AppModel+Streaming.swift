@@ -170,10 +170,10 @@ extension AppModel {
     /// which call made them, which is kept on that call's exchange.
     func apply(_ event: ChatEvent, to live: LiveReply) {
         live.work.apply(event)
+        live.progress = event.promptProgress
         switch event {
         case .delta(let text): live.content += text
         case .reasoning(let text): live.reasoning += text
-        case .progress(let progress): live.progress = progress
         case .error(let error): live.error = error
         case .usage(let usage, let reason):
             live.usage = usage
@@ -186,7 +186,7 @@ extension AppModel {
             live.exchanges.take(event)
         case .tool(let line, let writing): live.toolLines.take(line, writing: writing)
         case .toolCalled, .toolAnswered: live.exchanges.take(event)
-        case .toolProgress, .toolEnded, .waiting: break
+        case .progress, .toolProgress, .toolEnded, .waiting: break
         }
     }
 

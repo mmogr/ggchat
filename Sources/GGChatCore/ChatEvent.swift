@@ -43,3 +43,10 @@ public enum ChatEvent: Sendable, Equatable {
     case finished(reason: String?, usage: Usage?)
     case error(ProviderError)
 }
+
+extension ChatEvent {
+    /// The progress this event says, and nil for any other.
+    public var promptProgress: PromptProgress? {
+        if case .progress(let progress) = self { progress } else { nil }
+    }
+}

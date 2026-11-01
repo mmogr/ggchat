@@ -1944,9 +1944,9 @@ Each claim names the test that keeps it true.
   <!-- test: OpenAICompatibleProviderTests.testAReplyThatSkippedAChunkAndGotNoTextOrReasoningFails -->
 - A reply gives up only after ten minutes of silence, and while gglib reads a
   long prompt the reply shows "Reading 8,200 of 11,000 tokens" until its first
-  word. Only gglib is asked for that progress, over a pipe or from a server
-  that answered the status probe at its current address, and none of it is
-  kept.
+  thought or word, and only while that is the latest the reply has heard.
+  Only gglib is asked for that progress, over a pipe or from a server that
+  answered the status probe at its current address, and none of it is kept.
   <!-- test: PromptProgressTests.testAProviderTheRegistryBuildsStreamsOnASessionThatWaitsTenMinutes -->
   <!-- test: PromptProgressTests.testAChatStreamsOnTheStreamingSessionAndNothingElseDoes -->
   <!-- test: PromptProgressTests.testTheRequestAsksForProgressWhenToldAndHasNoSuchKeyOtherwise -->
@@ -1957,6 +1957,7 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelPromptProgressTests.testAServerMovedAwayFromGGLibIsNotAskedForProgress -->
   <!-- test: AppModelPromptProgressTests.testTheLiveReplyHoldsTheLatestProgressAndNothingOfItIsKept -->
   <!-- test: AppModelPromptProgressTests.testTheReadingLineCountsInTheLocalesDigitsUntilSomethingElseArrives -->
+  <!-- test: PromptReadingTests.testAReplyHoldsItsProgressOnlyUntilAnythingElseArrives -->
 - Exactly three custom glass surfaces exist, all in one file inside one
   `GlassEffectContainer`; `scripts/check_glass_sites.sh` counts them, and
   `scripts/check_no_hand_drawn_glass.sh` refuses any material or
