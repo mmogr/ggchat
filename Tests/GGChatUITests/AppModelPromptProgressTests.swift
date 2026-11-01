@@ -232,7 +232,7 @@ final class AppModelPromptProgressTests: XCTestCase {
     /// had progress is kept exactly as one that had none.
     @MainActor
     func testTheLiveReplyHoldsTheLatestProgressAndNothingOfItIsKept() async throws {
-        let frames = [42, 53, 57].map { PromptProgress(processed: $0, total: 57, cache: 42) }
+        let frames = [42, 53, 57].map { PromptProgress(processed: $0, total: 57) }
         let waiting = try makeModel(behind: EventsProvider(events: frames.map(ChatEvent.progress)))
         let task = try XCTUnwrap(waiting.send("hi"))
         for _ in 0..<200 where waiting.liveReply?.progress != frames.last {

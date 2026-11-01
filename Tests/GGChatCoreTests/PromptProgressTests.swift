@@ -69,9 +69,9 @@ final class PromptProgressTests: XCTestCase {
         XCTAssertEqual(
             frames,
             [
-                PromptProgress(processed: 42, total: 57, cache: 42, timeMs: 32),
-                PromptProgress(processed: 53, total: 57, cache: 42, timeMs: 459),
-                PromptProgress(processed: 57, total: 57, cache: 42, timeMs: 587),
+                PromptProgress(processed: 42, total: 57),
+                PromptProgress(processed: 53, total: 57),
+                PromptProgress(processed: 57, total: 57),
             ])
     }
 
