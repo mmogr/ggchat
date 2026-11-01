@@ -1947,12 +1947,15 @@ Each claim names the test that keeps it true.
   thought or word, and only while that is the latest the reply has heard.
   Only gglib is asked for that progress, over a pipe or from a server that
   answered the status probe at its current address, and none of it is kept.
+  A run with tools sends it as an agent event of its own, read the same.
   <!-- test: PromptProgressTests.testAProviderTheRegistryBuildsStreamsOnASessionThatWaitsTenMinutes -->
   <!-- test: PromptProgressTests.testAChatStreamsOnTheStreamingSessionAndNothingElseDoes -->
   <!-- test: PromptProgressTests.testTheRequestAsksForProgressWhenToldAndHasNoSuchKeyOtherwise -->
   <!-- test: PromptProgressTests.testTheFixturesProgressFramesDecodeAsGGLibSentThem -->
   <!-- test: PromptProgressTests.testTheProviderPassesProgressOnBeforeTheFirstReasoningAndStillFinishesOnce -->
   <!-- test: PromptProgressTests.testAProgressMemberThatDoesNotReadIsDroppedAndTheRestOfTheChunkIsRead -->
+  <!-- test: PromptProgressTests.testAnAgentRunsPromptProgressThatCannotBeReadMeansNothing -->
+  <!-- test: HubTurnProviderTests.testAnAgentRunsEventsAreItsTextReasoningAndToolLines -->
   <!-- test: AppModelPromptProgressTests.testOnlyAPipeOrAServerThatAnsweredTheStatusProbeIsAskedForProgress -->
   <!-- test: AppModelPromptProgressTests.testAServerMovedAwayFromGGLibIsNotAskedForProgress -->
   <!-- test: AppModelPromptProgressTests.testTheLiveReplyHoldsTheLatestProgressAndNothingOfItIsKept -->

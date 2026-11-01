@@ -100,6 +100,16 @@ final class PromptProgressTests: XCTestCase {
         XCTAssertEqual(events, [.delta("hi"), .finished(reason: nil, usage: nil)])
     }
 
+    /// An agent run's `prompt_progress` whose counts cannot be read means
+    /// nothing; one that reads is in `HubTurnProviderTests`' recorded run.
+    func testAnAgentRunsPromptProgressThatCannotBeReadMeansNothing() {
+        func read(_ fields: String) -> [ChatEvent] {
+            OpenAICompatibleProvider.agentEvents(SSEEvent(data: #"{"type":"prompt_progress"\#(fields)}"#))
+        }
+        XCTAssertEqual(read(#","processed":"many","total":11000"#), [])
+        XCTAssertEqual(read(#","processed":8200"#), [])
+    }
+
     /// Built once, and waiting longer than gglib does: its own limit on
     /// silence is 300 seconds. Model lists and status requests keep the
     /// shared session.
