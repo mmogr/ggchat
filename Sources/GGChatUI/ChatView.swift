@@ -9,6 +9,8 @@ struct ChatView: View {
     @State private var showingStatus = false
     @State private var editingPrompt = false
     @State private var editing: Message?
+    /// Set by Rename in the title's menu, while the chat is being named.
+    @State private var renaming: UUID?
     /// The height between the top bar and the keyboard or the bottom edge,
     /// which the composer's model list is sized from.
     @State private var room: CGFloat = 0
@@ -70,6 +72,10 @@ struct ChatView: View {
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
         #endif
+        .toolbarTitleMenu {
+            Button("Rename", systemImage: "pencil") { renaming = conversation.id }
+        }
+        .renamingChat($renaming)
         .toolbar {
             // On an open Duo on its side these are in the chat's panel.
             if !controlsOnPage {

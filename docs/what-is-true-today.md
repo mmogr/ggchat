@@ -1518,8 +1518,8 @@ Each claim names the test that keeps it true.
   <!-- test: ConversationTests.testAConversationIsCalledByItsTitleElseItsFirstQuestion -->
   <!-- test: ConversationTests.testAFirstTurnOfImagesAloneIsCalledWhatItHolds -->
 - A conversation kept on this device is given its title by Rename, in the
-  menu a long press on its row in the list opens and among VoiceOver's
-  actions on the row. The name is trimmed and kept in its store, and the
+  menu a long press on its row in the list opens, among VoiceOver's actions
+  on the row, and in the menu its title over the chat opens. The name is trimmed and kept in its store, and the
   conversation keeps its place in the list. An empty name gives back the
   title its first question gives it, and the title already shown, confirmed
   as offered, is not kept as a name. A Mac's own chats have no Rename here.
