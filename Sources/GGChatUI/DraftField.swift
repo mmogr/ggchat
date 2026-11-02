@@ -20,6 +20,9 @@ struct DraftField: View {
         @State private var opensCamera = false
     #endif
     let conversation: Conversation
+    /// Whether the field has the caret; `Composer` takes it away when the
+    /// model list opens.
+    var drafting: FocusState<Bool>.Binding
 
     private var streaming: Bool {
         model.isStreaming(conversation.id)
@@ -88,6 +91,7 @@ struct DraftField: View {
             .lineLimit(1...8)
             .textFieldStyle(.plain)
             .accessibilityIdentifier("composer")
+            .focused(drafting)
             // Open while a reply runs, so the next message is written as
             // this one comes; only Send waits for it.
             .onSubmit(sendIfPossible)

@@ -58,11 +58,13 @@ struct ChatView: View {
         .safeAreaInset(edge: .bottom) {
             Composer(conversation: conversation, room: room)
         }
-        // Read outside the inset, so the list it is for does not change it:
-        // whatever of the frame lies under the top bar or the keyboard is
-        // taken off, as the frame shrinks or as the insets grow.
+        // Read outside the inset, so the list it is for does not change it.
+        // The frame already runs from under the top bar to the keyboard, or
+        // to the home indicator while the keyboard is down; the proxy's safe
+        // area insets name those bars again, and taking them off as well
+        // left an iPhone Duo with the keyboard up no room at all (#277).
         .onGeometryChange(for: CGFloat.self) { proxy in
-            max(0, proxy.size.height - proxy.safeAreaInsets.top - proxy.safeAreaInsets.bottom)
+            proxy.size.height
         } action: {
             room = $0
         }
