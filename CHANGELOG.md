@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.15.0](https://github.com/mmogr/ggchat/compare/v0.14.0...v0.15.0) (2026-11-02)
+
+
+### What the app now does
+
+* **chat:** a chat kept here can be renamed, from the list or its title ([#275](https://github.com/mmogr/ggchat/issues/275)) ([017c3d7](https://github.com/mmogr/ggchat/commit/017c3d77232e1a298cd1766a7d19539030703df5))
+* **chat:** a prompt being read is a bar, on a Mac's own chat too ([#273](https://github.com/mmogr/ggchat/issues/273)) ([56aac2d](https://github.com/mmogr/ggchat/commit/56aac2df6bedb8e729b198c97bfe4f4415a3e089))
+* **images:** name FLUX 3 Klein and FLUX.2 klein ([#279](https://github.com/mmogr/ggchat/issues/279)) ([7fa9d57](https://github.com/mmogr/ggchat/commit/7fa9d5742cc778a32d8019a2f484ec386b29ee2f))
+
+
+### What the app stopped getting wrong
+
+* **chat:** the model list is sized from the chat's room, and opening it puts the keyboard away ([#277](https://github.com/mmogr/ggchat/issues/277)) ([#278](https://github.com/mmogr/ggchat/issues/278)) ([316c7fb](https://github.com/mmogr/ggchat/commit/316c7fbdc6978cd31db688b234a2ec030d89f10c))
+* **hub:** a run with tools, and a Mac's own chat, pass on how much of the prompt has been read ([#272](https://github.com/mmogr/ggchat/issues/272)) ([194ab2b](https://github.com/mmogr/ggchat/commit/194ab2b9521fee9adfc4eedcfa67f70c294d9bde))
+
 ## [0.14.0](https://github.com/mmogr/ggchat/compare/v0.13.0...v0.14.0) (2026-10-31)
 
 
