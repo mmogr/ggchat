@@ -54,7 +54,7 @@ public struct ImageModelRow: Decodable, Sendable, Equatable, Identifiable {
         resident = try container.decodeIfPresent(Bool.self, forKey: .resident) ?? false
     }
 
-    /// The family as a person reads it, in gglib's words for the four it
+    /// The family as a person reads it, in gglib's words for the six it
     /// has (`ImageFamily::label`), and the raw string for any other.
     public var familyLabel: String {
         switch family {
@@ -62,6 +62,8 @@ public struct ImageModelRow: Decodable, Sendable, Equatable, Identifiable {
         case "sdxl": "SDXL"
         case "qwen-image-2.1": "Qwen-Image 2.1"
         case "z-image": "Z-Image"
+        case "flux3-klein": "FLUX 3 Klein"
+        case "flux2-klein": "FLUX.2 klein"
         default: family
         }
     }

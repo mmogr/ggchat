@@ -102,9 +102,13 @@ final class ImageModelWireTests: XCTestCase {
     /// Every family gglib names reads in gglib's words (`ImageFamily::label`),
     /// and one it does not name stays the string it came as.
     func testEveryFamilyGGLibNamesReadsInItsWords() {
-        let families = ["flux1", "sdxl", "qwen-image-2.1", "z-image", "wan-3"]
+        let families = [
+            "flux1", "sdxl", "qwen-image-2.1", "z-image", "flux3-klein", "flux2-klein", "wan-3",
+        ]
         let labels = families.map { ImageModelRow(id: 1, name: "m", family: $0).familyLabel }
-        XCTAssertEqual(labels, ["Flux.1", "SDXL", "Qwen-Image 2.1", "Z-Image", "wan-3"])
+        XCTAssertEqual(
+            labels,
+            ["Flux.1", "SDXL", "Qwen-Image 2.1", "Z-Image", "FLUX 3 Klein", "FLUX.2 klein", "wan-3"])
     }
 
     /// The question can name an image model, `?image_model=<id>`, and the
