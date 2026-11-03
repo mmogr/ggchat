@@ -1379,6 +1379,26 @@ Each claim names the test that keeps it true.
   <!-- test: MathSpanTests.testALineThatWouldEndTheParagraphLeavesTheMathAlone -->
   <!-- test: MathSpanTests.testCodeIsLeftAlone -->
   <!-- test: MathSpanTests.testEmphasisOutsideMathStillApplies -->
+- Math in a reply is typeset: inline beside its text, at the text's size
+  and in its colour, and display math standing alone as a paragraph as a
+  centred block that scrolls sideways when it is wider than the chat. Each
+  span keeps its source in the text. A few commands SwiftMath, the
+  renderer, lacks are said in ones it has before drawing: `\mathrel{X}` as
+  `X` with a thick space either side, `\dots`, `\lvert`, `\rvert`,
+  `\lVert`, `\rVert` and `\:`. Math it still cannot read is shown as
+  written. Selected text copies an object character where math was drawn,
+  so a message's menu has Copy, which copies the message as written.
+  <!-- test: MathSpanTests.testEachMathSpanIsMarkedWithItsLaTeX -->
+  <!-- test: MathSpanTests.testMathIsMarkedInListsAndTables -->
+  <!-- test: MathSpanTests.testDisplayMathAloneInAParagraphStandsAlone -->
+  <!-- test: MathMacrosTests.testARelationIsItsSymbolWithThickSpaceAround -->
+  <!-- test: MathMacrosTests.testARelationWithoutABracedArgumentIsLeftAlone -->
+  <!-- test: MathMacrosTests.testOtherCommandsAreSaidInOnesSwiftMathKnows -->
+  <!-- test: MathMacrosTests.testLongerCommandsAndEscapedBackslashesAreLeftAlone -->
+  <!-- test: MathTextTests.testEverySpanOfAPartialOrderReplyIsDrawn -->
+  <!-- test: MathTextTests.testCommandsSwiftMathLacksAreDrawn -->
+  <!-- test: MathTextTests.testMathSwiftMathCannotReadIsNotDrawn -->
+  <!-- test: MathTextTests.testShortMathKeepsItsBaselineInsideThePicture -->
 - A reply being streamed, to a conversation here or to a Mac's chat, is
   parsed again only after the blocks no later token can change, so the
   parsing a token costs stays the size of the last block or two however long

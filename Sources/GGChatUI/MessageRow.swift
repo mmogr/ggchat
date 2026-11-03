@@ -65,6 +65,11 @@ struct MessageRow: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contextMenu {
+            // As written, so math comes out as its LaTeX: copying selected
+            // text gives an object character where math was drawn.
+            if !message.content.isEmpty {
+                Button("Copy", systemImage: "doc.on.doc") { Clipboard.copy(message.content) }
+            }
             if let changes, !message.isBeingWritten {
                 Button("Edit", systemImage: "pencil") { changes.edit(message) }
                 if message.role == .assistant {

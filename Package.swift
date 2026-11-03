@@ -60,6 +60,12 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-markdown.git", from: "0.8.0"),
         .package(url: "https://github.com/swiftlang/swift-docc-plugin.git", from: "1.5.0"),
+        // Draws the math in a reply. A revision rather than a version: the
+        // last release, 1.7.3, predates `\operatorname`, `\tfrac` and
+        // `\boldsymbol`, which models write and main has. Move to a version
+        // once one is tagged past this commit.
+        .package(
+            url: "https://github.com/mgriebling/SwiftMath.git", revision: "0b0222e102ba415b352cd29f334075622bd4e6aa"),
         // Pinned to a version, never a branch. The binding and the
         // xcframework are two halves of one artifact checked against each
         // other by a uniffi checksum, and a mismatch is a `fatalError` at the
@@ -115,7 +121,7 @@ let package = Package(
         ),
         .target(
             name: "GGChatUI",
-            dependencies: ["GGChatCore", "GGChatPipe", "GGChatLocal"],
+            dependencies: ["GGChatCore", "GGChatPipe", "GGChatLocal", "SwiftMath"],
             swiftSettings: [.defaultIsolation(MainActor.self)]
         ),
         .testTarget(

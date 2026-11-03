@@ -63,7 +63,7 @@ struct TableBlockView: View {
 
     private func cell(_ text: AttributedString, column: Int) -> some View {
         WrappingCell(limit: cellLimit) {
-            Text(text)
+            MathText(text: text)
                 .multilineTextAlignment(Self.textAlignment(alignment(of: column)))
                 .textSelection(.enabled)
         }
