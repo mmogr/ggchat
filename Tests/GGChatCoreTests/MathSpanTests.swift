@@ -63,8 +63,8 @@ final class MathSpanTests: XCTestCase {
         guard case .paragraph(let text) = blocks.first else { return XCTFail("\(blocks)") }
         XCTAssertEqual(String(text.characters), "Elementary ($e_k$): sums")
         XCTAssertFalse(text.runs.contains { $0.inlinePresentationIntent?.contains(.code) == true })
-        let strong = text.runs.filter { $0.inlinePresentationIntent == .stronglyEmphasized }
-        XCTAssertEqual(strong.map { String(text[$0.range].characters) }, ["Elementary ($e_k$):"])
+        let strong = text.runs[\.inlinePresentationIntent].filter { $0.0 == .stronglyEmphasized }
+        XCTAssertEqual(strong.map { String(text[$0.1].characters) }, ["Elementary ($e_k$):"])
     }
 
     func testMathInEveryKindOfBlock() {
@@ -118,5 +118,48 @@ final class MathSpanTests: XCTestCase {
         guard case .paragraph(let text) = blocks.first else { return XCTFail("\(blocks)") }
         XCTAssertEqual(String(text.characters), "one and $a*b$ and two")
         XCTAssertEqual(text.runs.filter { $0.inlinePresentationIntent != nil }.count, 2)
+    }
+
+    // MARK: - Marked for drawing
+
+    /// Each math span in `markdown`'s first block, as the parse marks it.
+    private func spans(_ markdown: String) -> [MathSpan] {
+        guard case .paragraph(let text) = MarkdownBlocks.parse(markdown).first else { return [] }
+        return text.runs.compactMap { $0[MathAttribute.self] }
+    }
+
+    func testEachMathSpanIsMarkedWithItsLaTeX() {
+        XCTAssertEqual(
+            spans(#"On $S$, \( a \mathrel{R} b \) and $$x^2$$ and \[ \frac{1}{2} \] hold."#),
+            [
+                MathSpan(latex: "S", isDisplay: false), MathSpan(latex: #"a \mathrel{R} b"#, isDisplay: false),
+                MathSpan(latex: "x^2", isDisplay: true), MathSpan(latex: #"\frac{1}{2}"#, isDisplay: true),
+            ])
+        let bars = [MathSpan(latex: "f*g", isDisplay: false), MathSpan(latex: "a|b", isDisplay: false)]
+        XCTAssertEqual(spans("Let $f*g$ | $a|b$"), bars, "a bar in math is a bar again")
+        XCTAssertEqual(spans("$$a\nb$$"), [MathSpan(latex: "a b", isDisplay: true)])
+        XCTAssertEqual(spans("$5 and $6, `$x$`"), [], "money and code are not math")
+    }
+
+    func testMathIsMarkedInListsAndTables() {
+        guard case .list(_, let items) = MarkdownBlocks.parse("1. **Reflexive** — $a \\mathrel{R} a$").first,
+            case .table(let table) = MarkdownBlocks.parse("| a | b |\n|---|---|\n| $x$ | $y|z$ |").first
+        else { return XCTFail("not a list and a table") }
+        XCTAssertEqual(items.first?.runs.compactMap { $0[MathAttribute.self]?.latex }, [#"a \mathrel{R} a"#])
+        let cells = table.rows.first?.compactMap { $0.runs.compactMap { $0[MathAttribute.self]?.latex }.first }
+        XCTAssertEqual(cells, ["x", "y|z"])
+    }
+
+    func testDisplayMathAloneInAParagraphStandsAlone() {
+        func alone(_ markdown: String) -> MathSpan? {
+            guard case .paragraph(let text) = MarkdownBlocks.parse(markdown).first else { return nil }
+            return MathSpan.standingAlone(in: text)
+        }
+        XCTAssertEqual(alone("$$x^2$$"), MathSpan(latex: "x^2", isDisplay: true))
+        XCTAssertEqual(alone(#"\[ \sum_i x_i \]"#), MathSpan(latex: #"\sum_i x_i"#, isDisplay: true))
+        XCTAssertNil(alone("so $$x^2$$"), "text beside it")
+        XCTAssertNil(alone("$x^2$"), "inline math")
+        XCTAssertNil(alone("$$a$$ $$b$$"), "two spans")
+        XCTAssertNil(alone("plain"))
     }
 }

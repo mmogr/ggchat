@@ -954,8 +954,14 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # with a ticket a serve printed, so a binding that could no longer do so
 # fails nothing else, so the package floor moves past it. The claim it backs
 # names it and the shipped-defaults test, so the marker floor moves by two.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1094
+#
+# 2026-11-03: 1094 -> 1105 and 984 -> 995 for math that is drawn. A span the
+# parse stops marking, a rewrite that stops being made or a short formula
+# drawn below its picture would leave the math as LaTeX or clipped and fail
+# nothing else, so these eleven and their markers are the whole of that
+# guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1105
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 984
+floor "README test markers" "${markers:-0}" 995
 
 exit $status

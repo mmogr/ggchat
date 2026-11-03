@@ -56,9 +56,10 @@ enum MathSpans {
         return String(decoding: out, as: UTF8.self)
     }
 
-    /// `text` with each code span `protect` made back as plain text, and any
-    /// other ``marker`` dropped, so a span the parser broke shows a stray
-    /// backtick at worst. Each ``pipe`` is a `|` again.
+    /// `text` with each code span `protect` made back as plain text, carrying
+    /// its ``MathSpan`` as a ``MathAttribute``, and any other ``marker``
+    /// dropped, so a span the parser broke shows a stray backtick at worst.
+    /// Each ``pipe`` is a `|` again.
     static func unwrap(_ text: AttributedString) -> AttributedString {
         guard text.characters.contains(marker) else { return text }
         var text = text
@@ -68,6 +69,8 @@ enum MathSpans {
         for run in spans {
             let intent = run.inlinePresentationIntent?.subtracting(.code)
             text[run.range].inlinePresentationIntent = intent?.isEmpty == true ? nil : intent
+            let source = String(text[run.range].characters.dropFirst()).replacing(String(pipe), with: "|")
+            text[run.range][MathAttribute.self] = MathSpan(source: source)
         }
         while let index = text.characters.firstIndex(of: marker) {
             text.characters.remove(at: index)

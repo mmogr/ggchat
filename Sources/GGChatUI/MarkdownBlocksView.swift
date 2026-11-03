@@ -22,10 +22,15 @@ struct MarkdownBlockView: View {
     var body: some View {
         switch block {
         case .paragraph(let text):
-            Text(text)
-                .textSelection(.enabled)
+            if let span = MathSpan.standingAlone(in: text) {
+                MathBlockView(span: span, source: text)
+            } else {
+                MathText(text: text)
+                    .textSelection(.enabled)
+            }
         case .heading(let level, let text):
-            Text(text)
+            let style: Font.TextStyle = level == 1 ? .title2 : level == 2 ? .title3 : .headline
+            MathText(text: text, style: style)
                 .font(level == 1 ? .title2.bold() : level == 2 ? .title3.bold() : .headline)
                 .textSelection(.enabled)
                 .accessibilityAddTraits(.isHeader)
@@ -38,7 +43,7 @@ struct MarkdownBlockView: View {
                         Text(ordered ? "\(index + 1)." : "•")
                             .foregroundStyle(.secondary)
                             .monospacedDigit()
-                        Text(item)
+                        MathText(text: item)
                             .textSelection(.enabled)
                     }
                 }
@@ -101,16 +106,23 @@ struct CodeBlockView: View {
     }
 
     private func copy() {
-        #if os(iOS)
-            UIPasteboard.general.string = code
-        #elseif os(macOS)
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(code, forType: .string)
-        #endif
+        Clipboard.copy(code)
         withAnimation { copied = true }
         Task {
             try? await Task.sleep(for: .seconds(1.5))
             withAnimation { copied = false }
         }
+    }
+}
+
+/// The system pasteboard, for a copy of plain text.
+enum Clipboard {
+    static func copy(_ text: String) {
+        #if os(iOS)
+            UIPasteboard.general.string = text
+        #elseif os(macOS)
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(text, forType: .string)
+        #endif
     }
 }
