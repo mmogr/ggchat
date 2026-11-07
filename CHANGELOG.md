@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.16.0](https://github.com/mmogr/ggchat/compare/v0.15.0...v0.16.0) (2026-11-07)
+
+
+### What the app now does
+
+* **markdown:** math in a reply is drawn as math ([#280](https://github.com/mmogr/ggchat/issues/280)) ([54b9287](https://github.com/mmogr/ggchat/commit/54b92879c69413206f32ef7f6a76efd7fd525f2a))
+
+
+### What the app stopped getting wrong
+
+* **tests:** the pipe tests wait on a clock, not on a count of yields ([#283](https://github.com/mmogr/ggchat/issues/283)) ([97bfbc6](https://github.com/mmogr/ggchat/commit/97bfbc66ed3772ffd3620613ee45d72594d89cc8))
+
 ## [0.15.0](https://github.com/mmogr/ggchat/compare/v0.14.0...v0.15.0) (2026-11-02)
 
 
