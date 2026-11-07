@@ -123,11 +123,22 @@ final class AppModelProxyStatusTests: XCTestCase {
         return (model, server)
     }
 
+    /// Waits, for up to `limit`, until the pipe reads `wanted`, and fails
+    /// at the caller if it never does. Polled on a clock rather than counted
+    /// in yields, for `GatedConnector.waitForArrivals`'s reason: a status
+    /// arrives from a task on the global executor, and a loaded machine can
+    /// keep it waiting for a thread for longer than any count of yields.
     @MainActor
-    private func waitForStatus(_ wanted: PipeStatus, _ model: AppModel, _ id: UUID) async {
-        for _ in 0..<200 where model.pipeStatus(for: id) != wanted {
-            await Task.yield()
+    private func waitForStatus(
+        _ wanted: PipeStatus, _ model: AppModel, _ id: UUID, within limit: Duration = .seconds(10),
+        file: StaticString = #filePath, line: UInt = #line
+    ) async {
+        let deadline = ContinuousClock.now + limit
+        while model.pipeStatus(for: id) != wanted, ContinuousClock.now < deadline {
+            try? await Task.sleep(for: .milliseconds(1))
         }
+        XCTAssertEqual(
+            model.pipeStatus(for: id), wanted, "the pipe never read \(wanted.rawValue)", file: file, line: line)
     }
 
     /// The probe as a pipe conversation opens on a launch, before the
