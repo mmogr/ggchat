@@ -38,6 +38,18 @@ final class PipeWaitEndingTests: XCTestCase {
         await task.value
     }
 
+    /// Waits, for up to `limit`, until `done` holds, and answers whether it
+    /// did. Polled on a clock rather than counted in yields, for
+    /// `GatedConnector.waitForArrivals`'s reason: a removal hangs its pipe up
+    /// in a task of its own, and a loaded machine can keep that task waiting
+    /// for a thread for longer than any count of yields.
+    @MainActor
+    private func waitUntil(within limit: Duration = .seconds(10), _ done: () -> Bool) async -> Bool {
+        let deadline = ContinuousClock.now + limit
+        while !done(), ContinuousClock.now < deadline { try? await Task.sleep(for: .milliseconds(1)) }
+        return done()
+    }
+
     /// The question is left as it was asked, with no reply under it and no
     /// sentence on it, which is what draws Retry.
     @MainActor
@@ -61,8 +73,9 @@ final class PipeWaitEndingTests: XCTestCase {
         }
         let gate = try XCTUnwrap(made)
         let send = try XCTUnwrap(model.send("anyone?"))
-        for _ in 0..<200 where gate.arrivals < 1 { await Task.yield() }
-        XCTAssertEqual(gate.arrivals, 1, "a pipe never dialled was not dialled")
+        let dialled = await gate.waitForArrivals(1)
+        XCTAssertTrue(dialled, "a pipe never dialled was not dialled")
+        XCTAssertEqual(gate.arrivals, 1, "the wait dialled the pipe more than once")
 
         model.stop()
         await settle(send, model)
@@ -106,15 +119,25 @@ final class PipeWaitEndingTests: XCTestCase {
         let (gate, registry) = try XCTUnwrap(made)
         let send = try XCTUnwrap(model.send("anyone?"))
         defer { send.cancel() }
-        for _ in 0..<200 where gate.arrivals < 1 { await Task.yield() }
+        let dialled = await gate.waitForArrivals(1)
+        XCTAssertTrue(dialled, "the wait never dialled its pipe")
 
         model.removeProvider(config.id)
-        for _ in 0..<200 where model.isStreaming { await Task.yield() }
+        let ended = await waitUntil { !model.isStreaming }
+        XCTAssertTrue(ended, "the wait went on after its provider was removed")
         try assertLeftWithRetry(model, "a removal while waiting")
 
+        // The removal hangs the pipe up in a task of its own, once the reply
+        // it put down has finished. A dial that lands before that task has
+        // moved the dial generation on is installed, and then hung up by it,
+        // so what is waited for is the end of both: landed, unbound, and no
+        // longer the provider's.
         gate.open()
         let bound = { gate.sessions.map(\.baseURL).filter { registry.provider(for: $0) != nil } }
-        for _ in 0..<200 where gate.sessions.isEmpty || !bound().isEmpty { await Task.yield() }
+        let settled = await waitUntil {
+            !gate.sessions.isEmpty && bound().isEmpty && model.pipeSession(for: config.id) == nil
+        }
+        XCTAssertTrue(settled, "the dial never landed and was hung up")
         XCTAssertEqual(gate.sessions.count, 1, "the held dial never landed")
         XCTAssertEqual(bound(), [], "the dial landed for a removed provider and kept its port")
         XCTAssertNil(model.pipeSession(for: config.id))
