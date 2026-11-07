@@ -123,24 +123,6 @@ final class AppModelProxyStatusTests: XCTestCase {
         return (model, server)
     }
 
-    /// Waits, for up to `limit`, until the pipe reads `wanted`, and fails
-    /// at the caller if it never does. Polled on a clock rather than counted
-    /// in yields, for `GatedConnector.waitForArrivals`'s reason: a status
-    /// arrives from a task on the global executor, and a loaded machine can
-    /// keep it waiting for a thread for longer than any count of yields.
-    @MainActor
-    private func waitForStatus(
-        _ wanted: PipeStatus, _ model: AppModel, _ id: UUID, within limit: Duration = .seconds(10),
-        file: StaticString = #filePath, line: UInt = #line
-    ) async {
-        let deadline = ContinuousClock.now + limit
-        while model.pipeStatus(for: id) != wanted, ContinuousClock.now < deadline {
-            try? await Task.sleep(for: .milliseconds(1))
-        }
-        XCTAssertEqual(
-            model.pipeStatus(for: id), wanted, "the pipe never read \(wanted.rawValue)", file: file, line: line)
-    }
-
     /// The probe as a pipe conversation opens on a launch, before the
     /// dial has returned. Asked through `makeProvider`, it raises
     /// "home is not connected yet." over a pill about to read Direct, and
@@ -158,7 +140,7 @@ final class AppModelProxyStatusTests: XCTestCase {
         XCTAssertEqual(StatusServer.requests(at: host), 0)
 
         await model.connectPipe(for: config)
-        await waitForStatus(.direct, model, config.id)
+        await PipeStatusWait.until(.direct, model, config.id)
         await model.probeProxyStatus(for: config)
         XCTAssertTrue(model.proxyStatusAvailable(for: config.id), "the pane stayed hidden once the pipe was up")
     }
@@ -181,7 +163,7 @@ final class AppModelProxyStatusTests: XCTestCase {
         XCTAssertFalse(model.proxyStatusAvailable(for: config.id), "the far machine had not answered yet")
 
         sleeper.release()
-        await waitForStatus(.direct, model, config.id)
+        await PipeStatusWait.until(.direct, model, config.id)
         XCTAssertEqual(
             model.connectedPulse, 1, "the connected pulse did not move on, so nothing would probe again")
         await model.probeProxyStatus(for: config)
@@ -199,7 +181,7 @@ final class AppModelProxyStatusTests: XCTestCase {
         let host = "called-off.status.test"
         let (model, config) = try makeModel(answeringAt: host)
         await model.connectPipe(for: config)
-        await waitForStatus(.direct, model, config.id)
+        await PipeStatusWait.until(.direct, model, config.id)
 
         let probe = Task { await model.probeProxyStatus(for: config) }
         for _ in 0..<5_000 where StatusServer.requests(at: host) == 0 {
@@ -259,7 +241,7 @@ final class AppModelProxyStatusTests: XCTestCase {
         let host = "reconnected.status.test"
         let (model, config) = try makeModel(answeringAt: host)
         await model.connectPipe(for: config)
-        await waitForStatus(.direct, model, config.id)
+        await PipeStatusWait.until(.direct, model, config.id)
 
         let probe = Task { await model.probeProxyStatus(for: config) }
         for _ in 0..<5_000 where StatusServer.requests(at: host) == 0 {
@@ -275,9 +257,9 @@ final class AppModelProxyStatusTests: XCTestCase {
         // a bare `connectPipe` would refuse; the reconnect shuts it down first.
         let session = try XCTUnwrap(model.pipeSession(for: config.id) as? MockPipeSession)
         session.forceClosed()
-        await waitForStatus(.closed, model, config.id)
+        await PipeStatusWait.until(.closed, model, config.id)
         await model.reconnectPipe(for: config)
-        await waitForStatus(.direct, model, config.id)
+        await PipeStatusWait.until(.direct, model, config.id)
         XCTAssertEqual(model.connectedPulse, 2, "the pipe did not come up a second time")
         StatusServer.release(at: host, with: 200)
         await probe.value
