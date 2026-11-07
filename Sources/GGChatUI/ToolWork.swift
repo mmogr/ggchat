@@ -91,8 +91,9 @@ struct ToolWork: Equatable {
     /// A load is said in gglib's words (`AgentEvent::waiting_sentence`, the
     /// line its CLI and its chat page print): "Loading Qwen3-4B… 12 s",
     /// the whole seconds left out under one and when gglib sent none, and
-    /// "the model" when it named none. gglib puts a load in no line, so
-    /// there is no place to say.
+    /// "the model" when it named none, the seconds in plain digits as
+    /// gglib prints them. gglib puts a load in no line, so there is no place
+    /// to say.
     static func line(for wait: RunWait, in locale: Locale) -> String {
         func number(_ value: some BinaryInteger) -> String { Int(clamping: value).formatted(.number.locale(locale)) }
         switch wait.reason {
@@ -104,7 +105,7 @@ struct ToolWork: Equatable {
         case .modelLoad:
             let line = "Loading \(wait.model ?? "the model")\u{2026}"
             guard let seconds = wait.elapsedMS.map({ $0 / 1000 }), seconds > 0 else { return line }
-            return "\(line) \(number(seconds)) s"
+            return "\(line) \(seconds) s"
         }
     }
 }

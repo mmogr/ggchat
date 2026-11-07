@@ -58,9 +58,11 @@ final class ToolWorkTests: XCTestCase {
         XCTAssertEqual(line(RunWait(reason: .modelLoad, model: "Qwen3-4B", elapsedMS: 999)), "Loading Qwen3-4B\u{2026}")
         XCTAssertEqual(line(RunWait(reason: .modelLoad, model: "Qwen3-4B", elapsedMS: 0)), "Loading Qwen3-4B\u{2026}")
         XCTAssertEqual(line(RunWait(reason: .modelLoad, elapsedMS: 3_000)), "Loading the model\u{2026} 3 s")
+        // Plain digits, ungrouped, as gglib prints them, whatever the locale.
         XCTAssertEqual(
             line(RunWait(reason: .modelLoad, model: "Qwen3-4B", elapsedMS: 12_000), Locale(identifier: "ar_EG")),
-            "Loading Qwen3-4B\u{2026} \u{0661}\u{0662} s")
+            "Loading Qwen3-4B\u{2026} 12 s")
+        XCTAssertEqual(line(RunWait(reason: .modelLoad, elapsedMS: 1_234_000)), "Loading the model\u{2026} 1234 s")
     }
 
     /// The latest word of a tool is the one shown, a wait gives way to

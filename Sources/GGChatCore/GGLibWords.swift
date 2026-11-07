@@ -15,9 +15,11 @@
 // - "Load it again": not a state but gglib's button for a model that is no
 //   longer loaded (`ModelGoneLine` in its GUI), which the pill offers once
 //   the model could not be loaded.
-// - "<name> is away. Your message will wait.": gglib's away line with no
-//   time, for a machine this device has never heard from, as gglib drops
-//   "since" when it does not know since when.
+// - "<name> is away. Your message will wait.": the away line with no time,
+//   for a machine this device has never heard from and that did not answer.
+//   gglib's page shows no line when it does not know since when; ggchat says
+//   so once the dial has failed, and nothing while it is still dialling.
+// - The load line's seconds are plain digits, as gglib prints them.
 // - The pill's pipe words, "Connecting", "Direct", "Relayed" and
 //   "Reconnect": how this device's own pipe to a machine is, which gglib
 //   says as a reach and a path and not as one word.

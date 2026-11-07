@@ -161,7 +161,8 @@ extension AppModel {
 
     /// gglib's away line, "home is away since 08:12. Your message will
     /// wait.", by when the machine was last heard, or "home is away. Your
-    /// message will wait." when it has not been heard from yet, while this
+    /// message will wait." when it has not been heard from yet and did not
+    /// answer (nothing while its first dial is still going), while this
     /// reply waits for its pipe; "Waiting for This iPhone to start its
     /// engine" while it waits for the engine; nil once it streams, and for
     /// every reply that never waited.
@@ -173,6 +174,9 @@ extension AppModel {
         let since = lastHeardAt[providerID].map {
             Self.shortStamp($0, now: now(), locale: locale, calendar: calendar)
         }
+        // A machine never heard from is away only once it has not answered:
+        // during a first dial, as gglib does with no time to give, no line.
+        guard since != nil || unanswered.contains(providerID) else { return nil }
         return GGLibWords.awayLine(config.name, since: since)
     }
 }
