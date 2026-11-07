@@ -1,0 +1,182 @@
+name: Update gglib
+
+# Takes the newest stable gglib release into this package and opens a PR, as
+# scripts/pin_gglib.sh does by hand. Weekly, or run by hand: Actions -> Update
+# gglib -> Run workflow, or
+# `gh workflow run update-gglib.yml -R mmogr/ggchat [-f version=<version>]`.
+#
+# gglib's frameworks are root binary targets pinned in Package.swift by URL
+# and checksum, with the Swift generated for them vendored in Sources/GGLib.
+# They are no package dependency, so neither Dependabot nor Update
+# dependencies moves them, and the Swift and the frameworks have to move
+# together: pin_gglib.sh is the only thing that takes a release, and this
+# runs it. CI on the PR then says whether the release still fits: a case or
+# a field gglib added fails to build in Sources/GGChatLocal, and
+# check_gglib_take.sh holds the take to the release.
+#
+# Stable releases only on the schedule. A release candidate is taken by
+# naming it.
+on:
+  schedule:
+    - cron: "23 5 * * 1"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: A gglib version to take, for example 0.31.0-rc.4. Leave empty to take the newest stable release.
+        type: string
+        required: false
+        default: ""
+
+# Everything that writes uses RELEASE_PLEASE_TOKEN, not GITHUB_TOKEN: a push
+# or a PR made with GITHUB_TOKEN starts no workflows, so CI and the Label
+# Check would never run on the PR this opens.
+permissions: {}
+
+concurrency:
+  group: update-gglib
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Take a gglib release and open a PR
+    # pin_gglib.sh needs bash, curl, unzip, jq and sha256sum, and no Swift.
+    runs-on: ubuntu-26.04
+    env:
+      GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+      REQUESTED: ${{ inputs.version }}
+    steps:
+      - name: Require the token
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::RELEASE_PLEASE_TOKEN is not set; without it the PR would start no CI"
+            exit 1
+          fi
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+      - name: Pick the release
+        id: pick
+        run: |
+          set -euo pipefail
+          # The line pin_gglib.sh rewrites and check_gglib_take.sh reads.
+          current=$(sed -nE 's/^let gglibVersion = "([^"]*)"$/\1/p' Package.swift)
+          if [ "$(printf '%s' "$current" | grep -c .)" -ne 1 ]; then
+            echo "::error::Package.swift does not declare gglibVersion on exactly one line"
+            exit 1
+          fi
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          # `changed` is written once, at the end: unset, the later steps are
+          # skipped.
+          if [ -n "$REQUESTED" ]; then
+            target=${REQUESTED#v}
+          else
+            gh release list -R mmogr/gglib --exclude-drafts --exclude-pre-releases --limit 50 \
+              --json tagName --jq '.[].tagName' > "$RUNNER_TEMP/tags.txt"
+            # The highest X.Y.Z among the tags, by number rather than by date:
+            # a patch to an older minor can be published after a newer one.
+            # Prints it, and whether it is newer than the pin. A tag with a
+            # suffix is a candidate, however it was marked, and is skipped.
+            picked=$(python3 - "$RUNNER_TEMP/tags.txt" "$current" <<'PY'
+          import re, sys
+          def key(version):
+              m = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?", version)
+              if not m:
+                  return None
+              core = tuple(int(n) for n in m.group(1, 2, 3))
+              if m.group(4) is None:
+                  return core + (1, ())
+              parts = tuple((0, int(p), "") if p.isdigit() else (1, 0, p) for p in m.group(4).split("."))
+              return core + (0, parts)
+          with open(sys.argv[1]) as f:
+              tags = [line.strip().removeprefix("v") for line in f]
+          stable = [t for t in tags if re.fullmatch(r"\d+\.\d+\.\d+", t)]
+          if not stable:
+              sys.exit("mmogr/gglib lists no stable release")
+          newest = max(stable, key=key)
+          pinned = key(sys.argv[2])
+          print(newest, "yes" if pinned is None or key(newest) > pinned else "no")
+          PY
+            )
+            read -r target newer <<< "$picked"
+            if [ "$newer" != yes ]; then
+              echo "Nothing to take: ggchat pins gglib $current, and the newest stable release, $target, is not newer." | tee -a "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+          fi
+          echo "version=$target" >> "$GITHUB_OUTPUT"
+
+          # Named by hand, any other version is taken: a candidate, or an
+          # older release to step back to.
+          if [ "$target" = "$current" ]; then
+            echo "Nothing to take: ggchat already pins gglib $current." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          # gglib's release job uploads SHA256SUMS last, so a release listed
+          # without it is still being uploaded, and the next run takes it. A
+          # version named by hand is left to pin_gglib.sh, which fails on a
+          # release it cannot download.
+          if [ -z "$REQUESTED" ] && ! curl -fsSL -o /dev/null "https://github.com/mmogr/gglib/releases/download/v$target/SHA256SUMS"; then
+            echo "Nothing taken: gglib $target has no SHA256SUMS yet, so its assets are still being uploaded." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          # One PR per release: a branch for it means its PR is open, or was
+          # closed without taking it, and either way is not opened again.
+          if git ls-remote --exit-code --heads origin "chore(deps)/gglib-$target" >/dev/null; then
+            echo "Nothing taken: branch chore(deps)/gglib-$target already exists, so its PR has been opened." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+      - name: Take it
+        if: steps.pick.outputs.changed == 'true'
+        env:
+          VERSION: ${{ steps.pick.outputs.version }}
+        run: scripts/pin_gglib.sh "$VERSION"
+      - name: Open a pull request
+        if: steps.pick.outputs.changed == 'true'
+        env:
+          BASE: ${{ github.event.repository.default_branch }}
+          VERSION: ${{ steps.pick.outputs.version }}
+          CURRENT: ${{ steps.pick.outputs.current }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          branch="chore(deps)/gglib-$VERSION"
+          old_pin=$(git show HEAD:Sources/GGLib/binding.json | jq -r .llama_pin)
+          new_pin=$(jq -r .llama_pin Sources/GGLib/binding.json)
+          subject="chore(deps): ggchat links gglib $VERSION"
+          git switch -c "$branch"
+          git add Package.swift Sources/GGLib
+          git -c user.name=mmogr -c user.email=172192206+mmogr@users.noreply.github.com \
+            commit --quiet -F - <<EOF
+          $subject
+
+          gglib $CURRENT -> $VERSION
+          llama.cpp $old_pin -> $new_pin
+
+          Taken with scripts/pin_gglib.sh $VERSION.
+          EOF
+          # The size the Label Check would give it, so the PR passes from the
+          # start: lines added and removed, against the same thresholds.
+          lines=$(git show --numstat --format= HEAD | awk '{n += $1 + $2} END {print n + 0}')
+          if [ "$lines" -lt 10 ]; then size=size/xs
+          elif [ "$lines" -lt 100 ]; then size=size/s
+          elif [ "$lines" -lt 500 ]; then size=size/m
+          elif [ "$lines" -lt 1000 ]; then size=size/l
+          else size=size/xl
+          fi
+          git push origin "$branch"
+          body="## What the system now does
+
+          The app links gglib $VERSION's frameworks and Swift, and runs llama.cpp $new_pin on the device.
+
+          - gglib $CURRENT -> $VERSION ([release notes](https://github.com/mmogr/gglib/releases/tag/v$VERSION))
+          - llama.cpp $old_pin -> $new_pin
+
+          ## How it is kept true
+
+          \`scripts/check_gglib_take.sh\` holds \`Sources/GGLib\` and the pinned checksums to the release. If the build fails in \`Sources/GGChatLocal\` (\`Mapping.swift\`, \`GGLibBuild+GGLib.swift\`), gglib's interface changed: answer it on this branch before merging.
+
+          Opened by the Update gglib workflow: $RUN_URL"
+          gh pr create --base "$BASE" --head "$branch" --title "$subject" --body "$body" \
+            --label deps --label dependencies --label "$size"
