@@ -246,10 +246,12 @@ Each claim names the test that keeps it true.
   that draws names its image model beside `draw`: `image_model` in a Mac's
   turn, and `&image_model=<id>` in the query of a run for a conversation
   kept here. Neither says it without drawing, and with none chosen each is
-  the request it was. gglib has recorded no such answer yet, so the fixture
-  these read, `contract-images-drawing-models.json`, is the example in the
-  contract both sides are built to and not a capture.
+  the request it was. gglib's recorded answers (`contracts/images/drawing.json`
+  there, `gglib-images-drawing.json` here) read: one with the default, one
+  with a model chosen, and the refusals of a chosen model that lacks files,
+  one that is gone, and several complete ones with no default.
   <!-- test: ImageModelWireTests.testTheContractsAnswerListsTheImageModelsInOrder -->
+  <!-- test: ImageModelWireTests.testATurnThatDrawsWithAChosenModelIsTheRecordedBody -->
   <!-- test: ImageModelWireTests.testAnAnswerWithoutTheListIsAnOlderGGLibAndAnEmptyListIsNot -->
   <!-- test: ImageModelWireTests.testAFamilyOrARoleThisBuildDoesNotKnowStillReads -->
   <!-- test: ImageModelWireTests.testEveryFamilyGGLibNamesReadsInItsWords -->
@@ -347,10 +349,14 @@ Each claim names the test that keeps it true.
   The reply holds the latest word in memory and nothing of it is kept: one
   line for it, "Drawing: step 12 of 20" in the locale's digits, with the
   picture's number from the second on and the place in line when it is not
-  next; a tool's progress goes when its own call ends and not another's, a
+  next. A wait for a model to load is said in gglib's words, "Loading
+  Qwen3-4B… 12 s", by the model and the time gglib sends with it, the
+  seconds left out under one, and "the model" from a gglib that names
+  none. A tool's progress goes when its own call ends and not another's, a
   wait gives way to whatever comes next, and a run that ends leaves none.
   <!-- test: ToolProgressWireTests.testTheRecordedFramesOfAPictureReadAsItsWaitItsStagesAndItsEnd -->
   <!-- test: ToolProgressWireTests.testAWaitForAModelAndFramesThatDoNotReadMeanNothing -->
+  <!-- test: RunsWireTests.testTheRecordedLoadWaitNamesItsModelAndItsTime -->
   <!-- test: ToolWorkTests.testEachStageOfAPictureHasItsLine -->
   <!-- test: ToolWorkTests.testAWaitSaysWhatIsInTheWay -->
   <!-- test: ToolWorkTests.testTheLatestWordIsShownUntilItsToolEnds -->
@@ -1257,10 +1263,14 @@ Each claim names the test that keeps it true.
   not serving waits for it, as one through a pipe waits for the pipe, with
   "Waiting for This iPhone to start its engine", and a serve refused puts
   its sentence under the question. The status pill, a pipe's slot, says how
-  the conversation's model is, with a memory chip: "Not loaded", "Loading
-  40%", "Ready", "Load again" once it could not be loaded, which serves the
-  engine afresh and asks the question again, or "Too big" once the engine
-  refused it, which opens the model browser; VoiceOver hears "Model …".
+  the conversation's model is, with a memory chip, in gglib's words where
+  gglib has them: "Not loaded", "Loading 40%", "Loaded", "Load it again"
+  once it could not be loaded, which serves the engine afresh and asks the
+  question again, or "Too big" once the engine refused it, which opens the
+  model browser; VoiceOver hears "Model …". The percent and "Too big" are
+  this app's: gglib's vocabulary has no word for either. The words it
+  does have, and its away line, are held to a copy of gglib's
+  `contracts/vocabulary/words.json`.
   Going to the background puts the replies down first, keeping what arrived
   with Continue, and then the engine, inside the same grace; a serve that
   lands while the app is away takes itself down, and coming back starts
@@ -1276,6 +1286,8 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelEngineLifecycleTests.testLoadAgainServesAfreshAndAsksTheQuestionAgain -->
   <!-- test: AppModelEngineLifecycleTests.testARefusedServePutsItsSentenceUnderTheWaitingQuestion -->
   <!-- test: SessionStatusTests.testThePillSaysEachStateInAFewWords -->
+  <!-- test: VocabularyContractTests.testEveryWordShownIsGGLibs -->
+  <!-- test: VocabularyContractTests.testTheAwayLineIsGGLibs -->
 - On an iPhone, This iPhone runs gglib's own engine, in a release build and
   in a DEBUG one launched without `-ggchat-mock-engine`: gglib's proxy on a
   loopback port, with a key new for each serve, in front of llama.cpp
@@ -1287,7 +1299,7 @@ Each claim names the test that keeps it true.
   only after an open that failed, so the process holds one library over one
   `gglib.db`. The engine's states are the pill's, each under the name
   gglib's proxy lists the model by, so the pill finds the conversation's
-  model and reads Ready once it has loaded; its errors are the app's, case
+  model and reads Loaded once it has loaded; its errors are the app's, case
   for case. The engine's state is followed from where it stands until it
   says stopped, and following stops when nothing listens. A serve that came
   up anywhere but this device's loopback address is shut down and refused.
@@ -1954,7 +1966,9 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelRefusalTests.testABackgroundBeforeTheFirstTokenWritesNoFailure -->
   <!-- test: AppModelRefusalTests.testAQuestionLeftWithNoReplyCanBeAskedAgain -->
 - A send, Retry or Continue through a pipe that is not connected waits for it
-  (ADR 0006) under "Waiting for home · last heard 08:12", until the pipe
+  (ADR 0006) under gglib's away line, "home is away since 08:12. Your
+  message will wait.", by when the machine was last heard, or "home is
+  away. Your message will wait." before it ever was, until the pipe
   connects, its dial is refused, or Stop, the background, a removed provider
   or a deleted conversation ends the wait. Removing a provider puts down the
   replies through it first, keeping what had arrived. Sends in several

@@ -77,7 +77,7 @@ final class AppModelGglibEngineTests: XCTestCase {
     }
 
     /// The first send serves gglib's engine, which loads the model within
-    /// the request; the pill reads Ready for the model as gglib names it,
+    /// the request; the pill reads Loaded for the model as gglib names it,
     /// and the reply raises the ring.
     func testAFirstSendServesGglibsEngineAndThePillReadsReady() async throws {
         let (model, served) = makeModel()
@@ -89,7 +89,7 @@ final class AppModelGglibEngineTests: XCTestCase {
         XCTAssertEqual(served.all.count, 1, "the send did not serve the engine once")
         XCTAssertEqual(model.selectedConversation?.messages.last?.content, MockProvider.sampleScript.text)
         let ready = await waitUntil { model.sessionStatus(for: conversation) == .engine(.ready) }
-        XCTAssertTrue(ready, "the pill does not read Ready: \(String(describing: model.engineStatus))")
+        XCTAssertTrue(ready, "the pill does not read Loaded: \(String(describing: model.engineStatus))")
         XCTAssertEqual(model.engineStatus, .ready(model: modelName, nCtx: 4_096))
         XCTAssertEqual(model.selectedConversation?.context?.size, 4_096)
         await model.shutDownEngine()
@@ -114,7 +114,7 @@ final class AppModelGglibEngineTests: XCTestCase {
         try await XCTUnwrap(model.send("again"), "a send after coming back was refused").value
         XCTAssertEqual(served.all.count, 2, "the send did not serve the engine afresh")
         let ready = await waitUntil { model.sessionStatus(for: conversation) == .engine(.ready) }
-        XCTAssertTrue(ready, "the pill does not read Ready after the second load")
+        XCTAssertTrue(ready, "the pill does not read Loaded after the second load")
         await model.shutDownEngine()
     }
 }

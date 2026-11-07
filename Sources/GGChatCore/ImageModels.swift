@@ -1,9 +1,9 @@
 // The image models a hub can draw with, as its answer about drawing lists
 // them, and what is wrong with a choice among them.
 //
-// Written by hand to mirror gglib's `ImageModelRow`. gglib has recorded no
-// answer with the list yet, so `contract-images-drawing-models.json` is
-// written from the contract's own example and read by `ImageModelWireTests`.
+// Written by hand to mirror gglib's `ImageModelRow`. The answers gglib
+// records with the list, `contracts/images/drawing.json` there, are copied
+// as `gglib-images-drawing.json` and replayed by `ImageModelWireTests`.
 
 /// One image model on a hub, as `GET /v1/images/drawing` lists it. The id
 /// is that machine's own catalogue id and names nothing on another.

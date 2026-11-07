@@ -82,7 +82,7 @@ final class OnDeviceUITests: XCTestCase {
         let loading = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Model Loading '")).firstMatch
         XCTAssertTrue(loading.waitForExistence(timeout: 30), "the pill never said the model was loading")
         XCTAssertTrue(
-            app.buttons["Model Ready"].firstMatch.waitForExistence(timeout: 60),
+            app.buttons["Model Loaded"].firstMatch.waitForExistence(timeout: 60),
             "the pill never said the model was ready")
         XCTAssertTrue(
             app.buttons["Context"].firstMatch.waitForExistence(timeout: 120), "no reply followed the model's load")

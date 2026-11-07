@@ -5,7 +5,7 @@ import GGChatCore
 // in the foreground only: it is served when a conversation on This iPhone
 // opens or a send waits for it, it loads a model within the first request
 // that names one, and it is put down on the way to the background, on a
-// memory warning while no reply is going through it, and by Load again,
+// memory warning while no reply is going through it, and by Load it again,
 // which serves it afresh. Coming back to the foreground starts nothing.
 extension AppModel {
     /// The one place `engineStatus` is written, which is what the status
@@ -55,7 +55,7 @@ extension AppModel {
         return Task { await shutDownEngine() }
     }
 
-    /// Load again, from the status pill once the engine could not load the
+    /// Load it again, from the status pill once the engine could not load the
     /// conversation's model: the engine is put down and served afresh, with
     /// this device's memory read again, as Reconnect hangs a pipe up and
     /// dials it again. Then, if the engine is serving, the conversation is

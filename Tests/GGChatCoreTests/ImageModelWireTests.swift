@@ -4,37 +4,76 @@ import XCTest
 @testable import GGChatCore
 
 /// The image models a hub lists, and the choice among them a message that
-/// draws carries, as this device reads and writes them. gglib has recorded
-/// no answer with the list yet: `contract-images-drawing-models.json` is
-/// the example in the contract both sides are built to, written out by
-/// hand, and not a capture.
+/// draws carries, as this device reads and writes them. gglib's recorded
+/// answers are `contracts/images/drawing.json` there, copied here byte for
+/// byte as `gglib-images-drawing.json` from gglib's main at ee456712.
 final class ImageModelWireTests: XCTestCase {
     private func answer(_ body: String) throws -> Drawing {
         try JSONDecoder().decode(Drawing.self, from: Data(body.utf8))
     }
 
-    /// The contract's example reads: the model that would draw with its id,
-    /// and the rows in the order given, each with its family, whether it is
-    /// complete, what it lacks, whether it is the default and whether it is
-    /// loaded.
+    /// gglib's recorded answers, by the name it records each under.
+    private func recorded() throws -> [String: Drawing] {
+        try JSONDecoder().decode([String: Drawing].self, from: try Fixtures.data("gglib-images-drawing.json"))
+    }
+
+    /// Every answer gglib records reads, the models in the order given,
+    /// each with its family, whether it is complete, what it lacks, whether
+    /// it is the default and whether it is loaded. With no model named the
+    /// default draws; one named draws itself; a named one that lacks files
+    /// and one that is gone are those faults; several complete models and
+    /// no default wait for a choice.
     func testTheContractsAnswerListsTheImageModelsInOrder() throws {
-        let drawing = try JSONDecoder().decode(
-            Drawing.self, from: try Fixtures.data("contract-images-drawing-models.json"))
-        let flux = ImageModelRow(
-            id: 3, name: "flux1-schnell-q8_0", family: "flux1", isDefault: true, resident: true)
-        let qwen = ImageModelRow(
-            id: 7, name: "qwen_image_2.1-Q8_0", family: "qwen-image-2.1", complete: false, missing: ["llm"])
+        let answers = try recorded()
         XCTAssertEqual(
-            drawing,
-            Drawing(available: true, model: "flux1-schnell-q8_0", modelID: 3, models: [flux, qwen]))
-        XCTAssertTrue(drawing.takesImageModel)
-        XCTAssertEqual(drawing.defaultImageModel, flux)
-        XCTAssertEqual(drawing.imageModel(7), qwen)
-        XCTAssertEqual(drawing.models?.map(\.familyLabel), ["Flux.1", "Qwen-Image 2.1"])
-        XCTAssertEqual(drawing.models?.map(\.missingLabels), [[], ["LLM"]])
-        XCTAssertNil(drawing.fault(ofChoice: 3))
-        XCTAssertEqual(drawing.fault(ofChoice: 7), .incomplete(qwen))
-        XCTAssertEqual(drawing.fault(ofChoice: 9), .gone)
+            answers.keys.sorted(),
+            ["chosen", "chosen_gone", "chosen_incomplete", "several_and_no_default", "unnamed"])
+        let flux = ImageModelRow(
+            id: 2, name: "flux", family: "flux1", complete: false, missing: ["vae", "clip_l", "t5xxl"])
+        let sdxl = ImageModelRow(id: 1, name: "sdxl", family: "sdxl", resident: true)
+        let turbo = ImageModelRow(id: 4, name: "sdxl-turbo", family: "sdxl", isDefault: true)
+        let listed = [flux, sdxl, turbo]
+
+        let unnamed = try XCTUnwrap(answers["unnamed"])
+        XCTAssertEqual(unnamed, Drawing(available: true, model: "sdxl-turbo", modelID: 4, models: listed))
+        XCTAssertTrue(unnamed.takesImageModel)
+        XCTAssertEqual(unnamed.defaultImageModel, turbo)
+        XCTAssertEqual(unnamed.models?.map(\.familyLabel), ["Flux.1", "SDXL", "SDXL"])
+        XCTAssertEqual(unnamed.models?.map(\.missingLabels), [["VAE", "CLIP-L", "T5-XXL"], [], []])
+        XCTAssertFalse(unnamed.awaitsImageChoice)
+
+        let chosen = try XCTUnwrap(answers["chosen"])
+        XCTAssertEqual(chosen, Drawing(available: true, model: "sdxl", modelID: 1, models: listed))
+        XCTAssertNil(chosen.fault(ofChoice: 1))
+        XCTAssertEqual(chosen.imageModel(1), sdxl)
+
+        let incomplete = try XCTUnwrap(answers["chosen_incomplete"])
+        XCTAssertFalse(incomplete.available)
+        XCTAssertEqual(incomplete.code, "image_model_incomplete")
+        XCTAssertEqual(incomplete.fault(ofChoice: 2), .incomplete(flux))
+
+        let gone = try XCTUnwrap(answers["chosen_gone"])
+        XCTAssertEqual(gone.code, "model_not_found")
+        XCTAssertEqual(gone.fault(ofChoice: 99), .gone)
+
+        let several = try XCTUnwrap(answers["several_and_no_default"])
+        XCTAssertEqual(several.code, "drawing_unavailable")
+        XCTAssertNil(several.defaultImageModel)
+        XCTAssertTrue(several.awaitsImageChoice)
+    }
+
+    /// A turn to a Mac's chat that draws with a chosen image model reads as
+    /// gglib records it (`image_model_turn` in `gglib-chats-recorded.json`)
+    /// and is sent as exactly that body: `draw` and the model's id beside
+    /// the text.
+    func testATurnThatDrawsWithAChosenModelIsTheRecordedBody() throws {
+        let file = try JSONSerialization.jsonObject(with: try Fixtures.data("gglib-chats-recorded.json"))
+        let body = try XCTUnwrap((file as? [String: Any])?["image_model_turn"] as? [String: Any])
+        let turn = HubTurn(conversationID: 12, content: "Draw a red dot.", draw: true, imageModel: 7)
+        let data = try JSONSerialization.data(withJSONObject: body)
+        XCTAssertEqual(try JSONDecoder().decode(HubTurn.self, from: data), turn)
+        let sent = try JSONSerialization.jsonObject(with: try JSONEncoder().encode(turn)) as? [String: Any]
+        XCTAssertEqual(sent.map { $0 as NSDictionary }, body as NSDictionary)
     }
 
     /// An answer with no `models` is a gglib from before the list: it

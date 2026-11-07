@@ -24,17 +24,20 @@ nonisolated public enum SessionStatus: Sendable, Equatable {
         case tooBig
     }
 
-    /// The pill's words.
+    /// The pill's words: gglib's for a model's residency and for loading
+    /// it again (`GGLibWords`), with this device's own for how far a load
+    /// has got and for a model too big for it. A pipe's are this app's.
     public var words: String {
         switch self {
         case .pipe(.idle): "Connecting"
         case .pipe(.direct): "Direct"
         case .pipe(.relayed): "Relayed"
         case .pipe(.closed): "Reconnect"
-        case .engine(.notLoaded): "Not loaded"
-        case .engine(.loading(let fraction)): "Loading \(Int((min(max(fraction, 0), 1) * 100).rounded()))%"
-        case .engine(.ready): "Ready"
-        case .engine(.failed): "Load again"
+        case .engine(.notLoaded): GGLibWords.Residency.notLoaded.word
+        case .engine(.loading(let fraction)):
+            "\(GGLibWords.Residency.loading.word) \(Int((min(max(fraction, 0), 1) * 100).rounded()))%"
+        case .engine(.ready): GGLibWords.Residency.loaded.word
+        case .engine(.failed): GGLibWords.loadItAgain
         case .engine(.tooBig): "Too big"
         }
     }
@@ -68,7 +71,7 @@ nonisolated public enum SessionStatus: Sendable, Equatable {
     }
 
     /// Whether the pill is tinted: only when it is asking to be pressed,
-    /// Reconnect and Load again. The others read as status, and those that
+    /// Reconnect and Load it again. The others read as status, and those that
     /// are pressable are so without saying it.
     public var asksToBePressed: Bool {
         self == .pipe(.closed) || self == .engine(.failed)
@@ -112,7 +115,7 @@ extension AppModel {
     }
 
     /// Whether pressing the pill does anything now. Reconnect is offered in
-    /// every state but a dial in flight (`canReconnect(_:)`); Load again
+    /// every state but a dial in flight (`canReconnect(_:)`); Load it again
     /// while no reply is going through the engine; Too big wherever the
     /// browser can open.
     public func offersPress(on status: SessionStatus, in conversation: Conversation) -> Bool {

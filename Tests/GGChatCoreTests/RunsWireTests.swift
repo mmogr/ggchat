@@ -6,7 +6,9 @@ import XCTest
 /// copied here as a fixture) against the Swift run types, and its
 /// `tool_reply` frames against how an agent run's events are read. The copy
 /// is from gglib's `test(contracts): a tool result with images is recorded`,
-/// in the change that adds a tool's images to its result.
+/// in the change that adds a tool's images to its result; the copy now is
+/// of gglib's c7907001 (`feat(agent)/chat-via-endpoint`), which records a
+/// run's `frames` and `model_load`, the wait while its model loads.
 final class RunsWireTests: XCTestCase {
     private struct Recorded: Decodable {
         let queued: RunInfo
@@ -38,10 +40,11 @@ final class RunsWireTests: XCTestCase {
         XCTAssertEqual(run, want)
     }
 
+    /// An agent run says its frames are written as an agent's events.
     func testInProgressRunCarriesModelDeviceAndSeq() throws {
         let want = RunInfo(
             id: "run-busy-02", kind: .agent, status: .inProgress, model: "qwen3-8b", device: "phone-7c2e",
-            createdAtMs: Self.created, lastSeq: 42)
+            createdAtMs: Self.created, lastSeq: 42, frames: .agent)
         XCTAssertEqual(try recorded().inProgress, want)
     }
 
@@ -56,7 +59,7 @@ final class RunsWireTests: XCTestCase {
         let want = RunInfo(
             id: "run-failed-04", kind: .agent, status: .failed, model: "gemma-3-12b", device: "phone-7c2e",
             createdAtMs: Self.created, finishedAtMs: Self.created + 1_500, lastSeq: 3,
-            error: RunError(code: "model_unavailable", message: "The model could not be loaded."))
+            error: RunError(code: "model_unavailable", message: "The model could not be loaded."), frames: .agent)
         XCTAssertEqual(try recorded().failed, want)
     }
 
@@ -110,6 +113,17 @@ final class RunsWireTests: XCTestCase {
                 .toolAnswered(callID: "call-draw-1", text: "[image 1024x1024 PNG stored]", failed: false),
                 .images([image], callID: "call-draw-1"), .delta("Here is a red dot."),
             ])
+    }
+
+    /// The recorded wait while a run's model loads names the model as the
+    /// catalogue shows it and how long the load has taken.
+    func testTheRecordedLoadWaitNamesItsModelAndItsTime() throws {
+        let object = try JSONSerialization.jsonObject(with: try Fixtures.data("gglib-runs-recorded.json"))
+        let frame = try XCTUnwrap((object as? [String: Any])?["model_load"])
+        let data = try JSONSerialization.data(withJSONObject: frame)
+        XCTAssertEqual(
+            OpenAICompatibleProvider.agentEvents(SSEEvent(data: String(decoding: data, as: UTF8.self))),
+            [.waiting(RunWait(reason: .modelLoad, model: "Qwen3-4B", elapsedMS: 1000))])
     }
 
     func testOnlyCompletedFailedAndCancelledAreTerminal() {

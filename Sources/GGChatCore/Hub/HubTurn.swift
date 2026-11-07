@@ -4,9 +4,9 @@
 // Written by hand to mirror `gglib_core::domain::hub_chats::HubTurn` in
 // gglib. The bodies gglib records under `turn`, `image_turn` and
 // `thinking_turn` in `contracts/chats/recorded.json` are replayed against it
-// by `HubChatsWireTests`. It records none with `draw` or `image_model`,
-// which `DrawingWireTests` and `ImageModelWireTests` read as this build
-// writes them.
+// by `HubChatsWireTests`, and `image_model_turn`, a turn with `draw` and
+// `image_model`, by `ImageModelWireTests`, which with `DrawingWireTests`
+// reads the rest of what this build writes of them.
 
 /// The user's new message on one of the hub's chats, and nothing else: the
 /// hub rebuilds the history from its own record, and refuses a body with a

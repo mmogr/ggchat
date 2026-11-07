@@ -58,13 +58,20 @@ final class ToolProgressWireTests: XCTestCase {
             ])
     }
 
-    /// A wait for a model to load is its own reason. A stage or a reason
-    /// this build does not know, and a frame missing what it must have,
-    /// mean nothing: the reply reads on.
+    /// A wait for a model to load is its own reason, with the model and the
+    /// time gglib sends with it, either of which a gglib from before them
+    /// leaves out. A stage or a reason this build does not know, and a
+    /// frame missing what it must have, mean nothing: the reply reads on.
     func testAWaitForAModelAndFramesThatDoNotReadMeanNothing() {
         XCTAssertEqual(
             events(#"{"type":"waiting","reason":"model_load","step":0,"total":0,"position":0}"#),
             [.waiting(RunWait(reason: .modelLoad))])
+        XCTAssertEqual(
+            events(#"{"type":"waiting","reason":"model_load","step":0,"total":0,"position":0,"elapsed_ms":2500}"#),
+            [.waiting(RunWait(reason: .modelLoad, elapsedMS: 2500))])
+        XCTAssertEqual(
+            events(#"{"type":"waiting","reason":"model_load","step":0,"total":0,"position":0,"model":"Qwen3-4B"}"#),
+            [.waiting(RunWait(reason: .modelLoad, model: "Qwen3-4B"))])
         XCTAssertEqual(events(#"{"type":"waiting","reason":"disk","step":0,"total":0,"position":0}"#), [])
         XCTAssertEqual(events(#"{"type":"waiting","reason":"model_load"}"#), [])
         XCTAssertEqual(events(#"{"type":"tool_progress","tool_call_id":"c1","stage":"upscaling"}"#), [])
