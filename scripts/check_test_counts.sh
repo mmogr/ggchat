@@ -975,8 +975,13 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # since deleted, would send that string and fail every time, a default the
 # list no longer names would be sent the same way, and another server's chat
 # could be sent its default; these two are the whole of that guard.
+#
+# 2026-11-08: markers 995 -> 1014 for what is true of a chat's model key.
+# The claim names nine tests: the five ModelKeyTests and two ModelKeyRunTests
+# that are the whole of its guard, the fixture's and the move's. The floor
+# stood ten under the count before them, so it moves to the count.
 floor "package test cases" "$(test_cases "$ROOT/Tests")" 1118
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 995
+floor "README test markers" "${markers:-0}" 1014
 
 exit $status

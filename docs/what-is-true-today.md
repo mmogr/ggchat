@@ -180,6 +180,31 @@ Each claim names the test that keeps it true.
   <!-- test: QuickActionTests.testAConversationMovedToAnotherProviderTakesItsDefaultModel -->
   <!-- test: QuickActionTests.testAConversationAHubIsStillWritingStaysOnItsProvider -->
   <!-- test: ConcurrentReplyTests.testAConversationWhoseReplyIsStreamingStaysOnItsProvider -->
+- A conversation and a provider's default name a gglib model by its key:
+  the id gglib's model list gives it (`gglib_id`), with `:` and the profile
+  after it for a profile variant. That key is stored and sent as the
+  request's model, and the name shown is the one the list gives it now, so
+  a model renamed on the Mac keeps working and shows its new name. A reply
+  on a run leaves its context reading under the key it was sent, though
+  gglib's report names a profile variant by its base model's name and
+  models that share a name by that name alone. Any other server's model,
+  and This iPhone's, is named by the name it lists, and nothing below
+  changes for it. A gglib conversation whose model the list no longer
+  names, such as one saved by a name before conversations were keyed, or
+  one whose model was deleted, runs on the provider's default; until the
+  list is read its own model is sent. Listing gglib replaces a default the
+  list no longer names with the first model that chats, and a gglib
+  provider moved to another machine forgets its default and every model
+  its conversations chose, since an id names a model on one machine.
+  <!-- test: WireTests.testModelsFixtureCarriesGGLibExtras -->
+  <!-- test: ModelKeyTests.testARenameOnTheMacChangesOnlyTheNameShown -->
+  <!-- test: ModelKeyRunTests.testAReplyReadOnAfterAMoveLeavesItsReadingUnderTheKeySent -->
+  <!-- test: ModelKeyRunTests.testAReportByABaseOrASharedNameKeepsTheKeySent -->
+  <!-- test: ModelKeyTests.testAProfileVariantIsKeyedByItsIdAndProfile -->
+  <!-- test: ModelKeyTests.testThisIPhonesModelsAreKeyedByName -->
+  <!-- test: ModelKeyTests.testAChatWhoseModelIsNotListedRunsOnTheDefault -->
+  <!-- test: ModelKeyTests.testADefaultTheListNoLongerNamesIsReplaced -->
+  <!-- test: ProviderRemovalForgetsTests.testMovingAProviderForgetsTheModelsTheOldMachineListed -->
 - gglib draws pictures with an image model, and its model list names one
   with `image_generation`. Such a model cannot chat, and neither can one
   listed with `embeddings`: the model list offers neither, and a provider
@@ -1890,8 +1915,9 @@ Each claim names the test that keeps it true.
 - A Mac's chat has the same switch and the Mac remembers it: the chat opens
   showing what the Mac remembers, the one turn that changes it says `off` or
   `default`, and this phone stores nothing of it, looking the chat's model up
-  in that Mac's model list, which it reads when a chat is opened while it
-  holds no list for that Mac, and again when the pipe comes up.
+  by its id in that Mac's model list, which it reads when a chat is opened
+  while it holds no list for that Mac, and again when the pipe comes up. A
+  model renamed on the Mac is still found.
   <!-- test: HubChatsWireTests.testAnOpenedChatReadsTheThinkingItRemembersAndItsModel -->
   <!-- test: HubChatsWireTests.testATurnThatChangesThinkingIsTheRecordedBody -->
   <!-- test: HubTurnProviderTests.testATurnThatSaysTheThinkingChoiceIsPutWithIt -->
@@ -2092,7 +2118,9 @@ Each claim names the test that keeps it true.
   opening on it is called off. A model list or a status probe it was waiting
   for keeps nothing when it comes back, and a server moved to another
   address forgets the models the old one listed, a late list from it
-  included, which no longer writes the old address back. A rename made
+  included, which no longer writes the old address back, and, where the
+  old one listed gglib's ids, with them its default and the model each of
+  its conversations chose. A rename made
   while a list is asked for is kept when the list names the default model.
   <!-- test: ProviderRemovalForgetsTests.testRemovingAProviderLeavesNothingKeptUnderItsID -->
   <!-- test: ProviderRemovalForgetsTests.testAModelListThatComesBackAfterItsProviderWasRemovedIsNotKept -->
