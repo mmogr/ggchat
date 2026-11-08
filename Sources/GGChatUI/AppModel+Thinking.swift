@@ -20,6 +20,7 @@ struct HubChatThinking: Equatable, Sendable {
     /// The catalogue id of the model the opened chat was made with, which
     /// a rename on the Mac keeps.
     var modelID: Int64?
+    // periphery:ignore - read only on iOS, by ThisChatPanel; the macOS build `make unused` indexes has no panel
     /// The name of the model the chat last ran on, as its settings or else
     /// its last reply give it: shown where the Mac lists no model by the id,
     /// and never looked up.
