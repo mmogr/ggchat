@@ -67,7 +67,7 @@ nonisolated enum ThisChatPart: Equatable {
                 NavigationLink {
                     ModelChoice(conversationID: conversation.id)
                 } label: {
-                    LabeledContent("Model", value: conversation.model ?? provider?.defaultModel ?? "Choose a model")
+                    LabeledContent("Model", value: model.shownModelName(for: conversation) ?? "Choose a model")
                 }
                 if let provider {
                     LabeledContent("Provider", value: provider.name)

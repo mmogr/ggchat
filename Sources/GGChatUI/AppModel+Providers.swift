@@ -209,7 +209,7 @@ extension AppModel {
     public func refreshModels(for config: ProviderConfig, quietly: Bool = false) async {
         guard let provider = makeProvider(for: config) else { return }
         do {
-            let models = try await provider.models()
+            let models = kept(try await provider.models(), from: config)
             // A list that comes back for a provider removed, or moved to
             // another machine, while it was asked for is not kept.
             guard let current = providers.first(where: { $0.id == config.id }), current.kind == config.kind
@@ -222,7 +222,7 @@ extension AppModel {
             // for is not written over by the one this call was given.
             if current.defaultModel == nil, let first = models.first(where: \.chats) {
                 var updated = current
-                updated.defaultModel = first.id
+                updated.defaultModel = first.key
                 updateProvider(updated)
             }
         } catch {

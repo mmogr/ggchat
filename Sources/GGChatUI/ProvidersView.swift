@@ -78,6 +78,7 @@ struct ProvidersView: View {
 }
 
 struct ProviderRow: View {
+    @Environment(AppModel.self) private var model
     let provider: ProviderConfig
 
     var body: some View {
@@ -99,7 +100,7 @@ struct ProviderRow: View {
         case .openAICompatible(let baseURL):
             Redaction.describe(baseURL)
         case .pipe:
-            "modelpipe · " + (provider.defaultModel ?? "no model chosen")
+            "modelpipe · " + (model.name(of: provider.defaultModel, on: provider.id) ?? "no model chosen")
         case .onDevice:
             "On this iPhone · " + (provider.defaultModel ?? "no model chosen")
         }

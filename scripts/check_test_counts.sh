@@ -960,7 +960,16 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # drawn below its picture would leave the math as LaTeX or clipped and fail
 # nothing else, so these eleven and their markers are the whole of that
 # guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1105
+#
+# 2026-11-08: 1105 -> 1116 for a gglib chat naming its model by id. A chat
+# that stores the name again would work until the model is renamed on the
+# Mac, and then every send fails; a key that drops the profile sends the base
+# model; This iPhone keyed by gglib's ids finds none of its models by name;
+# and a run's report taken as it came leaves the context ring under a name
+# the chat is not on, so it is not drawn. Nothing else notices any of them,
+# so these five are the whole of that guard. The count already stood six
+# above the floor, so it moves to the count.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1116
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
 floor "README test markers" "${markers:-0}" 995
 

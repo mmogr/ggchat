@@ -23,13 +23,13 @@ extension AppModel {
     func modelListSections(for conversation: Conversation, locale: Locale, calendar: Calendar) -> [ModelListSection] {
         providers.map { config in
             let ownModel = config.id == conversation.providerID ? conversation.model ?? config.defaultModel : nil
-            let (listed, rows) = listedRows(of: config)
+            let (listed, rows) = listedRows(of: config, current: ownModel)
             let down = config.isPipe && pipeStatuses[config.id]?.isConnected != true
             return ModelListSection(
                 provider: config,
                 state: listState(
                     of: config, using: ownModel ?? config.defaultModel, locale: locale, calendar: calendar),
-                rows: rows.map { ModelListRow(modelID: $0.id, detail: $0.detail, isCurrent: $0.id == ownModel) },
+                rows: rows,
                 isListed: listed,
                 isStale: listed && down,
                 moves: config.id != conversation.providerID,
@@ -37,24 +37,27 @@ extension AppModel {
         }
     }
 
-    /// Whether `config` has listed its models, and the ones that chat with
-    /// their detail lines. This iPhone's are the models installed on it,
+    /// Whether `config` has listed its models, and a row for each that
+    /// chats, ticked where its key is `current`. This iPhone's are the models installed on it,
     /// which the library reads without the engine: the engine starts only
     /// when a conversation on it opens or sends, and a model it has not
     /// listed yet is still one it can load by name. Its line is the
     /// engine's description once the engine has listed the model, and the
     /// model's size until then. Any other provider's are what it last
     /// listed while the app has run.
-    private func listedRows(of config: ProviderConfig) -> (Bool, [(id: String, detail: String?)]) {
+    private func listedRows(of config: ProviderConfig, current: String?) -> (Bool, [ModelListRow]) {
         let listed = modelsByProvider[config.id]
         if config.kind == .onDevice, let installed = onDevice.installed {
             let rows = installed.filter { ModelInfo(id: $0.name, capabilities: $0.capabilities).chats }.map { item in
-                let detail = listed?.first { $0.id == item.name }?.detailLine ?? Sizes.download(item.bytes)
-                return (id: item.name, detail: Optional(detail))
+                let detail = listed?.first { $0.key == item.name }?.detailLine ?? Sizes.download(item.bytes)
+                return ModelListRow(modelID: item.name, detail: detail, isCurrent: item.name == current)
             }
             return (true, rows)
         }
-        return (listed != nil, chatModels(for: config.id).map { (id: $0.id, detail: $0.detailLine) })
+        let rows = chatModels(for: config.id).map { entry in
+            ModelListRow(modelID: entry.key, name: entry.id, detail: entry.detailLine, isCurrent: entry.key == current)
+        }
+        return (listed != nil, rows)
     }
 
     /// The few words beside a provider's name: how the engine is with the

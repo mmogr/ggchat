@@ -31,7 +31,9 @@ struct ConversationRow: View {
 
     private var subtitle: String {
         let provider = model.provider(for: conversation)?.name ?? "No provider"
-        if let modelName = conversation.model { return "\(provider) · \(modelName)" }
+        if let modelName = model.name(of: conversation.model, on: conversation.providerID) {
+            return "\(provider) · \(modelName)"
+        }
         return provider
     }
 }

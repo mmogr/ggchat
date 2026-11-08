@@ -53,11 +53,10 @@ struct HubChatThinking: Equatable, Sendable {
 extension AppModel {
     // MARK: - A conversation kept here
 
-    /// Whether a provider's model list says a model thinks, or nil when the
-    /// list does not name it or has not been read.
-    func listsAsThinking(_ modelID: String?, on providerID: UUID?) -> Bool? {
-        guard let modelID, let providerID else { return nil }
-        return models(for: providerID).first { $0.id == modelID }?.thinks
+    /// Whether a provider's model list says the model `key` names thinks,
+    /// or nil when the list does not name it or has not been read.
+    func listsAsThinking(_ key: String?, on providerID: UUID?) -> Bool? {
+        listed(key, on: providerID)?.thinks
     }
 
     /// Whether the conversation is offered the switch: its provider is gglib
