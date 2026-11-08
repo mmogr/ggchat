@@ -19,18 +19,21 @@ final class ThinkingWireTests: XCTestCase {
 
     /// gglib's model list says which model thinks with `reasoning`, beside
     /// `vision` and apart from it, and leaves `capabilities` out for a model
-    /// with nothing to list. The fixture's `reasoning` row was written by
-    /// hand from gglib's client guide (`docs/clients.md`, "Thinking"), as
-    /// its `vision` row was from `capabilities_of`; it was not recorded.
+    /// with nothing to list. The fixture was recorded from gglib, and a
+    /// profile variant lists its base model's capabilities.
     func testAModelThatThinksSaysSoInItsCapabilities() throws {
         let models = try JSONDecoder().decode(ModelsResponse.self, from: try Fixtures.data("gglib-models.json")).data
-        let thinking = try XCTUnwrap(models.first { $0.id == "Gemma-4-31B-It" })
+        let thinking = try XCTUnwrap(models.first { $0.id == "Qwen3-4B-Instruct-2507" })
         XCTAssertEqual(thinking.capabilities, ["reasoning"])
         XCTAssertTrue(thinking.thinks)
         XCTAssertFalse(thinking.readsImages, "a model that thinks was taken for one that reads images")
         let seeing = try XCTUnwrap(models.first { $0.id == "Qwen3.8-27B" })
-        XCTAssertFalse(seeing.thinks, "a model that reads images was taken for one that thinks")
-        XCTAssertEqual(models.filter(\.thinks).map(\.id), ["Gemma-4-31B-It"])
+        XCTAssertEqual(seeing.capabilities, ["vision", "reasoning"])
+        XCTAssertTrue(seeing.thinks)
+        XCTAssertFalse(try XCTUnwrap(models.first { $0.id == "Qwen3Vl 8b Instruct" }).thinks)
+        let seer = ModelInfo(id: "seer", capabilities: ["vision"])
+        XCTAssertFalse(seer.thinks, "a model that reads images was taken for one that thinks")
+        XCTAssertEqual(models.filter(\.thinks).map(\.key), ["3", "1", "3:creative", "1:creative"])
         // An older gglib, and any other server, lists no capabilities.
         XCTAssertFalse(ModelInfo(id: "plain").thinks)
         XCTAssertFalse(ModelInfo(id: "none", capabilities: []).thinks)

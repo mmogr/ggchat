@@ -62,7 +62,7 @@ extension AppModel {
     /// images. A model it does not list is not known to, and is sent the
     /// chat without it rather than refused.
     private func showsDrawnPicture(to model: String, request: ChatRequest, for config: ProviderConfig) -> Bool {
-        request.replaysToolCalls && models(for: config.id).first(where: { $0.id == model })?.readsImages == true
+        request.replaysToolCalls && listed(model, on: config.id)?.readsImages == true
     }
 }
 

@@ -77,7 +77,7 @@ extension AppModel {
         live.started = message.runCursor != nil
         live.frames = message.runFrames ?? .openai
         live.exchanges = message.exchanges
-        live.model = conversation.model ?? provider(for: conversation)?.defaultModel
+        live.model = model(for: conversation)
         guard let config = provider(for: conversation) else {
             // Its provider is gone, and the hub with it.
             giveUp(live, saying: "is no longer a provider here, so the rest of this reply cannot be read.")
@@ -114,7 +114,7 @@ extension AppModel {
     private func sentRequest(
         for message: Message, in conversation: Conversation, config: ProviderConfig
     ) throws(ImageUnavailable) -> ChatRequest? {
-        guard let modelID = conversation.model ?? config.defaultModel,
+        guard let modelID = model(for: conversation),
             let index = conversation.messages.firstIndex(where: { $0.id == message.id })
         else { return nil }
         var sent = conversation

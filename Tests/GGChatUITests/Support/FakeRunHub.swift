@@ -20,6 +20,8 @@ final class FakeRunHub: RunProvider, DrawingProvider {
         var error: RunError?
         /// The model the run's last report says it was sent to.
         var reportsModel: String?
+        /// The models it lists, in place of `MockProvider.sampleModels`.
+        var models: [ModelInfo]?
         /// A read passes on frames up to this seq, then holds the stream
         /// open, as a run still being written does; nil ends it.
         var holdAt: UInt32?
@@ -86,7 +88,7 @@ final class FakeRunHub: RunProvider, DrawingProvider {
     }
 
     func models() async throws -> [ModelInfo] {
-        MockProvider.sampleModels
+        with(\.models) ?? MockProvider.sampleModels
     }
 
     func drawing(judging imageModel: UInt64?) async throws(ProviderError) -> Drawing {

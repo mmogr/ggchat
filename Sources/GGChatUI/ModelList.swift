@@ -1,17 +1,21 @@
 import Foundation
 import GGChatCore
 
-/// One model in the model list: its id, which is the name it is shown and
-/// sent by, the one short line under it, and whether it is the
-/// conversation's.
+/// One model in the model list: its key (`ModelInfo.key`), which a pick
+/// stores and a send names it by, the name it is shown by, the one short
+/// line under it, and whether it is the conversation's.
 nonisolated public struct ModelListRow: Identifiable, Equatable, Sendable {
     public let modelID: String
+    /// The name the provider lists it under now; its key where the two are
+    /// the same.
+    public let name: String
     public let detail: String?
     public let isCurrent: Bool
     public var id: String { modelID }
 
-    public init(modelID: String, detail: String?, isCurrent: Bool) {
+    public init(modelID: String, name: String? = nil, detail: String?, isCurrent: Bool) {
         self.modelID = modelID
+        self.name = name ?? modelID
         self.detail = detail
         self.isCurrent = isCurrent
     }
@@ -119,7 +123,7 @@ nonisolated public struct ModelList: Equatable, Sendable {
 
     /// Filters `all` to the provider `filter` names, when it names one of
     /// them and there are chips to choose it by, and to the models whose
-    /// id or detail line holds `query`, ignoring case. A section with no
+    /// name or detail line holds `query`, ignoring case. A section with no
     /// model that matches a search is left out; without a search, every
     /// section of the filter stays, listed or not.
     public static func make(_ all: [ModelListSection], filter: UUID?, query: String) -> ModelList {
@@ -130,7 +134,7 @@ nonisolated public struct ModelList: Equatable, Sendable {
         if !query.isEmpty {
             sections = sections.compactMap { section in
                 let rows = section.rows.filter { row in
-                    row.modelID.localizedCaseInsensitiveContains(query)
+                    row.name.localizedCaseInsensitiveContains(query)
                         || row.detail?.localizedCaseInsensitiveContains(query) == true
                 }
                 guard !rows.isEmpty else { return nil }

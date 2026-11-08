@@ -106,9 +106,12 @@ extension AppModel {
 
     /// Ends the reply as the run's last report says it ended. The report
     /// names the model the run was sent to, which a reply read on after the
-    /// conversation's model was changed would otherwise get wrong.
+    /// conversation's model was changed would otherwise get wrong; it is kept
+    /// as a key, and as the key sent where it names that model
+    /// (`key(reported:sent:on:)`).
     private func endReply(_ live: LiveReply, as info: RunInfo) {
-        live.model = info.model ?? live.model
+        let providerID = conversations.first { $0.id == live.conversationID }?.providerID
+        live.model = key(reported: info.model, sent: live.model, on: providerID)
         switch info.status {
         case .completed:
             live.error = nil

@@ -45,49 +45,72 @@ final class HubChatModelListTests: XCTestCase {
             metadata: HubMessageMetadata(modelName: modelName))
     }
 
+    /// Chat 12 opened as made with the model `modelID`, its settings and
+    /// last reply naming the model `named`.
+    private func chat(madeWith modelID: Int64?, named: String? = nil) -> HubChatOpen {
+        let opened = FakeChatsHub.opened.conversation
+        return HubChatOpen(
+            conversation: HubConversation(
+                id: opened.id, title: opened.title, modelID: modelID, settings: HubChatSettings(modelName: named),
+                createdAt: opened.createdAt, updatedAt: opened.updatedAt),
+            messages: Array(FakeChatsHub.opened.messages.dropLast()) + [reply(by: named)])
+    }
+
     /// The switch is there only for a model the Mac lists now as one that
-    /// thinks. The chat's model is the one its settings name, else its last
-    /// reply's, else the one the list of chats gives it, each looked up in
-    /// the Mac's models; a chat that names none, a model the Mac does not
-    /// list, one it lists without `reasoning`, and a chat that cannot be read
-    /// have no switch. Whether images are sent asks the same model.
+    /// thinks. The chat's model is the base entry in the Mac's models whose
+    /// catalogue id is the one the opened chat was made with, else the one
+    /// its row in the list of chats gives; a name its settings or a reply
+    /// give is never looked up, so a rename on the Mac changes nothing. A
+    /// chat that names no id, an id the Mac does not list, a model listed
+    /// without `reasoning`, a profile variant alone and a chat that cannot be
+    /// read have no switch. Whether images are sent asks the same model.
     func testTheSwitchIsHiddenWhenTheModelIsNotInTheMacsList() async throws {
         let hub = FakeChatsHub()
         let (model, config) = try await HubChatContinueTests.opened(hub)
         XCTAssertEqual(model.models(for: config.id).map(\.id), ["mock-27b", "mock-4b"])
-        XCTAssertFalse(model.hubChatOffersThinking, "a model the Mac does not list was offered the switch")
+        XCTAssertFalse(model.hubChatOffersThinking, "a model the Mac does not list by id was offered the switch")
 
         let listed = [
-            ModelInfo(id: "qwen3-8b", capabilities: ["reasoning"]), ModelInfo(id: "plain-4b"),
-            ModelInfo(id: "seer-9b", capabilities: ["vision", "reasoning"]),
+            ModelInfo(id: "qwen3-8b", gglibID: 3, capabilities: ["reasoning"]), ModelInfo(id: "plain-4b", gglibID: 4),
+            ModelInfo(id: "seer-9b", gglibID: 9, capabilities: ["vision", "reasoning"]),
         ]
         model.modelsByProvider[config.id] = listed
-        XCTAssertTrue(model.hubChatOffersThinking, "the model the list of chats names thinks")
-        model.modelsByProvider[config.id] = [ModelInfo(id: "qwen3-8b", capabilities: ["vision"])]
+        XCTAssertTrue(model.hubChatOffersThinking, "the model the chat was made with thinks")
+        model.modelsByProvider[config.id] = [ModelInfo(id: "qwen3-8b", gglibID: 3, capabilities: ["vision"])]
         XCTAssertFalse(model.hubChatOffersThinking, "a model listed without reasoning was offered the switch")
+        model.modelsByProvider[config.id] = [
+            ModelInfo(id: "qwen3-8b:creative", gglibID: 3, profile: "creative", capabilities: ["reasoning"])
+        ]
+        XCTAssertFalse(model.hubChatOffersThinking, "a profile variant was taken for the chat's model")
+        model.modelsByProvider[config.id] = [ModelInfo(id: "Qwen3 8B", gglibID: 3, capabilities: ["reasoning"])]
+        XCTAssertTrue(model.hubChatOffersThinking, "a model renamed on the Mac lost the switch")
         model.modelsByProvider[config.id] = listed
 
-        // The names the chat's settings and its last reply give, and then
-        // whether the switch is there and whether images are sent.
-        let cases: [([String?], [Bool])] = [
-            ([nil, nil], [true, false]), ([nil, "plain-4b"], [false, false]), ([nil, "seer-9b"], [true, true]),
-            (["plain-4b", "seer-9b"], [false, false]), (["seer-9b", "plain-4b"], [true, true]),
-            (["qwen3-8b", "plain-4b"], [true, false]), (["gone-2b", "qwen3-8b"], [false, true]),
+        // The id the opened chat was made with, the name its settings and
+        // last reply give, and then whether the switch is there and whether
+        // images are sent.
+        let cases: [((Int64?, String?), [Bool])] = [
+            ((nil, nil), [true, false]), ((4, nil), [false, false]), ((9, nil), [true, true]),
+            ((4, "seer-9b"), [false, false]), ((9, "plain-4b"), [true, true]), ((7, "qwen3-8b"), [false, true]),
         ]
-        for (names, want) in cases {
-            let rows = Array(FakeChatsHub.opened.messages.dropLast()) + [reply(by: names[1])]
-            let chat = FakeChatsHub.opened.with(HubChatSettings(modelName: names[0]), rows: rows)
-            hub.with { $0.chats[12] = chat }
+        for ((id, named), want) in cases {
+            hub.with { $0.chats[12] = chat(madeWith: id, named: named) }
             try await reopen(model, on: config)
             let open = try XCTUnwrap(model.openedHubChat)
-            XCTAssertEqual([model.hubChatOffersThinking, model.canSeeHubChat(open)], want, "\(names)")
+            let shown = [model.hubChatOffersThinking, model.canSeeHubChat(open)]
+            XCTAssertEqual(shown, want, "\(id as Any) \(named as Any)")
         }
 
-        // Chat 9 names no model anywhere.
-        hub.with { $0.chats[9] = HubChatOpen(conversation: FakeChatsHub.opened.conversation, messages: []) }
+        // Chat 9's row in the list of chats names no model, and nor does it.
+        hub.with {
+            $0.chats[9] = HubChatOpen(
+                conversation: HubConversation(
+                    id: 9, title: "New Chat", createdAt: "2026-09-29 18:02:41", updatedAt: "2026-09-29 18:02:41"),
+                messages: [reply(by: "qwen3-8b")])
+        }
         try await reopen(model, on: config, chat: 9)
-        XCTAssertEqual(model.openedHubChat?.state, .read([]))
-        XCTAssertFalse(model.hubChatOffersThinking, "a chat that names no model was offered the switch")
+        XCTAssertEqual(model.openedHubChat?.state.showsRows, true)
+        XCTAssertFalse(model.hubChatOffersThinking, "a chat that names no model id was offered the switch")
 
         hub.with { state in
             state.chats[12] = FakeChatsHub.opened
@@ -98,20 +121,18 @@ final class HubChatModelListTests: XCTestCase {
         XCTAssertFalse(model.hubChatOffersThinking, "a chat that could not be read was offered the switch")
     }
 
-    /// The chat's model is its last reply that names one, so a newer reply
-    /// that names none, as one that did not finish, does not hide it. gglib's
-    /// own recorded chat has this shape. Chat 9's row in the list of chats
-    /// names no model, so only a reply can.
-    func testAReplyThatNamesNoModelDoesNotHideTheOneBeforeIt() async throws {
+    /// A chat opened without a model id takes the one its row in the list of
+    /// chats gives. A name its settings and its last reply give another
+    /// model changes nothing.
+    func testAChatOpenedWithoutAModelIDTakesTheOneItsListRowGives() async throws {
         let hub = FakeChatsHub()
         let (model, config) = try await HubChatContinueTests.opened(hub)
         model.modelsByProvider[config.id] = Thinking.models
-        let unfinished = HubMessage(id: 44, conversationID: 9, role: "assistant", content: "Pin the", createdAt: "f")
-        let rows = [reply(by: "qwen3-8b"), unfinished]
-        hub.with { $0.chats[9] = HubChatOpen(conversation: FakeChatsHub.opened.conversation, messages: rows) }
-        try await reopen(model, on: config, chat: 9)
+        hub.with { $0.chats[12] = chat(madeWith: nil, named: "plain-4b") }
+        try await reopen(model, on: config)
         XCTAssertEqual(model.openedHubChat?.state.showsRows, true)
-        XCTAssertTrue(model.hubChatOffersThinking, "a reply that names no model hid the one before it")
+        XCTAssertEqual(model.hubChatModel(try XCTUnwrap(model.openedHubChat))?.id, "qwen3-8b")
+        XCTAssertTrue(model.hubChatOffersThinking, "the list row's model id was not looked up")
     }
 
     /// Opening one of a Mac's chats lists that Mac's models when this phone

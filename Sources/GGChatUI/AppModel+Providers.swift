@@ -48,6 +48,7 @@ extension AppModel {
     public func updateProvider(_ config: ProviderConfig) {
         guard let index = providers.firstIndex(where: { $0.id == config.id }) else { return }
         let previous = providers[index]
+        let config = forgettingTheDefault(of: config, ifMovedFrom: previous)
         providers[index] = config
         forgetProxyStatus(ifMovedFrom: previous, to: config)
         do {
@@ -78,6 +79,7 @@ extension AppModel {
         guard let index = providers.firstIndex(where: { $0.id == config.id }) else {
             throw ProviderEditError.noLongerThere
         }
+        let config = forgettingTheDefault(of: config, ifMovedFrom: providers[index])
         var replacedSecrets: [SecretKind: String?] = [:]
         do {
             for (kind, secret) in credentials where !secret.isEmpty {
@@ -209,7 +211,7 @@ extension AppModel {
     public func refreshModels(for config: ProviderConfig, quietly: Bool = false) async {
         guard let provider = makeProvider(for: config) else { return }
         do {
-            let models = try await provider.models()
+            let models = kept(try await provider.models(), from: config)
             // A list that comes back for a provider removed, or moved to
             // another machine, while it was asked for is not kept.
             guard let current = providers.first(where: { $0.id == config.id }), current.kind == config.kind
@@ -217,12 +219,19 @@ extension AppModel {
             heard(config.id)
             modelsByProvider[config.id] = models
             // The first that can chat: an image model or an embeddings model
-            // listed first is never chosen for a conversation. Set on the
-            // provider as it is now, so an edit made while the list was asked
-            // for is not written over by the one this call was given.
-            if current.defaultModel == nil, let first = models.first(where: \.chats) {
+            // listed first is never chosen for a conversation. Chosen for a
+            // provider with no default, and for one keyed by gglib's ids
+            // (`keysByID`) whose default the list no longer names, so the
+            // default a gglib chat falls back on (`model(for:)`) is always
+            // one the list names. Set on the provider as it is now, so an
+            // edit made while the list was asked for is not written over by
+            // the one this call was given.
+            let unlisted = current.defaultModel.map { key in
+                keysByID(config.id) && !models.contains { $0.chats && $0.key == key }
+            }
+            if unlisted ?? true, let first = models.first(where: \.chats) {
                 var updated = current
-                updated.defaultModel = first.id
+                updated.defaultModel = first.key
                 updateProvider(updated)
             }
         } catch {

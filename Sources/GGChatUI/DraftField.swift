@@ -120,7 +120,7 @@ struct DraftField: View {
     private var canSend: Bool {
         let provider = model.provider(for: conversation)
         return draft.hasContent && preparing == 0 && provider != nil
-            && (conversation.model ?? provider?.defaultModel) != nil && model.takesTurn(conversation)
+            && model.model(for: conversation) != nil && model.takesTurn(conversation)
     }
 
     private func sendIfPossible() {
