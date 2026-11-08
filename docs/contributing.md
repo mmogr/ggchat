@@ -98,6 +98,16 @@ swift archive and fails unless `Sources/GGLib` is that archive byte for byte
 and the pinned checksums are the release's own. It refuses checksums of
 zeros, which pin nothing.
 
+Every Monday, Actions → Update gglib runs `scripts/pin_gglib.sh` for the
+newest stable gglib release, if it is newer than the pin, and opens a PR on
+`chore(deps)/gglib-<version>` naming the gglib and llama.cpp it moves from
+and to. A release candidate is taken only by naming it:
+`gh workflow run update-gglib.yml -R mmogr/ggchat -f version=0.31.0-rc.4`,
+and without `-f` it takes the newest stable release now. It opens one PR per
+release: once that branch exists it is not opened again. A release that adds
+a case or a field to gglib's binding fails that PR's build in
+`Sources/GGChatLocal`, and is answered on its branch.
+
 To build against a gglib of your own, build its frameworks in that checkout
 with its own make targets, `phone-llama` and then `ffi-xcframework`, take
 them, and set `GGLIB_FFI_LOCAL_XCFRAMEWORK` for every build:
@@ -375,9 +385,9 @@ workflow, or
 `gh workflow run update-deps.yml -R mmogr/ggchat` (add
 `-f package=modelpipe-ffi` for one pin): it runs `swift package update` and
 opens a PR listing each pin it moved, or says there is nothing to update.
-gglib's frameworks are no package dependency, and neither moves them: a
-gglib release is taken with `scripts/pin_gglib.sh`, as Building and testing
-says.
+gglib's frameworks are no package dependency, and neither moves them: the
+Update gglib workflow takes a gglib release, with `scripts/pin_gglib.sh`, as
+Building and testing says.
 
 ## House rules
 
