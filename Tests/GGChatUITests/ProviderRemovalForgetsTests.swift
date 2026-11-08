@@ -93,24 +93,50 @@ final class ProviderRemovalForgetsTests: XCTestCase {
     /// A server moved to another address forgets the models the old one
     /// listed, and a list the old one sends back late is not kept for the
     /// new one. Kept, the default model it picks would also write the old
-    /// address back over the move.
+    /// address back over the move. The model each of its conversations
+    /// chose, and its default, go too, even when the edit carries the old
+    /// default: a gglib model's id names a model on the old machine alone.
+    /// An edit that does not move it keeps them, and so does a move of a
+    /// server whose list named its models by name.
     func testMovingAProviderForgetsTheModelsTheOldMachineListed() async throws {
         let held = HeldModels()
         let (model, server) = try makeModel(serving: held)
-        model.modelsByProvider[server.id] = [ModelInfo(id: "old-model")]
+        var named = server
+        named.defaultModel = "7"
+        model.updateProvider(named)
+        model.newConversation()
+        let id = try XCTUnwrap(model.selectedConversationID)
+        model.select(model: "7:creative", for: id)
+        named.name = "desk"
+        model.updateProvider(named)
+        XCTAssertEqual(model.providers.first?.defaultModel, "7", "a rename forgot the default")
+        XCTAssertEqual(model.selectedConversation?.model, "7:creative", "a rename forgot the chat's model")
+        model.modelsByProvider[server.id] = [ModelInfo(id: "old-model", gglibID: 7)]
         let listing = Task { await model.refreshModels(for: server, quietly: true) }
         for _ in 0..<5_000 where held.asked == 0 { await Task.yield() }
         XCTAssertEqual(held.asked, 1, "the list was never asked for")
 
-        var moved = server
+        var moved = named
         moved.kind = .openAICompatible(baseURL: try XCTUnwrap(URL(string: "http://127.0.0.1:49980/v1")))
         model.updateProvider(moved)
         XCTAssertNil(model.modelsByProvider[server.id], "the old machine's models were kept after the move")
+        XCTAssertNil(model.providers.first?.defaultModel, "the old machine's default was kept")
+        XCTAssertNil(model.selectedConversation?.model, "the chat kept the old machine's model")
         held.release()
         await listing.value
 
         XCTAssertNil(model.modelsByProvider[server.id], "the old machine's late list was kept for the new one")
         XCTAssertEqual(model.providers.map(\.kind), [moved.kind], "the late list undid the move")
+
+        var plain = try XCTUnwrap(model.providers.first)
+        plain.defaultModel = "old-model"
+        model.updateProvider(plain)
+        model.select(model: "old-model", for: id)
+        model.modelsByProvider[server.id] = [ModelInfo(id: "old-model")]
+        plain.kind = .openAICompatible(baseURL: try XCTUnwrap(URL(string: "http://127.0.0.1:49981/v1")))
+        model.updateProvider(plain)
+        XCTAssertEqual(model.providers.first?.defaultModel, "old-model", "a default named by its name was forgotten")
+        XCTAssertEqual(model.selectedConversation?.model, "old-model", "a model named by its name was forgotten")
     }
 
     /// A rename made while the list was asked for is kept when the list

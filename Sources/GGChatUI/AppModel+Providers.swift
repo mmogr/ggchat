@@ -48,6 +48,7 @@ extension AppModel {
     public func updateProvider(_ config: ProviderConfig) {
         guard let index = providers.firstIndex(where: { $0.id == config.id }) else { return }
         let previous = providers[index]
+        let config = forgettingTheDefault(of: config, ifMovedFrom: previous)
         providers[index] = config
         forgetProxyStatus(ifMovedFrom: previous, to: config)
         do {
@@ -78,6 +79,7 @@ extension AppModel {
         guard let index = providers.firstIndex(where: { $0.id == config.id }) else {
             throw ProviderEditError.noLongerThere
         }
+        let config = forgettingTheDefault(of: config, ifMovedFrom: providers[index])
         var replacedSecrets: [SecretKind: String?] = [:]
         do {
             for (kind, secret) in credentials where !secret.isEmpty {
