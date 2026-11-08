@@ -12,7 +12,6 @@ struct Composer: View {
     @Environment(\.locale) private var locale
     @Environment(\.calendar) private var calendar
     @Namespace private var glass
-    @State private var pickingModel = false
     /// Whether the message field has the caret, which opening the model
     /// list takes away on an iPhone or an iPad.
     @FocusState private var drafting: Bool
@@ -20,6 +19,9 @@ struct Composer: View {
         @Environment(\.horizontalSizeClass) private var sizeClass
     #endif
     let conversation: Conversation
+    /// Whether the model pill is open as its list. Kept by the chat, which
+    /// closes it on a tap anywhere outside it.
+    @Binding var pickingModel: Bool
     /// The chat's height between its top bar and the keyboard, or the home
     /// indicator while the keyboard is down, which the model list is sized
     /// from; 0 until it has been measured.
@@ -55,6 +57,15 @@ struct Composer: View {
             if let provider { model.open(provider) }
         }
         .sensoryFeedback(.success, trigger: model.connectedPulse)
+        // A tap in the message field is a tap outside the list too, and one
+        // the transcript's catcher cannot see, since the field is above it.
+        .onChange(of: drafting) { _, now in
+            if now, pickingModel { closeList() }
+        }
+    }
+
+    private func closeList() {
+        withAnimation(reduceMotion ? nil : .snappy) { pickingModel = false }
     }
 
     /// Side by side when they fit, stacked at accessibility sizes, with the
@@ -106,9 +117,7 @@ struct Composer: View {
     private var modelPill: some View {
         VStack(alignment: .leading, spacing: 0) {
             if pickingModel {
-                ModelListPanel(conversation: conversation, room: room) {
-                    withAnimation(reduceMotion ? nil : .snappy) { pickingModel = false }
-                }
+                ModelListPanel(conversation: conversation, room: room) { closeList() }
                 Divider()
             }
             Button {

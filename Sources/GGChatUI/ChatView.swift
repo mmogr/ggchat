@@ -6,9 +6,13 @@ import SwiftUI
 struct ChatView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.chatControlsOnPage) private var controlsOnPage
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showingStatus = false
     @State private var editingPrompt = false
     @State private var editing: Message?
+    /// Whether the composer's model pill is open as its list; kept here so a
+    /// tap on the transcript can close it.
+    @State private var pickingModel = false
     /// The height between the top bar and the keyboard or the bottom edge,
     /// which the composer's model list is sized from.
     @State private var room: CGFloat = 0
@@ -55,8 +59,25 @@ struct ChatView: View {
                 ContentUnavailableView("Say something", systemImage: "text.bubble")
             }
         }
+        // While the model list is open, a tap anywhere outside it closes it,
+        // as a menu does, and does nothing else: the tap is not also a tap on
+        // whatever is under it. The composer is drawn above this, so its own
+        // controls, the list among them, still take their taps; the open
+        // spaces between them fall through to here. VoiceOver closes the list
+        // with the pill, whose hint says so, so this is hidden from it.
+        .overlay {
+            if pickingModel {
+                Color.clear
+                    .contentShape(.rect)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(reduceMotion ? nil : .snappy) { pickingModel = false }
+                    }
+                    .accessibilityHidden(true)
+            }
+        }
         .safeAreaInset(edge: .bottom) {
-            Composer(conversation: conversation, room: room)
+            Composer(conversation: conversation, pickingModel: $pickingModel, room: room)
         }
         // Read outside the inset, so the list it is for does not change it.
         // The frame already runs from under the top bar to the keyboard, or
