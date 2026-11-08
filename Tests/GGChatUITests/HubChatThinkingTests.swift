@@ -13,8 +13,10 @@ import XCTest
 final class HubChatThinkingTests: XCTestCase {
     private typealias Runs = AppModelRunTests
     private let question = "And how do I fix it?"
-    /// A Mac's models: the one chat 12 names thinks, and one does not.
-    static let models = [ModelInfo(id: "qwen3-8b", capabilities: ["reasoning"]), ModelInfo(id: "plain-4b")]
+    /// A Mac's models: the one chat 12 names by id thinks, and one does not.
+    static let models = [
+        ModelInfo(id: "qwen3-8b", gglibID: 3, capabilities: ["reasoning"]), ModelInfo(id: "plain-4b", gglibID: 4),
+    ]
 
     /// A Mac that lists chat 12's model as one that thinks, and remembers
     /// `thinking` for the chat. As gglib does, it remembers what a turn it

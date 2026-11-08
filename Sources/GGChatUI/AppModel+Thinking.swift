@@ -17,8 +17,12 @@ struct HubChatThinking: Equatable, Sendable {
     /// the same; nil otherwise, and the switch then shows what the Mac
     /// remembers.
     var chosenOff: Bool?
-    /// The model the chat last ran on, as its settings or else its last
-    /// reply name it.
+    /// The catalogue id of the model the opened chat was made with, which
+    /// a rename on the Mac keeps.
+    var modelID: Int64?
+    /// The name of the model the chat last ran on, as its settings or else
+    /// its last reply give it: shown where the Mac lists no model by the id,
+    /// and never looked up.
     var modelName: String?
 
     /// Whether the switch shows off.
@@ -41,10 +45,12 @@ struct HubChatThinking: Equatable, Sendable {
         if chosenOff == off { chosenOff = nil }
     }
 
-    /// Takes what an opened chat says: what the Mac remembers, and its
-    /// model, which its settings name or else its last reply that names one.
+    /// Takes what an opened chat says: what the Mac remembers, its model's
+    /// id, and the name its settings or else its last reply that names one
+    /// give that model.
     mutating func read(_ chat: HubChatOpen) {
         remember(off: chat.conversation.settings?.thinking == .off)
+        modelID = chat.conversation.modelID
         let named = chat.messages.last { $0.role == Role.assistant.rawValue && $0.metadata?.modelName != nil }
         modelName = chat.conversation.settings?.modelName ?? named?.metadata?.modelName
     }
@@ -104,13 +110,14 @@ extension AppModel {
     // MARK: - A Mac's chat
 
     /// The model the Mac's chat open runs on, as that Mac's list has it: the
-    /// name its settings give, else its last reply's, else the one the list
-    /// of chats gives it. Nil when it names none, or one the Mac does not
-    /// list now.
+    /// base entry whose catalogue id (`gglibID`) is the opened chat's model
+    /// id, else the one the list of chats gives it. Found by id, so a model
+    /// renamed on the Mac is still found. Nil when the chat names none, or
+    /// one the Mac does not list now.
     func hubChatModel(_ open: OpenHubChat) -> ModelInfo? {
-        let name = open.thinking.modelName ?? hubChats[open.providerID]?.first { $0.id == open.chatID }?.model
-        guard let name else { return nil }
-        return models(for: open.providerID).first { $0.id == name }
+        let id = open.thinking.modelID ?? hubChats[open.providerID]?.first { $0.id == open.chatID }?.modelID
+        guard let id else { return nil }
+        return models(for: open.providerID).first { $0.gglibID == id && $0.profile == nil }
     }
 
     /// Whether the chat open is offered the switch: its rows are read, so

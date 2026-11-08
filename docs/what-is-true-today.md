@@ -1904,7 +1904,7 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatThinkingTests.testARefusedTurnKeepsTheChoice -->
   <!-- test: HubChatThinkingTests.testTheChoiceIsNeverStoredAndGoesWithTheChat -->
   <!-- test: HubChatModelListTests.testTheSwitchIsHiddenWhenTheModelIsNotInTheMacsList -->
-  <!-- test: HubChatModelListTests.testAReplyThatNamesNoModelDoesNotHideTheOneBeforeIt -->
+  <!-- test: HubChatModelListTests.testAChatOpenedWithoutAModelIDTakesTheOneItsListRowGives -->
   <!-- test: HubChatModelListTests.testOpeningAChatListsTheMacsModels -->
   <!-- test: HubChatModelListTests.testAListThatFailsOnOpeningAChatRaisesNoAlert -->
   <!-- test: HubChatModelListTests.testAPipeComingUpListsAgainAndAFailedListKeepsTheOld -->
