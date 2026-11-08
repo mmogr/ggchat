@@ -44,15 +44,15 @@ final class ImageRefTests: XCTestCase {
 
     /// gglib's model list says which model reads images with `vision`, and
     /// leaves `capabilities` out for a model with nothing to list. The
-    /// fixture's `vision` row was written by hand from gglib's
-    /// `capabilities_of`, not recorded.
+    /// fixture was recorded from gglib with a projector linked to one model.
     func testTheModelListSaysWhichModelReadsImages() throws {
         let models = try JSONDecoder().decode(ModelsResponse.self, from: try Fixtures.data("gglib-models.json")).data
         XCTAssertFalse(models.isEmpty)
         let seeing = try XCTUnwrap(models.first { $0.id == "Qwen3.8-27B" })
-        XCTAssertEqual(seeing.capabilities, ["vision"])
+        XCTAssertEqual(seeing.capabilities, ["vision", "reasoning"])
         XCTAssertTrue(seeing.readsImages)
-        let blind = try XCTUnwrap(models.first { $0.id == "Qwen3-4B" })
+        XCTAssertEqual(models.filter(\.readsImages).map(\.key), ["3", "3:creative"])
+        let blind = try XCTUnwrap(models.first { $0.id == "Qwen3Vl 8b Instruct" })
         XCTAssertNil(blind.capabilities)
         XCTAssertFalse(blind.readsImages)
         XCTAssertFalse(ModelInfo(id: "e", capabilities: ["embeddings"]).readsImages)

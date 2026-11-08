@@ -161,7 +161,7 @@ final class PromptProgressTests: XCTestCase {
         let listed = try await allButChat.models()
         let answered = try await allButChat.proxyStatus()
         let streamed = try await firstSnapshot(allButChat)
-        XCTAssertEqual(listed.count, 5)
+        XCTAssertEqual(listed.count, 6)
         XCTAssertNotNil(answered)
         XCTAssertNotNil(streamed)
     }

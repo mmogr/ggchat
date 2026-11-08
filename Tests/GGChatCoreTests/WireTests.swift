@@ -84,12 +84,23 @@ final class WireTests: XCTestCase {
         XCTAssertEqual(reasons, ["stop"])
     }
 
+    /// gglib's list, recorded from a scratch gglib with three models and a
+    /// profile listed in models, carries each model's catalogue id. A
+    /// profile variant carries its base model's id and names its profile,
+    /// and a chat's key is the id, then `:<profile>` for a variant. An entry
+    /// from any other server is keyed by the name it lists.
     func testModelsFixtureCarriesGGLibExtras() throws {
         let models = try JSONDecoder().decode(ModelsResponse.self, from: try Fixtures.data("gglib-models.json")).data
-        XCTAssertEqual(models.count, 5)
+        XCTAssertEqual(models.count, 6)
         XCTAssertEqual(models.first?.ownedBy, "gglib")
         XCTAssertNotNil(models.first?.contextWindow)
         XCTAssertNotNil(models.first?.description)
+        XCTAssertEqual(models.map(\.gglibID), [3, 2, 1, 3, 2, 1])
+        XCTAssertEqual(models.map(\.profile), [nil, nil, nil, "creative", "creative", "creative"])
+        XCTAssertEqual(models.map(\.key), ["3", "2", "1", "3:creative", "2:creative", "1:creative"])
+        XCTAssertEqual(models[4].id, "Qwen3Vl 8b Instruct:creative", "the name stays the name shown")
+        XCTAssertEqual(ModelInfo(id: "llama3").key, "llama3")
+        XCTAssertEqual(ModelInfo(id: "llama3", profile: "creative").key, "llama3", "a profile without an id")
     }
 
     func testModelsWithoutExtrasDecode() throws {

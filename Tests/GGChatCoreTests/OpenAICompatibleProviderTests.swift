@@ -245,7 +245,7 @@ final class OpenAICompatibleProviderTests: XCTestCase {
         StubURLProtocol.register(host: "models.test", path: "/v1/models", .init(status: 200, chunks: [body]))
         StubURLProtocol.register(host: "nokey.test", path: "/v1/models", .init(status: 200, chunks: [body]))
         let models = try await provider(host: "models.test", apiKey: "abc").models()
-        XCTAssertEqual(models.count, 5)
+        XCTAssertEqual(models.count, 6)
         _ = try await provider(host: "nokey.test", apiKey: "").models()
         XCTAssertEqual(
             StubURLProtocol.requests(host: "models.test").last?.value(forHTTPHeaderField: "Authorization"), "Bearer abc"
