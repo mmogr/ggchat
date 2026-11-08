@@ -155,12 +155,8 @@ struct Composer: View {
         #endif
     }
 
-    private var currentModelID: String? {
-        conversation.model ?? provider?.defaultModel
-    }
-
     private var modelLabel: String {
-        currentModelID ?? "Choose a model"
+        model.shownModelName(for: conversation) ?? "Choose a model"
     }
 
     // MARK: - Status pill

@@ -1,8 +1,17 @@
 /// Codable shapes for `/v1/models` and chat completion chunks, with gglib's
-/// extras (`description`, `context_window`, `capabilities`) optional so any
-/// server decodes. The request is in `ChatCompletionRequest.swift`.
+/// extras (`gglib_id`, `profile`, `description`, `context_window`,
+/// `capabilities`) optional so any server decodes. The request is in
+/// `ChatCompletionRequest.swift`.
 public struct ModelInfo: Codable, Sendable, Equatable, Hashable, Identifiable {
+    /// The name the server lists the model under. gglib's changes when the
+    /// model is renamed there, so a chat stores ``key``, not this.
     public var id: String
+    /// The model's id in gglib's catalogue, which a rename keeps and which is
+    /// never reused. A profile variant carries its base model's. Nil from any
+    /// other server.
+    public var gglibID: Int64?
+    /// The sampling profile a gglib variant selects; nil on a base entry.
+    public var profile: String?
     public var ownedBy: String?
     public var description: String?
     public var contextWindow: Int?
@@ -12,18 +21,33 @@ public struct ModelInfo: Codable, Sendable, Equatable, Hashable, Identifiable {
     public var capabilities: [String]?
 
     public init(
-        id: String, ownedBy: String? = nil, description: String? = nil, contextWindow: Int? = nil,
-        capabilities: [String]? = nil
+        id: String, gglibID: Int64? = nil, profile: String? = nil, ownedBy: String? = nil,
+        description: String? = nil, contextWindow: Int? = nil, capabilities: [String]? = nil
     ) {
         self.id = id
+        self.gglibID = gglibID
+        self.profile = profile
         self.ownedBy = ownedBy
         self.description = description
         self.contextWindow = contextWindow
         self.capabilities = capabilities
     }
 
+    /// What a chat names this model by: what it stores and sends as the
+    /// request's `model`. For a gglib entry, its catalogue id, with
+    /// `:<profile>` after it for a profile variant, which gglib splits at the
+    /// last colon; so a rename on the Mac changes only the name shown. Any
+    /// other entry is named by its `id`.
+    public var key: String {
+        guard let gglibID else { return id }
+        guard let profile else { return String(gglibID) }
+        return "\(gglibID):\(profile)"
+    }
+
     enum CodingKeys: String, CodingKey {
         case id
+        case gglibID = "gglib_id"
+        case profile
         case ownedBy = "owned_by"
         case description
         case contextWindow = "context_window"

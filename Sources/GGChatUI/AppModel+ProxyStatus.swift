@@ -46,28 +46,46 @@ extension AppModel {
     /// address or machine, as `setPipeStatus` does when a pipe comes up. The
     /// answer was about the old one, and a server that is not gglib must not
     /// be asked for progress. The image model and the servers each of its
-    /// conversations chose go too: an id names a model or a server on the
-    /// old machine alone, and re-pairing is such a move. So does its list of
-    /// models, which the next catch-up lists again. The generation drops a
+    /// conversations chose go too, and the model where its list named
+    /// models by gglib's ids (`keysByID`): an id names a model or a server
+    /// on the old machine alone, and re-pairing is such a move. So does its
+    /// list of models, which the next catch-up lists again, and the default
+    /// is chosen from that (`forgettingTheDefault`). The generation drops a
     /// probe still in flight.
     func forgetProxyStatus(ifMovedFrom previous: ProviderConfig, to config: ProviderConfig) {
         guard previous.kind != config.kind else { return }
+        let keyedByID = keysByID(config.id)
         modelsByProvider[config.id] = nil
         proxyStatusAvailability[config.id] = nil
         providersWithoutRuns.remove(config.id)
         drawings[config.id] = nil
-        forgetMachineChoices(on: config.id)
+        forgetMachineChoices(on: config.id, models: keyedByID)
         probeGeneration[config.id] = (probeGeneration[config.id] ?? 0) + 1
     }
 
-    /// Forgets every image model and every server chosen on a provider,
-    /// when it is moved to another machine: an id names a model or a server
-    /// on the old one alone. One write for each conversation that chose
-    /// either, and none for one that chose neither.
-    func forgetMachineChoices(on providerID: UUID) {
+    /// `config` as an edit leaves it: one that moves it to another machine
+    /// forgets its default model where the old machine's list named it by
+    /// gglib's id (`keysByID`), and the next list chooses one
+    /// (`refreshModels`). A default named by its name is kept.
+    func forgettingTheDefault(of config: ProviderConfig, ifMovedFrom previous: ProviderConfig) -> ProviderConfig {
+        guard previous.kind != config.kind, keysByID(config.id) else { return config }
+        var moved = config
+        moved.defaultModel = nil
+        return moved
+    }
+
+    /// Forgets every image model and server chosen on a provider, and with
+    /// `models` every model, when it is moved to another machine: an id
+    /// names a model or a server on the old one alone, so a conversation
+    /// runs on the new machine's default (`model(for:)`). One write for each
+    /// conversation that chose any of them, and none for one that chose none.
+    func forgetMachineChoices(on providerID: UUID, models: Bool) {
         imageChoiceAnswers[providerID] = nil
         for var conversation in conversations where conversation.providerID == providerID {
-            guard conversation.imageModelID != nil || !conversation.toolChoice.isDefault else { continue }
+            let model = models ? nil : conversation.model
+            guard model != conversation.model || conversation.imageModelID != nil || !conversation.toolChoice.isDefault
+            else { continue }
+            conversation.model = model
             conversation.imageModelID = nil
             conversation.toolChoice = ToolChoice()
             update(conversation)

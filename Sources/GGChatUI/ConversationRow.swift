@@ -31,7 +31,11 @@ struct ConversationRow: View {
 
     private var subtitle: String {
         let provider = model.provider(for: conversation)?.name ?? "No provider"
-        if let modelName = conversation.model { return "\(provider) · \(modelName)" }
+        // Only for a chat that chose a model, and then the one it runs on,
+        // the default where its own is no longer listed.
+        if conversation.model != nil, let modelName = model.shownModelName(for: conversation) {
+            return "\(provider) · \(modelName)"
+        }
         return provider
     }
 }

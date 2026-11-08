@@ -53,11 +53,19 @@ lost answer carries the same body. A change made and not sent is gone on
 Back; keeping it would mean writing something about a Mac's chat to this
 phone.
 
-Whether a Mac's chat has the switch is a lookup by name: the model its
-settings name, else its last reply's, else the one the list of chats gives
-it, in that Mac's model list. So opening a Mac's chat lists the Mac's models
-when this phone has none, and a pipe coming up lists them again; a list that
-fails keeps the one before.
+Whether a Mac's chat has the switch is a lookup by key: the base entry in
+that Mac's model list whose `gglib_id` is the model id the opened chat was
+made with, else the one its row in the list of chats gives. A conversation
+kept here looks its model up by its key too (`ModelInfo.key`), that id for a
+gglib model. So opening a
+Mac's chat lists the Mac's models when this phone has none, and a pipe
+coming up lists them again; a list that fails keeps the one before.
+
+> **Note, 2026-11-08 (mmogr/gglib#1839).** The lookup was by name: the
+> model the chat's settings named, else its last reply's. A model renamed
+> on the Mac then matched nothing, and a conversation kept here that had
+> saved the name sent it and failed. Both now go by the id, which a rename
+> keeps.
 
 The control is one toggle in the top bar of both kinds of chat, where the
 system prompt's button is: a brain, filled while on and an outline while
@@ -90,7 +98,7 @@ switch can be shown.
   drifted from `contracts/chats/recorded.json`, and the recording is copied
   again and replayed before either switch is believed.
 - gglib saying in the opened chat whether its model thinks: then the lookup
-  by name goes, and with it the list read on opening.
+  by key goes, and with it the list read on opening.
 - A change made and not sent being lost on Back and noticed in use: then
   gglib needs a way to set the choice without a turn. A copy kept on this
   phone is not the answer.

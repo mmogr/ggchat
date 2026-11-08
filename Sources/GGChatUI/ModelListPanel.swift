@@ -184,9 +184,9 @@ struct ModelListRowLabel: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 1) {
-                // A long id cut to one line at an accessibility size is
+                // A long name cut to one line at an accessibility size is
                 // a few letters of it, so it wraps there.
-                Text(row.modelID)
+                Text(row.name)
                     .foregroundStyle(dimmed ? .secondary : .primary)
                     .lineLimit(typeSize.isAccessibilitySize ? 3 : 1)
                 if let detail = row.detail {

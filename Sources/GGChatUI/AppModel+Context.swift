@@ -11,7 +11,7 @@ extension AppModel {
     /// the same model it is drawn again.
     public func contextReading(for conversation: Conversation) -> ContextReading? {
         guard let reading = conversation.context,
-            reading.model == (conversation.model ?? provider(for: conversation)?.defaultModel)
+            reading.model == model(for: conversation)
         else { return nil }
         return reading
     }

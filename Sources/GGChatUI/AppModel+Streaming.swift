@@ -108,7 +108,7 @@ extension AppModel {
             lastError = "This conversation has no provider. Add one, then pick it."
             return nil
         }
-        guard let modelID = conversation.model ?? config.defaultModel else {
+        guard let modelID = model(for: conversation) else {
             lastError = "Pick a model first."
             return nil
         }

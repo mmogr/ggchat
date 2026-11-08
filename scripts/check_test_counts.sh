@@ -960,8 +960,28 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # drawn below its picture would leave the math as LaTeX or clipped and fail
 # nothing else, so these eleven and their markers are the whole of that
 # guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1105
+#
+# 2026-11-08: 1105 -> 1116 for a gglib chat naming its model by id. A chat
+# that stores the name again would work until the model is renamed on the
+# Mac, and then every send fails; a key that drops the profile sends the base
+# model; This iPhone keyed by gglib's ids finds none of its models by name;
+# and a run's report taken as it came leaves the context ring under a name
+# the chat is not on, so it is not drawn. Nothing else notices any of them,
+# so these five are the whole of that guard. The count already stood six
+# above the floor, so it moves to the count.
+#
+# 2026-11-08: 1116 -> 1118 for a gglib chat whose model is not listed
+# running on the default. Without them a chat saved by a name, or on a model
+# since deleted, would send that string and fail every time, a default the
+# list no longer names would be sent the same way, and another server's chat
+# could be sent its default; these two are the whole of that guard.
+#
+# 2026-11-08: markers 995 -> 1014 for what is true of a chat's model key.
+# The claim names nine tests: the five ModelKeyTests and two ModelKeyRunTests
+# that are the whole of its guard, the fixture's and the move's. The floor
+# stood ten under the count before them, so it moves to the count.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1118
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 995
+floor "README test markers" "${markers:-0}" 1014
 
 exit $status

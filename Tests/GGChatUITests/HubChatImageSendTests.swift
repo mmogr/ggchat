@@ -194,7 +194,7 @@ final class HubChatImageSendTests: XCTestCase {
         let (model, config) = try await HubChatContinueTests.opened(hub)
         let open = try XCTUnwrap(model.openedHubChat)
         XCTAssertTrue(model.canSeeHubChat(open), "a model this phone has not read was refused")
-        model.modelsByProvider[config.id] = [ModelInfo(id: "qwen3-8b")]
+        model.modelsByProvider[config.id] = [ModelInfo(id: "qwen3-8b", gglibID: 3)]
         XCTAssertFalse(model.canSeeHubChat(open))
         XCTAssertFalse(model.admitsImagesToHubChat())
         XCTAssertEqual(model.lastError, AppModel.cannotSee)
@@ -204,7 +204,7 @@ final class HubChatImageSendTests: XCTestCase {
         XCTAssertEqual(model.openedHubChat?.unsent?.images.map(\.id), [image.id])
         XCTAssertEqual(hub.with(\.uploads).count, 0)
 
-        model.modelsByProvider[config.id] = [ModelInfo(id: "qwen3-8b", capabilities: ["vision"])]
+        model.modelsByProvider[config.id] = [ModelInfo(id: "qwen3-8b", gglibID: 3, capabilities: ["vision"])]
         XCTAssertTrue(model.admitsImagesToHubChat())
         await model.sendToHubChat("And this?", images: [image])?.value
         XCTAssertEqual(hub.with(\.uploads).count, 1)
