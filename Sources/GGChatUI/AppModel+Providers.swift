@@ -217,10 +217,17 @@ extension AppModel {
             heard(config.id)
             modelsByProvider[config.id] = models
             // The first that can chat: an image model or an embeddings model
-            // listed first is never chosen for a conversation. Set on the
-            // provider as it is now, so an edit made while the list was asked
-            // for is not written over by the one this call was given.
-            if current.defaultModel == nil, let first = models.first(where: \.chats) {
+            // listed first is never chosen for a conversation. Chosen for a
+            // provider with no default, and for one keyed by gglib's ids
+            // (`keysByID`) whose default the list no longer names, so the
+            // default a gglib chat falls back on (`model(for:)`) is always
+            // one the list names. Set on the provider as it is now, so an
+            // edit made while the list was asked for is not written over by
+            // the one this call was given.
+            let unlisted = current.defaultModel.map { key in
+                keysByID(config.id) && !models.contains { $0.chats && $0.key == key }
+            }
+            if unlisted ?? true, let first = models.first(where: \.chats) {
                 var updated = current
                 updated.defaultModel = first.key
                 updateProvider(updated)

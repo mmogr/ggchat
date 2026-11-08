@@ -11,7 +11,7 @@ extension AppModel {
     /// send both ask here.
     func canSee(_ conversation: Conversation) -> Bool {
         guard let config = provider(for: conversation), speaksGGLib(config),
-            let listed = listed(conversation.model ?? config.defaultModel, on: config.id)
+            let listed = listed(model(for: conversation), on: config.id)
         else { return true }
         return listed.readsImages
     }

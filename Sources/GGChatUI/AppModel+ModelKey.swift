@@ -21,10 +21,25 @@ extension AppModel {
         return listed(key, on: providerID)?.id ?? key
     }
 
+    /// The key a send in `conversation` names its model by: the
+    /// conversation's own, or the provider's default where it has none. On
+    /// a list keyed by gglib's ids (`keysByID`), a model the list does not
+    /// name gives way to the default too, which `refreshModels` keeps on a
+    /// model the list names. So a gglib chat whose model was deleted, or
+    /// that was saved by a name before chats were keyed, runs on the default
+    /// and is not refused for a model that is not there. Any other server's
+    /// chat, This iPhone's included, is sent its own model as it was saved.
+    public func model(for conversation: Conversation) -> String? {
+        let config = provider(for: conversation)
+        guard let chosen = conversation.model else { return config?.defaultModel }
+        guard let config, keysByID(config.id), listed(chosen, on: config.id) == nil else { return chosen }
+        return config.defaultModel
+    }
+
     /// The name of the model a send in `conversation` asks for, which the
     /// model pill and the chat's panel show.
     public func shownModelName(for conversation: Conversation) -> String? {
-        name(of: conversation.model ?? provider(for: conversation)?.defaultModel, on: conversation.providerID)
+        name(of: model(for: conversation), on: conversation.providerID)
     }
 
     /// The key of the model a run's report names. gglib reports the string

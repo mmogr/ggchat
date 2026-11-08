@@ -65,7 +65,7 @@ extension AppModel {
     /// read yet all offer none.
     public func offersThinking(for conversation: Conversation) -> Bool {
         guard let config = provider(for: conversation), speaksGGLib(config) else { return false }
-        return listsAsThinking(conversation.model ?? config.defaultModel, on: config.id) == true
+        return listsAsThinking(model(for: conversation), on: config.id) == true
     }
 
     /// Sets whether the model is asked not to think in this conversation,

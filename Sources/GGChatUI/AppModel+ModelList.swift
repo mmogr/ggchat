@@ -22,7 +22,7 @@ extension AppModel {
     /// provider is ticked.
     func modelListSections(for conversation: Conversation, locale: Locale, calendar: Calendar) -> [ModelListSection] {
         providers.map { config in
-            let ownModel = config.id == conversation.providerID ? conversation.model ?? config.defaultModel : nil
+            let ownModel = config.id == conversation.providerID ? model(for: conversation) : nil
             let (listed, rows) = listedRows(of: config, current: ownModel)
             let down = config.isPipe && pipeStatuses[config.id]?.isConnected != true
             return ModelListSection(

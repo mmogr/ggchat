@@ -88,6 +88,70 @@ final class ModelKeyTests: XCTestCase {
         XCTAssertEqual(try sentModel(recorder.requests.last), "1:creative")
     }
 
+    /// A chat saved with a model the list no longer names, as one saved by
+    /// its name before chats were keyed or one whose model was deleted,
+    /// runs on the provider's default and is shown under the default's name.
+    /// Until the list is read the chat's own model is taken at its word, and
+    /// on a list that names its models by name, not gglib's ids, always.
+    func testAChatWhoseModelIsNotListedRunsOnTheDefault() async throws {
+        let recorder = RecordingProvider(
+            wrapping: listing([ModelInfo(id: "Qwen3.8 27B", gglibID: 3), ModelInfo(id: "Plain", gglibID: 2)]))
+        let (model, config) = try await Runs.makeModel(behind: recorder, direct: true)
+        let id = try XCTUnwrap(model.selectedConversationID)
+        model.select(model: "Qwen3.8-27B", for: id)
+        XCTAssertEqual(model.model(for: try XCTUnwrap(model.selectedConversation)), "Qwen3.8-27B")
+
+        await model.refreshModels(for: config)
+        let conversation = try XCTUnwrap(model.selectedConversation)
+        XCTAssertEqual(conversation.model, "Qwen3.8-27B", "the old name was rewritten rather than passed over")
+        XCTAssertEqual(model.model(for: conversation), "3")
+        XCTAssertEqual(model.shownModelName(for: conversation), "Qwen3.8 27B")
+        try await XCTUnwrap(model.send("go")).value
+        XCTAssertEqual(try sentModel(recorder.requests.last), "3", "the unlisted name was sent")
+        XCTAssertNil(model.streamErrors[id])
+
+        model.select(model: "2", for: id)
+        let listed = try XCTUnwrap(model.selectedConversation)
+        XCTAssertEqual(model.model(for: listed), "2", "a listed model was passed over")
+
+        recorder.wrap(listing([ModelInfo(id: "Plain")]))
+        await model.refreshModels(for: config)
+        model.select(model: "Qwen3.8-27B", for: id)
+        try await XCTUnwrap(model.send("by name")).value
+        XCTAssertEqual(try sentModel(recorder.requests.last), "Qwen3.8-27B", "a list by name sent the default")
+    }
+
+    /// A list that no longer names the provider's default replaces it with
+    /// the first model that chats, and one that names it keeps it, so the
+    /// default a chat falls back on is always one the list names. A list
+    /// that names its models by name, not gglib's ids, keeps the default as
+    /// it was.
+    func testADefaultTheListNoLongerNamesIsReplaced() async throws {
+        let recorder = RecordingProvider(
+            wrapping: listing([
+                ModelInfo(id: "Drawer", gglibID: 5, capabilities: ["image_generation"]),
+                ModelInfo(id: "First", gglibID: 1), ModelInfo(id: "Second", gglibID: 2),
+            ]))
+        let (model, config) = try await Runs.makeModel(behind: recorder, direct: true)
+        XCTAssertEqual(model.providers.first?.defaultModel, "mock-27b")
+        await model.refreshModels(for: config)
+        XCTAssertEqual(model.providers.first?.defaultModel, "1", "the default the list does not name was kept")
+
+        var chosen = try XCTUnwrap(model.providers.first)
+        chosen.defaultModel = "2"
+        model.updateProvider(chosen)
+        await model.refreshModels(for: config)
+        XCTAssertEqual(model.providers.first?.defaultModel, "2", "a default the list names was replaced")
+
+        recorder.wrap(listing([ModelInfo(id: "First", gglibID: 1)]))
+        await model.refreshModels(for: config)
+        XCTAssertEqual(model.providers.first?.defaultModel, "1", "a deleted default was kept")
+
+        recorder.wrap(listing([ModelInfo(id: "Other")]))
+        await model.refreshModels(for: config)
+        XCTAssertEqual(model.providers.first?.defaultModel, "1", "a list that names models by name replaced it")
+    }
+
     /// This iPhone's list is kept by name: its library and its engine name
     /// a model by what it is installed as, so the id its own gglib lists is
     /// dropped when the list is read, and its default and the Thinking

@@ -969,7 +969,13 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # the chat is not on, so it is not drawn. Nothing else notices any of them,
 # so these five are the whole of that guard. The count already stood six
 # above the floor, so it moves to the count.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1116
+#
+# 2026-11-08: 1116 -> 1118 for a gglib chat whose model is not listed
+# running on the default. Without them a chat saved by a name, or on a model
+# since deleted, would send that string and fail every time, a default the
+# list no longer names would be sent the same way, and another server's chat
+# could be sent its default; these two are the whole of that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1118
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
 floor "README test markers" "${markers:-0}" 995
 

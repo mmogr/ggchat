@@ -94,7 +94,7 @@ extension AppModel {
         case .pipe: return pipeStatuses[config.id].map(SessionStatus.pipe)
         case .onDevice:
             guard engine.isAvailable else { return nil }
-            return .engine(modelState(of: conversation.model ?? config.defaultModel))
+            return .engine(modelState(of: model(for: conversation)))
         case .openAICompatible: return nil
         }
     }
