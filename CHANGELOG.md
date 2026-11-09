@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.17.0](https://github.com/mmogr/ggchat/compare/v0.16.0...v0.17.0) (2026-11-09)
+
+
+### What the app now does
+
+* **composer:** a tap outside the open model list closes it ([#287](https://github.com/mmogr/ggchat/issues/287)) ([1027dd4](https://github.com/mmogr/ggchat/commit/1027dd46f8cf959df1f6ceddb6a985c6c9bdd090))
+* **core:** a gglib model in the list carries its id, and its key is what a chat names it by ([cba6940](https://github.com/mmogr/ggchat/commit/cba694030958718ca6634b29675b0a394076548f))
+* **core:** a waiting reply says the daemon's sentence ([#291](https://github.com/mmogr/ggchat/issues/291)) ([e480c10](https://github.com/mmogr/ggchat/commit/e480c103f581e8be298745b243f2a60fb618264f))
+* **core:** the phone says gglib's words for loading, loaded and away ([#290](https://github.com/mmogr/ggchat/issues/290)) ([b742038](https://github.com/mmogr/ggchat/commit/b742038cfcd42cb93c405433a116d3b40ee36057))
+
+
+### What the app stopped getting wrong
+
+* **duo:** a flat Duo on its side keeps the list beside the chat at three eighths ([#289](https://github.com/mmogr/ggchat/issues/289)) ([785c559](https://github.com/mmogr/ggchat/commit/785c559351004a5b3a3f60a2b3a492b4b439442f))
+* **hub:** a Mac's chat finds its model in the list by id ([b4dd753](https://github.com/mmogr/ggchat/commit/b4dd7535cd1b9aa58f3234dbe4a905e36ccf3ddf))
+* **models:** a chat on a gglib Mac knows its model by id, so a rename on the Mac breaks nothing ([36dbd7c](https://github.com/mmogr/ggchat/commit/36dbd7c72acfee2d26b9f2cab9dad7f06a34de0c))
+* **models:** a gglib chat stores and sends its model's id, so a rename changes only the name shown ([4676b91](https://github.com/mmogr/ggchat/commit/4676b9172ebe895818ed4fe4052c27e3c33ba2ce))
+* **models:** a gglib chat whose model is no longer listed runs on the default, which is always a listed model ([c4fd560](https://github.com/mmogr/ggchat/commit/c4fd5600c85d1253d1e844fc859f96aa0c24a274))
+* **providers:** a gglib provider moved to another machine forgets its chats' models and its default ([304f94e](https://github.com/mmogr/ggchat/commit/304f94e676e42dcb7c1c59ba41de43c69cd40267))
+* **ui:** the unused-code scan keeps a Mac's chat's model name, read only on iOS ([#288](https://github.com/mmogr/ggchat/issues/288)) ([9085b8b](https://github.com/mmogr/ggchat/commit/9085b8b5d723dacb3108803d1db04f1ddbbc5482))
+
+
+### Documentation
+
+* a chat and a Mac's chat find their gglib model by its id, which a rename keeps ([830325a](https://github.com/mmogr/ggchat/commit/830325a41d0cb72b935700ed5f52e0b34b6cea36))
+
 ## [0.16.0](https://github.com/mmogr/ggchat/compare/v0.15.0...v0.16.0) (2026-11-07)
 
 
