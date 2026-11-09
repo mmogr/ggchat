@@ -98,7 +98,7 @@ final class AppModelLibraryTests: XCTestCase {
         model.download(tooBig, of: phoneRepo)
         XCTAssertTrue(library.downloadsAsked.isEmpty, "a quantization too big for this iPhone was downloaded")
         XCTAssertTrue(model.providers.isEmpty, "This iPhone was added for a model it cannot run")
-        XCTAssertNil(model.onDevice.downloads[QuantChoice(repo: phoneRepo, quantization: tooBig.name)])
+        XCTAssertNil(model.onDevice.downloads[QuantChoice(repo: phoneRepo, quantization: tooBig.label)])
 
         await model.loadOffers(of: deskRepo, in: browser)
         let desk = try XCTUnwrap(browser.offers[deskRepo])
@@ -116,8 +116,8 @@ final class AppModelLibraryTests: XCTestCase {
         let browser = try open(model, with: reading, counting: &samples)
         await model.loadOffers(of: phoneRepo, in: browser)
         let offers = try XCTUnwrap(browser.offers[phoneRepo])
-        let fits = try XCTUnwrap(offers.first { $0.name == "Q4_K_M" })
-        let short = try XCTUnwrap(offers.first { $0.name == "Q8_0" })
+        let fits = try XCTUnwrap(offers.first { $0.label == "Q4_K_M" })
+        let short = try XCTUnwrap(offers.first { $0.label == "Q8_0" })
 
         model.download(fits, of: phoneRepo)
         model.download(short, of: phoneRepo)
@@ -126,7 +126,7 @@ final class AppModelLibraryTests: XCTestCase {
         XCTAssertEqual(model.providers.first?.name, "This iPhone")
         XCTAssertNil(model.providers.first?.defaultModel, "a model not yet installed was named the default")
 
-        let both = [fits, short].map { QuantChoice(repo: phoneRepo, quantization: $0.name) }
+        let both = [fits, short].map { QuantChoice(repo: phoneRepo, quantization: $0.label) }
         let done = await waitUntil { both.allSatisfy { model.onDevice.downloads[$0]?.state == .done } }
         XCTAssertTrue(done, "the downloads did not walk to done: \(model.onDevice.downloads)")
         model.download(fits, of: phoneRepo)
@@ -145,8 +145,8 @@ final class AppModelLibraryTests: XCTestCase {
         var samples = 0
         let browser = try open(model, with: reading, counting: &samples)
         await model.loadOffers(of: phoneRepo, in: browser)
-        let fits = try XCTUnwrap(browser.offers[phoneRepo]?.first { $0.name == "Q4_K_M" })
-        let choice = QuantChoice(repo: phoneRepo, quantization: fits.name)
+        let fits = try XCTUnwrap(browser.offers[phoneRepo]?.first { $0.label == "Q4_K_M" })
+        let choice = QuantChoice(repo: phoneRepo, quantization: fits.label)
 
         model.download(fits, of: phoneRepo)
         let failed = await waitUntil {
@@ -213,7 +213,7 @@ final class AppModelLibraryTests: XCTestCase {
         model.openModelBrowser { reading }
         XCTAssertNil(model.onDevice.modelBrowser, "a build with no engine opened the browser")
         let offer = QuantOffer(
-            name: "Q4_K_M", totalBytes: 1 << 30, shardCount: 1, verdict: .fits(ctx: 16_384),
+            label: "Q4_K_M", totalBytes: 1 << 30, shardCount: 1, verdict: .fits(ctx: 16_384),
             why: FitWhy(weightsBytes: nil, kvBytesPerToken: nil, budgetBytes: nil, trainedCtx: nil))
         model.download(offer, of: phoneRepo)
         XCTAssertTrue(library.downloadsAsked.isEmpty)

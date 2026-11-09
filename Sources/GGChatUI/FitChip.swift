@@ -111,7 +111,7 @@ struct FitExplanation: Identifiable, Equatable {
 
     init(repo: String, offer: QuantOffer) {
         self.repo = repo
-        name = offer.name
+        name = offer.label
         verdict = offer.verdict
         why = offer.why
         rationale = nil

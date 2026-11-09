@@ -107,9 +107,9 @@ extension AppModel {
         guard let modelID else { return .notLoaded }
         if onDevice.tooBig.contains(modelID) { return .tooBig }
         switch engineStatus {
-        case .loading(modelID, let fraction)?: return .loading(fraction: fraction)
-        case .ready(modelID, _)?: return .ready
-        case .failed(modelID, _)?: return .failed
+        case .loading(_, modelID, let fraction)?: return .loading(fraction: fraction)
+        case .ready(_, modelID, _)?: return .ready
+        case .failed(_, modelID, _)?: return .failed
         default: return .notLoaded
         }
     }

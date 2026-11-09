@@ -125,18 +125,25 @@ public struct SearchPage: Sendable, Equatable, Hashable {
     }
 }
 
-/// One quantization a repository publishes, mirroring gglib-ffi's
-/// `QuantOffer`.
+/// One variant a repository publishes, mirroring gglib-ffi's `QuantOffer`:
+/// files that are shards of one another, named as its uploader named them.
 public struct QuantOffer: Sendable, Equatable, Hashable {
-    /// `Q4_K_M`, `Q8_0` and so on.
-    public var name: String
+    /// What a download asks for it by: `Q4_K_M`, `UD-Q4_K_XL` and so on.
+    public var label: String
+    /// What its header says it is. Only a ``VariantRole/model`` is offered
+    /// for download.
+    public var role: VariantRole
     public var totalBytes: UInt64
     public var shardCount: UInt32
     public var verdict: FitVerdict
     public var why: FitWhy
 
-    public init(name: String, totalBytes: UInt64, shardCount: UInt32, verdict: FitVerdict, why: FitWhy) {
-        self.name = name
+    public init(
+        label: String, role: VariantRole = .model, totalBytes: UInt64, shardCount: UInt32, verdict: FitVerdict,
+        why: FitWhy
+    ) {
+        self.label = label
+        self.role = role
         self.totalBytes = totalBytes
         self.shardCount = shardCount
         self.verdict = verdict
@@ -144,11 +151,27 @@ public struct QuantOffer: Sendable, Equatable, Hashable {
     }
 }
 
-/// A model on this device, mirroring gglib-ffi's `InstalledModel`. `name`
-/// is what the engine's model list calls it.
+/// What a variant's header says it is, mirroring gglib-ffi's `VariantRole`.
+public enum VariantRole: Sendable, Equatable, Hashable {
+    /// A model's weights, which a download fetches and gglib runs.
+    case model
+    /// A draft or a helper, which gglib cannot run on its own and never
+    /// downloads.
+    case draftOrHelper
+    /// A multimodal projector, fetched with its model and never alone.
+    case projector
+}
+
+/// A model on this device, mirroring gglib-ffi's `InstalledModel`. `id` is
+/// what a chat names it by: two quantizations of one model share `name`.
 public struct InstalledModel: Sendable, Equatable, Hashable, Identifiable {
     public var id: Int64
     public var name: String
+    /// The label of its type (`Q4_K_M`), when gglib knows one.
+    public var quantization: String?
+    /// The Hugging Face repository it was downloaded from, when it came
+    /// from one.
+    public var repo: String?
     public var bytes: UInt64
     public var trainedCtx: UInt64?
     /// gglib's words for what it can do beyond chat, as the model list
@@ -157,10 +180,13 @@ public struct InstalledModel: Sendable, Equatable, Hashable, Identifiable {
     public var verdict: FitVerdict
 
     public init(
-        id: Int64, name: String, bytes: UInt64, trainedCtx: UInt64?, capabilities: [String], verdict: FitVerdict
+        id: Int64, name: String, quantization: String? = nil, repo: String? = nil, bytes: UInt64,
+        trainedCtx: UInt64?, capabilities: [String], verdict: FitVerdict
     ) {
         self.id = id
         self.name = name
+        self.quantization = quantization
+        self.repo = repo
         self.bytes = bytes
         self.trainedCtx = trainedCtx
         self.capabilities = capabilities

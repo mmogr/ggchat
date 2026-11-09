@@ -62,8 +62,8 @@ final class AppModelRemovalTests: XCTestCase {
     /// Downloads a second model to this iPhone, and answers its name.
     private func installSecond(in model: AppModel) async throws -> String {
         let offers = try await library.quantizations(repo: phoneRepo, reading: reading)
-        let fits = try XCTUnwrap(offers.first { $0.name == "Q4_K_M" })
-        let name = MockLibrary.installedName(repo: phoneRepo, quantization: fits.name)
+        let fits = try XCTUnwrap(offers.first { $0.label == "Q4_K_M" })
+        let name = MockLibrary.installedName(repo: phoneRepo, quantization: fits.label)
         model.download(fits, of: phoneRepo)
         let installed = await waitUntil { model.onDevice.installed?.contains { $0.name == name } == true }
         XCTAssertTrue(installed, "the second model was never installed")
@@ -137,7 +137,9 @@ final class AppModelRemovalTests: XCTestCase {
         let other = try await installSecond(in: model)
         let conversation = model.newConversation(with: config)
         try await XCTUnwrap(model.send("hi")).value
-        let loaded = await waitUntil { model.engineStatus == .ready(model: MockEngine.model.id, nCtx: 4_096) }
+        let loaded = await waitUntil {
+            model.engineStatus == .ready(id: MockEngine.modelID, model: MockEngine.model.id, nCtx: 4_096)
+        }
         XCTAssertTrue(loaded, "the send loaded no model: \(String(describing: model.engineStatus))")
         let served = try XCTUnwrap(model.engineSession as? MockEngineSession)
 
@@ -206,7 +208,7 @@ final class AppModelRemovalTests: XCTestCase {
         let conversation = model.newConversation(with: config)
         await model.open(config).value
         try await XCTUnwrap(model.send("hi")).value
-        let ready = EngineStatus.ready(model: MockEngine.model.id, nCtx: 4_096)
+        let ready = EngineStatus.ready(id: MockEngine.modelID, model: MockEngine.model.id, nCtx: 4_096)
         let loaded = await waitUntil { model.engineStatus == ready }
         XCTAssertTrue(loaded, "the send loaded no model: \(String(describing: model.engineStatus))")
         let served = try XCTUnwrap(model.engineSession as? MockEngineSession)

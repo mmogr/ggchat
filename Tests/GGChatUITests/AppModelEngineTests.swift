@@ -12,7 +12,7 @@ import XCTest
 /// engine down, a serve or a shutdown in flight included.
 @MainActor
 final class AppModelEngineTests: XCTestCase {
-    private let ready = EngineStatus.ready(model: MockEngine.model.id, nCtx: 4_096)
+    private let ready = EngineStatus.ready(id: MockEngine.modelID, model: MockEngine.model.id, nCtx: 4_096)
 
     private func makeModel(engine: any LocalEngine, registry: LoopbackProviderRegistry) -> AppModel {
         let defaults = UserDefaults(suiteName: "AppModelEngineTests.\(UUID().uuidString)")!

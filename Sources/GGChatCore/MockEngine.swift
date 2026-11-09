@@ -42,9 +42,14 @@
         public static let apiKey = "mock-engine-key"
         /// The context the mock loads its model with, and reports.
         public static let contextSize = 4_096
-        /// The one model the mock engine lists.
+        /// The library id of ``model``, the model the mock's library holds
+        /// from the start.
+        public static let modelID: Int64 = 1
+        /// The model the mock engine lists from the start, and the one its
+        /// walk loads, whichever model a request names.
         public static let model = ModelInfo(
-            id: "mock-phone-1.7b", ownedBy: "ggchat", description: "a canned model small enough for a phone",
+            id: "mock-phone-1.7b", gglibID: modelID, ownedBy: "ggchat",
+            description: "a canned model small enough for a phone",
             contextWindow: 40_960, capabilities: ["reasoning"])
 
         public var behaviour: Behaviour
@@ -114,14 +119,15 @@
         /// step apart. A model too big is refused before it loads, and with
         /// no model there is nothing to load.
         var walk: [EngineStatus] {
-            let model = Self.model.id
-            let ready = EngineStatus.ready(model: model, nCtx: UInt64(Self.contextSize))
+            let (id, model) = (Self.modelID, Self.model.id)
+            let ready = EngineStatus.ready(id: id, model: model, nCtx: UInt64(Self.contextSize))
             switch behaviour {
-            case .ready: return [.loading(model: model, fraction: 0.5), ready]
-            case .slow: return (1...10).map { .loading(model: model, fraction: Double($0) / 10) } + [ready]
+            case .ready: return [.loading(id: id, model: model, fraction: 0.5), ready]
+            case .slow: return (1...10).map { .loading(id: id, model: model, fraction: Double($0) / 10) } + [ready]
             case .fails:
                 return [
-                    .loading(model: model, fraction: 0.5), .failed(model: model, reason: "the mock was told to fail"),
+                    .loading(id: id, model: model, fraction: 0.5),
+                    .failed(id: id, model: model, reason: "the mock was told to fail"),
                 ]
             case .tooBig, .noModels: return []
             }

@@ -35,7 +35,7 @@ final class AppModelDownloadTests: XCTestCase {
     /// offers it.
     private func offer(_ name: String, from library: any ModelLibrary) async throws -> QuantOffer {
         let offers = try await library.quantizations(repo: phoneRepo, reading: reading)
-        return try XCTUnwrap(offers.first { $0.name == name })
+        return try XCTUnwrap(offers.first { $0.label == name })
     }
 
     /// Waits until `done` holds, for `AppModelEngineTests.waitUntil`'s
@@ -66,7 +66,7 @@ final class AppModelDownloadTests: XCTestCase {
         let library = MockLibrary(sleeper: sleeper)
         let model = makeModel(library: library)
         let fits = try await offer("Q4_K_M", from: library)
-        let choice = QuantChoice(repo: phoneRepo, quantization: fits.name)
+        let choice = QuantChoice(repo: phoneRepo, quantization: fits.label)
         var bytes: [UInt64] = []
         func step(until wanted: DownloadState, _ what: String) async {
             let reached = await waitUntil { model.onDevice.downloads[choice]?.state == wanted }
@@ -124,8 +124,8 @@ final class AppModelDownloadTests: XCTestCase {
         let library = MockLibrary(sleeper: sleeper, directory: modelsFolder)
         let model = makeModel(library: library)
         let fits = try await offer("Q4_K_M", from: library)
-        let choice = QuantChoice(repo: phoneRepo, quantization: fits.name)
-        let name = MockLibrary.installedName(repo: phoneRepo, quantization: fits.name)
+        let choice = QuantChoice(repo: phoneRepo, quantization: fits.label)
+        let name = MockLibrary.installedName(repo: phoneRepo, quantization: fits.label)
         let partial = MockLibrary.partialFile(name, in: modelsFolder)
 
         model.download(fits, of: phoneRepo)
@@ -192,7 +192,7 @@ final class AppModelDownloadTests: XCTestCase {
         let model = makeModel(library: library)
         model.onDevice.modelsDirectory = ModelsDirectory(directory: modelsFolder) { _ in 512 << 20 }
         let fits = try await offer("Q4_K_M", from: library)
-        let choice = QuantChoice(repo: phoneRepo, quantization: fits.name)
+        let choice = QuantChoice(repo: phoneRepo, quantization: fits.label)
 
         model.download(fits, of: phoneRepo)
         XCTAssertTrue(library.downloadsAsked.isEmpty, "a download there was no room for reached the library")

@@ -46,7 +46,9 @@ final class AppModelRemovalRaceTests: XCTestCase {
     /// Sends, and waits until the engine has the mock's model loaded.
     private func load(_ model: AppModel) async throws {
         try await XCTUnwrap(model.send("hi")).value
-        let loaded = await waitUntil { model.engineStatus == .ready(model: MockEngine.model.id, nCtx: 4_096) }
+        let loaded = await waitUntil {
+            model.engineStatus == .ready(id: MockEngine.modelID, model: MockEngine.model.id, nCtx: 4_096)
+        }
         XCTAssertTrue(loaded, "the send loaded no model: \(String(describing: model.engineStatus))")
     }
 
@@ -74,8 +76,8 @@ final class AppModelRemovalRaceTests: XCTestCase {
         let engine = GatedEngine(registry: registry, holdingServes: false, holdingShutdowns: true)
         let (model, _) = try await makeModel(engine: engine)
         let offers = try await watching.quantizations(repo: phoneRepo, reading: reading)
-        let fits = try XCTUnwrap(offers.first { $0.name == "Q4_K_M" })
-        let other = MockLibrary.installedName(repo: phoneRepo, quantization: fits.name)
+        let fits = try XCTUnwrap(offers.first { $0.label == "Q4_K_M" })
+        let other = MockLibrary.installedName(repo: phoneRepo, quantization: fits.label)
         model.download(fits, of: phoneRepo)
         let downloaded = await waitUntil { model.onDevice.installed?.contains { $0.name == other } == true }
         XCTAssertTrue(downloaded, "the second model was never installed")

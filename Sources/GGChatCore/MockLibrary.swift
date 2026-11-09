@@ -87,21 +87,21 @@
             guard repo == Self.phoneRepo else {
                 return [
                     QuantOffer(
-                        name: "Q4_K_M", totalBytes: 16 * Self.gigabyte, shardCount: 1, verdict: Self.tooBig,
+                        label: "Q4_K_M", totalBytes: 16 * Self.gigabyte, shardCount: 1, verdict: Self.tooBig,
                         why: Self.why)
                 ]
             }
             return [
                 QuantOffer(
-                    name: "Q4_K_M", totalBytes: Self.gigabyte, shardCount: 1,
+                    label: "Q4_K_M", totalBytes: Self.gigabyte, shardCount: 1,
                     verdict: behaviour == .tooBig ? Self.tooBig : .fits(ctx: 16_384), why: Self.why),
                 QuantOffer(
-                    name: "Q8_0", totalBytes: 2 * Self.gigabyte, shardCount: 1, verdict: .tight(ctx: 4_096),
+                    label: "Q8_0", totalBytes: 2 * Self.gigabyte, shardCount: 1, verdict: .tight(ctx: 4_096),
                     why: Self.why),
                 QuantOffer(
-                    name: "F16", totalBytes: 4 * Self.gigabyte, shardCount: 2, verdict: Self.tooBig, why: Self.why),
+                    label: "F16", totalBytes: 4 * Self.gigabyte, shardCount: 2, verdict: Self.tooBig, why: Self.why),
                 QuantOffer(
-                    name: "IQ2_XS", totalBytes: Self.gigabyte / 2, shardCount: 1,
+                    label: "IQ2_XS", totalBytes: Self.gigabyte / 2, shardCount: 1,
                     verdict: .unknown(missing: .kvShape, cutOff: true),
                     why: FitWhy(
                         weightsBytes: Self.gigabyte / 2, kvBytesPerToken: nil, budgetBytes: Self.budget, trainedCtx: nil
@@ -127,9 +127,9 @@
         /// stream stops the walk.
         public func download(repo: String, quantization: String) async throws -> AsyncStream<DownloadProgress> {
             let offer =
-                offers(of: repo).first { $0.name == quantization }
+                offers(of: repo).first { $0.label == quantization }
                 ?? QuantOffer(
-                    name: quantization, totalBytes: Self.gigabyte, shardCount: 1, verdict: .fits(ctx: 16_384),
+                    label: quantization, totalBytes: Self.gigabyte, shardCount: 1, verdict: .fits(ctx: 16_384),
                     why: Self.why)
             let name = Self.installedName(repo: repo, quantization: quantization)
             let walk = DownloadWalk(

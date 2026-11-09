@@ -85,7 +85,10 @@ final class GglibLibraryTests: XCTestCase {
             page: GGLib.SearchPage(
                 hits: [GGLib.SearchHit(repo: "o/r", likes: 1, downloads: 2, parametersB: nil, trainedCtx: 4)],
                 nextCursor: nil),
-            offers: [GGLib.QuantOffer(name: "Q4_K_M", totalBytes: 1, shardCount: 1, verdict: .tight(ctx: 4), why: why)])
+            offers: [
+                GGLib.QuantOffer(
+                    label: "Q4_K_M", role: .model, totalBytes: 1, shardCount: 1, verdict: .tight(ctx: 4), why: why)
+            ])
         let library = GglibLibrary(open: { fake })
 
         let suggested = try await library.suggested(reading: reading)

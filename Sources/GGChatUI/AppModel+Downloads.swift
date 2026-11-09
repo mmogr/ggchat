@@ -20,7 +20,7 @@ extension AppModel {
     /// whose steps end short of done or failed is kept as failed, so it can
     /// be chosen again; one called off is forgotten (``cancelDownload(_:)``).
     public func download(_ offer: QuantOffer, of repo: String) {
-        let choice = QuantChoice(repo: repo, quantization: offer.name)
+        let choice = QuantChoice(repo: repo, quantization: offer.label)
         guard runsModelsHere, offer.verdict.allowsDownload else { return }
         switch onDevice.downloads[choice]?.state {
         case nil, .failed?: break
@@ -57,7 +57,7 @@ extension AppModel {
         guard let directory = onDevice.modelsDirectory else { return nil }
         guard prepareModelsDirectory() else { return Self.directoryNotKept }
         guard let room = directory.room(), room < offer.totalBytes else { return nil }
-        return "There is no room for \(offer.name) on this iPhone: it takes \(Sizes.download(offer.totalBytes)) "
+        return "There is no room for \(offer.label) on this iPhone: it takes \(Sizes.download(offer.totalBytes)) "
             + "and \(Sizes.download(room)) is free."
     }
 

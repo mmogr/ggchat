@@ -17,12 +17,12 @@ extension AppModel {
         let previous = engineStatus
         engineStatus = status
         switch status {
-        case .loading(let model, _)?:
-            if case .loading(model, _)? = previous { return }
+        case .loading(_, let model, _)?:
+            if case .loading(_, model, _)? = previous { return }
             log.log(.info, "engine loading \(model)")
-        case .ready(let model, let nCtx)? where previous != status:
+        case .ready(_, let model, let nCtx)? where previous != status:
             log.log(.info, "engine ready with \(model), context \(nCtx)")
-        case .failed(let model, let reason)? where previous != status:
+        case .failed(_, let model, let reason)? where previous != status:
             log.log(.error, "engine could not load \(model): \(reason)")
         default: break
         }
