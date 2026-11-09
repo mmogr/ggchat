@@ -125,12 +125,6 @@ public struct ContextReading: Codable, Sendable, Equatable, Hashable {
         }
     }
 
-    /// Whether the figure stands beside the ring: from a warning on, so the
-    /// colour is never the only thing that says the context is filling.
-    public var showsFigure: Bool {
-        severity != .normal
-    }
-
     /// Whether a mark sits inside the ring: at danger.
     public var showsMark: Bool {
         severity == .danger
