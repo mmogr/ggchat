@@ -22,14 +22,16 @@ extension AppModel {
         return open
     }
 
-    /// Deletes the open conversation if it is untouched and `next` is not
-    /// it. Called by the selection's setter before it moves, so the deletion
-    /// clears a selection that is about to be written anyway.
+    /// Deletes every untouched conversation but `next`. Called by the
+    /// selection's setter before it moves, so a deletion clears a selection
+    /// that is about to be written anyway. Not for no selection at all: Back
+    /// on a phone, or a list that briefly reports none, keeps it, and the
+    /// next one opened takes it away.
     func dropUntouched(leavingFor next: SidebarSelection?) {
-        guard let id = selectedConversationID, next != .local(id),
-            let open = selectedConversation, isUntouched(open)
-        else { return }
-        deleteConversation(id)
+        guard let next else { return }
+        let opening: UUID? = if case .local(let id) = next { id } else { nil }
+        let left = conversations.filter { $0.id != opening && isUntouched($0) }
+        for conversation in left { deleteConversation(conversation.id) }
     }
 
     /// Deletes every untouched conversation but the open one: those an

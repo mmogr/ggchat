@@ -41,6 +41,19 @@ final class UntouchedConversationTests: XCTestCase {
         XCTAssertEqual(model.selection, .local(kept.id), "the deletion took the selection with it")
     }
 
+    /// Back, which leaves nothing open, keeps it: only another opened
+    /// takes it away.
+    func testBackKeepsAnUntouchedConversation() {
+        let model = bare([addressed()])
+        let untouched = model.newConversation()
+        model.selection = nil
+        XCTAssertEqual(model.conversations.map(\.id), [untouched.id])
+
+        let kept = model.newConversation()
+        XCTAssertNotEqual(kept.id, untouched.id, "with nothing open, New reopened the one Back left")
+        XCTAssertEqual(model.conversations.map(\.id), [kept.id], "the one Back left stayed beside the new one")
+    }
+
     func testANewConversationWithAnotherProviderLeavesOneUntouched() {
         let model = bare([addressed("first"), addressed("second")])
         let first = model.newConversation(with: model.providers[0])

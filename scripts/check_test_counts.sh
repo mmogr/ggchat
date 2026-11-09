@@ -995,11 +995,11 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # to words made here that match gglib's for a load, and fails nothing else, so
 # these three and their markers are the whole of that guard.
 #
-# 2026-11-10: 1125 -> 1130 and 1021 -> 1026 for the one untouched chat the
+# 2026-11-10: 1125 -> 1131 and 1021 -> 1027 for the one untouched chat the
 # list keeps. A list that keeps every New conversation again fails nothing
-# else, so these five and their markers are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1130
+# else, so these six and their markers are the whole of that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1131
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 1026
+floor "README test markers" "${markers:-0}" 1027
 
 exit $status

@@ -133,9 +133,10 @@ Each claim names the test that keeps it true.
   with nothing asked, no name, no system prompt, and its model, Thinking,
   picture model and tools still its provider's. New conversation on such a
   one with the same provider is that one again, opening another
-  conversation or a Mac's chat deletes it, and a launch deletes those an
-  older build left. Anything chosen in it keeps it.
+  conversation or a Mac's chat deletes it, Back keeps it, and a launch
+  deletes those an older build left. Anything chosen in it keeps it.
   <!-- test: UntouchedConversationTests.testNewConversationOnAnUntouchedOneIsThatOneAgain -->
+  <!-- test: UntouchedConversationTests.testBackKeepsAnUntouchedConversation -->
   <!-- test: UntouchedConversationTests.testLeavingAnUntouchedConversationDeletesIt -->
   <!-- test: UntouchedConversationTests.testANewConversationWithAnotherProviderLeavesOneUntouched -->
   <!-- test: UntouchedConversationTests.testAnythingChosenKeepsIt -->
