@@ -24,13 +24,13 @@ final class AppModelGglibEngineTests: XCTestCase {
         let replying = MockProvider(contextSize: 4_096)
 
         func models() async throws -> [ModelInfo] {
-            [ModelInfo(id: model, ownedBy: "gglib")]
+            [ModelInfo(id: model, gglibID: 1, ownedBy: "gglib")]
         }
 
         func stream(_ request: ChatRequest) -> AsyncStream<ChatEvent> {
             if let server = server() {
-                server.move(to: .loading(model: model, fraction: 0.5))
-                server.move(to: .ready(model: model, nCtx: 4_096))
+                server.move(to: .loading(id: 1, model: model, fraction: 0.5))
+                server.move(to: .ready(id: 1, model: model, nCtx: 4_096))
             }
             return replying.stream(request)
         }
@@ -77,11 +77,11 @@ final class AppModelGglibEngineTests: XCTestCase {
     }
 
     /// The first send serves gglib's engine, which loads the model within
-    /// the request; the pill reads Loaded for the model as gglib names it,
+    /// the request; the pill reads Loaded for the model by gglib's id for it,
     /// and the reply raises the ring.
     func testAFirstSendServesGglibsEngineAndThePillReadsReady() async throws {
         let (model, served) = makeModel()
-        let config = try model.addThisIPhone(defaultModel: modelName)
+        let config = try model.addThisIPhone(defaultModel: "1")
         let conversation = model.newConversation(with: config)
         XCTAssertNil(model.engineSession, "adding This iPhone served its engine")
 
@@ -90,7 +90,7 @@ final class AppModelGglibEngineTests: XCTestCase {
         XCTAssertEqual(model.selectedConversation?.messages.last?.content, MockProvider.sampleScript.text)
         let ready = await waitUntil { model.sessionStatus(for: conversation) == .engine(.ready) }
         XCTAssertTrue(ready, "the pill does not read Loaded: \(String(describing: model.engineStatus))")
-        XCTAssertEqual(model.engineStatus, .ready(model: modelName, nCtx: 4_096))
+        XCTAssertEqual(model.engineStatus, .ready(id: 1, model: modelName, nCtx: 4_096))
         XCTAssertEqual(model.selectedConversation?.context?.size, 4_096)
         await model.shutDownEngine()
     }
@@ -99,7 +99,7 @@ final class AppModelGglibEngineTests: XCTestCase {
     /// back serves nothing, and the next send serves it afresh.
     func testTheBackgroundPutsGglibsEngineDownAndTheNextSendServesAgain() async throws {
         let (model, served) = makeModel()
-        let config = try model.addThisIPhone(defaultModel: modelName)
+        let config = try model.addThisIPhone(defaultModel: "1")
         let conversation = model.newConversation(with: config)
         try await XCTUnwrap(model.send("hi")).value
         let first = try XCTUnwrap(served.last)

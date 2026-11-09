@@ -34,16 +34,18 @@ final class MockEngineTests: XCTestCase {
             return events
         }
         let second = await iterator.next()
-        XCTAssertEqual(second, .loading(model: MockEngine.model.id, fraction: 0.5))
+        XCTAssertEqual(second, .loading(id: MockEngine.modelID, model: MockEngine.model.id, fraction: 0.5))
         await sleeper.release()
         let third = await iterator.next()
-        XCTAssertEqual(third, .ready(model: MockEngine.model.id, nCtx: 4_096))
+        XCTAssertEqual(third, .ready(id: MockEngine.modelID, model: MockEngine.model.id, nCtx: 4_096))
         let events = await replying.value
         XCTAssertTrue(events.contains { if case .finished = $0 { true } else { false } }, "no reply after the load")
 
         var late = session.status.makeAsyncIterator()
         let lateFirst = await late.next()
-        XCTAssertEqual(lateFirst, .ready(model: MockEngine.model.id, nCtx: 4_096), "a late subscriber starts late")
+        XCTAssertEqual(
+            lateFirst, .ready(id: MockEngine.modelID, model: MockEngine.model.id, nCtx: 4_096),
+            "a late subscriber starts late")
 
         await session.shutdown()
         let stopped = await iterator.next()
@@ -113,7 +115,7 @@ final class MockEngineTests: XCTestCase {
     func testTheOtherBehavioursWalkAndListAsTheyAreNamed() async throws {
         let slow = MockEngine(behaviour: .slow).walk
         XCTAssertEqual(slow.count, 11)
-        XCTAssertEqual(slow.last, .ready(model: MockEngine.model.id, nCtx: 4_096))
+        XCTAssertEqual(slow.last, .ready(id: MockEngine.modelID, model: MockEngine.model.id, nCtx: 4_096))
 
         let fails = MockEngine(behaviour: .fails, registry: LoopbackProviderRegistry())
         guard case .failed? = fails.walk.last else { return XCTFail("fails walked \(fails.walk)") }
@@ -128,7 +130,9 @@ final class MockEngineTests: XCTestCase {
             }
             guard case .error? = refused.first else { return XCTFail("a failed load answered \(refused)") }
             let loading = await statuses.next()
-            XCTAssertEqual(loading, .loading(model: MockEngine.model.id, fraction: 0.5), "attempt \(attempt)")
+            XCTAssertEqual(
+                loading, .loading(id: MockEngine.modelID, model: MockEngine.model.id, fraction: 0.5),
+                "attempt \(attempt)")
             guard case .failed? = await statuses.next() else { return XCTFail("attempt \(attempt) did not fail") }
         }
         await session.shutdown()
@@ -168,7 +172,8 @@ final class MockLibraryTests: XCTestCase {
     private let reading = DeviceReading(physicalBytes: 12 << 30, availableBytes: 6 << 30, isSimulator: true)
 
     /// The phone's repository has a quantization for each verdict there is,
-    /// another has none that fits, and each reading asked with is kept.
+    /// then a projector and a draft, another has none that fits, and each
+    /// reading asked with is kept.
     func testTheQuantizationsCarryAVerdictOfEachKind() async throws {
         let library = MockLibrary()
         let offers = try await library.quantizations(repo: MockLibrary.phoneRepo, reading: reading)
@@ -183,7 +188,8 @@ final class MockLibraryTests: XCTestCase {
             case .unknown: "unknown"
             }
         }
-        XCTAssertEqual(kinds, ["fits", "tight", "too big", "unknown"])
+        XCTAssertEqual(kinds, ["fits", "tight", "too big", "unknown", "fits", "fits"])
+        XCTAssertEqual(offers.map(\.role), [.model, .model, .model, .model, .projector, .draftOrHelper])
     }
 
     /// The engine's model is installed, but for no-models, and too big for

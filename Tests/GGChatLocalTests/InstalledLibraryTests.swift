@@ -106,8 +106,8 @@ final class InstalledLibraryTests: XCTestCase {
         XCTAssertEqual(own.models, models)
     }
 
-    /// A model in the library is listed with its size and its trained
-    /// context; with no reading handed over it cannot be judged for want of
+    /// A model in the library is listed with its size, its trained context,
+    /// its quantization and the repository it came from; with no reading handed over it cannot be judged for want of
     /// a budget, and once one is, it is. Removing it takes its file, the
     /// folder that held only it, and its row; removing it again finds none.
     func testAModelIsListedJudgedAndRemovedWithItsFiles() async throws {
@@ -125,7 +125,8 @@ final class InstalledLibraryTests: XCTestCase {
             listed,
             [
                 InstalledModel(
-                    id: id, name: "Test model", bytes: UInt64(header.count), trainedCtx: 40_960, capabilities: [],
+                    id: id, name: "Test model", quantization: "Q4_K_M", repo: "test-owner/Test-GGUF",
+                    bytes: UInt64(header.count), trainedCtx: 40_960, capabilities: [],
                     verdict: .unknown(missing: .budget, cutOff: false))
             ])
 

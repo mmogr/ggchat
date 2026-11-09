@@ -64,23 +64,44 @@ final class MockLibraryDownloadTests: XCTestCase {
 
         for await _ in try await library.download(repo: phoneRepo, quantization: "Q8_0") {}
 
-        let name = MockLibrary.installedName(repo: phoneRepo, quantization: "Q8_0")
-        XCTAssertEqual(name, "mock-phone-1.7b-Q8_0")
+        let name = MockLibrary.installedName(repo: phoneRepo)
+        XCTAssertEqual(name, "mock-phone-1.7b")
         let installed = try await library.installed()
         XCTAssertEqual(installed.map(\.name), [name])
+        XCTAssertEqual(installed.first?.quantization, "Q8_0")
+        XCTAssertEqual(installed.first?.repo, phoneRepo)
         XCTAssertEqual(installed.first?.bytes, 2 * MockLibrary.gigabyte)
         XCTAssertEqual(installed.first?.verdict, .tight(ctx: 4_096))
         let listed = try await engine.answering.models()
         XCTAssertEqual(listed.map(\.id), [name])
-        let finished = MockLibrary.finishedFile(name, in: folder)
+        let finished = MockLibrary.finishedFile(repo: phoneRepo, quantization: "Q8_0", in: folder)
         XCTAssertTrue(FileManager.default.fileExists(atPath: finished.path(percentEncoded: false)))
         XCTAssertFalse(
             FileManager.default.fileExists(
-                atPath: MockLibrary.partialFile(name, in: folder).path(percentEncoded: false)))
+                atPath: MockLibrary.partialFile(repo: phoneRepo, quantization: "Q8_0", in: folder)
+                    .path(percentEncoded: false)))
 
         try await library.remove(id: try XCTUnwrap(installed.first?.id))
         let after = try await engine.answering.models()
         XCTAssertEqual(after, [])
         XCTAssertFalse(FileManager.default.fileExists(atPath: finished.path(percentEncoded: false)))
+    }
+
+    /// A projector or a draft is refused, as gglib refuses one, and nothing
+    /// is installed.
+    func testADraftOrAProjectorIsRefused() async throws {
+        let library = MockLibrary(behaviour: .noModels)
+        for label in ["mmproj-F16", "MTP-Q8_0"] {
+            do {
+                _ = try await library.download(repo: phoneRepo, quantization: label)
+                XCTFail("\(label) was downloaded")
+            } catch {
+                XCTAssertEqual(
+                    error as? OnDeviceError,
+                    .internal(message: "\(label) of \(phoneRepo) is not a model gglib runs on its own."))
+            }
+        }
+        let installed = try await library.installed()
+        XCTAssertEqual(installed, [])
     }
 }

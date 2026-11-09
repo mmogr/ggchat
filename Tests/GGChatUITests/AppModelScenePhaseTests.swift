@@ -197,7 +197,7 @@ final class AppModelScenePhaseTests: XCTestCase {
             pipeConnector: GatedConnector(registry: registry),
             engine: MockEngine(registry: registry, provider: HangingProvider()), library: library,
             diagnostics: Diagnostics(defaults: defaults), now: { Date(timeIntervalSince1970: 1_700_000_000) })
-        let config = try model.addThisIPhone(defaultModel: MockEngine.model.id)
+        let config = try model.addThisIPhone(defaultModel: MockEngine.model.key)
         model.newConversation()
         await model.open(config).value
         let streaming = try XCTUnwrap(model.send("go"))
