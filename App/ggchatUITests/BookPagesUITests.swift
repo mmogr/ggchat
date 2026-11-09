@@ -66,6 +66,35 @@ final class BookPagesUITests: XCTestCase {
             "the draft was lost when the list went and came back")
     }
 
+    /// A provider edited in Providers over the chat is saved with Providers
+    /// still open: Save takes away only the editor.
+    @MainActor
+    func testAProviderEditedOverTheChatIsSavedWithProvidersStillOpen() throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .phone, "an iPad keeps the system's split view")
+        XCUIDevice.shared.orientation = .landscapeLeft
+        addTeardownBlock { @MainActor in XCUIDevice.shared.orientation = .portrait }
+        let app = launchFreshApp(arguments: ["-ggchat-fold", "YES"])
+        let window = app.windows.firstMatch
+        XCTAssertTrue(window.waitForExistence(timeout: 10))
+        try XCTSkipIf(window.frame.width <= window.frame.height, "this simulator did not turn on its side")
+
+        addMockProvider(in: app)
+        openConversation(in: app)
+        app.buttons["Providers"].firstMatch.tap()
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Mock'")).firstMatch
+        let name = app.textFields["edit-name"].firstMatch
+        XCTAssertTrue(tap(row, untilExists: name), "a provider row is not a way into its settings")
+        XCTAssertTrue(focus(name), "the name field never took the keyboard")
+        name.typeText("Desk")
+        app.buttons["Save"].firstMatch.tap()
+        XCTAssertTrue(name.waitForNonExistence(timeout: 10), "Save did not close the editor")
+        XCTAssertTrue(
+            app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'MockDesk'")).firstMatch
+                .waitForExistence(timeout: 10),
+            "Save took Providers away with the editor")
+        attach(app, name: "book-pages-provider-saved")
+    }
+
     @MainActor
     private func addMockProvider(in app: XCUIApplication) {
         openProviderForm(in: app)

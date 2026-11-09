@@ -150,7 +150,7 @@ extension RootView {
     fileprivate var layout: some View {
         #if os(iOS)
             if phoneLayout != .system {
-                PhoneColumns(layout: phoneLayout, folds: folds, pane: $pane) {
+                PhoneColumns(layout: phoneLayout, folds: folds, pane: paneBinding(for: .chatColumn)) {
                     sidebar(beside: true)
                 } detail: {
                     detail
@@ -169,9 +169,6 @@ extension RootView {
         NavigationSplitView(columnVisibility: $columns) {
             sidebar
                 .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 400)
-                .navigationDestination(item: paneBinding(for: .listScreen)) { pane in
-                    RootPanePage(pane: pane)
-                }
         } detail: {
             detail
         }
@@ -190,13 +187,10 @@ extension RootView {
     }
 
     /// How a pane is shown here: pushed over the chat where the app lays the
-    /// list beside it, pushed on the list's screen on a phone that has the
-    /// list a screen back, and a sheet on an iPad, a Mac, and a phone whose
-    /// window is wide enough for the system to keep both.
+    /// list beside it, and a sheet wherever the system lays it out.
     private var panePresentation: RootPane.Presentation {
         #if os(iOS)
             if phoneLayout != .system { return .chatColumn }
-            if UIDevice.current.userInterfaceIdiom == .phone, widthClass == .compact { return .listScreen }
         #endif
         return .sheet
     }

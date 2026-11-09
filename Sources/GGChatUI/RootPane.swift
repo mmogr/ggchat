@@ -4,8 +4,9 @@ import SwiftUI
 /// beside the chat on an open Duo, upright, as a book or flat, it is pushed
 /// over the chat in the chat's own column, so the list stays where it is and
 /// the chat, its draft and its place, is under it when Done or a chat in the
-/// list takes it away. Folded, a phone pushes it on the list's own screen.
-/// An iPad and a Mac keep a sheet.
+/// list takes it away. Everywhere else, a folded phone, an iPad and a Mac,
+/// it is a sheet: pushed on a folded phone's list, Save in a provider's
+/// editor took Providers with it, and the list was what was left.
 enum RootPane: Hashable, Identifiable {
     case providers, settings
 
@@ -15,9 +16,6 @@ enum RootPane: Hashable, Identifiable {
     enum Presentation: Equatable {
         /// Pushed over the chat, in the chat's column.
         case chatColumn
-        /// Pushed on the list's own screen: a phone with the list a screen
-        /// back.
-        case listScreen
         /// A sheet over everything.
         case sheet
     }

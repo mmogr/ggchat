@@ -1002,8 +1002,12 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # 2026-11-10: 43 -> 44 and 1022 -> 1023 for Providers and Settings over the
 # chat on an open Duo. A pane that goes back to a sheet there fails no unit
 # test, so this walk and its marker are the whole of that guard.
+#
+# 2026-11-10: 44 -> 45 and 1023 -> 1024 for a provider saved over the chat
+# with Providers still open. Pushed on a folded phone's list, Save took
+# Providers with it; the walk on its side is what holds the open Duo to it.
 floor "package test cases" "$(test_cases "$ROOT/Tests")" 1125
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 44
-floor "README test markers" "${markers:-0}" 1023
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 45
+floor "README test markers" "${markers:-0}" 1024
 
 exit $status

@@ -1635,12 +1635,14 @@ Each claim names the test that keeps it true.
   Settings open in the chat's column, over the chat, with the list where it
   was and their button in the bar shown as chosen; Done, or a chat chosen in
   the list, the open one included, takes the page away, and the chat is
-  under it as it was, its draft kept. Folded, a phone pushes them on the
-  list's own screen, and an iPad and a Mac keep a sheet. The window is read
+  under it as it was, its draft kept, and a provider edited there is saved
+  with Providers still open. Folded, a phone keeps them as a sheet, as an
+  iPad and a Mac do. The window is read
   by its width and the tallest height seen at it, so the keyboard, which
   only takes height away, never changes the layout under the field being
   typed in.
   <!-- test: ThisChatUprightUITests.testProvidersOpenOverTheChatAndLeaveItsDraft -->
+  <!-- test: BookPagesUITests.testAProviderEditedOverTheChatIsSavedWithProvidersStillOpen -->
   <!-- test: SidebarPinningTests.testAnOpenDuoHeldUprightKeepsTheListBesideTheChat -->
   <!-- test: SidebarPinningTests.testAWideWindowLeavesTheListToTheSystem -->
   <!-- test: SidebarPinningTests.testAFoldedDuoIsAPhoneWithItsListAScreenBack -->
