@@ -988,8 +988,14 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # and time that stop being read, fail nothing else, so these four and their
 # markers are the whole of that guard, and the floors move past every test
 # and marker there is today.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1122
+#
+#
+# 2026-11-09: 1122 -> 1125 and 1018 -> 1021 for the daemon's sentence. A wait
+# whose `said` stops being read, or stops being shown as it came, falls back
+# to words made here that match gglib's for a load, and fails nothing else, so
+# these three and their markers are the whole of that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1125
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 1018
+floor "README test markers" "${markers:-0}" 1021
 
 exit $status
