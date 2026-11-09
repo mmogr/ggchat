@@ -32,6 +32,9 @@ extension EnvironmentValues {
         let layout: PhoneLayout
         /// The window's fold while the phone is half open; see `Fold`.
         let folds: [CGRect]
+        /// Providers or Settings, pushed over the chat while open; see
+        /// `RootPane`.
+        @Binding var pane: RootPane?
         @ViewBuilder let sidebar: () -> Sidebar
         @ViewBuilder let detail: () -> Detail
         /// Whether the list is showing: on a Duo on its side, whether its
@@ -73,9 +76,17 @@ extension EnvironmentValues {
         /// the chat's own controls are in the panel, so a bar a third of an
         /// open Duo wide is not crowded into a More button and keeps the
         /// chat's title.
+        ///
+        /// Providers and Settings are pushed on this stack, over the chat,
+        /// which stays its root: its draft and its place are under the page
+        /// when Done, or a chat chosen in the list, takes it away.
         private var chatColumn: some View {
             NavigationStack {
                 detail()
+                    .navigationDestination(item: $pane) { pane in
+                        RootPanePage(pane: pane)
+                    }
+                    .onChange(of: model.selection) { pane = nil }
                     .environment(\.chatControlsOnPage, true)
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {

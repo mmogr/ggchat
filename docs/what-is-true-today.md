@@ -1631,10 +1631,16 @@ Each claim names the test that keeps it true.
   list's place beside the chat. Wherever the list is a column beside the
   chat, its header holds its title and the new-conversation button, and
   Providers and Settings sit in a bar at its foot; where the app lays it out
-  itself, its rows are a sidebar's, not inset cards. The window is read by
-  its width and the tallest height seen at it, so the keyboard, which only
-  takes height away, never changes the layout under the field being typed
-  in.
+  itself, its rows are a sidebar's, not inset cards. There Providers and
+  Settings open in the chat's column, over the chat, with the list where it
+  was and their button in the bar shown as chosen; Done, or a chat chosen in
+  the list, the open one included, takes the page away, and the chat is
+  under it as it was, its draft kept. Folded, a phone pushes them on the
+  list's own screen, and an iPad and a Mac keep a sheet. The window is read
+  by its width and the tallest height seen at it, so the keyboard, which
+  only takes height away, never changes the layout under the field being
+  typed in.
+  <!-- test: ThisChatUprightUITests.testProvidersOpenOverTheChatAndLeaveItsDraft -->
   <!-- test: SidebarPinningTests.testAnOpenDuoHeldUprightKeepsTheListBesideTheChat -->
   <!-- test: SidebarPinningTests.testAWideWindowLeavesTheListToTheSystem -->
   <!-- test: SidebarPinningTests.testAFoldedDuoIsAPhoneWithItsListAScreenBack -->
