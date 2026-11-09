@@ -86,6 +86,38 @@ final class ThisIPhoneTwinsTests: XCTestCase {
         XCTAssertTrue(ready, "the pill did not say id 1 was ready: \(String(describing: model.engineStatus))")
         let twin = try XCTUnwrap(model.conversations.first { $0.id == other.id })
         XCTAssertEqual(model.sessionStatus(for: twin), .engine(.notLoaded), "the twin read as the model loaded")
+
+        model.selectedConversationID = other.id
+        try await XCTUnwrap(model.send("and you")).value
+        let swapped = await waitUntil { model.sessionStatus(for: twin) == .engine(.ready) }
+        XCTAssertTrue(swapped, "the twin asked for was not loaded: \(String(describing: model.engineStatus))")
+        let first = try XCTUnwrap(model.conversations.first { $0.id == conversation.id })
+        XCTAssertEqual(model.sessionStatus(for: first), .engine(.notLoaded), "id 1 still reads as loaded")
+    }
+
+    /// A launch reads what is installed, so a chat on This iPhone shows its
+    /// model's name, not its id, before anything opens the list or serves
+    /// the engine. A default saved by a name, before the phone was keyed by
+    /// id, sends nothing: its chats ask for a model, and the engine's
+    /// listing replaces it with the first model that chats.
+    func testALaunchNamesTheModelAndAnOldDefaultByNameIsReplaced() async throws {
+        let (model, config) = try await makeModel()
+        model.onDevice.installed = nil
+        var renamed = config
+        renamed.defaultModel = modelName
+        model.updateProvider(renamed)
+        let conversation = model.newConversation(with: renamed)
+        XCTAssertEqual(conversation.model, modelName)
+        XCTAssertNil(model.model(for: conversation), "a default saved by a name is sent")
+
+        model.load()
+        let read = await waitUntil { model.onDevice.installed != nil }
+        XCTAssertTrue(read, "the launch did not read what is installed")
+        model.select(model: "2", for: conversation.id)
+        XCTAssertEqual(model.shownModelName(for: try XCTUnwrap(model.selectedConversation)), "\(modelName) · Q8_0")
+
+        await model.open(config).value
+        XCTAssertEqual(model.providers.first { $0.id == config.id }?.defaultModel, "1", "the name was kept")
     }
 
     /// Removing id 2 while the engine holds id 1 leaves the engine serving,

@@ -62,7 +62,7 @@ final class SessionStatusTests: XCTestCase {
         let model = makeModel(engine: MockEngine(registry: registry), registry: registry)
         let config = try model.addThisIPhone(defaultModel: MockEngine.model.key)
         let other = model.newConversation(with: config)
-        model.select(model: "another-model", for: other.id)
+        model.select(model: "7", for: other.id)
         let conversation = model.newConversation(with: config)
         await model.open(config).value
         try await XCTUnwrap(model.send("hi")).value
@@ -91,7 +91,7 @@ final class SessionStatusTests: XCTestCase {
         model.press(.engine(.tooBig), in: conversation)
         XCTAssertNotNil(model.onDevice.modelBrowser, "Too big did not open the model browser")
 
-        model.select(model: "a-smaller-model", for: conversation.id)
+        model.select(model: "8", for: conversation.id)
         let smaller = try XCTUnwrap(model.selectedConversation)
         XCTAssertEqual(model.sessionStatus(for: smaller), .engine(.notLoaded))
         model.select(model: MockEngine.model.key, for: conversation.id)

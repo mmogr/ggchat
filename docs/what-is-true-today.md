@@ -190,15 +190,18 @@ Each claim names the test that keeps it true.
   models that share a name by that name alone. This iPhone's models are
   keyed by gglib's id too, so two quantizations of one model, which share
   its name, are two choices; its list is what its library has installed,
-  read without serving the engine, and each shows the name it is installed
-  under before the engine lists anything. Any other server's model is
+  read at launch without serving the engine, and each shows the name it is
+  installed under before the engine lists anything. The mock engine loads
+  the model a request names by its id, as gglib's does. Any other server's model is
   named by the name it lists, and nothing below changes for it. A gglib
   conversation whose model the list no longer
   names, such as one saved by a name before conversations were keyed, or
   one whose model was deleted, runs on the provider's default; until the
   list is read its own model is sent. On This iPhone the default must be
-  installed too: a chat or a default saved by a name, before the phone was
-  keyed by id, asks for a model. Listing a gglib machine replaces a default
+  installed too, and a name is never sent: a chat or a default saved by a
+  name, before the phone was keyed by id, asks for a model, and the
+  engine's listing replaces such a default with the first model that
+  chats. Listing a gglib machine replaces a default
   the list no longer names with the first model that chats, and a gglib
   provider moved to another machine forgets its default and every model
   its conversations chose, since an id names a model on one machine.
@@ -209,6 +212,7 @@ Each claim names the test that keeps it true.
   <!-- test: ModelKeyTests.testAProfileVariantIsKeyedByItsIdAndProfile -->
   <!-- test: ModelKeyTests.testThisIPhonesModelsAreKeyedByID -->
   <!-- test: ThisIPhoneTwinsTests.testTwoQuantizationsOfOneModelAreTwoChoices -->
+  <!-- test: ThisIPhoneTwinsTests.testALaunchNamesTheModelAndAnOldDefaultByNameIsReplaced -->
   <!-- test: ModelKeyTests.testAChatWhoseModelIsNotListedRunsOnTheDefault -->
   <!-- test: ModelKeyTests.testADefaultTheListNoLongerNamesIsReplaced -->
   <!-- test: ProviderRemovalForgetsTests.testMovingAProviderForgetsTheModelsTheOldMachineListed -->

@@ -207,13 +207,14 @@ well, but separately.
 names, as Xcode names it: no simulator runs it, so no other walk can. Its
 walk adds This iPhone at launch with the model `GGCHAT_LIVE_ENGINE_MODEL`
 names, which must already be downloaded to the phone through the model
-browser, under the name the browser's "On this iPhone" shows; the app
-chooses it by its library id, the first of that name. It sends, and waits
+browser, under the name the browser's "On this iPhone" shows before its
+" · " and quantization; the app chooses it by its library id, the first of
+that name. It sends, and waits
 for the pill to read Loaded and the ring to rise; puts the app in the background, comes
 back to a pill that reads Not loaded, and sends again:
 
 ```sh
-DEVICE='My iPhone' GGCHAT_LIVE_ENGINE_MODEL=Qwen3-0.6B-Q4_K_M make uitest-device-engine
+DEVICE='My iPhone' GGCHAT_LIVE_ENGINE_MODEL=Qwen3-0.6B make uitest-device-engine
 ```
 
 It is signed for the phone as `make phone` is, so the provisioning profile

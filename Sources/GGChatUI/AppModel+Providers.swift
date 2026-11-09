@@ -223,13 +223,15 @@ extension AppModel {
             // provider with no default, and for a gglib machine's keyed by
             // its ids (`keysByID`) whose default the list no longer names, so
             // the default a gglib chat falls back on (`model(for:)`) is always
-            // one the list names. This iPhone's is not replaced: a removal
-            // clears it, and one that names no installed model leaves its
-            // chats asking for a model. Set on the provider as it is now, so
-            // an edit made while the list was asked for is not written over
-            // by the one this call was given.
+            // one the list names. This iPhone's is replaced only when it is a
+            // name, saved before the phone was keyed by id: a removal clears
+            // the default that had the model, after the listing that would
+            // otherwise put the model left in its place. Set on the provider
+            // as it is now, so an edit made while the list was asked for is
+            // not written over by the one this call was given.
             let unlisted = current.defaultModel.map { key in
-                config.kind != .onDevice && keysByID(config.id) && !models.contains { $0.chats && $0.key == key }
+                if config.kind == .onDevice { return engineID(of: key) == nil }
+                return keysByID(config.id) && !models.contains { $0.chats && $0.key == key }
             }
             if unlisted ?? true, let first = models.first(where: \.chats) {
                 var updated = current

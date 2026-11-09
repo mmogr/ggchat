@@ -289,7 +289,7 @@ uitest-duo:
 # the phone named DEVICE, as Xcode names it, with GGCHAT_LIVE_ENGINE_MODEL
 # naming a model already downloaded to it, by the name its library gives it:
 #
-#   DEVICE='My iPhone' GGCHAT_LIVE_ENGINE_MODEL=Qwen3-0.6B-Q4_K_M make uitest-device-engine
+#   DEVICE='My iPhone' GGCHAT_LIVE_ENGINE_MODEL=Qwen3-0.6B make uitest-device-engine
 #
 # Signed for the phone, as `make phone` signs, so the provisioning profile
 # must carry the increased memory limit. No simulator runs gglib's engine and

@@ -43,10 +43,12 @@ extension AppModel {
 
     /// Whether a chat on the provider may send `key`: any key on a list not
     /// keyed by gglib's ids or not read yet, and otherwise one the list
-    /// names. On This iPhone, one its library has installed, once that has
-    /// been read.
+    /// names. On This iPhone, an id, of a model its library has installed
+    /// once that has been read; never a name, as one saved before the phone
+    /// was keyed by id.
     private func names(_ key: String, on config: ProviderConfig) -> Bool {
         if config.kind == .onDevice {
+            guard engineID(of: key) != nil else { return false }
             guard onDevice.installed != nil else { return true }
             return installedModel(key) != nil
         }
@@ -54,10 +56,10 @@ extension AppModel {
     }
 
     /// The library id of the model that `key` names on This iPhone, as the
-    /// engine's status names it: the listed entry's, so a profile variant
-    /// (`<id>:<profile>`) is its base model's, else the key read as an id.
+    /// engine's status names it: the listed entry's, else what comes before
+    /// a profile's colon (`<id>:<profile>`), read as an id. Nil for a name.
     func engineID(of key: String) -> Int64? {
-        listed(key, on: thisIPhoneID)?.gglibID ?? Int64(key)
+        listed(key, on: thisIPhoneID)?.gglibID ?? key.split(separator: ":").first.flatMap { Int64($0) }
     }
 
     /// The key a send in `conversation` names its model by: the
