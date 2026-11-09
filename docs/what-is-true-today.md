@@ -1608,7 +1608,8 @@ Each claim names the test that keeps it true.
   it and never under 240 points, with the sidebar button at the chat's
   leading edge. Wherever the list is a column beside the chat, its header
   holds its title and the new-conversation button, and Providers and
-  Settings sit in a bar at its foot. The window is read by its width and
+  Settings sit in a bar at its foot; where the app lays it out itself, its
+  rows are a sidebar's, not inset cards. The window is read by its width and
   the tallest height seen at it, so the keyboard, which only takes height
   away, never changes the layout under the field being typed in.
   <!-- test: SidebarPinningTests.testAnOpenDuoHeldUprightKeepsTheListBesideTheChat -->
@@ -1636,9 +1637,10 @@ Each claim names the test that keeps it true.
   status, the ones the chat offers, with the servers listed once, not
   again under the status, and the top bar leaves those out. A
   Mac's chat has its model, Thinking, context and server there, its tools
-  and prompt being the Mac's. Laid flat, the chat has the whole screen and
-  the list button lays the list beside it at half the width; half opened
-  again, the list comes back, and a hide holds until then. A window less
+  and prompt being the Mac's. Laid flat, the list is beside the chat at
+  three eighths of the width, as on an open Duo held upright, and the
+  chat's controls stay in the panel; each half opening or laying flat puts
+  a hidden list back, and a hide holds until then. A window less
   than 600 points high, a folded Duo or a large iPhone on its side, is not
   read as an open Duo. The chat is laid out once whatever is beside it, so
   turning, half opening, laying flat and hiding the list keep its draft.
@@ -1650,7 +1652,7 @@ Each claim names the test that keeps it true.
   <!-- test: BookPagesTests.testFlatThereAreNoPages -->
   <!-- test: BookPagesTests.testAPropFoldAcrossTheScreenMakesNoPages -->
   <!-- test: BookPagesTests.testAFoldLeavingAPageTooNarrowMakesNoPages -->
-  <!-- test: BookPagesTests.testAListShownByHandWhileFlatGetsHalfTheScreen -->
+  <!-- test: SidebarPinningTests.testAFlatDuoOnItsSideGivesTheListThreeEighths -->
   <!-- test: BookPagesTests.testAChatKeptHereShowsEverythingItIsOffered -->
   <!-- test: BookPagesTests.testAChatOfferedNothingStillShowsItsModelAndPrompt -->
   <!-- test: BookPagesTests.testAMacsChatHasNoToolsOrPromptHere -->
@@ -1660,8 +1662,9 @@ Each claim names the test that keeps it true.
   chats gglib keeps there, listed at launch, when its pipe comes up and on a
   pull, each with the time it last changed (the date too when not today),
   and marked "Writing" while the Mac is writing a reply to one. The
-  phone's own chats are then headed "On this phone", with a line under them
-  saying they are kept only on this phone and the Mac does not keep them.
+  phone's own chats are then headed "On this phone", with a line under them,
+  while there are any, saying they are kept only on this phone and the Mac
+  does not keep them.
   Opening one reads its questions and replies live, and Back drops them:
   no conversation and no message row comes from the Mac into the store
   (ADR 0007). A Mac that reads its chats only to a device through its tunnel
