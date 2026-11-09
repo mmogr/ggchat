@@ -38,6 +38,10 @@ final class SidebarPinningTests: XCTestCase {
         XCTAssertEqual(SidebarPinning.listWidth(beside: open.width), 251)
     }
 
+    func testAFlatDuoOnItsSideGivesTheListThreeEighths() {
+        XCTAssertEqual(SidebarPinning.listWidth(beside: 951), 357)
+    }
+
     func testTheListIsNeverNarrowerThan240Points() {
         XCTAssertEqual(SidebarPinning.listWidth(beside: SidebarPinning.narrowest), 240)
     }

@@ -49,12 +49,6 @@ final class BookPagesTests: XCTestCase {
         XCTAssertNil(BookPages.pages(in: open, folds: [near]))
     }
 
-    func testAListShownByHandWhileFlatGetsHalfTheScreen() {
-        let pages = BookPages.even(in: open)
-        XCTAssertEqual(pages.leading, 476)
-        XCTAssertEqual(pages.gap, 0)
-    }
-
     func testAChatKeptHereShowsEverythingItIsOffered() {
         let parts = ThisChatPart.parts(
             isMacsChat: false, thinks: true, offersTools: true, hasContext: true, reportsStatus: true

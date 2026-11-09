@@ -8,8 +8,8 @@ extension EnvironmentValues {
 
 #if os(iOS)
     /// How a phone lays out the list and the chat: as the system does, the
-    /// list beside the chat on a tall open Duo, or a Duo on its side as a
-    /// book, half open or flat.
+    /// list beside the chat on a tall open Duo, or a Duo on its side, as a
+    /// book while half open or with the list beside the chat while flat.
     enum PhoneLayout {
         case system, listBeside, pages, flat
 
@@ -60,13 +60,11 @@ extension EnvironmentValues {
                     chatColumn
                 }
             }
-            // The list is put back on each unfolding, each turn upright and
-            // each half opening on its side, and a hide holds until then.
-            // Laid flat, the chat has the screen.
+            // The list is put back on each unfolding, each turn and each
+            // half opening or laying flat, and a hide holds until then.
             .onChange(of: layout, initial: true) { _, layout in
                 switch layout {
-                case .listBeside, .pages: listShown = true
-                case .flat: listShown = false
+                case .listBeside, .pages, .flat: listShown = true
                 case .system: break
                 }
                 if !layout.isBook { leadingPage = .list }
@@ -109,21 +107,20 @@ extension EnvironmentValues {
         private var leadingColumn: some View {
             NavigationStack {
                 switch leadingPage {
-                case .list: sidebar()
+                // A sidebar's rows, as Claude's app has them, not the
+                // inset cards a list in a stack is given.
+                case .list: sidebar().listStyle(.sidebar)
                 case .thisChat: ThisChatPanel()
                 }
             }
             .id(leadingPage)
         }
 
-        /// The pages of a Duo on its side: either side of its fold while it
-        /// is half open, and even while it is flat. None upright.
+        /// The pages of a Duo on its side while it is half open, either side
+        /// of its fold. None flat or upright, where the list takes its
+        /// share beside the chat; see `SidebarPinning.listWidth`.
         private func bookPages(in size: CGSize) -> BookPages.Pages? {
-            switch layout {
-            case .pages: BookPages.pages(in: size, folds: folds) ?? BookPages.even(in: size)
-            case .flat: BookPages.even(in: size)
-            case .listBeside, .system: nil
-            }
+            layout == .pages ? BookPages.pages(in: size, folds: folds) : nil
         }
 
         private var showsPanel: Bool {
