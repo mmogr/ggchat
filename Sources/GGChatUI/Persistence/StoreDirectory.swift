@@ -38,7 +38,7 @@ import SwiftData
 /// The lines that make and mark the directory repeat
 /// `PipeIdentityFiles.ensureDirectory` rather than share it: there a failure
 /// dials with no identity, here it keeps nothing.
-struct StoreDirectory {
+nonisolated struct StoreDirectory {
     /// Moves one file, or throws. Tests stand in one that fails partway.
     typealias Mover = (_ from: URL, _ to: URL) throws -> Void
 
@@ -197,7 +197,7 @@ struct StoreDirectory {
 }
 
 /// What the person has to be told about where their conversations are kept.
-public struct StoreNotice: Equatable, Sendable {
+nonisolated public struct StoreNotice: Equatable, Sendable {
     /// The container is in memory only (`isStoredInMemoryOnly`).
     public let keptInMemory: Bool
     /// An older build's store was found at the old place beside the one in
@@ -213,7 +213,7 @@ public struct StoreNotice: Equatable, Sendable {
 }
 
 /// The container, and what opening it has to tell the person.
-public struct OpenedStore {
+nonisolated public struct OpenedStore: Sendable {
     public let container: ModelContainer
     public let notice: StoreNotice?
 }
@@ -222,7 +222,7 @@ extension SwiftDataStore {
     /// The store, opened inside `ggchat-store`; or, when it cannot be kept
     /// there, a container in memory and a notice that says so. The old place
     /// is never opened.
-    public static func open(log: any LogSink = OSLogSink(category: "store")) -> OpenedStore {
+    nonisolated public static func open(log: any LogSink = OSLogSink(category: "store")) -> OpenedStore {
         #if DEBUG
             // `-ggchat-reset YES` starts from nothing, so a UI test sees the
             // first-run screens. No test reads the flag here.
@@ -236,7 +236,7 @@ extension SwiftDataStore {
     /// `open(log:)` at places the caller names, which is how the tests open a
     /// store away from the real Application Support: `swift test` is not
     /// sandboxed on macOS, so there it is the developer's own.
-    static func open(
+    nonisolated static func open(
         at location: StoreDirectory?, resetRequested: Bool = false,
         mover: StoreDirectory.Mover = StoreDirectory.renameWithoutReplacing, log: any LogSink
     ) -> OpenedStore {
