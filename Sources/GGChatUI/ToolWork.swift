@@ -88,13 +88,20 @@ struct ToolWork: Equatable {
         }
     }
 
-    /// A load is said in gglib's words (`AgentEvent::waiting_sentence`, the
-    /// line its CLI and its chat page print): "Loading Qwen3-4B… 12 s",
-    /// the whole seconds left out under one and when gglib sent none, and
-    /// "the model" when it named none, the seconds in plain digits as
-    /// gglib prints them. gglib puts a load in no line, so there is no place
-    /// to say.
+    /// A wait is said in gglib's words: the sentence its frame carries as
+    /// `said` (`AgentEvent::waiting_sentence`, the line its CLI and its chat
+    /// page print), shown as it came, "Loading Qwen3-4B… 1 s" or "Waiting
+    /// for an image render, step 3 of 20, 2 in line".
+    ///
+    /// A gglib before 0.31.0 sends no `said`, and ggchat ships against
+    /// stable gglib, so the line is then worded here: a load as gglib words
+    /// it, "Loading Qwen3-4B… 12 s", the whole seconds left out under one
+    /// and when gglib sent none, and "the model" when it named none, the
+    /// seconds in plain digits as gglib prints them; a picture as "Waiting
+    /// for a picture to be drawn, at step 3 of 20, place 2 in line". This
+    /// fallback goes once ggchat's minimum gglib carries `said`.
     static func line(for wait: RunWait, in locale: Locale) -> String {
+        if let said = wait.said { return said }
         func number(_ value: some BinaryInteger) -> String { Int(clamping: value).formatted(.number.locale(locale)) }
         switch wait.reason {
         case .imageRender:

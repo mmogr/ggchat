@@ -349,14 +349,21 @@ Each claim names the test that keeps it true.
   The reply holds the latest word in memory and nothing of it is kept: one
   line for it, "Drawing: step 12 of 20" in the locale's digits, with the
   picture's number from the second on and the place in line when it is not
-  next. A wait for a model to load is said in gglib's words, "Loading
-  Qwen3-4B… 12 s", by the model and the time gglib sends with it, the
-  seconds left out under one, and "the model" from a gglib that names
-  none. A tool's progress goes when its own call ends and not another's, a
-  wait gives way to whatever comes next, and a run that ends leaves none.
+  next. A wait is said in gglib's words: the sentence its frame carries,
+  "Loading Qwen3-4B… 1 s" or "Waiting for an image render, step 3 of 20, 2
+  in line", shown as it came. A gglib before 0.31.0 sends none, and the line
+  is then worded here: a load as "Loading Qwen3-4B… 12 s", by the model and
+  the time gglib sends with it, the seconds left out under one, and "the
+  model" from a gglib that names none; a picture as "Waiting for a picture to
+  be drawn, at step 3 of 20, place 2 in line". A tool's progress goes when
+  its own call ends and not another's, a wait gives way to whatever comes
+  next, and a run that ends leaves none.
   <!-- test: ToolProgressWireTests.testTheRecordedFramesOfAPictureReadAsItsWaitItsStagesAndItsEnd -->
   <!-- test: ToolProgressWireTests.testAWaitForAModelAndFramesThatDoNotReadMeanNothing -->
   <!-- test: RunsWireTests.testTheRecordedLoadWaitNamesItsModelAndItsTime -->
+  <!-- test: RunsWireTests.testTheRecordedRenderWaitSaysItsStepItsPlaceAndItsSentence -->
+  <!-- test: ToolWorkTests.testAWaitShowsTheSentenceGglibSaid -->
+  <!-- test: ToolWorkTests.testAWaitWithoutASentenceIsWordedHere -->
   <!-- test: ToolWorkTests.testEachStageOfAPictureHasItsLine -->
   <!-- test: ToolWorkTests.testAWaitSaysWhatIsInTheWay -->
   <!-- test: ToolWorkTests.testTheLatestWordIsShownUntilItsToolEnds -->

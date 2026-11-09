@@ -76,10 +76,15 @@ public struct RunWait: Decodable, Sendable, Equatable {
     /// and nor has a load's from a gglib that predates them.
     public var model: String?
     public var elapsedMS: UInt64?
+    /// The sentence to show for the wait, worded once by gglib
+    /// (`AgentEvent::waiting_sentence`): "Loading Qwen3-4B… 1 s", "Waiting
+    /// for an image render, step 3 of 20, 2 in line". A gglib before 0.31.0
+    /// sends none.
+    public var said: String?
 
     public init(
         reason: Reason, step: Int = 0, total: Int = 0, position: Int = 0, model: String? = nil,
-        elapsedMS: UInt64? = nil
+        elapsedMS: UInt64? = nil, said: String? = nil
     ) {
         self.reason = reason
         self.step = step
@@ -87,10 +92,11 @@ public struct RunWait: Decodable, Sendable, Equatable {
         self.position = position
         self.model = model
         self.elapsedMS = elapsedMS
+        self.said = said
     }
 
     enum CodingKeys: String, CodingKey {
-        case reason, step, total, position, model
+        case reason, step, total, position, model, said
         case elapsedMS = "elapsed_ms"
     }
 }

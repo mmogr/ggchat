@@ -65,6 +65,46 @@ final class ToolWorkTests: XCTestCase {
         XCTAssertEqual(line(RunWait(reason: .modelLoad, elapsedMS: 1_234_000)), "Loading the model\u{2026} 1234 s")
     }
 
+    /// One of gglib's recorded `waiting` frames, from the fixture the core
+    /// tests read, found beside this file's package, without `said` when
+    /// `said` is false, as a gglib before 0.31.0 sends it.
+    private static func recordedWait(_ key: String, said: Bool = true) throws -> RunWait {
+        let file = URL(filePath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appending(path: "GGChatCoreTests/Fixtures/gglib-runs-recorded.json")
+        let object = try JSONSerialization.jsonObject(with: Data(contentsOf: file))
+        var frame = try XCTUnwrap((object as? [String: Any])?[key] as? [String: Any], "gglib recorded no \(key)")
+        if !said { frame["said"] = nil }
+        return try JSONDecoder().decode(RunWait.self, from: JSONSerialization.data(withJSONObject: frame))
+    }
+
+    /// A wait whose frame carries gglib's sentence shows that sentence as it
+    /// came, whatever else the frame says, a load's and a render's alike.
+    func testAWaitShowsTheSentenceGglibSaid() throws {
+        func line(_ wait: RunWait) -> String { ToolWork.line(for: wait, in: Self.british) }
+        XCTAssertEqual(
+            line(try Self.recordedWait("image_render")), "Waiting for an image render, step 3 of 20, 2 in line")
+        XCTAssertEqual(line(try Self.recordedWait("model_load")), "Loading Qwen3-4B\u{2026} 1 s")
+        // The sentence, not words made here from the fields beside it.
+        XCTAssertEqual(
+            line(RunWait(reason: .modelLoad, said: "Loading Qwen3-4B\u{2026} 1 s")), "Loading Qwen3-4B\u{2026} 1 s")
+        XCTAssertEqual(
+            line(RunWait(reason: .imageRender, said: "Waiting for an image render, step 3 of 20, 2 in line")),
+            "Waiting for an image render, step 3 of 20, 2 in line")
+        var work = ToolWork()
+        work.apply(.waiting(try Self.recordedWait("image_render")))
+        XCTAssertEqual(work.line(in: Self.british), "Waiting for an image render, step 3 of 20, 2 in line")
+    }
+
+    /// A frame from a gglib that sends no sentence is worded here, as it
+    /// was before gglib did.
+    func testAWaitWithoutASentenceIsWordedHere() throws {
+        func line(_ wait: RunWait) -> String { ToolWork.line(for: wait, in: Self.british) }
+        XCTAssertEqual(
+            line(try Self.recordedWait("image_render", said: false)),
+            "Waiting for a picture to be drawn, at step 3 of 20, place 2 in line")
+        XCTAssertEqual(line(try Self.recordedWait("model_load", said: false)), "Loading Qwen3-4B\u{2026} 1 s")
+    }
+
     /// The latest word of a tool is the one shown, a wait gives way to
     /// whatever comes next, and a tool's progress goes when its own call
     /// ends and not when another's does.

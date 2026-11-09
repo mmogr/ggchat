@@ -7,8 +7,10 @@ import XCTest
 /// `tool_reply` frames against how an agent run's events are read. The copy
 /// is from gglib's `test(contracts): a tool result with images is recorded`,
 /// in the change that adds a tool's images to its result; the copy now is
-/// of gglib's c7907001 (`feat(agent)/chat-via-endpoint`), which records a
-/// run's `frames` and `model_load`, the wait while its model loads.
+/// of gglib's 6b3f9d44 (`feat(gui)/chat-without-lock`), which records a
+/// run's `frames`, `model_load`, the wait while its model loads, and
+/// `image_render`, the wait behind a picture, each with the sentence it is
+/// shown as, `said`.
 final class RunsWireTests: XCTestCase {
     private struct Recorded: Decodable {
         let queued: RunInfo
@@ -115,15 +117,38 @@ final class RunsWireTests: XCTestCase {
             ])
     }
 
-    /// The recorded wait while a run's model loads names the model as the
-    /// catalogue shows it and how long the load has taken.
-    func testTheRecordedLoadWaitNamesItsModelAndItsTime() throws {
+    /// The events one recorded frame reads as.
+    private func recordedEvents(_ key: String) throws -> [ChatEvent] {
         let object = try JSONSerialization.jsonObject(with: try Fixtures.data("gglib-runs-recorded.json"))
-        let frame = try XCTUnwrap((object as? [String: Any])?["model_load"])
+        let frame = try XCTUnwrap((object as? [String: Any])?[key], "gglib recorded no \(key)")
         let data = try JSONSerialization.data(withJSONObject: frame)
+        return OpenAICompatibleProvider.agentEvents(SSEEvent(data: String(decoding: data, as: UTF8.self)))
+    }
+
+    /// The recorded wait while a run's model loads names the model as the
+    /// catalogue shows it, how long the load has taken, and the sentence
+    /// gglib shows it as.
+    func testTheRecordedLoadWaitNamesItsModelAndItsTime() throws {
         XCTAssertEqual(
-            OpenAICompatibleProvider.agentEvents(SSEEvent(data: String(decoding: data, as: UTF8.self))),
-            [.waiting(RunWait(reason: .modelLoad, model: "Qwen3-4B", elapsedMS: 1000))])
+            try recordedEvents("model_load"),
+            [
+                .waiting(
+                    RunWait(
+                        reason: .modelLoad, model: "Qwen3-4B", elapsedMS: 1000, said: "Loading Qwen3-4B\u{2026} 1 s"))
+            ])
+    }
+
+    /// The recorded wait behind a picture says the step it is at, its place
+    /// in line and the sentence gglib shows it as.
+    func testTheRecordedRenderWaitSaysItsStepItsPlaceAndItsSentence() throws {
+        XCTAssertEqual(
+            try recordedEvents("image_render"),
+            [
+                .waiting(
+                    RunWait(
+                        reason: .imageRender, step: 3, total: 20, position: 2,
+                        said: "Waiting for an image render, step 3 of 20, 2 in line"))
+            ])
     }
 
     func testOnlyCompletedFailedAndCancelledAreTerminal() {
