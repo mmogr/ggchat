@@ -83,4 +83,22 @@ final class MockLibraryDownloadTests: XCTestCase {
         XCTAssertEqual(after, [])
         XCTAssertFalse(FileManager.default.fileExists(atPath: finished.path(percentEncoded: false)))
     }
+
+    /// A projector or a draft is refused, as gglib refuses one, and nothing
+    /// is installed.
+    func testADraftOrAProjectorIsRefused() async throws {
+        let library = MockLibrary(behaviour: .noModels)
+        for label in ["mmproj-F16", "MTP-Q8_0"] {
+            do {
+                _ = try await library.download(repo: phoneRepo, quantization: label)
+                XCTFail("\(label) was downloaded")
+            } catch {
+                XCTAssertEqual(
+                    error as? OnDeviceError,
+                    .internal(message: "\(label) of \(phoneRepo) is not a model gglib runs on its own."))
+            }
+        }
+        let installed = try await library.installed()
+        XCTAssertEqual(installed, [])
+    }
 }

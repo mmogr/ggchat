@@ -1129,8 +1129,12 @@ Each claim names the test that keeps it true.
   suggestions' place, each the model with its owner beside it and its
   size, context and downloads under them, leaving out what the repository
   does not say. Each leads to a page for its repository with a row per
-  quantization: its size, its chip and a download button; a suggestion's
-  chip sits beside its link, not in it, so each takes its own taps. Every
+  quantization, labelled as its uploader labelled it: its size, its chip
+  and a download button. gglib lists a repository's projectors, drafts and
+  helpers too, and fetches none of them on its own, so the page leaves
+  them out and Download refuses one; a projector comes with its model. A
+  suggestion's chip sits beside its link, not in it, so each takes its own
+  taps. Every
   chip in the browser's lists ends in an info glyph and is a button:
   pressed, it opens a sheet saying how gglib judged the model, in words
   from the figures it judged it by, and for a suggestion gglib's own
@@ -1157,6 +1161,7 @@ Each claim names the test that keeps it true.
   mock and the Mac show Server and Pipe alone.
   <!-- test: AppModelLibraryTests.testTheReadingIsSampledOncePerOpen -->
   <!-- test: AppModelLibraryTests.testATooBigQuantizationCannotBeDownloaded -->
+  <!-- test: ModelBrowserVariantTests.testADraftOrAProjectorIsNeverOffered -->
   <!-- test: AppModelLibraryTests.testChoosingModelsCreatesThisIPhoneOnce -->
   <!-- test: AppModelLibraryTests.testTheBrowserSaysWhenItReadTheDevice -->
   <!-- test: AppModelLibraryTests.testASearchGoesOnAPageAtATime -->

@@ -92,8 +92,8 @@ final class AppModelLibraryTests: XCTestCase {
         let browser = try open(model, with: reading, counting: &samples)
         await model.loadOffers(of: phoneRepo, in: browser)
         let offers = try XCTUnwrap(browser.offers[phoneRepo])
-        XCTAssertEqual(offers.map(\.verdict.allowsDownload), [true, true, false, true])
-        let tooBig = try XCTUnwrap(offers.first { !$0.verdict.allowsDownload })
+        XCTAssertEqual(offers.map(\.allowsDownload), [true, true, false, true])
+        let tooBig = try XCTUnwrap(offers.first { !$0.allowsDownload })
 
         model.download(tooBig, of: phoneRepo)
         XCTAssertTrue(library.downloadsAsked.isEmpty, "a quantization too big for this iPhone was downloaded")

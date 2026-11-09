@@ -21,7 +21,7 @@ extension AppModel {
     /// be chosen again; one called off is forgotten (``cancelDownload(_:)``).
     public func download(_ offer: QuantOffer, of repo: String) {
         let choice = QuantChoice(repo: repo, quantization: offer.label)
-        guard runsModelsHere, offer.verdict.allowsDownload else { return }
+        guard runsModelsHere, offer.allowsDownload else { return }
         switch onDevice.downloads[choice]?.state {
         case nil, .failed?: break
         default: return

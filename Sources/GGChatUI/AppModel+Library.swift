@@ -42,12 +42,15 @@ public struct QuantChoice: Hashable, Sendable {
     public var quantization: String
 }
 
-extension FitVerdict {
-    /// Whether the browser lets this be downloaded: anything but a model
-    /// gglib found too big for this device. One it cannot tell about yet is
-    /// let through, since downloading it is how gglib finds out.
+extension QuantOffer {
+    /// Whether the browser lets this be downloaded: a model's weights,
+    /// unless gglib found them too big for this device. One it cannot tell
+    /// about yet is let through, since downloading it is how gglib finds
+    /// out. A draft, a helper or a projector never is: gglib refuses to
+    /// fetch one on its own.
     var allowsDownload: Bool {
-        if case .tooBig = self { return false }
+        guard role == .model else { return false }
+        if case .tooBig = verdict { return false }
         return true
     }
 }
@@ -150,7 +153,9 @@ extension AppModel {
     }
 
     /// Asks for each quantization `repo` publishes, with how it fits, with
-    /// the browser's reading.
+    /// the browser's reading, and keeps the models among them. gglib lists a
+    /// repository's drafts, helpers and projectors too, which this iPhone
+    /// never downloads on their own: a projector comes with its model.
     public func loadOffers(of repo: String, in browser: ModelBrowser) async {
         guard let reading = browser.reading else {
             browser.offerFailures[repo] = Self.unreadDevice
@@ -158,6 +163,7 @@ extension AppModel {
         }
         do {
             browser.offers[repo] = try await library.quantizations(repo: repo, reading: reading)
+                .filter { $0.role == .model }
             browser.offerFailures[repo] = nil
         } catch {
             guard !Task.isCancelled else { return }

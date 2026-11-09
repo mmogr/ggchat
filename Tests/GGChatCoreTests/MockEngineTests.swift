@@ -172,7 +172,8 @@ final class MockLibraryTests: XCTestCase {
     private let reading = DeviceReading(physicalBytes: 12 << 30, availableBytes: 6 << 30, isSimulator: true)
 
     /// The phone's repository has a quantization for each verdict there is,
-    /// another has none that fits, and each reading asked with is kept.
+    /// then a projector and a draft, another has none that fits, and each
+    /// reading asked with is kept.
     func testTheQuantizationsCarryAVerdictOfEachKind() async throws {
         let library = MockLibrary()
         let offers = try await library.quantizations(repo: MockLibrary.phoneRepo, reading: reading)
@@ -187,7 +188,8 @@ final class MockLibraryTests: XCTestCase {
             case .unknown: "unknown"
             }
         }
-        XCTAssertEqual(kinds, ["fits", "tight", "too big", "unknown"])
+        XCTAssertEqual(kinds, ["fits", "tight", "too big", "unknown", "fits", "fits"])
+        XCTAssertEqual(offers.map(\.role), [.model, .model, .model, .model, .projector, .draftOrHelper])
     }
 
     /// The engine's model is installed, but for no-models, and too big for

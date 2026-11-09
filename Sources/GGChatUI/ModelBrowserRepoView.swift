@@ -83,7 +83,7 @@ struct ModelBrowserRepoView: View {
                 .accessibilityLabel("On this iPhone")
                 .accessibilityIdentifier("downloaded")
         case nil, .failed?:
-            if offer.verdict.allowsDownload {
+            if offer.allowsDownload {
                 Button {
                     model.download(offer, of: repo)
                 } label: {

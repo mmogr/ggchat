@@ -82,7 +82,8 @@
         }
 
         /// A quantization for each verdict there is, of the phone's
-        /// repository; every one of any other is too big.
+        /// repository, then a projector and a draft, which gglib lists and
+        /// never downloads on their own; every one of any other is too big.
         func offers(of repo: String) -> [QuantOffer] {
             guard repo == Self.phoneRepo else {
                 return [
@@ -106,6 +107,12 @@
                     why: FitWhy(
                         weightsBytes: Self.gigabyte / 2, kvBytesPerToken: nil, budgetBytes: Self.budget, trainedCtx: nil
                     )),
+                QuantOffer(
+                    label: "mmproj-F16", role: .projector, totalBytes: Self.gigabyte / 4, shardCount: 1,
+                    verdict: .fits(ctx: 16_384), why: Self.why),
+                QuantOffer(
+                    label: "MTP-Q8_0", role: .draftOrHelper, totalBytes: Self.gigabyte / 8, shardCount: 1,
+                    verdict: .fits(ctx: 16_384), why: Self.why),
             ]
         }
 
@@ -131,6 +138,10 @@
                 ?? QuantOffer(
                     label: quantization, totalBytes: Self.gigabyte, shardCount: 1, verdict: .fits(ctx: 16_384),
                     why: Self.why)
+            guard offer.role == .model else {
+                throw OnDeviceError.internal(
+                    message: "\(quantization) of \(repo) is not a model gglib runs on its own.")
+            }
             let name = Self.installedName(repo: repo, quantization: quantization)
             let walk = DownloadWalk(
                 id: "\(repo):\(quantization)", total: offer.totalBytes, sleeper: sleeper, stepDelay: stepDelay,
