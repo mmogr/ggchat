@@ -80,6 +80,8 @@ final class AppModelRemovalTests: XCTestCase {
     func testARemovedModelLeavesTheChatsAndTheDefaultThatHadItWithNone() async throws {
         let (model, config) = try makeModel()
         let first = model.newConversation(with: config)
+        // Named, so it is kept when the second opens (`AppModel+Untouched`).
+        model.renameConversation(first.id, to: "First")
         let second = model.newConversation(with: config)
         await model.open(config).value
 
@@ -107,6 +109,8 @@ final class AppModelRemovalTests: XCTestCase {
         await model.open(config).value
         let other = try await installSecond(in: model)
         let gone = model.newConversation(with: config)
+        // Named, so it is kept when the next opens (`AppModel+Untouched`).
+        model.renameConversation(gone.id, to: "Gone")
         let kept = model.newConversation(with: config)
         model.select(model: other, for: kept.id)
         let server = ProviderConfig(
