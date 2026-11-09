@@ -994,8 +994,12 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # whose `said` stops being read, or stops being shown as it came, falls back
 # to words made here that match gglib's for a load, and fails nothing else, so
 # these three and their markers are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1125
+#
+# 2026-11-10: 1125 -> 1130 and 1021 -> 1025 for the card a long-pressed
+# message lifts. A preview that goes back to the whole row fails nothing
+# else, so these and their markers are the whole of that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1130
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 1021
+floor "README test markers" "${markers:-0}" 1025
 
 exit $status
