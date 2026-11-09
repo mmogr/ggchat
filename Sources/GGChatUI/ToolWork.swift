@@ -88,17 +88,24 @@ struct ToolWork: Equatable {
         }
     }
 
+    /// A load is said in gglib's words (`AgentEvent::waiting_sentence`, the
+    /// line its CLI and its chat page print): "Loading Qwen3-4B… 12 s",
+    /// the whole seconds left out under one and when gglib sent none, and
+    /// "the model" when it named none, the seconds in plain digits as
+    /// gglib prints them. gglib puts a load in no line, so there is no place
+    /// to say.
     static func line(for wait: RunWait, in locale: Locale) -> String {
-        func number(_ value: Int) -> String { value.formatted(.number.locale(locale)) }
-        var line: String
+        func number(_ value: some BinaryInteger) -> String { Int(clamping: value).formatted(.number.locale(locale)) }
         switch wait.reason {
         case .imageRender:
-            line = "Waiting for a picture to be drawn"
+            var line = "Waiting for a picture to be drawn"
             if wait.total > 0 { line += ", at step \(number(wait.step)) of \(number(wait.total))" }
+            if wait.position > 1 { line += ", place \(number(wait.position)) in line" }
+            return line
         case .modelLoad:
-            line = "Waiting for the model to load"
+            let line = "Loading \(wait.model ?? "the model")\u{2026}"
+            guard let seconds = wait.elapsedMS.map({ $0 / 1000 }), seconds > 0 else { return line }
+            return "\(line) \(seconds) s"
         }
-        if wait.position > 1 { line += ", place \(number(wait.position)) in line" }
-        return line
     }
 }

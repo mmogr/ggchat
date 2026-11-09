@@ -13,7 +13,8 @@
     "model": "qwen3-8b",
     "device": "phone-7c2e",
     "created_at_ms": 1790000000000,
-    "last_seq": 42
+    "last_seq": 42,
+    "frames": "agent"
   },
   "completed": {
     "id": "run-done-03",
@@ -36,7 +37,8 @@
     "error": {
       "code": "model_unavailable",
       "message": "The model could not be loaded."
-    }
+    },
+    "frames": "agent"
   },
   "cancelled": {
     "id": "run-cancelled-05",
@@ -94,6 +96,15 @@
       "type": "final_answer"
     }
   ],
+  "model_load": {
+    "elapsed_ms": 1000,
+    "model": "Qwen3-4B",
+    "position": 0,
+    "reason": "model_load",
+    "step": 0,
+    "total": 0,
+    "type": "waiting"
+  },
   "list": {
     "runs": [
       {
@@ -103,7 +114,8 @@
         "model": "qwen3-8b",
         "device": "phone-7c2e",
         "created_at_ms": 1790000000000,
-        "last_seq": 42
+        "last_seq": 42,
+        "frames": "agent"
       },
       {
         "id": "run-failed-04",
@@ -117,7 +129,8 @@
         "error": {
           "code": "model_unavailable",
           "message": "The model could not be loaded."
-        }
+        },
+        "frames": "agent"
       }
     ]
   }

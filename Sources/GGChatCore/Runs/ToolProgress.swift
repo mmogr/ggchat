@@ -70,12 +70,28 @@ public struct RunWait: Decodable, Sendable, Equatable {
     public var total: Int
     /// This wait's place in line, 1 being next; 0 when not in a line.
     public var position: Int
+    /// The model being loaded, by the name gglib's catalogue shows, and how
+    /// long the load has taken so far in milliseconds. gglib sends a load's
+    /// wait again each second with both; a wait for a picture has neither,
+    /// and nor has a load's from a gglib that predates them.
+    public var model: String?
+    public var elapsedMS: UInt64?
 
-    public init(reason: Reason, step: Int = 0, total: Int = 0, position: Int = 0) {
+    public init(
+        reason: Reason, step: Int = 0, total: Int = 0, position: Int = 0, model: String? = nil,
+        elapsedMS: UInt64? = nil
+    ) {
         self.reason = reason
         self.step = step
         self.total = total
         self.position = position
+        self.model = model
+        self.elapsedMS = elapsedMS
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case reason, step, total, position, model
+        case elapsedMS = "elapsed_ms"
     }
 }
 

@@ -105,7 +105,11 @@ final class PipeWaitTests: XCTestCase {
         let send = try XCTUnwrap(model.send("anyone?"), "a send through a pipe still dialling was refused")
         for _ in 0..<200 { await Task.yield() }
         XCTAssertEqual(model.liveReply?.waitingFor, config.id)
-        XCTAssertEqual(waitingLine(model), "Waiting for home · not heard from yet")
+        XCTAssertNil(waitingLine(model), "a first dial still going is not an away machine")
+        model.unanswered.insert(config.id)
+        XCTAssertEqual(
+            waitingLine(model), "home is away. Your message will wait.", "a machine that did not answer is away")
+        model.unanswered.remove(config.id)
         XCTAssertEqual(gate.arrivals, 1, "the send dialled again instead of joining the dial in flight")
         XCTAssertNil(model.lastError)
 
@@ -142,7 +146,7 @@ final class PipeWaitTests: XCTestCase {
         let send = try XCTUnwrap(model.send("anyone?"), "a send through a closed pipe was refused")
         for _ in 0..<200 where gate.arrivals < 2 { await Task.yield() }
         XCTAssertEqual(gate.arrivals, 2, "the send did not dial the closed pipe")
-        XCTAssertEqual(waitingLine(model), "Waiting for home · last heard 08:12")
+        XCTAssertEqual(waitingLine(model), "home is away since 08:12. Your message will wait.")
 
         gate.open()
         await settle(send, model)

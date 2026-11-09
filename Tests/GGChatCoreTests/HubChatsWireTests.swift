@@ -11,7 +11,8 @@ import XCTest
 /// and its `upload` against how an image sent to the hub is named. Its
 /// `tool_reply`, the rows of a reply whose tool made an image, is from
 /// gglib's `test(contracts): a tool result with images is recorded`, copied
-/// the same way.
+/// the same way, and the copy now is of gglib's main at ee456712, whose
+/// `image_model_turn` `ImageModelWireTests` replays.
 ///
 /// The opened chat remembers its thinking switched off, and ends with a turn
 /// sent from a device whose reply did not finish: its finished reply's row

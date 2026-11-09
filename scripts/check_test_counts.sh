@@ -980,8 +980,16 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # The claim names nine tests: the five ModelKeyTests and two ModelKeyRunTests
 # that are the whole of its guard, the fixture's and the move's. The floor
 # stood ten under the count before them, so it moves to the count.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1118
+#
+# 2026-11-09: 1118 -> 1122 and 1014 -> 1018 for gglib's words.
+# The pill, the
+# away line and the loading line say what gglib says, held to a copy of its
+# vocabulary and its recordings; a word that drifts back, or a load's model
+# and time that stop being read, fail nothing else, so these four and their
+# markers are the whole of that guard, and the floors move past every test
+# and marker there is today.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1122
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 1014
+floor "README test markers" "${markers:-0}" 1018
 
 exit $status

@@ -7,7 +7,7 @@ import XCTest
 /// and CI never take it; no simulator runs gglib's engine.
 ///
 /// `-ggchat-live-engine-model` adds This iPhone at launch with that model
-/// chosen. The first send loads the model, the pill reading Ready once it
+/// chosen. The first send loads the model, the pill reading Loaded once it
 /// has; the reply raises the ring from the context the engine loaded it
 /// with. Going to the background puts the engine down, so coming back the
 /// pill reads Not loaded, and the next send loads the model again.
@@ -27,7 +27,7 @@ final class OnDeviceLiveUITests: XCTestCase {
             "the pill does not say the model is not loaded before anything was sent")
 
         send("Say hello in five words.", in: app)
-        let ready = app.buttons["Model Ready"].firstMatch
+        let ready = app.buttons["Model Loaded"].firstMatch
         XCTAssertTrue(ready.waitForExistence(timeout: 300), "the pill never said the model was ready")
         let ring = app.buttons["Context"].firstMatch
         XCTAssertTrue(ring.waitForExistence(timeout: 300), "a reply from gglib's engine raised no ring")

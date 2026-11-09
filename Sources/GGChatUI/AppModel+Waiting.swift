@@ -159,15 +159,24 @@ extension AppModel {
         for wait in sessionWaits.values where wait.providerID == providerID { wait.wake() }
     }
 
-    /// "Waiting for home · last heard 08:12", or "Waiting for home · not
-    /// heard from yet", while this reply waits for its pipe, and "Waiting
-    /// for This iPhone to start its engine" while it waits for the engine;
-    /// nil once it streams, and for every reply that never waited.
+    /// gglib's away line, "home is away since 08:12. Your message will
+    /// wait.", by when the machine was last heard, or "home is away. Your
+    /// message will wait." when it has not been heard from yet and did not
+    /// answer (nothing while its first dial is still going), while this
+    /// reply waits for its pipe; "Waiting for This iPhone to start its
+    /// engine" while it waits for the engine; nil once it streams, and for
+    /// every reply that never waited.
     public func waitingLine(for live: LiveReply, locale: Locale, calendar: Calendar) -> String? {
         guard let providerID = live.waitingFor, let config = providers.first(where: { $0.id == providerID }) else {
             return nil
         }
         if config.kind == .onDevice { return "Waiting for \(config.name) to start its engine" }
-        return "Waiting for \(config.name) · \(lastHeardLine(for: providerID, locale: locale, calendar: calendar))"
+        let since = lastHeardAt[providerID].map {
+            Self.shortStamp($0, now: now(), locale: locale, calendar: calendar)
+        }
+        // A machine never heard from is away only once it has not answered:
+        // during a first dial, as gglib does with no time to give, no line.
+        guard since != nil || unanswered.contains(providerID) else { return nil }
+        return GGLibWords.awayLine(config.name, since: since)
     }
 }

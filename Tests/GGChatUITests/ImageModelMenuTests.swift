@@ -15,23 +15,23 @@ final class ImageModelMenuTests: XCTestCase {
         DrawMenu.Row(model: model, title: title, detail: detail, enabled: enabled, checked: checked)
     }
 
-    /// The contract's example: "Default" first, naming the model the Mac's
-    /// own rule picks and ticked while none is chosen, then each model in
-    /// the order given, with its family, "loaded" for the one loaded now,
-    /// and for one that lacks a file what it lacks, dimmed.
+    /// gglib's recorded answer with no model named: "Default" first,
+    /// naming the model the Mac's own rule picks and ticked while none is
+    /// chosen, then each model in the order given, with its family,
+    /// "loaded" for the one loaded now, and for one that lacks files what
+    /// it lacks, dimmed.
     func testTheMenuListsTheDefaultThenEachModelInTheOrderGiven() throws {
-        let drawing = try JSONDecoder().decode(
-            Drawing.self, from: Data(contentsOf: try XCTUnwrap(Self.contractAnswer)))
-        let menu = DrawMenu(drawing, chosen: nil)
+        let menu = DrawMenu(try Self.recorded("unnamed"), chosen: nil)
         XCTAssertEqual(
             menu.rows,
             [
-                row(nil, "Default (flux1-schnell-q8_0)", nil, checked: true),
-                row(3, "flux1-schnell-q8_0", "Flux.1 \u{B7} loaded"),
-                row(7, "qwen_image_2.1-Q8_0", "Qwen-Image 2.1 \u{B7} missing LLM", enabled: false),
+                row(nil, "Default (sdxl-turbo)", nil, checked: true),
+                row(2, "flux", "Flux.1 \u{B7} missing VAE, CLIP-L, T5-XXL", enabled: false),
+                row(1, "sdxl", "SDXL \u{B7} loaded"),
+                row(4, "sdxl-turbo", "SDXL"),
             ])
-        XCTAssertEqual(menu.rows.map(\.id), ["default", "3", "7"])
-        XCTAssertEqual(menu.drawsWith, "flux1-schnell-q8_0")
+        XCTAssertEqual(menu.rows.map(\.id), ["default", "2", "1", "4"])
+        XCTAssertEqual(menu.drawsWith, "sdxl-turbo")
         XCTAssertTrue(menu.isOffered)
 
         let chosen = DrawMenu(Choice.lists, chosen: 7)
@@ -41,10 +41,13 @@ final class ImageModelMenuTests: XCTestCase {
         XCTAssertEqual(chosen.drawsWith, "qwen_image_2.1-Q8_0")
     }
 
-    /// The fixture the core tests read, found beside this file's package.
-    private static var contractAnswer: URL? {
-        URL(filePath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-            .appending(path: "GGChatCoreTests/Fixtures/contract-images-drawing-models.json")
+    /// One of gglib's recorded answers, from the fixture the core tests
+    /// read, found beside this file's package.
+    private static func recorded(_ key: String) throws -> Drawing {
+        let file = URL(filePath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appending(path: "GGChatCoreTests/Fixtures/gglib-images-drawing.json")
+        let answers = try JSONDecoder().decode([String: Drawing].self, from: Data(contentsOf: file))
+        return try XCTUnwrap(answers[key], "gglib recorded no \(key)")
     }
 
     /// There is a menu only where there is a choice to make or one to undo.

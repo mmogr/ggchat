@@ -207,7 +207,7 @@ names, as Xcode names it: no simulator runs it, so no other walk can. Its
 walk adds This iPhone at launch with the model `GGCHAT_LIVE_ENGINE_MODEL`
 names, which must already be downloaded to the phone through the model
 browser, under the name its model list shows; sends, and waits for the pill
-to read Ready and the ring to rise; puts the app in the background, comes
+to read Loaded and the ring to rise; puts the app in the background, comes
 back to a pill that reads Not loaded, and sends again:
 
 ```sh

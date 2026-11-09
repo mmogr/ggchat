@@ -19,14 +19,14 @@ final class SessionStatusTests: XCTestCase {
             now: { Date(timeIntervalSince1970: 1_700_000_000) })
     }
 
-    /// Each of the engine's states in a few words with a memory chip, read
-    /// as "Model …"; a pipe's as before, read as "Connection …". Only
-    /// Reconnect and Load again are tinted, and a pipe connecting and a model
-    /// loading animate.
+    /// Each of the engine's states in a few words with a memory chip, in
+    /// gglib's where it has them, read as "Model …"; a pipe's as before,
+    /// read as "Connection …". Only Reconnect and Load it again are tinted,
+    /// and a pipe connecting and a model loading animate.
     func testThePillSaysEachStateInAFewWords() {
         let engine: [(SessionStatus.ModelState, String)] = [
-            (.notLoaded, "Not loaded"), (.loading(fraction: 0.4), "Loading 40%"), (.ready, "Ready"),
-            (.failed, "Load again"), (.tooBig, "Too big"),
+            (.notLoaded, "Not loaded"), (.loading(fraction: 0.4), "Loading 40%"), (.ready, "Loaded"),
+            (.failed, "Load it again"), (.tooBig, "Too big"),
         ]
         for (state, words) in engine {
             let status = SessionStatus.engine(state)

@@ -9,7 +9,7 @@ import XCTest
 /// waits for the engine and through its load, the background puts it down
 /// only after the replies, a serve landing while the app is away takes
 /// itself down, coming back starts nothing, a memory warning spares a reply,
-/// a send that joined a serve put down serves afresh, Load again serves
+/// a send that joined a serve put down serves afresh, Load it again serves
 /// afresh and asks again, and a refused serve says why under the question.
 @MainActor
 final class AppModelEngineLifecycleTests: XCTestCase {
@@ -228,7 +228,7 @@ final class AppModelEngineLifecycleTests: XCTestCase {
         XCTAssertEqual(model.selectedConversation?.messages.last?.content, MockProvider.sampleScript.text)
     }
 
-    /// The model fails to load: the pill says Load again, and pressing it
+    /// The model fails to load: the pill says Load it again, and pressing it
     /// serves the engine afresh and asks the question again, which loads the
     /// model and is answered.
     func testLoadAgainServesAfreshAndAsksTheQuestionAgain() async throws {
@@ -243,12 +243,12 @@ final class AppModelEngineLifecycleTests: XCTestCase {
         XCTAssertEqual(question.role, .user)
         XCTAssertNotNil(question.failure, "a load that failed left no failure on the question")
         let failed = await waitUntil { self.status(model, conversation) == .engine(.failed) }
-        XCTAssertTrue(failed, "the pill does not offer Load again")
+        XCTAssertTrue(failed, "the pill does not offer Load it again")
         XCTAssertTrue(model.offersPress(on: .engine(.failed), in: conversation))
 
-        try await XCTUnwrap(model.press(.engine(.failed), in: conversation), "Load again did nothing").value
-        XCTAssertEqual(engine.serves, 2, "Load again did not serve the engine afresh")
-        XCTAssertEqual(engine.shutdowns, 1, "Load again did not put the failed engine down first")
+        try await XCTUnwrap(model.press(.engine(.failed), in: conversation), "Load it again did nothing").value
+        XCTAssertEqual(engine.serves, 2, "Load it again did not serve the engine afresh")
+        XCTAssertEqual(engine.shutdowns, 1, "Load it again did not put the failed engine down first")
         let messages = try XCTUnwrap(model.selectedConversation?.messages)
         XCTAssertEqual(messages.count, 2, "the question was not asked again, or was asked twice")
         XCTAssertNil(messages.first?.failure, "the question kept its failure")

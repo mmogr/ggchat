@@ -39,9 +39,11 @@ final class ToolWorkTests: XCTestCase {
     }
 
     /// A wait says what is in the way, how far that has got when it is
-    /// known, and the place in line when it is not next.
+    /// known, and the place in line when it is not next. A load is said in
+    /// gglib's words (`waiting_sentence`): the model by name, or "the
+    /// model", and the whole seconds from one on, in the locale's digits.
     func testAWaitSaysWhatIsInTheWay() {
-        func line(_ wait: RunWait) -> String { ToolWork.line(for: wait, in: Self.british) }
+        func line(_ wait: RunWait, _ locale: Locale = Self.british) -> String { ToolWork.line(for: wait, in: locale) }
         XCTAssertEqual(
             line(RunWait(reason: .imageRender, step: 12, total: 20, position: 1)),
             "Waiting for a picture to be drawn, at step 12 of 20")
@@ -49,8 +51,18 @@ final class ToolWorkTests: XCTestCase {
         XCTAssertEqual(
             line(RunWait(reason: .imageRender, step: 2, total: 20, position: 2)),
             "Waiting for a picture to be drawn, at step 2 of 20, place 2 in line")
-        XCTAssertEqual(line(RunWait(reason: .modelLoad)), "Waiting for the model to load")
-        XCTAssertEqual(line(RunWait(reason: .modelLoad, position: 3)), "Waiting for the model to load, place 3 in line")
+        XCTAssertEqual(line(RunWait(reason: .modelLoad)), "Loading the model\u{2026}")
+        XCTAssertEqual(line(RunWait(reason: .modelLoad, position: 3)), "Loading the model\u{2026}")
+        XCTAssertEqual(
+            line(RunWait(reason: .modelLoad, model: "Qwen3-4B", elapsedMS: 12_900)), "Loading Qwen3-4B\u{2026} 12 s")
+        XCTAssertEqual(line(RunWait(reason: .modelLoad, model: "Qwen3-4B", elapsedMS: 999)), "Loading Qwen3-4B\u{2026}")
+        XCTAssertEqual(line(RunWait(reason: .modelLoad, model: "Qwen3-4B", elapsedMS: 0)), "Loading Qwen3-4B\u{2026}")
+        XCTAssertEqual(line(RunWait(reason: .modelLoad, elapsedMS: 3_000)), "Loading the model\u{2026} 3 s")
+        // Plain digits, ungrouped, as gglib prints them, whatever the locale.
+        XCTAssertEqual(
+            line(RunWait(reason: .modelLoad, model: "Qwen3-4B", elapsedMS: 12_000), Locale(identifier: "ar_EG")),
+            "Loading Qwen3-4B\u{2026} 12 s")
+        XCTAssertEqual(line(RunWait(reason: .modelLoad, elapsedMS: 1_234_000)), "Loading the model\u{2026} 1234 s")
     }
 
     /// The latest word of a tool is the one shown, a wait gives way to
@@ -63,7 +75,7 @@ final class ToolWorkTests: XCTestCase {
         XCTAssertNil(work.fraction)
 
         work.apply(.waiting(RunWait(reason: .modelLoad)))
-        XCTAssertEqual(work.line(in: Self.british), "Waiting for the model to load")
+        XCTAssertEqual(work.line(in: Self.british), "Loading the model\u{2026}")
         work.apply(.tool("Generate Image"))
         XCTAssertTrue(work.isEmpty, "a wait outlived the reply going on")
 
