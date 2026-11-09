@@ -1681,9 +1681,11 @@ Each claim names the test that keeps it true.
   chats gglib keeps there, listed at launch, when its pipe comes up and on a
   pull, each with the time it last changed (the date too when not today),
   and marked "Writing" while the Mac is writing a reply to one. The
-  phone's own chats are then headed "On this phone", with a line under them,
-  while there are any, saying they are kept only on this phone and the Mac
-  does not keep them.
+  phone's own chats are then headed "On this phone", with a short line under
+  them, while there are any, saying the Mac doesn't keep them. What there is
+  to say about a Mac, that it has no chats yet, when it was last seen, or
+  that it does not share them, is a line in its section's footer, not a row
+  of the list.
   Opening one reads its questions and replies live, and Back drops them:
   no conversation and no message row comes from the Mac into the store
   (ADR 0007). A Mac that reads its chats only to a device through its tunnel
