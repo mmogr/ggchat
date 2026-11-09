@@ -98,13 +98,13 @@ struct OnThisIPhoneSection: View {
     }
 
     private func installedRow(_ item: InstalledModel) -> some View {
-        CompactRow(title: item.name, detail: Sizes.download(item.bytes)) {
+        CompactRow(title: item.shownName, detail: Sizes.download(item.bytes)) {
             HStack(spacing: 12) {
                 FitChipButton(explanation: FitExplanation(installed: item), open: explain)
                 if model.thisIPhoneID == nil {
                     Button("Use") { model.useInstalled(item) }
                         .buttonStyle(.borderless)
-                        .accessibilityLabel("Use \(item.name)")
+                        .accessibilityLabel("Use \(item.shownName)")
                 }
             }
         }
@@ -128,9 +128,10 @@ struct OnThisIPhoneSection: View {
         }
     }
 
-    /// What the question before a removal asks: "Remove mock-phone-1.7b?"
+    /// What the question before a removal asks: "Remove mock-phone-1.7b ·
+    /// Q4_K_M?"
     static func removalQuestion(for item: InstalledModel) -> String {
-        "Remove \(item.name)?"
+        "Remove \(item.shownName)?"
     }
 
     /// What it says under the question: the room the removal frees.

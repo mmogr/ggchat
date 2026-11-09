@@ -2,8 +2,8 @@ import XCTest
 
 /// gglib's own engine on a real iPhone, not the mock: `make
 /// uitest-device-engine` on the owner's phone, with
-/// `GGCHAT_LIVE_ENGINE_MODEL` naming a model already downloaded to it as its
-/// model list names it. Skipped unless that is set, so the simulator walks
+/// `GGCHAT_LIVE_ENGINE_MODEL` naming a model already downloaded to it by the
+/// name its library gives it, which the app chooses by its id. Skipped unless that is set, so the simulator walks
 /// and CI never take it; no simulator runs gglib's engine.
 ///
 /// `-ggchat-live-engine-model` adds This iPhone at launch with that model

@@ -29,7 +29,7 @@ final class AppModelRemovalRaceTests: XCTestCase {
             pipeConnector: MockPipeConnector(sleeper: ImmediateSleeper(), registry: registry),
             engine: engine, library: watching, diagnostics: Diagnostics(defaults: defaults),
             now: { Date(timeIntervalSince1970: 1_700_000_000) })
-        let config = try model.addThisIPhone(defaultModel: MockEngine.model.id)
+        let config = try model.addThisIPhone(defaultModel: MockEngine.model.key)
         model.newConversation(with: config)
         await model.open(config).value
         return (model, config)
@@ -46,14 +46,16 @@ final class AppModelRemovalRaceTests: XCTestCase {
     /// Sends, and waits until the engine has the mock's model loaded.
     private func load(_ model: AppModel) async throws {
         try await XCTUnwrap(model.send("hi")).value
-        let loaded = await waitUntil { model.engineStatus == .ready(model: MockEngine.model.id, nCtx: 4_096) }
+        let loaded = await waitUntil {
+            model.engineStatus == .ready(id: MockEngine.modelID, model: MockEngine.model.id, nCtx: 4_096)
+        }
         XCTAssertTrue(loaded, "the send loaded no model: \(String(describing: model.engineStatus))")
     }
 
     /// The installed model called `name`, as `model` reads it.
-    private func installed(_ name: String, in model: AppModel) async throws -> InstalledModel {
+    private func installed(_ id: Int64, in model: AppModel) async throws -> InstalledModel {
         await model.refreshInstalled()
-        return try XCTUnwrap(model.onDevice.installed?.first { $0.name == name })
+        return try XCTUnwrap(model.onDevice.installed?.first { $0.id == id })
     }
 
     /// The engine with the model loaded has stopped answering by the time
@@ -62,7 +64,7 @@ final class AppModelRemovalRaceTests: XCTestCase {
         let (model, _) = try await makeModel(engine: MockEngine(registry: registry, catalogue: catalogue))
         try await load(model)
 
-        await model.removeInstalled(try await installed(MockEngine.model.id, in: model))
+        await model.removeInstalled(try await installed(MockEngine.modelID, in: model))
         XCTAssertNil(model.onDevice.installedFailure)
         XCTAssertEqual(watching.engineAnsweredAtRemovals, [false], "the files went while the engine still answered")
     }
@@ -74,14 +76,16 @@ final class AppModelRemovalRaceTests: XCTestCase {
         let engine = GatedEngine(registry: registry, holdingServes: false, holdingShutdowns: true)
         let (model, _) = try await makeModel(engine: engine)
         let offers = try await watching.quantizations(repo: phoneRepo, reading: reading)
-        let fits = try XCTUnwrap(offers.first { $0.name == "Q4_K_M" })
-        let other = MockLibrary.installedName(repo: phoneRepo, quantization: fits.name)
+        let fits = try XCTUnwrap(offers.first { $0.label == "Q4_K_M" })
         model.download(fits, of: phoneRepo)
-        let downloaded = await waitUntil { model.onDevice.installed?.contains { $0.name == other } == true }
+        let downloaded = await waitUntil {
+            model.onDevice.installed?.contains { $0.quantization == fits.label } == true
+        }
         XCTAssertTrue(downloaded, "the second model was never installed")
         try await load(model)
-        let phone = try await installed(MockEngine.model.id, in: model)
-        let second = try await installed(other, in: model)
+        let phone = try await installed(MockEngine.modelID, in: model)
+        let other = try XCTUnwrap(model.onDevice.installed?.first { $0.quantization == fits.label })
+        let second = try await installed(other.id, in: model)
 
         let first = Task { await model.removeInstalled(phone) }
         let goingDown = await engine.waitForShutdowns(1)
@@ -104,13 +108,14 @@ final class AppModelRemovalRaceTests: XCTestCase {
         let engine = GatedEngine(registry: registry, holdingServes: false, holdingShutdowns: true)
         let (model, _) = try await makeModel(engine: engine)
         try await load(model)
-        let phone = try await installed(MockEngine.model.id, in: model)
+        let phone = try await installed(MockEngine.modelID, in: model)
 
         let removing = Task { await model.removeInstalled(phone) }
         let goingDown = await engine.waitForShutdowns(1)
         XCTAssertTrue(goingDown, "the removal did not put the engine down")
         XCTAssertNil(model.send("again"), "a send naming the model being removed went ahead")
-        XCTAssertEqual(model.lastError, AppModel.beingRemoved(MockEngine.model.id))
+        XCTAssertEqual(
+            model.lastError, "\(MockEngine.model.id) is being removed from this iPhone. Pick another model.")
         XCTAssertTrue(model.liveReplies.isEmpty, "a refused send is waiting for the engine")
         engine.releaseShutdowns()
         await removing.value

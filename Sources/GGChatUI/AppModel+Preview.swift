@@ -30,7 +30,7 @@ extension AppModel {
         // Last, so the providers above keep their places; DEBUG only, as the
         // mock engine whose model it names is.
         #if DEBUG
-            _ = try? model.addThisIPhone(defaultModel: MockEngine.model.id)
+            _ = try? model.addThisIPhone(defaultModel: MockEngine.model.key)
         #endif
         let conversation = model.newConversation()
         var seeded = conversation

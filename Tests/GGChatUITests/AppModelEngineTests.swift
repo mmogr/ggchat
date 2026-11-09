@@ -12,7 +12,7 @@ import XCTest
 /// engine down, a serve or a shutdown in flight included.
 @MainActor
 final class AppModelEngineTests: XCTestCase {
-    private let ready = EngineStatus.ready(model: MockEngine.model.id, nCtx: 4_096)
+    private let ready = EngineStatus.ready(id: MockEngine.modelID, model: MockEngine.model.id, nCtx: 4_096)
 
     private func makeModel(engine: any LocalEngine, registry: LoopbackProviderRegistry) -> AppModel {
         let defaults = UserDefaults(suiteName: "AppModelEngineTests.\(UUID().uuidString)")!
@@ -42,7 +42,7 @@ final class AppModelEngineTests: XCTestCase {
         let registry = LoopbackProviderRegistry()
         let model = makeModel(
             engine: MockEngine(behaviour: behaviour, registry: registry, provider: provider), registry: registry)
-        let config = try model.addThisIPhone(defaultModel: MockEngine.model.id)
+        let config = try model.addThisIPhone(defaultModel: MockEngine.model.key)
         model.newConversation()
         await model.open(config).value
         return (model, config)
@@ -79,7 +79,7 @@ final class AppModelEngineTests: XCTestCase {
         let chats = hub.with(\.chats)
         XCTAssertEqual(chats.count, 1)
         XCTAssertEqual(chats.first?.returnProgress, true, "the engine is gglib and was not asked for progress")
-        XCTAssertEqual(chats.first?.model, MockEngine.model.id)
+        XCTAssertEqual(chats.first?.model, MockEngine.model.key)
         XCTAssertEqual(hub.with(\.drawingAsked), 0, "this iPhone was asked whether it draws")
         XCTAssertEqual(model.selectedConversation?.messages.last?.content, "the old way")
     }
@@ -101,7 +101,7 @@ final class AppModelEngineTests: XCTestCase {
         try await XCTUnwrap(model.send("hi")).value
         let conversation = try XCTUnwrap(model.selectedConversation)
         XCTAssertEqual(conversation.context?.size, 4_096)
-        XCTAssertEqual(conversation.context?.model, MockEngine.model.id)
+        XCTAssertEqual(conversation.context?.model, MockEngine.model.key)
         XCTAssertNotNil(model.contextReading(for: conversation), "a reply on this iPhone raised no ring")
     }
 
@@ -122,7 +122,7 @@ final class AppModelEngineTests: XCTestCase {
     /// is refused at once with a sentence about the build, and nothing waits.
     func testWithNoEngineASendOnThisIPhoneIsRefusedWithASentence() async throws {
         let model = makeModel(engine: UnavailableEngine(), registry: LoopbackProviderRegistry())
-        let config = try model.addThisIPhone(defaultModel: MockEngine.model.id)
+        let config = try model.addThisIPhone(defaultModel: MockEngine.model.key)
         model.newConversation()
         await model.open(config).value
         XCTAssertNil(model.engineSession)
@@ -136,7 +136,7 @@ final class AppModelEngineTests: XCTestCase {
     func testThisIPhoneIsAddedOnce() throws {
         let model = makeModel(engine: MockEngine(registry: LoopbackProviderRegistry()), registry: .init())
         let first = try model.addThisIPhone(defaultModel: nil)
-        let second = try model.addThisIPhone(defaultModel: MockEngine.model.id)
+        let second = try model.addThisIPhone(defaultModel: MockEngine.model.key)
         XCTAssertEqual(first.id, second.id)
         XCTAssertEqual(model.providers.map(\.kind), [.onDevice])
         XCTAssertEqual(model.providers.first?.name, "This iPhone")
@@ -160,7 +160,7 @@ final class AppModelEngineTests: XCTestCase {
         let registry = LoopbackProviderRegistry()
         let engine = GatedEngine(registry: registry, holdingServes: true, holdingShutdowns: false)
         let model = makeModel(engine: engine, registry: registry)
-        let config = try model.addThisIPhone(defaultModel: MockEngine.model.id)
+        let config = try model.addThisIPhone(defaultModel: MockEngine.model.key)
         model.newConversation()
         let opening = model.open(config)
         let serving = await engine.waitForServes(1)
@@ -184,14 +184,14 @@ final class AppModelEngineTests: XCTestCase {
         let registry = LoopbackProviderRegistry()
         let engine = GatedEngine(registry: registry, holdingServes: false, holdingShutdowns: true)
         let model = makeModel(engine: engine, registry: registry)
-        let first = try model.addThisIPhone(defaultModel: MockEngine.model.id)
+        let first = try model.addThisIPhone(defaultModel: MockEngine.model.key)
         await model.open(first).value
         let gone = try XCTUnwrap(model.engineSession as? GatedEngineSession)
         model.removeProvider(first.id)
         let goingDown = await engine.waitForShutdowns(1)
         XCTAssertTrue(goingDown, "removing This iPhone did not take its engine down")
 
-        let again = try model.addThisIPhone(defaultModel: MockEngine.model.id)
+        let again = try model.addThisIPhone(defaultModel: MockEngine.model.key)
         let opening = model.open(again)
         let servedEarly = await engine.waitForServes(2, within: .milliseconds(200))
         XCTAssertFalse(servedEarly, "the engine was served again while its last session was going down")
