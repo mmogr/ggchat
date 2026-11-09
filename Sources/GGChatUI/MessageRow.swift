@@ -81,7 +81,7 @@ struct MessageRow: View {
                 Button("Branch from here", systemImage: "arrow.triangle.branch") { changes.branch(message.id) }
             }
         } preview: {
-            MessagePreviewCard(message: message, imagesFromHub: imagesFromHub)
+            MessagePreviewCard(message: message, picture: previewPicture)
         }
     }
 
@@ -98,6 +98,13 @@ struct MessageRow: View {
             .buttonStyle(.bordered)
         }
         .padding(.top, 2)
+    }
+
+    /// The first picture of a message with no words, for its long-press
+    /// card; read here, where the model is.
+    private var previewPicture: CGImage? {
+        guard message.content.isEmpty, let image = message.images.first else { return nil }
+        return imagesFromHub ? model.hubThumbnail(of: image) : model.thumbnail(of: image)
     }
 
     private var partialFooter: some View {

@@ -8,11 +8,14 @@ import SwiftUI
 /// The card is one width whatever the message, and no taller than
 /// `maxHeight`, with the text fading out where it is cut. A message of only
 /// images shows its first.
+///
+/// The card reads nothing from the environment's model: the system draws a
+/// preview in a hosting of its own, and a card that read `AppModel` there
+/// crashed the app on the hold. The row hands it the picture.
 struct MessagePreviewCard: View {
-    @Environment(AppModel.self) private var model
     let message: Message
-    /// Whether the images are a Mac's chat's, read from it into memory.
-    let imagesFromHub: Bool
+    /// The message's first picture, for a message of only images.
+    let picture: CGImage?
 
     nonisolated static let width: CGFloat = 340
     nonisolated static let maxHeight: CGFloat = 420
@@ -26,10 +29,8 @@ struct MessagePreviewCard: View {
         let preview = MarkdownPreview(MarkdownBlocks.parse(message.content))
         VStack(alignment: .leading, spacing: 8) {
             RoleLabel(role: message.role)
-            if preview.blocks.isEmpty, let image = message.images.first {
-                ImageThumbnail(
-                    picture: imagesFromHub ? model.hubThumbnail(of: image) : model.thumbnail(of: image),
-                    side: 200)
+            if preview.blocks.isEmpty, !message.images.isEmpty {
+                ImageThumbnail(picture: picture, side: 200)
             }
             MarkdownBlocksView(blocks: preview.blocks)
         }
