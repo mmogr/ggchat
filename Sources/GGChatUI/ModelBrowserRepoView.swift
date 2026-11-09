@@ -24,7 +24,7 @@ struct ModelBrowserRepoView: View {
                         Text("This repository publishes no quantization this iPhone can run.")
                             .foregroundStyle(.secondary)
                     }
-                    ForEach(offers, id: \.name) { offer in
+                    ForEach(offers, id: \.label) { offer in
                         row(offer)
                     }
                 } header: {
@@ -54,7 +54,7 @@ struct ModelBrowserRepoView: View {
     }
 
     private func row(_ offer: QuantOffer) -> some View {
-        let choice = QuantChoice(repo: repo, quantization: offer.name)
+        let choice = QuantChoice(repo: repo, quantization: offer.label)
         let progress = model.onDevice.downloads[choice]
         return VStack(alignment: .leading, spacing: 6) {
             CompactRow(title: Self.title(offer), detail: nil) {
@@ -64,7 +64,7 @@ struct ModelBrowserRepoView: View {
                 }
             }
             if let progress, progress.state.isUnderWay {
-                DownloadBar(progress: progress, name: offer.name) { model.cancelDownload(choice) }
+                DownloadBar(progress: progress, name: offer.label) { model.cancelDownload(choice) }
             } else if case .failed(let reason)? = progress?.state {
                 Text(reason).font(.caption).foregroundStyle(.red)
             }
@@ -72,18 +72,19 @@ struct ModelBrowserRepoView: View {
     }
 
     /// What ends the row: a download button, which one too big for this
-    /// iPhone does not have; a mark once it is on this iPhone; nothing while
-    /// it downloads, whose bar and Cancel are under the row.
+    /// iPhone does not have; a mark once it is on this iPhone, as a download
+    /// just done or as installed; nothing while it downloads, whose bar and
+    /// Cancel are under the row.
     @ViewBuilder
     private func control(_ offer: QuantOffer, progress: DownloadProgress?) -> some View {
-        switch progress?.state {
+        switch model.isOnThisIPhone(offer, of: repo) ? .done : progress?.state {
         case .done?:
             Image(systemName: "checkmark.circle.fill")
                 .foregroundStyle(.green)
                 .accessibilityLabel("On this iPhone")
                 .accessibilityIdentifier("downloaded")
         case nil, .failed?:
-            if offer.verdict.allowsDownload {
+            if offer.allowsDownload {
                 Button {
                     model.download(offer, of: repo)
                 } label: {
@@ -91,7 +92,7 @@ struct ModelBrowserRepoView: View {
                         .imageScale(.large)
                 }
                 .buttonStyle(.borderless)
-                .accessibilityLabel("Download, \(offer.name)")
+                .accessibilityLabel("Download, \(offer.label)")
             }
         default:
             EmptyView()
@@ -102,6 +103,6 @@ struct ModelBrowserRepoView: View {
     nonisolated static func title(_ offer: QuantOffer) -> String {
         let size = Sizes.download(offer.totalBytes)
         let files = offer.shardCount > 1 ? " in \(offer.shardCount) files" : ""
-        return "\(offer.name) · \(size)\(files)"
+        return "\(offer.label) · \(size)\(files)"
     }
 }

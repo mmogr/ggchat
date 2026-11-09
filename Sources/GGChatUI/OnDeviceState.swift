@@ -26,11 +26,13 @@ public final class OnDeviceState {
     /// Where the models are kept, or nil on the Mac, which keeps none.
     @ObservationIgnored var modelsDirectory = EngineFactory.makeModelsDirectory()
     /// The models the engine refused as too big for this device since it was
-    /// last served, by id, which the status pill says. A serve reads the
-    /// memory afresh, so it starts with none.
+    /// last served, by the key the refused request named them by, which the
+    /// status pill says. A serve reads the memory afresh, so it starts with
+    /// none.
     public internal(set) var tooBig: Set<String> = []
-    /// The names of the models being removed, one entry per removal under
-    /// way, which a send naming one is refused for (`AppModel+Removal`).
+    /// The library ids of the models being removed, as keys, one entry per
+    /// removal under way, which a send naming one is refused for
+    /// (`AppModel+Removal`).
     @ObservationIgnored var removing: [String] = []
     /// Moved on by every shutdown of the engine, so a serve that lands after
     /// one takes itself down: nothing else would.

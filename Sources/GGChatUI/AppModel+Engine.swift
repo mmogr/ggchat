@@ -32,7 +32,7 @@ extension AppModel {
     public func useInstalled(_ installed: InstalledModel) {
         guard runsModelsHere, thisIPhoneID == nil else { return }
         do {
-            try addThisIPhone(defaultModel: installed.name)
+            try addThisIPhone(defaultModel: String(installed.id))
         } catch {
             onDevice.installedFailure = error.localizedDescription
         }
@@ -40,19 +40,19 @@ extension AppModel {
 
     /// Adds This iPhone at launch in a DEBUG build launched with
     /// `-ggchat-mock-engine`, over the mock engine, or with
-    /// `-ggchat-live-engine-model <id>`, over gglib's with that model chosen,
-    /// which is how a walk is given one, as "Add mock provider" gives it a
-    /// server; not with `-ggchat-mock-engine-unadded`, which walks a first
-    /// run. Nothing anywhere else: a build without an engine offers nothing
-    /// on-device.
+    /// `-ggchat-live-engine-model <name>`, over gglib's with the model of that
+    /// name chosen once the library has said its id, which is how a walk is
+    /// given one, as "Add mock provider" gives it a server; not with
+    /// `-ggchat-mock-engine-unadded`, which walks a first run. Nothing
+    /// anywhere else: a build without an engine offers nothing on-device.
     func addThisIPhoneForAWalk() {
         #if DEBUG
             guard engine.isAvailable, !EngineFactory.leavesThisIPhoneOut else { return }
             let model: String?
             if let behaviour = EngineFactory.mockBehaviour {
-                model = behaviour == .noModels ? nil : MockEngine.model.id
-            } else if let live = EngineFactory.liveEngineModel {
-                model = live
+                model = behaviour == .noModels ? nil : String(MockEngine.modelID)
+            } else if EngineFactory.liveEngineModel != nil {
+                model = nil
             } else {
                 return
             }
@@ -61,8 +61,25 @@ extension AppModel {
             } catch {
                 report(error)
             }
+            if let live = EngineFactory.liveEngineModel { Task { await choose(installedNamed: live) } }
         #endif
     }
+
+    #if DEBUG
+        /// Makes the model installed as `name` This iPhone's default, for a
+        /// walk on a device, which names its model as the library names it
+        /// and cannot know its id. The first of that name, by id, as gglib
+        /// takes a bare name.
+        private func choose(installedNamed name: String) async {
+            await refreshInstalled()
+            let named = onDevice.installed?.filter { $0.name == name }.min { $0.id < $1.id }
+            guard let named, var config = providers.first(where: { $0.kind == .onDevice }) else {
+                return log.log(.error, "the walk's model \(name) is not installed on this iPhone")
+            }
+            config.defaultModel = String(named.id)
+            updateProvider(config)
+        }
+    #endif
 
     /// Serves the engine, unless a session is up, this build has no engine,
     /// or the app is away: the engine runs in the foreground only. A serve in

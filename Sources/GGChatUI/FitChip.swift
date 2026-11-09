@@ -99,25 +99,26 @@ struct FitChipButton: View {
 /// alone, judged with no reading the browser took, so its sheet says that
 /// verdict and neither figures nor when the device was read.
 struct FitExplanation: Identifiable, Equatable {
+    let id: String
     /// The repository, or nil for an installed model, which does not say.
     let repo: String?
-    /// The quantization, or the installed model's name.
+    /// The quantization, or the installed model's name and quantization.
     let name: String
     let verdict: FitVerdict
     let why: FitWhy?
     let rationale: String?
 
-    var id: String { "\(repo ?? "")/\(name)" }
-
     init(repo: String, offer: QuantOffer) {
+        id = "\(repo)/\(offer.label)"
         self.repo = repo
-        name = offer.name
+        name = offer.label
         verdict = offer.verdict
         why = offer.why
         rationale = nil
     }
 
     init(suggestion: Suggestion) {
+        id = "\(suggestion.repo)/\(suggestion.quantization)"
         repo = suggestion.repo
         name = suggestion.quantization
         verdict = suggestion.verdict
@@ -125,9 +126,12 @@ struct FitExplanation: Identifiable, Equatable {
         rationale = suggestion.rationale.isEmpty ? nil : suggestion.rationale
     }
 
+    /// Keyed by the model's id, which two quantizations of one model, named
+    /// alike, do not share.
     init(installed: InstalledModel) {
+        id = "installed/\(installed.id)"
         repo = nil
-        name = installed.name
+        name = installed.shownName
         verdict = installed.verdict
         why = nil
         rationale = nil

@@ -77,7 +77,7 @@ final class ModelBrowserLayoutTests: XCTestCase {
         silent.rationale = ""
         XCTAssertNil(FitExplanation(suggestion: silent).rationale, "an empty sentence took a section")
 
-        let offer = QuantOffer(name: "Q8_0", totalBytes: 2 << 30, shardCount: 1, verdict: .tight(ctx: 4_096), why: why)
+        let offer = QuantOffer(label: "Q8_0", totalBytes: 2 << 30, shardCount: 1, verdict: .tight(ctx: 4_096), why: why)
         let quant = FitExplanation(repo: "Qwen/Qwen3-1.7B-GGUF", offer: offer)
         XCTAssertNil(quant.rationale)
         XCTAssertEqual(quant.why, why)
@@ -117,11 +117,11 @@ final class ModelBrowserLayoutTests: XCTestCase {
         XCTAssertEqual(HitRow.detail(bare, locale: locale), "12 downloads")
 
         let whole = QuantOffer(
-            name: "Q4_K_M", totalBytes: 1_100_000_000, shardCount: 1, verdict: .tooBig(needBytes: 1, haveBytes: 0),
+            label: "Q4_K_M", totalBytes: 1_100_000_000, shardCount: 1, verdict: .tooBig(needBytes: 1, haveBytes: 0),
             why: none)
         XCTAssertEqual(ModelBrowserRepoView.title(whole), "Q4_K_M · \(Sizes.download(1_100_000_000))")
         let split = QuantOffer(
-            name: "Q8_0", totalBytes: 4_290_000_000, shardCount: 2, verdict: .fits(ctx: 8_192), why: none)
+            label: "Q8_0", totalBytes: 4_290_000_000, shardCount: 2, verdict: .fits(ctx: 8_192), why: none)
         XCTAssertEqual(ModelBrowserRepoView.title(split), "Q8_0 · \(Sizes.download(4_290_000_000)) in 2 files")
 
         XCTAssertEqual(DownloadBar.percent(DownloadProgress(id: "", bytes: 41, total: 100, state: .running)), "41%")
@@ -191,11 +191,11 @@ final class ModelBrowserLayoutTests: XCTestCase {
         model.useInstalled(first)
         XCTAssertEqual(model.providers.map(\.kind), [.onDevice])
         XCTAssertEqual(model.providers.first?.name, "This iPhone")
-        XCTAssertEqual(model.providers.first?.defaultModel, "mock-phone-1.7b")
+        XCTAssertEqual(model.providers.first?.defaultModel, "1")
 
         model.useInstalled(second)
         XCTAssertEqual(model.providers.count, 1, "Use added a second This iPhone")
-        XCTAssertEqual(model.providers.first?.defaultModel, "mock-phone-1.7b", "Use changed This iPhone's model")
+        XCTAssertEqual(model.providers.first?.defaultModel, "1", "Use changed This iPhone's model")
 
         let mac = makeModel(engine: UnavailableEngine())
         mac.useInstalled(first)

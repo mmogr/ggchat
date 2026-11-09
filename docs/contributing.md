@@ -41,9 +41,10 @@ make test-live-library
 
 gglib's own engine is served on the Mac's slice by `make test-live-engine`,
 with tinygemma3, gglib's recorder's tiny model, in a scratch library: the
-model is listed under the name it was added as, one reply streams through
-the ordinary provider, the status walks to ready with that name at the
-context the reply's usage reports, and the shutdown ends it on stopped.
+model is listed under the name it was added as, with its library id, one
+reply asked of it by that id, as a chat on This iPhone asks, streams through
+the ordinary provider, the status walks to ready with that id and name at
+the context the reply's usage reports, and the shutdown ends it on stopped.
 `make record-phone-stream` records the reply `PhoneStreamContractTests`
 replays, into `Tests/GGChatLocalTests/Fixtures`, with a note of the gglib,
 the llama.cpp and the model that made it. Both need the folder holding
@@ -207,12 +208,14 @@ well, but separately.
 names, as Xcode names it: no simulator runs it, so no other walk can. Its
 walk adds This iPhone at launch with the model `GGCHAT_LIVE_ENGINE_MODEL`
 names, which must already be downloaded to the phone through the model
-browser, under the name its model list shows; sends, and waits for the pill
-to read Loaded and the ring to rise; puts the app in the background, comes
+browser, under the name the browser's "On this iPhone" shows before its
+" · " and quantization; the app chooses it by its library id, the first of
+that name. It sends, and waits
+for the pill to read Loaded and the ring to rise; puts the app in the background, comes
 back to a pill that reads Not loaded, and sends again:
 
 ```sh
-DEVICE='My iPhone' GGCHAT_LIVE_ENGINE_MODEL=Qwen3-0.6B-Q4_K_M make uitest-device-engine
+DEVICE='My iPhone' GGCHAT_LIVE_ENGINE_MODEL=Qwen3-0.6B make uitest-device-engine
 ```
 
 It is signed for the phone as `make phone` is, so the provisioning profile

@@ -27,7 +27,8 @@ private func string(_ text: String) -> Data { uint64(UInt64(text.utf8.count)) + 
 
 /// Stores a model in a library's database as a download leaves one: its
 /// weights at `weights`, trained for 40,960 tokens, with the KV shape the
-/// synthetic header carries. Answers its id.
+/// synthetic header carries, labelled `Q4_K_M` and downloaded from
+/// `test-owner/Test-GGUF`. Answers its id.
 ///
 /// The binding has no call that adds a model, since a phone gets its models
 /// by download, so the row is written as gglib's own repository tests write
@@ -46,9 +47,10 @@ func storeModel(at weights: URL, in database: URL) throws -> Int64 {
         "llama.attention.key_length":"64","llama.attention.value_length":"64"}
         """#
     let insert = """
-        INSERT INTO models (name, file_path, param_count_b, architecture, quantization, context_length, \
-        metadata, added_at, model_key)
-        VALUES ('Test model', ?, 1.0, 'llama', 'Q4_K_M', 40960, ?, '2026-01-01 00:00:00', 'test-model')
+        INSERT INTO models (name, file_path, param_count_b, architecture, variant_label, context_length, \
+        metadata, added_at, hf_repo_id, model_key)
+        VALUES ('Test model', ?, 1.0, 'llama', 'Q4_K_M', 40960, ?, '2026-01-01 00:00:00', 'test-owner/Test-GGUF', \
+        'test-model')
         """
     var statement: OpaquePointer?
     guard sqlite3_prepare_v2(db, insert, -1, &statement, nil) == SQLITE_OK else {

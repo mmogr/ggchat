@@ -60,17 +60,31 @@ final class MappingTests: XCTestCase {
                 nextCursor: "2"))
         XCTAssertEqual(
             GGChatCore.QuantOffer(
-                GGLib.QuantOffer(name: "Q8_0", totalBytes: 5, shardCount: 2, verdict: .tight(ctx: 4_096), why: why)),
-            GGChatCore.QuantOffer(name: "Q8_0", totalBytes: 5, shardCount: 2, verdict: .tight(ctx: 4_096), why: appsWhy)
-        )
+                GGLib.QuantOffer(
+                    label: "UD-Q8_K_XL", role: .projector, totalBytes: 5, shardCount: 2, verdict: .tight(ctx: 4_096),
+                    why: why)),
+            GGChatCore.QuantOffer(
+                label: "UD-Q8_K_XL", role: .projector, totalBytes: 5, shardCount: 2, verdict: .tight(ctx: 4_096),
+                why: appsWhy))
         XCTAssertEqual(
             GGChatCore.InstalledModel(
                 GGLib.InstalledModel(
-                    id: 4, name: "Test model", bytes: 6, trainedCtx: 40_960, capabilities: ["reasoning"],
+                    id: 4, name: "Test model", listedId: "Test model@Q4_K_M", quantization: "Q4_K_M",
+                    repo: "someone/test-GGUF", bytes: 6, trainedCtx: 40_960, capabilities: ["reasoning"],
                     verdict: .unknown(missing: .budget, cutOff: false))),
             GGChatCore.InstalledModel(
-                id: 4, name: "Test model", bytes: 6, trainedCtx: 40_960, capabilities: ["reasoning"],
-                verdict: .unknown(missing: .budget, cutOff: false)))
+                id: 4, name: "Test model", quantization: "Q4_K_M", repo: "someone/test-GGUF", bytes: 6,
+                trainedCtx: 40_960, capabilities: ["reasoning"], verdict: .unknown(missing: .budget, cutOff: false)))
+    }
+
+    /// What a variant's header says it is, case for case.
+    func testEachVariantRoleIsSaidAsTheAppsOwn() {
+        let said: [(GGLib.VariantRole, GGChatCore.VariantRole)] = [
+            (.model, .model), (.draftOrHelper, .draftOrHelper), (.projector, .projector),
+        ]
+        for (role, appsRole) in said {
+            XCTAssertEqual(GGChatCore.VariantRole(role), appsRole, "\(role)")
+        }
     }
 
     /// The reading is the one record that goes the other way.
@@ -120,15 +134,21 @@ final class MappingTests: XCTestCase {
         XCTAssertEqual(OnDeviceError(thrown: Machinery()), .internal(message: "a buffer could not be read"))
     }
 
-    /// Each of gglib's states is the app's of the same name, with the model
-    /// as gglib names it, the name its proxy lists in `/v1/models`, and the
-    /// fraction, the context and the reason as they came.
+    /// Each of gglib's states is the app's of the same name, with the
+    /// model's library id, which tells two quantizations of one model apart,
+    /// its name, and the fraction, the context and the reason as they came.
     func testEachEngineStateIsSaidAsTheAppsOwn() {
         let said: [(GGLib.EngineState, EngineStatus)] = [
             (.idle, .idle),
-            (.loading(model: "tinygemma3", fraction: 0.25), .loading(model: "tinygemma3", fraction: 0.25)),
-            (.ready(model: "tinygemma3", nCtx: 8_192), .ready(model: "tinygemma3", nCtx: 8_192)),
-            (.failed(model: "tinygemma3", reason: "no Metal"), .failed(model: "tinygemma3", reason: "no Metal")),
+            (
+                .loading(id: 3, model: "tinygemma3", fraction: 0.25),
+                .loading(id: 3, model: "tinygemma3", fraction: 0.25)
+            ),
+            (.ready(id: 3, model: "tinygemma3", nCtx: 8_192), .ready(id: 3, model: "tinygemma3", nCtx: 8_192)),
+            (
+                .failed(id: 3, model: "tinygemma3", reason: "no Metal"),
+                .failed(id: 3, model: "tinygemma3", reason: "no Metal")
+            ),
             (.stopped, .stopped),
         ]
         for (state, status) in said {

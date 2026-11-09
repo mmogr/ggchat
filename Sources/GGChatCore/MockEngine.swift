@@ -42,9 +42,14 @@
         public static let apiKey = "mock-engine-key"
         /// The context the mock loads its model with, and reports.
         public static let contextSize = 4_096
-        /// The one model the mock engine lists.
+        /// The library id of ``model``, the model the mock's library holds
+        /// from the start.
+        public static let modelID: Int64 = 1
+        /// The model the mock engine lists from the start, and the one its
+        /// walk loads, whichever model a request names.
         public static let model = ModelInfo(
-            id: "mock-phone-1.7b", ownedBy: "ggchat", description: "a canned model small enough for a phone",
+            id: "mock-phone-1.7b", gglibID: modelID, ownedBy: "ggchat",
+            description: "a canned model small enough for a phone",
             contextWindow: 40_960, capabilities: ["reasoning"])
 
         public var behaviour: Behaviour
@@ -82,7 +87,10 @@
         /// which the session keeps for a test to read back.
         public func serve(reading: DeviceReading) async throws -> any EngineSession {
             let session = MockEngineSession(
-                reading: reading, walk: walk, sleeper: sleeper, stepDelay: stepDelay, registry: registry)
+                reading: reading, walk: { [self] in walk(id: $0, model: $1) },
+                resolve: { [catalogue] in
+                    Self.resolve($0, in: catalogue)
+                }, sleeper: sleeper, stepDelay: stepDelay, registry: registry)
             registry.register(LoadingFirst(session: session, replying: provider ?? answering), at: Self.baseURL)
             return session
         }
@@ -110,18 +118,37 @@
             return CatalogueListing(replying: replying, catalogue: catalogue)
         }
 
-        /// The statuses a load walks through from `idle` or `failed`, one
-        /// step apart. A model too big is refused before it loads, and with
-        /// no model there is nothing to load.
+        /// The statuses a load of ``model`` walks through.
         var walk: [EngineStatus] {
-            let model = Self.model.id
-            let ready = EngineStatus.ready(model: model, nCtx: UInt64(Self.contextSize))
+            walk(id: Self.modelID, model: Self.model.id)
+        }
+
+        /// The model a request's `key` names, by library id and name, as
+        /// gglib resolves it: an id, with a profile after a colon or not, or
+        /// a name, the first installed under it; ``model`` for one the
+        /// catalogue does not hold, which the mock loads whatever it is asked.
+        static func resolve(_ key: String, in catalogue: MockLibrary.Catalogue) -> (id: Int64, model: String) {
+            let installed = catalogue.installed
+            let id = key.split(separator: ":").first.flatMap { Int64($0) }
+            let found =
+                installed.first { $0.id == id }
+                ?? installed.filter { $0.name == key }.min { $0.id < $1.id }
+            return found.map { ($0.id, $0.name) } ?? (modelID, model.id)
+        }
+
+        /// The statuses a load of the model with library id `id` walks
+        /// through from `idle`, `failed` or another model ready, one step
+        /// apart. A model too big is refused before it loads, and with no
+        /// model there is nothing to load.
+        func walk(id: Int64, model: String) -> [EngineStatus] {
+            let ready = EngineStatus.ready(id: id, model: model, nCtx: UInt64(Self.contextSize))
             switch behaviour {
-            case .ready: return [.loading(model: model, fraction: 0.5), ready]
-            case .slow: return (1...10).map { .loading(model: model, fraction: Double($0) / 10) } + [ready]
+            case .ready: return [.loading(id: id, model: model, fraction: 0.5), ready]
+            case .slow: return (1...10).map { .loading(id: id, model: model, fraction: Double($0) / 10) } + [ready]
             case .fails:
                 return [
-                    .loading(model: model, fraction: 0.5), .failed(model: model, reason: "the mock was told to fail"),
+                    .loading(id: id, model: model, fraction: 0.5),
+                    .failed(id: id, model: model, reason: "the mock was told to fail"),
                 ]
             case .tooBig, .noModels: return []
             }
@@ -136,7 +163,8 @@
         /// The reading the session was served with.
         public let reading: DeviceReading
         private let relay = StatusRelay<EngineStatus>(initial: .idle)
-        private let walk: [EngineStatus]
+        private let walk: @Sendable (Int64, String) -> [EngineStatus]
+        private let resolve: @Sendable (String) -> (id: Int64, model: String)
         private let sleeper: any Sleeper
         private let stepDelay: Duration
         /// The load under way, while one is.
@@ -145,31 +173,38 @@
         private let registry: LoopbackProviderRegistry
 
         init(
-            reading: DeviceReading, walk: [EngineStatus], sleeper: any Sleeper, stepDelay: Duration,
-            registry: LoopbackProviderRegistry
+            reading: DeviceReading, walk: @escaping @Sendable (Int64, String) -> [EngineStatus],
+            resolve: @escaping @Sendable (String) -> (id: Int64, model: String), sleeper: any Sleeper,
+            stepDelay: Duration, registry: LoopbackProviderRegistry
         ) {
             self.reading = reading
             self.walk = walk
+            self.resolve = resolve
             self.sleeper = sleeper
             self.stepDelay = stepDelay
             self.registry = registry
         }
 
-        /// Loads the model, as gglib's engine loads one for the first request
-        /// that names it, unless it is loaded: walks the statuses, one step
-        /// apart. A load under way is joined, and one that failed is walked
-        /// again, as gglib tries again at the next request. Returns once the
-        /// walk has ended.
-        func load() async {
+        /// Loads the model `key` names, as gglib's engine loads one for the
+        /// first request that names it, unless it is loaded: walks the
+        /// statuses, one step apart, under the model's id. A load under way
+        /// is joined, one that failed is walked again, as gglib tries again
+        /// at the next request, and a request naming another model than the
+        /// one ready loads that one in its place. Returns once the walk has
+        /// ended.
+        func load(naming key: String) async {
+            let (id, model) = resolve(key)
             let load: Task<Void, Never>? = walking.withLock { walking in
                 if let walking { return walking }
                 switch relay.current {
                 case .idle, .failed: break
+                case .ready(let held, _, _) where held != id: break
                 case .loading, .ready, .stopped: return nil
                 }
                 guard !stopped.withLock({ $0 }) else { return nil }
+                let steps = walk(id, model)
                 let started = Task { [self] in
-                    for status in walk {
+                    for status in steps {
                         guard (try? await sleeper.sleep(for: stepDelay)) != nil else { break }
                         relay.send(status)
                     }
@@ -224,7 +259,7 @@
                 let replying = replying
                 return AsyncStream { continuation in
                     let task = Task {
-                        await session.load()
+                        await session.load(naming: request.model)
                         for await event in replying.stream(request) { continuation.yield(event) }
                         continuation.finish()
                     }

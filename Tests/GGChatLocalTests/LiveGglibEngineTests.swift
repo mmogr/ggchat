@@ -32,9 +32,11 @@ final class LiveGglibEngineTests: XCTestCase {
         }
         let provider = OpenAICompatibleProvider(baseURL: session.baseURL, apiKey: session.apiKey)
 
-        let listed = try await provider.models().map(\.id)
-        XCTAssertEqual(listed, [live.name], "the proxy lists the model under another id")
-        let model = try XCTUnwrap(listed.first)
+        let listed = try await provider.models()
+        XCTAssertEqual(listed.map(\.id), [live.name], "the proxy lists the model under another id")
+        let id = try XCTUnwrap(listed.first?.gglibID, "the proxy lists the model without its library id")
+        // A chat on This iPhone names its model by its library id.
+        let model = String(id)
         let request = ChatRequest(
             model: model, messages: [Message(role: .user, content: "Say hello.", createdAt: .distantPast)],
             maxTokens: 16, returnProgress: true)
@@ -57,8 +59,8 @@ final class LiveGglibEngineTests: XCTestCase {
         let said = await following.value
         XCTAssertEqual(said.first, .idle, "the stream did not start where a new engine stands")
         XCTAssertTrue(
-            said.contains(.ready(model: model, nCtx: UInt64(reading.size))),
-            "the status never said ready with \(model) at \(reading.size): \(said)")
+            said.contains(.ready(id: id, model: live.name, nCtx: UInt64(reading.size))),
+            "the status never said ready with \(live.name), id \(id), at \(reading.size): \(said)")
         XCTAssertEqual(said.last, .stopped, "the shutdown did not end the watch on stopped")
         let after = session.status
         var afterSaid: [EngineStatus] = []

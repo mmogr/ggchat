@@ -995,10 +995,16 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # to words made here that match gglib's for a load, and fails nothing else, so
 # these three and their markers are the whole of that guard.
 #
-# 2026-11-10: 1125 -> 1126 and 1021 -> 1022 for the store opened off the
+# 2026-11-09: 1125 -> 1134 and 1021 -> 1028 for gglib 0.31.0. A variant's
+# role, a model's id in the engine's status, and an installed model's
+# quantization and repository are read nowhere else: a draft offered for
+# download, twins keyed by one name, a pill following the wrong twin, or a
+# removal that clears both, would fail only these.
+#
+# 2026-11-10: 1134 -> 1135 and 1028 -> 1029 for the store opened off the
 # main actor while the window draws (#59).
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1126
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1135
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 1022
+floor "README test markers" "${markers:-0}" 1029
 
 exit $status
