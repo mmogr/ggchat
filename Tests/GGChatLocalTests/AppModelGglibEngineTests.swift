@@ -77,11 +77,11 @@ final class AppModelGglibEngineTests: XCTestCase {
     }
 
     /// The first send serves gglib's engine, which loads the model within
-    /// the request; the pill reads Loaded for the model as gglib names it,
+    /// the request; the pill reads Loaded for the model by gglib's id for it,
     /// and the reply raises the ring.
     func testAFirstSendServesGglibsEngineAndThePillReadsReady() async throws {
         let (model, served) = makeModel()
-        let config = try model.addThisIPhone(defaultModel: modelName)
+        let config = try model.addThisIPhone(defaultModel: "1")
         let conversation = model.newConversation(with: config)
         XCTAssertNil(model.engineSession, "adding This iPhone served its engine")
 
@@ -99,7 +99,7 @@ final class AppModelGglibEngineTests: XCTestCase {
     /// back serves nothing, and the next send serves it afresh.
     func testTheBackgroundPutsGglibsEngineDownAndTheNextSendServesAgain() async throws {
         let (model, served) = makeModel()
-        let config = try model.addThisIPhone(defaultModel: modelName)
+        let config = try model.addThisIPhone(defaultModel: "1")
         let conversation = model.newConversation(with: config)
         try await XCTUnwrap(model.send("hi")).value
         let first = try XCTUnwrap(served.last)

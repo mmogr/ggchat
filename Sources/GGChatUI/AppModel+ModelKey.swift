@@ -3,8 +3,12 @@ import GGChatCore
 
 // A conversation and a provider's default name a model by its key
 // (`ModelInfo.key`): a gglib model's catalogue id, which a rename on the Mac
-// keeps, and any other server's name for it. Every lookup in a provider's
-// list goes by key, and the name shown is the one the list gives it now.
+// keeps and which tells two quantizations of one model apart, and any other
+// server's name for it. Every lookup in a provider's list goes by key, and
+// the name shown is the one the list gives it now. This iPhone's models are
+// keyed by gglib's id too, and its list of record is what its library has
+// installed (`onDevice.installed`), which is read without serving the
+// engine.
 extension AppModel {
     /// The entry that `key` names in the provider's list, or nil when the
     /// list does not name it or has not been read.
@@ -13,12 +17,46 @@ extension AppModel {
         return models(for: providerID).first { $0.key == key }
     }
 
-    /// The name the provider's list gives the model that `key` names. The
-    /// key itself where the list does not name it, as before the list is
-    /// read: for any server but gglib the two are the same.
+    /// The model installed on this device that `key` names by its id, or
+    /// nil when none does or what is installed has not been read.
+    func installedModel(_ key: String?) -> InstalledModel? {
+        guard let id = key.flatMap({ Int64($0) }) else { return nil }
+        return onDevice.installed?.first { $0.id == id }
+    }
+
+    /// The name the provider's list gives the model that `key` names: on
+    /// This iPhone the name of the model installed under that id. The key
+    /// itself where nothing names it, as before the list is read: for any
+    /// server but gglib the two are the same.
     public func name(of key: String?, on providerID: UUID?) -> String? {
         guard let key else { return nil }
+        if isThisIPhone(providerID), let installed = installedModel(key) { return installed.name }
         return listed(key, on: providerID)?.id ?? key
+    }
+
+    /// Whether `providerID` is This iPhone's.
+    func isThisIPhone(_ providerID: UUID?) -> Bool {
+        guard let providerID else { return false }
+        return providers.first { $0.id == providerID }?.kind == .onDevice
+    }
+
+    /// Whether a chat on the provider may send `key`: any key on a list not
+    /// keyed by gglib's ids or not read yet, and otherwise one the list
+    /// names. On This iPhone, one its library has installed, once that has
+    /// been read.
+    private func names(_ key: String, on config: ProviderConfig) -> Bool {
+        if config.kind == .onDevice {
+            guard onDevice.installed != nil else { return true }
+            return installedModel(key) != nil
+        }
+        return !keysByID(config.id) || listed(key, on: config.id) != nil
+    }
+
+    /// The library id of the model that `key` names on This iPhone, as the
+    /// engine's status names it: the listed entry's, so a profile variant
+    /// (`<id>:<profile>`) is its base model's, else the key read as an id.
+    func engineID(of key: String) -> Int64? {
+        listed(key, on: thisIPhoneID)?.gglibID ?? Int64(key)
     }
 
     /// The key a send in `conversation` names its model by: the
@@ -28,12 +66,17 @@ extension AppModel {
     /// model the list names. So a gglib chat whose model was deleted, or
     /// that was saved by a name before chats were keyed, runs on the default
     /// and is not refused for a model that is not there. Any other server's
-    /// chat, This iPhone's included, is sent its own model as it was saved.
+    /// chat is sent its own model as it was saved.
+    ///
+    /// On This iPhone the default must be installed too, or there is no
+    /// model: a removal clears the chats and the default that had the
+    /// model, and a chat or a default saved by a name, before the phone was
+    /// keyed by id, asks for a model rather than running on another.
     public func model(for conversation: Conversation) -> String? {
-        let config = provider(for: conversation)
-        guard let chosen = conversation.model else { return config?.defaultModel }
-        guard let config, keysByID(config.id), listed(chosen, on: config.id) == nil else { return chosen }
-        return config.defaultModel
+        guard let config = provider(for: conversation) else { return conversation.model }
+        if let chosen = conversation.model, names(chosen, on: config) { return chosen }
+        guard config.kind == .onDevice else { return config.defaultModel }
+        return config.defaultModel.flatMap { names($0, on: config) ? $0 : nil }
     }
 
     /// The name of the model a send in `conversation` asks for, which the
@@ -52,23 +95,9 @@ extension AppModel {
         return models(for: providerID).first { $0.id == model }?.key ?? model
     }
 
-    /// A provider's list as it is kept. This iPhone's is keyed by name: its
-    /// library lists what is installed by name, its engine loads a model by
-    /// name, and nothing renames a model on this device from elsewhere, so
-    /// the id its own gglib lists is dropped.
-    func kept(_ models: [ModelInfo], from config: ProviderConfig) -> [ModelInfo] {
-        guard config.kind == .onDevice else { return models }
-        return models.map { model in
-            var byName = model
-            byName.gglibID = nil
-            byName.profile = nil
-            return byName
-        }
-    }
-
     /// Whether the provider's list names its models by gglib's catalogue
-    /// ids, each of which names a model on one machine alone. This iPhone's
-    /// does not (`kept`), nor does any other server's, nor a list not read.
+    /// ids, each of which names a model on one machine alone: a gglib
+    /// machine's and This iPhone's, once read; no other server's.
     func keysByID(_ providerID: UUID?) -> Bool {
         guard let providerID else { return false }
         return models(for: providerID).contains { $0.gglibID != nil }

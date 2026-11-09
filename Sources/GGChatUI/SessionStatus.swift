@@ -102,14 +102,18 @@ extension AppModel {
         }
     }
 
-    /// How the engine is with `modelID`, as the pill says it.
+    /// How the engine is with the model `modelID` names, as the pill says
+    /// it. The engine's status names its model by gglib's id, which tells a
+    /// model from another quantization of it, so a twin loading leaves this
+    /// one not loaded.
     func modelState(of modelID: String?) -> SessionStatus.ModelState {
         guard let modelID else { return .notLoaded }
         if onDevice.tooBig.contains(modelID) { return .tooBig }
+        guard let id = engineID(of: modelID) else { return .notLoaded }
         switch engineStatus {
-        case .loading(_, modelID, let fraction)?: return .loading(fraction: fraction)
-        case .ready(_, modelID, _)?: return .ready
-        case .failed(_, modelID, _)?: return .failed
+        case .loading(id, _, let fraction)?: return .loading(fraction: fraction)
+        case .ready(id, _, _)?: return .ready
+        case .failed(id, _, _)?: return .failed
         default: return .notLoaded
         }
     }

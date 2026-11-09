@@ -29,7 +29,7 @@ final class AppModelRemovalRaceTests: XCTestCase {
             pipeConnector: MockPipeConnector(sleeper: ImmediateSleeper(), registry: registry),
             engine: engine, library: watching, diagnostics: Diagnostics(defaults: defaults),
             now: { Date(timeIntervalSince1970: 1_700_000_000) })
-        let config = try model.addThisIPhone(defaultModel: MockEngine.model.id)
+        let config = try model.addThisIPhone(defaultModel: MockEngine.model.key)
         model.newConversation(with: config)
         await model.open(config).value
         return (model, config)
@@ -112,7 +112,8 @@ final class AppModelRemovalRaceTests: XCTestCase {
         let goingDown = await engine.waitForShutdowns(1)
         XCTAssertTrue(goingDown, "the removal did not put the engine down")
         XCTAssertNil(model.send("again"), "a send naming the model being removed went ahead")
-        XCTAssertEqual(model.lastError, AppModel.beingRemoved(MockEngine.model.id))
+        XCTAssertEqual(
+            model.lastError, "\(MockEngine.model.id) is being removed from this iPhone. Pick another model.")
         XCTAssertTrue(model.liveReplies.isEmpty, "a refused send is waiting for the engine")
         engine.releaseShutdowns()
         await removing.value

@@ -178,7 +178,9 @@ final class AppModelDownloadTests: XCTestCase {
             }
             let joined = await waitUntil { model.chatModels(for: config.id).map(\.id) == [name] }
             XCTAssertTrue(joined, "serving first \(serveFirst): the list is \(model.chatModels(for: config.id))")
-            XCTAssertEqual(model.providers.first?.defaultModel, name)
+            XCTAssertEqual(
+                model.providers.first?.defaultModel, model.onDevice.installed?.first.map { String($0.id) },
+                "the download is not This iPhone's default by its id")
         }
     }
 

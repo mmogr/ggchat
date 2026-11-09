@@ -17,13 +17,13 @@ extension AppModel {
         let previous = engineStatus
         engineStatus = status
         switch status {
-        case .loading(_, let model, _)?:
-            if case .loading(_, model, _)? = previous { return }
-            log.log(.info, "engine loading \(model)")
-        case .ready(_, let model, let nCtx)? where previous != status:
-            log.log(.info, "engine ready with \(model), context \(nCtx)")
-        case .failed(_, let model, let reason)? where previous != status:
-            log.log(.error, "engine could not load \(model): \(reason)")
+        case .loading(let id, let model, _)?:
+            if case .loading(id, _, _)? = previous { return }
+            log.log(.info, "engine loading \(model), id \(id)")
+        case .ready(let id, let model, let nCtx)? where previous != status:
+            log.log(.info, "engine ready with \(model), id \(id), context \(nCtx)")
+        case .failed(let id, let model, let reason)? where previous != status:
+            log.log(.error, "engine could not load \(model), id \(id): \(reason)")
         default: break
         }
     }

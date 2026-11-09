@@ -211,7 +211,7 @@ extension AppModel {
     public func refreshModels(for config: ProviderConfig, quietly: Bool = false) async {
         guard let provider = makeProvider(for: config) else { return }
         do {
-            let models = kept(try await provider.models(), from: config)
+            let models = try await provider.models()
             // A list that comes back for a provider removed, or moved to
             // another machine, while it was asked for is not kept.
             guard let current = providers.first(where: { $0.id == config.id }), current.kind == config.kind
@@ -220,14 +220,16 @@ extension AppModel {
             modelsByProvider[config.id] = models
             // The first that can chat: an image model or an embeddings model
             // listed first is never chosen for a conversation. Chosen for a
-            // provider with no default, and for one keyed by gglib's ids
-            // (`keysByID`) whose default the list no longer names, so the
-            // default a gglib chat falls back on (`model(for:)`) is always
-            // one the list names. Set on the provider as it is now, so an
-            // edit made while the list was asked for is not written over by
-            // the one this call was given.
+            // provider with no default, and for a gglib machine's keyed by
+            // its ids (`keysByID`) whose default the list no longer names, so
+            // the default a gglib chat falls back on (`model(for:)`) is always
+            // one the list names. This iPhone's is not replaced: a removal
+            // clears it, and one that names no installed model leaves its
+            // chats asking for a model. Set on the provider as it is now, so
+            // an edit made while the list was asked for is not written over
+            // by the one this call was given.
             let unlisted = current.defaultModel.map { key in
-                keysByID(config.id) && !models.contains { $0.chats && $0.key == key }
+                config.kind != .onDevice && keysByID(config.id) && !models.contains { $0.chats && $0.key == key }
             }
             if unlisted ?? true, let first = models.first(where: \.chats) {
                 var updated = current

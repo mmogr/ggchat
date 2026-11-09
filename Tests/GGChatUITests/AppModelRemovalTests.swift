@@ -40,7 +40,7 @@ final class AppModelRemovalTests: XCTestCase {
             pipeConnector: MockPipeConnector(sleeper: ImmediateSleeper(), registry: registry),
             engine: MockEngine(registry: registry, provider: provider, catalogue: catalogue), library: watching,
             diagnostics: Diagnostics(defaults: defaults), now: { Date(timeIntervalSince1970: 1_700_000_000) })
-        let config = try model.addThisIPhone(defaultModel: MockEngine.model.id)
+        let config = try model.addThisIPhone(defaultModel: MockEngine.model.key)
         return (model, config)
     }
 
@@ -59,15 +59,15 @@ final class AppModelRemovalTests: XCTestCase {
         return try XCTUnwrap(model.onDevice.installed?.first { $0.name == MockEngine.model.id })
     }
 
-    /// Downloads a second model to this iPhone, and answers its name.
-    private func installSecond(in model: AppModel) async throws -> String {
+    /// Downloads a second model to this iPhone, and answers it installed.
+    private func installSecond(in model: AppModel) async throws -> InstalledModel {
         let offers = try await library.quantizations(repo: phoneRepo, reading: reading)
         let fits = try XCTUnwrap(offers.first { $0.label == "Q4_K_M" })
         let name = MockLibrary.installedName(repo: phoneRepo, quantization: fits.label)
         model.download(fits, of: phoneRepo)
         let installed = await waitUntil { model.onDevice.installed?.contains { $0.name == name } == true }
         XCTAssertTrue(installed, "the second model was never installed")
-        return name
+        return try XCTUnwrap(model.onDevice.installed?.first { $0.name == name })
     }
 
     private func modelOf(_ id: UUID, in model: AppModel) -> String? {
@@ -108,7 +108,7 @@ final class AppModelRemovalTests: XCTestCase {
         let other = try await installSecond(in: model)
         let gone = model.newConversation(with: config)
         let kept = model.newConversation(with: config)
-        model.select(model: other, for: kept.id)
+        model.select(model: String(other.id), for: kept.id)
         let server = ProviderConfig(
             name: "desk", kind: .openAICompatible(baseURL: URL(string: "http://127.0.0.1:49995/v1")!),
             defaultModel: MockEngine.model.id)
@@ -120,10 +120,10 @@ final class AppModelRemovalTests: XCTestCase {
         XCTAssertNil(
             model.providers.first { $0.id == config.id }?.defaultModel,
             "the listing gave This iPhone the model left as its default")
-        XCTAssertEqual(modelOf(kept.id, in: model), other, "a chat on another model lost it")
+        XCTAssertEqual(modelOf(kept.id, in: model), String(other.id), "a chat on another model lost it")
         XCTAssertEqual(modelOf(elsewhere.id, in: model), MockEngine.model.id, "a chat on a server lost its model")
         XCTAssertEqual(model.providers.first { $0.id == server.id }?.defaultModel, MockEngine.model.id)
-        XCTAssertEqual(model.chatModels(for: config.id).map(\.id), [other])
+        XCTAssertEqual(model.chatModels(for: config.id).map(\.id), [other.name])
     }
 
     /// An engine with the model loaded is put down before the files go, so
@@ -147,12 +147,12 @@ final class AppModelRemovalTests: XCTestCase {
         XCTAssertNil(model.engineSession, "the engine went on holding the model removed")
         XCTAssertNil(model.engineStatus)
         XCTAssertNil(model.registry.provider(for: MockEngine.baseURL), "the engine still answers")
-        XCTAssertEqual(model.chatModels(for: config.id).map(\.id), [other], "the model removed is still listed")
+        XCTAssertEqual(model.chatModels(for: config.id).map(\.id), [other.name], "the model removed is still listed")
 
         await model.open(config).value
         let again = try XCTUnwrap(model.engineSession as? MockEngineSession, "the engine was not served again")
         XCTAssertFalse(again === served)
-        XCTAssertEqual(model.chatModels(for: config.id).map(\.id), [other])
+        XCTAssertEqual(model.chatModels(for: config.id).map(\.id), [other.name])
         XCTAssertNil(modelOf(conversation.id, in: model), "the chat was given another model")
         XCTAssertNil(model.providers.first?.defaultModel, "This iPhone was given another default")
     }
@@ -224,8 +224,8 @@ final class AppModelRemovalTests: XCTestCase {
         XCTAssertEqual(model.engineStatus, ready)
         XCTAssertEqual(model.onDevice.installed, installed)
         XCTAssertEqual(model.chatModels(for: config.id).map(\.id), [MockEngine.model.id])
-        XCTAssertEqual(modelOf(conversation.id, in: model), MockEngine.model.id)
-        XCTAssertEqual(model.providers.first?.defaultModel, MockEngine.model.id)
+        XCTAssertEqual(modelOf(conversation.id, in: model), MockEngine.model.key)
+        XCTAssertEqual(model.providers.first?.defaultModel, MockEngine.model.key)
         XCTAssertEqual(model.onDevice.downloads[finished]?.state, .done, "a refused removal forgot a finished download")
     }
 
@@ -246,9 +246,9 @@ final class AppModelRemovalTests: XCTestCase {
         XCTAssertEqual(model.onDevice.installed, installed)
         XCTAssertEqual(catalogue.installed.map(\.name), [MockEngine.model.id])
         XCTAssertEqual(model.chatModels(for: config.id).map(\.id), [MockEngine.model.id])
-        XCTAssertEqual(modelOf(conversation.id, in: model), MockEngine.model.id)
-        XCTAssertEqual(model.providers.first?.defaultModel, MockEngine.model.id)
-        XCTAssertEqual(try store.loadConversations().first?.model, MockEngine.model.id)
-        XCTAssertEqual(try store.loadProviders().first?.defaultModel, MockEngine.model.id)
+        XCTAssertEqual(modelOf(conversation.id, in: model), MockEngine.model.key)
+        XCTAssertEqual(model.providers.first?.defaultModel, MockEngine.model.key)
+        XCTAssertEqual(try store.loadConversations().first?.model, MockEngine.model.key)
+        XCTAssertEqual(try store.loadProviders().first?.defaultModel, MockEngine.model.key)
     }
 }

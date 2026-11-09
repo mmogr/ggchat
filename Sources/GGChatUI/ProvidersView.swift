@@ -102,7 +102,7 @@ struct ProviderRow: View {
         case .pipe:
             "modelpipe · " + (model.name(of: provider.defaultModel, on: provider.id) ?? "no model chosen")
         case .onDevice:
-            "On this iPhone · " + (provider.defaultModel ?? "no model chosen")
+            "On this iPhone · " + (model.name(of: provider.defaultModel, on: provider.id) ?? "no model chosen")
         }
     }
 }

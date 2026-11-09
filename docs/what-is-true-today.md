@@ -187,13 +187,19 @@ Each claim names the test that keeps it true.
   a model renamed on the Mac keeps working and shows its new name. A reply
   on a run leaves its context reading under the key it was sent, though
   gglib's report names a profile variant by its base model's name and
-  models that share a name by that name alone. Any other server's model,
-  and This iPhone's, is named by the name it lists, and nothing below
-  changes for it. A gglib conversation whose model the list no longer
+  models that share a name by that name alone. This iPhone's models are
+  keyed by gglib's id too, so two quantizations of one model, which share
+  its name, are two choices; its list is what its library has installed,
+  read without serving the engine, and each shows the name it is installed
+  under before the engine lists anything. Any other server's model is
+  named by the name it lists, and nothing below changes for it. A gglib
+  conversation whose model the list no longer
   names, such as one saved by a name before conversations were keyed, or
   one whose model was deleted, runs on the provider's default; until the
-  list is read its own model is sent. Listing gglib replaces a default the
-  list no longer names with the first model that chats, and a gglib
+  list is read its own model is sent. On This iPhone the default must be
+  installed too: a chat or a default saved by a name, before the phone was
+  keyed by id, asks for a model. Listing a gglib machine replaces a default
+  the list no longer names with the first model that chats, and a gglib
   provider moved to another machine forgets its default and every model
   its conversations chose, since an id names a model on one machine.
   <!-- test: WireTests.testModelsFixtureCarriesGGLibExtras -->
@@ -201,7 +207,8 @@ Each claim names the test that keeps it true.
   <!-- test: ModelKeyRunTests.testAReplyReadOnAfterAMoveLeavesItsReadingUnderTheKeySent -->
   <!-- test: ModelKeyRunTests.testAReportByABaseOrASharedNameKeepsTheKeySent -->
   <!-- test: ModelKeyTests.testAProfileVariantIsKeyedByItsIdAndProfile -->
-  <!-- test: ModelKeyTests.testThisIPhonesModelsAreKeyedByName -->
+  <!-- test: ModelKeyTests.testThisIPhonesModelsAreKeyedByID -->
+  <!-- test: ThisIPhoneTwinsTests.testTwoQuantizationsOfOneModelAreTwoChoices -->
   <!-- test: ModelKeyTests.testAChatWhoseModelIsNotListedRunsOnTheDefault -->
   <!-- test: ModelKeyTests.testADefaultTheListNoLongerNamesIsReplaced -->
   <!-- test: ProviderRemovalForgetsTests.testMovingAProviderForgetsTheModelsTheOldMachineListed -->
@@ -1201,15 +1208,17 @@ Each claim names the test that keeps it true.
   opens, or by the section's Edit, and each asks first, naming the model
   and the room it frees. One no longer listed as installed is refused
   before anything is touched. The engine is put down before the files go
-  while its status says a model is loading or ready, while a reply goes
-  through it or waits for it, and while a shutdown is already under way,
-  which a second removal joins; a reply through it is kept as Stop keeps
-  it, and the engine serves again at the next request. One that may hold
-  no model goes on serving. While the model is being removed, a send
+  while its status says that model is loading or ready, while a reply
+  naming it goes through the engine or waits for it, and while a shutdown
+  is already under way, which a second removal joins; a reply through it
+  is kept as Stop keeps it, and the engine serves again at the next
+  request. One that holds another model, another quantization of this one
+  included, or none, goes on serving. While the model is being removed, a send
   naming it is refused with a sentence. The model leaves This iPhone's
   list, and every chat on This iPhone that had it, and This iPhone's
-  default if it was the model, are left with none, matched by name, after
-  the listing, so the listing does not make the model left This iPhone's
+  default if it was the model, are left with none, matched by the model's
+  id, so removing one of two quantizations of a model leaves the other's
+  chats alone, after the listing, so the listing does not make the model left This iPhone's
   default; a chat left with no model and no default says "Choose a model"
   and does not send. Chats on other models and other providers keep
   theirs. A removal the library refuses says why under the section and
@@ -1232,6 +1241,7 @@ Each claim names the test that keeps it true.
   <!-- test: ScreenGalleryUITests.testADownloadFillsItsBarAndTheModelJoinsTheList -->
   <!-- test: AppModelRemovalTests.testARemovedModelLeavesTheChatsAndTheDefaultThatHadItWithNone -->
   <!-- test: AppModelRemovalTests.testARemovalLeavesTheOtherChatsAlone -->
+  <!-- test: ThisIPhoneTwinsTests.testRemovingOneTwinLeavesTheOther -->
   <!-- test: AppModelRemovalTests.testARemovalPutsALoadedEngineDown -->
   <!-- test: AppModelRemovalTests.testARemovalKeepsWhatAReplyThroughTheEngineHad -->
   <!-- test: AppModelRemovalTests.testARemovalLeavesAnIdleEngineServing -->
@@ -1309,9 +1319,10 @@ Each claim names the test that keeps it true.
   model library's own: the engine is served from the one library the browser
   asks, opened at the first question or serve and kept, and opened again
   only after an open that failed, so the process holds one library over one
-  `gglib.db`. The engine's states are the pill's, each under the name
-  gglib's proxy lists the model by, so the pill finds the conversation's
-  model and reads Loaded once it has loaded; its errors are the app's, case
+  `gglib.db`. The engine's states are the pill's, each with the model's
+  library id beside its name, so the pill finds the conversation's model
+  by its id, not a twin of the same name, and reads Loaded once it has
+  loaded; its errors are the app's, case
   for case. The engine's state is followed from where it stands until it
   says stopped, and following stops when nothing listens. A serve that came
   up anywhere but this device's loopback address is shut down and refused.
@@ -1324,6 +1335,7 @@ Each claim names the test that keeps it true.
   increased memory limit, so a build signed for a phone needs a provisioning
   profile that carries it.
   <!-- test: MappingTests.testEachEngineStateIsSaidAsTheAppsOwn -->
+  <!-- test: ThisIPhoneTwinsTests.testThePillFollowsTheTwinTheEngineHolds -->
   <!-- test: InstalledLibraryTests.testTheLibraryIsOpenedInPrivateFoldersOutOfTheBackup -->
   <!-- test: GglibEngineTests.testAServeGglibRefusesIsTheAppsErrorAndTheReadingCrossedAsRead -->
   <!-- test: GglibEngineTests.testTheSessionIsAtTheServersAddressWithItsKey -->

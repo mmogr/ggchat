@@ -191,11 +191,11 @@ final class ModelBrowserLayoutTests: XCTestCase {
         model.useInstalled(first)
         XCTAssertEqual(model.providers.map(\.kind), [.onDevice])
         XCTAssertEqual(model.providers.first?.name, "This iPhone")
-        XCTAssertEqual(model.providers.first?.defaultModel, "mock-phone-1.7b")
+        XCTAssertEqual(model.providers.first?.defaultModel, "1")
 
         model.useInstalled(second)
         XCTAssertEqual(model.providers.count, 1, "Use added a second This iPhone")
-        XCTAssertEqual(model.providers.first?.defaultModel, "mock-phone-1.7b", "Use changed This iPhone's model")
+        XCTAssertEqual(model.providers.first?.defaultModel, "1", "Use changed This iPhone's model")
 
         let mac = makeModel(engine: UnavailableEngine())
         mac.useInstalled(first)

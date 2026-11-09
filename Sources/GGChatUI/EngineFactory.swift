@@ -98,8 +98,9 @@ public enum EngineFactory {
         static let mockEngineKey = "ggchat-mock-engine"
 
         /// The model a walk on a device names with `-ggchat-live-engine-model
-        /// <id>`, as gglib's proxy lists it: This iPhone is added at launch
-        /// with it chosen, over gglib's own engine. Nil when unset or empty.
+        /// <name>`, as gglib's library names it: This iPhone is added at
+        /// launch with it chosen, by its id, over gglib's own engine. Nil when
+        /// unset or empty.
         static var liveEngineModel: String? {
             UserDefaults.standard.string(forKey: "ggchat-live-engine-model").flatMap { $0.isEmpty ? nil : $0 }
         }
