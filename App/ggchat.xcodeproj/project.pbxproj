@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		04FA3183E1569EDD8456EC80 /* ThisChatUprightUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECF55731FEF472A682641FB9 /* ThisChatUprightUITests.swift */; };
 		16ADEFC09003320C95363413 /* ggchatApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D176E1F0D09146E5E6384D /* ggchatApp.swift */; };
 		1E261CE3A582DEC1F616C4AC /* JumpToLatestUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEDE1A7EEC17E8C4F0B5982A /* JumpToLatestUITests.swift */; };
 		281B7549ACADA120FD98060E /* TypingDuringAReplyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27D848FFB39BF527A53D18C4 /* TypingDuringAReplyUITests.swift */; };
@@ -30,6 +31,7 @@
 		ECF98E598E431213FBA52015 /* ContextRingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89A5B151C23B46CE0B51A157 /* ContextRingUITests.swift */; };
 		F27413BDEBA0841B86A2861C /* RenameUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E57382FDF23BB62891F940CF /* RenameUITests.swift */; };
 		FAF20668F07257B8B61A72B7 /* LiveServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3513C1C38B6CD42BBB5ADA4 /* LiveServer.swift */; };
+		FB4F1DCA322A3C26575F4223 /* ModelListDismissUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51D0909D25571D7FAF31250C /* ModelListDismissUITests.swift */; };
 		FFC99CA1BA319689370A7776 /* BranchingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E91528AC0293EFD6DA4E2A5C /* BranchingUITests.swift */; };
 /* End PBXBuildFile section */
 
@@ -50,6 +52,7 @@
 		261ADF538454ADA1B24301E8 /* LiveServerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveServerTests.swift; sourceTree = "<group>"; };
 		27D848FFB39BF527A53D18C4 /* TypingDuringAReplyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingDuringAReplyUITests.swift; sourceTree = "<group>"; };
 		3B587441DB44EB8387612415 /* ScreenGalleryUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenGalleryUITests.swift; sourceTree = "<group>"; };
+		51D0909D25571D7FAF31250C /* ModelListDismissUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelListDismissUITests.swift; sourceTree = "<group>"; };
 		56D176E1F0D09146E5E6384D /* ggchatApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ggchatApp.swift; sourceTree = "<group>"; };
 		5828F83DDDB73D7768813BB7 /* FormScrolling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormScrolling.swift; sourceTree = "<group>"; };
 		78C6E0AA1DB221B991ACCF8A /* ToolsMenuUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolsMenuUITests.swift; sourceTree = "<group>"; };
@@ -73,6 +76,7 @@
 		E57382FDF23BB62891F940CF /* RenameUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenameUITests.swift; sourceTree = "<group>"; };
 		E8525D55CC4C5971CAEB1E81 /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		E91528AC0293EFD6DA4E2A5C /* BranchingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BranchingUITests.swift; sourceTree = "<group>"; };
+		ECF55731FEF472A682641FB9 /* ThisChatUprightUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThisChatUprightUITests.swift; sourceTree = "<group>"; };
 		EFA7D812A49BFE4BB0007F8F /* ggchatUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ggchatUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -156,6 +160,7 @@
 				DEDE1A7EEC17E8C4F0B5982A /* JumpToLatestUITests.swift */,
 				C3513C1C38B6CD42BBB5ADA4 /* LiveServer.swift */,
 				261ADF538454ADA1B24301E8 /* LiveServerTests.swift */,
+				51D0909D25571D7FAF31250C /* ModelListDismissUITests.swift */,
 				95126E609B0DB6C1D2E84A15 /* ModelListRoomUITests.swift */,
 				A94B64234EFEFC5988A467C9 /* OnDeviceLiveUITests.swift */,
 				0B3302D3C5A9F015C5963C57 /* OnDeviceUITests.swift */,
@@ -166,6 +171,7 @@
 				3B587441DB44EB8387612415 /* ScreenGalleryUITests.swift */,
 				C69AC7B3D98931EF1ABA408D /* ScreenGalleryUITests+ModelBrowser.swift */,
 				CAF6B576B3C71108C3136D17 /* ThinkingSwitchUITests.swift */,
+				ECF55731FEF472A682641FB9 /* ThisChatUprightUITests.swift */,
 				78C6E0AA1DB221B991ACCF8A /* ToolsMenuUITests.swift */,
 				27D848FFB39BF527A53D18C4 /* TypingDuringAReplyUITests.swift */,
 				A72388942EA2BF180AE457CF /* UITestSupport.swift */,
@@ -281,6 +287,7 @@
 				1E261CE3A582DEC1F616C4AC /* JumpToLatestUITests.swift in Sources */,
 				FAF20668F07257B8B61A72B7 /* LiveServer.swift in Sources */,
 				95328C623F60DECDC145792B /* LiveServerTests.swift in Sources */,
+				FB4F1DCA322A3C26575F4223 /* ModelListDismissUITests.swift in Sources */,
 				3B16A63EE0442EF8669D74C2 /* ModelListRoomUITests.swift in Sources */,
 				2C0788C1FEEC674DB1753B1A /* OnDeviceLiveUITests.swift in Sources */,
 				309B608000639E700302887E /* OnDeviceUITests.swift in Sources */,
@@ -291,6 +298,7 @@
 				69300469D9BD979A0541797F /* ScreenGalleryUITests+ModelBrowser.swift in Sources */,
 				895F021D8EBF53CF1DE2D275 /* ScreenGalleryUITests.swift in Sources */,
 				CE4E3FF304BCD95F38F8A741 /* ThinkingSwitchUITests.swift in Sources */,
+				04FA3183E1569EDD8456EC80 /* ThisChatUprightUITests.swift in Sources */,
 				5BD7BCA11FDAEB85FCA86A75 /* ToolsMenuUITests.swift in Sources */,
 				281B7549ACADA120FD98060E /* TypingDuringAReplyUITests.swift in Sources */,
 				C3CA847E3248F9EEBB33E2FC /* UITestSupport.swift in Sources */,

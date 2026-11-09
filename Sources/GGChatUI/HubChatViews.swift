@@ -133,7 +133,7 @@ struct HubChatView: View {
         .toolbar {
             // Only for a model the Mac lists as one that thinks. The Mac
             // remembers the choice; here it is held with the chat.
-            // On an open Duo on its side it is in the chat's panel.
+            // On an open Duo it is in the chat's panel.
             if model.hubChatOffersThinking, !controlsOnPage {
                 ToolbarItem(placement: .automatic) {
                     ThinkingToggle(isOn: model.hubThinkingOn) { model.setHubThinking(on: $0) }

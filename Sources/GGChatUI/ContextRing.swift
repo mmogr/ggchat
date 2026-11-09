@@ -103,7 +103,7 @@ private struct ContextSheet: View {
 }
 
 /// The counts as rows, for the sheet's list or a section of another: the
-/// panel beside the chat on an open iPhone Duo on its side.
+/// panel beside the chat on an open iPhone Duo.
 struct ContextLines: View {
     @Environment(\.locale) private var locale
     let reading: ContextReading

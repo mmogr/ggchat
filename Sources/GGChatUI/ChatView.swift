@@ -97,7 +97,7 @@ struct ChatView: View {
         // an iPhone's bar that the bar's own controls fold into a More button.
         // A chat is renamed from its row in the list.
         .toolbar {
-            // On an open Duo on its side these are in the chat's panel.
+            // On an open Duo these are in the chat's panel.
             if !controlsOnPage {
                 // Always there, so a prompt can be set before the first
                 // message. Whether one is set is in the label, not an

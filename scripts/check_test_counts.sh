@@ -994,8 +994,12 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # whose `said` stops being read, or stops being shown as it came, falls back
 # to words made here that match gglib's for a load, and fails nothing else, so
 # these three and their markers are the whole of that guard.
+#
+# 2026-11-10: 42 -> 43 and 1021 -> 1022 for an upright open Duo's panel. The
+# chat's controls going back into its top bar there fails no unit test, so
+# this walk and its marker are the whole of that guard.
 floor "package test cases" "$(test_cases "$ROOT/Tests")" 1125
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 1021
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 43
+floor "README test markers" "${markers:-0}" 1022
 
 exit $status

@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// A part of the panel beside a chat on an open iPhone Duo on its side,
-/// shown or left out by `parts`.
+/// A part of the panel beside a chat on an open iPhone Duo, shown or left
+/// out by `parts`.
 nonisolated enum ThisChatPart: Equatable {
     case model, thinking, tools, systemPrompt, context, server
 
@@ -23,8 +23,8 @@ nonisolated enum ThisChatPart: Equatable {
 #if os(iOS)
     import GGChatCore
 
-    /// "This chat": the open chat's own controls, on the leading page of an
-    /// open iPhone Duo on its side, beside the chat on the trailing page. Its
+    /// "This chat": the open chat's own controls, in the list's place beside
+    /// the chat on an open iPhone Duo, upright or on its side. Its
     /// model, Thinking, Tools, system prompt, context and server, which
     /// elsewhere are in the chat's top bar, its sheets and its composer. The
     /// composer keeps its model pill and context ring here too, so the chat's

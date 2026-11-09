@@ -22,7 +22,7 @@ struct SystemPromptView: View {
 }
 
 /// The field, Cancel and Save, for the sheet's stack or pushed on another:
-/// on an open iPhone Duo on its side, on the chat's panel beside it. Either
+/// on an open iPhone Duo, on the chat's panel beside it. Either
 /// way out is the stack's, a sheet dismissed or a page popped.
 struct SystemPromptForm: View {
     @Environment(AppModel.self) private var model
