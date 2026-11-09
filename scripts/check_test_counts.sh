@@ -994,8 +994,14 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # whose `said` stops being read, or stops being shown as it came, falls back
 # to words made here that match gglib's for a load, and fails nothing else, so
 # these three and their markers are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1125
+#
+# 2026-11-09: 1125 -> 1133 and 1021 -> 1027 for gglib 0.31.0. A variant's
+# role, a model's id in the engine's status, and an installed model's
+# quantization and repository are read nowhere else: a draft offered for
+# download, twins keyed by one name, a pill following the wrong twin, or a
+# removal that clears both, would fail only these.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1133
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 1021
+floor "README test markers" "${markers:-0}" 1027
 
 exit $status

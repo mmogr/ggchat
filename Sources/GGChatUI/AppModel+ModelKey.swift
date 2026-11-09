@@ -25,12 +25,13 @@ extension AppModel {
     }
 
     /// The name the provider's list gives the model that `key` names: on
-    /// This iPhone the name of the model installed under that id. The key
+    /// This iPhone the model installed under that id, with its quantization
+    /// (`InstalledModel.shownName`). The key
     /// itself where nothing names it, as before the list is read: for any
     /// server but gglib the two are the same.
     public func name(of key: String?, on providerID: UUID?) -> String? {
         guard let key else { return nil }
-        if isThisIPhone(providerID), let installed = installedModel(key) { return installed.name }
+        if isThisIPhone(providerID), let installed = installedModel(key) { return installed.shownName }
         return listed(key, on: providerID)?.id ?? key
     }
 
@@ -118,5 +119,21 @@ extension AppModel {
         if named.isEmpty { return sent }
         if let id = listed(sent, on: providerID)?.gglibID, named.contains(where: { $0.gglibID == id }) { return sent }
         return key(naming: report, on: providerID)
+    }
+}
+
+extension InstalledModel {
+    /// How the app names a model on this device: "Qwen3 4B · Q4_K_M", its
+    /// name and the quantization gglib labels it with, which tells two
+    /// quantizations of one model apart; the name alone where gglib knows
+    /// no label.
+    public var shownName: String {
+        guard let quantization else { return name }
+        return "\(name) · \(quantization)"
+    }
+
+    /// Whether this is `quantization` of `repo` as the browser offers it.
+    func isDownload(of repo: String, _ quantization: String) -> Bool {
+        self.repo == repo && self.quantization == quantization
     }
 }

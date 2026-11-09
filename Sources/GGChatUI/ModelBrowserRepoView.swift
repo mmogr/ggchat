@@ -72,11 +72,12 @@ struct ModelBrowserRepoView: View {
     }
 
     /// What ends the row: a download button, which one too big for this
-    /// iPhone does not have; a mark once it is on this iPhone; nothing while
-    /// it downloads, whose bar and Cancel are under the row.
+    /// iPhone does not have; a mark once it is on this iPhone, as a download
+    /// just done or as installed; nothing while it downloads, whose bar and
+    /// Cancel are under the row.
     @ViewBuilder
     private func control(_ offer: QuantOffer, progress: DownloadProgress?) -> some View {
-        switch progress?.state {
+        switch model.isOnThisIPhone(offer, of: repo) ? .done : progress?.state {
         case .done?:
             Image(systemName: "checkmark.circle.fill")
                 .foregroundStyle(.green)

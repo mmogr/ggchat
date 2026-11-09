@@ -152,6 +152,13 @@ extension AppModel {
         }
     }
 
+    /// Whether `offer` of `repo` is installed on this iPhone, by the
+    /// repository and the quantization gglib says each installed model came
+    /// from, which outlasts a launch, as a finished download does not.
+    public func isOnThisIPhone(_ offer: QuantOffer, of repo: String) -> Bool {
+        onDevice.installed?.contains { $0.isDownload(of: repo, offer.label) } == true
+    }
+
     /// Asks for each quantization `repo` publishes, with how it fits, with
     /// the browser's reading, and keeps the models among them. gglib lists a
     /// repository's drafts, helpers and projectors too, which this iPhone

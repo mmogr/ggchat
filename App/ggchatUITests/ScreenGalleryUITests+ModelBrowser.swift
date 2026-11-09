@@ -155,7 +155,7 @@ extension ScreenGalleryUITests {
         // so the witness is a row of the list, which only the open pill shows.
         let pill = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Model, '")).firstMatch
         let joined = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS %@ AND NOT (label BEGINSWITH 'Model, ')", "mock-phone-1.7b-Q4_K_M")
+            NSPredicate(format: "label CONTAINS %@ AND NOT (label BEGINSWITH 'Model, ')", "mock-phone-1.7b · Q4_K_M")
         ).firstMatch
         XCTAssertTrue(tap(pill, untilExists: joined), "the downloaded model did not join the model list")
     }

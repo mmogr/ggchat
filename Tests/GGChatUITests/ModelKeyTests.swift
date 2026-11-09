@@ -181,12 +181,14 @@ final class ModelKeyTests: XCTestCase {
         let phone = try model.addThisIPhone(defaultModel: "1")
         model.newConversation()
         await model.refreshInstalled()
-        XCTAssertEqual(model.name(of: "2", on: phone.id), name, "the twin is not shown by its name before a listing")
+        XCTAssertEqual(
+            model.name(of: "2", on: phone.id), "\(name) · Q8_0", "the twin is not shown by its name before a listing")
 
         await model.open(phone).value
         await model.refreshModels(for: phone)
         XCTAssertEqual(model.models(for: phone.id).map(\.key), ["1", "1:fast", "2"], "the phone dropped gglib's ids")
-        XCTAssertEqual(model.name(of: "2", on: phone.id), name)
+        XCTAssertEqual(model.name(of: "2", on: phone.id), "\(name) · Q8_0")
+        XCTAssertEqual(model.name(of: "1", on: phone.id), name, "a model with no quantization is not shown by its name")
         XCTAssertEqual(model.engineID(of: "1:fast"), 1, "a profile variant is not its base model's")
         XCTAssertEqual(model.providers.first { $0.id == phone.id }?.defaultModel, "1")
         var conversation = try XCTUnwrap(model.selectedConversation)

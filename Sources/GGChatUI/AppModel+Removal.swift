@@ -27,11 +27,10 @@ extension AppModel {
     /// under way a send naming the model is refused
     /// (`refusesForARemoval(_:on:)`), so nothing loads it again.
     ///
-    /// Any removal also forgets which downloads finished: an installed model
-    /// does not say which repository and quantization it came from, so the
-    /// browser offers each of them again rather than calling one downloaded
-    /// that may be gone. The model leaves This iPhone's list too, which an
-    /// engine put down cannot list again.
+    /// The download that brought the model in is forgotten, so the browser
+    /// offers that quantization of that repository again; the browser knows
+    /// a variant is on this iPhone from what is installed. The model leaves
+    /// This iPhone's list too, which an engine put down cannot list again.
     ///
     /// Then every conversation on This iPhone that had the model, and This
     /// iPhone's default if it was the model, has none; they are cleared
@@ -58,7 +57,9 @@ extension AppModel {
             onDevice.installedFailure = error.localizedDescription
             return
         }
-        onDevice.downloads = onDevice.downloads.filter { $0.value.state != .done }
+        if let repo = installed.repo, let quantization = installed.quantization {
+            onDevice.downloads[QuantChoice(repo: repo, quantization: quantization)] = nil
+        }
         if let id = thisIPhoneID { modelsByProvider[id]?.removeAll { $0.gglibID == installed.id } }
         await refreshInstalled()
         await relistThisIPhone()

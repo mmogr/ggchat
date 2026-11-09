@@ -125,8 +125,7 @@ final class AppModelDownloadTests: XCTestCase {
         let model = makeModel(library: library)
         let fits = try await offer("Q4_K_M", from: library)
         let choice = QuantChoice(repo: phoneRepo, quantization: fits.label)
-        let name = MockLibrary.installedName(repo: phoneRepo, quantization: fits.label)
-        let partial = MockLibrary.partialFile(name, in: modelsFolder)
+        let partial = MockLibrary.partialFile(repo: phoneRepo, quantization: fits.label, in: modelsFolder)
 
         model.download(fits, of: phoneRepo)
         await sleeper.release()
@@ -141,9 +140,12 @@ final class AppModelDownloadTests: XCTestCase {
         XCTAssertTrue(deleted, "the partial file outlived Cancel")
         for _ in 1...50 { await Task.yield() }
         XCTAssertNil(model.onDevice.downloads[choice], "a step sent before Cancel put the row back")
-        XCTAssertFalse(scratch.exists(MockLibrary.finishedFile(name, in: modelsFolder)))
-        let installed = try await library.installed().map(\.name)
-        XCTAssertFalse(installed.contains(name), "a cancelled download was installed")
+        XCTAssertFalse(
+            scratch.exists(MockLibrary.finishedFile(repo: phoneRepo, quantization: fits.label, in: modelsFolder)))
+        let installed = try await library.installed()
+        XCTAssertFalse(
+            installed.contains { $0.repo == phoneRepo && $0.quantization == fits.label },
+            "a cancelled download was installed")
 
         model.download(fits, of: phoneRepo)
         XCTAssertEqual(model.onDevice.downloads[choice]?.state, .queued, "Download was not offered again")
@@ -155,7 +157,7 @@ final class AppModelDownloadTests: XCTestCase {
     /// default as the first model listed. One that finishes before the
     /// engine serves raises nothing and is listed once a conversation opens.
     func testAFinishedDownloadJoinsThisIPhonesModels() async throws {
-        let name = MockLibrary.installedName(repo: phoneRepo, quantization: "Q4_K_M")
+        let name = MockLibrary.installedName(repo: phoneRepo)
         for serveFirst in [true, false] {
             let registry = LoopbackProviderRegistry()
             let catalogue = MockLibrary.Catalogue(behaviour: .noModels)

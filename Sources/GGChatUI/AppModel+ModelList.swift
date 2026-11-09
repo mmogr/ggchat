@@ -52,7 +52,7 @@ extension AppModel {
             let rows = installed.filter { ModelInfo(id: $0.name, capabilities: $0.capabilities).chats }.map { item in
                 let key = String(item.id)
                 let detail = listed?.first { $0.key == key }?.detailLine ?? Sizes.download(item.bytes)
-                return ModelListRow(modelID: key, name: item.name, detail: detail, isCurrent: key == current)
+                return ModelListRow(modelID: key, name: item.shownName, detail: detail, isCurrent: key == current)
             }
             return (true, rows)
         }

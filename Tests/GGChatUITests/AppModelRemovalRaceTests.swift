@@ -53,9 +53,9 @@ final class AppModelRemovalRaceTests: XCTestCase {
     }
 
     /// The installed model called `name`, as `model` reads it.
-    private func installed(_ name: String, in model: AppModel) async throws -> InstalledModel {
+    private func installed(_ id: Int64, in model: AppModel) async throws -> InstalledModel {
         await model.refreshInstalled()
-        return try XCTUnwrap(model.onDevice.installed?.first { $0.name == name })
+        return try XCTUnwrap(model.onDevice.installed?.first { $0.id == id })
     }
 
     /// The engine with the model loaded has stopped answering by the time
@@ -64,7 +64,7 @@ final class AppModelRemovalRaceTests: XCTestCase {
         let (model, _) = try await makeModel(engine: MockEngine(registry: registry, catalogue: catalogue))
         try await load(model)
 
-        await model.removeInstalled(try await installed(MockEngine.model.id, in: model))
+        await model.removeInstalled(try await installed(MockEngine.modelID, in: model))
         XCTAssertNil(model.onDevice.installedFailure)
         XCTAssertEqual(watching.engineAnsweredAtRemovals, [false], "the files went while the engine still answered")
     }
@@ -77,13 +77,15 @@ final class AppModelRemovalRaceTests: XCTestCase {
         let (model, _) = try await makeModel(engine: engine)
         let offers = try await watching.quantizations(repo: phoneRepo, reading: reading)
         let fits = try XCTUnwrap(offers.first { $0.label == "Q4_K_M" })
-        let other = MockLibrary.installedName(repo: phoneRepo, quantization: fits.label)
         model.download(fits, of: phoneRepo)
-        let downloaded = await waitUntil { model.onDevice.installed?.contains { $0.name == other } == true }
+        let downloaded = await waitUntil {
+            model.onDevice.installed?.contains { $0.quantization == fits.label } == true
+        }
         XCTAssertTrue(downloaded, "the second model was never installed")
         try await load(model)
-        let phone = try await installed(MockEngine.model.id, in: model)
-        let second = try await installed(other, in: model)
+        let phone = try await installed(MockEngine.modelID, in: model)
+        let other = try XCTUnwrap(model.onDevice.installed?.first { $0.quantization == fits.label })
+        let second = try await installed(other.id, in: model)
 
         let first = Task { await model.removeInstalled(phone) }
         let goingDown = await engine.waitForShutdowns(1)
@@ -106,7 +108,7 @@ final class AppModelRemovalRaceTests: XCTestCase {
         let engine = GatedEngine(registry: registry, holdingServes: false, holdingShutdowns: true)
         let (model, _) = try await makeModel(engine: engine)
         try await load(model)
-        let phone = try await installed(MockEngine.model.id, in: model)
+        let phone = try await installed(MockEngine.modelID, in: model)
 
         let removing = Task { await model.removeInstalled(phone) }
         let goingDown = await engine.waitForShutdowns(1)

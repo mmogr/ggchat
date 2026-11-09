@@ -102,7 +102,7 @@ struct FitExplanation: Identifiable, Equatable {
     let id: String
     /// The repository, or nil for an installed model, which does not say.
     let repo: String?
-    /// The quantization, or the installed model's name.
+    /// The quantization, or the installed model's name and quantization.
     let name: String
     let verdict: FitVerdict
     let why: FitWhy?
@@ -131,7 +131,7 @@ struct FitExplanation: Identifiable, Equatable {
     init(installed: InstalledModel) {
         id = "installed/\(installed.id)"
         repo = nil
-        name = installed.name
+        name = installed.shownName
         verdict = installed.verdict
         why = nil
         rationale = nil

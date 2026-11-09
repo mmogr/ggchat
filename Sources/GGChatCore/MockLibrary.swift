@@ -123,9 +123,11 @@
         /// Refuses an id that is not installed, as gglib does, and takes
         /// the model out of the catalogue and its file off the disk.
         public func remove(id: Int64) async throws {
-            let name = catalogue.installed.first { $0.id == id }?.name
-            guard let name, catalogue.remove(id: id) else { throw OnDeviceError.notFound }
-            if let directory { try? FileManager.default.removeItem(at: Self.finishedFile(name, in: directory)) }
+            let model = catalogue.installed.first { $0.id == id }
+            guard let model, catalogue.remove(id: id) else { throw OnDeviceError.notFound }
+            guard let directory, let repo = model.repo, let quantization = model.quantization else { return }
+            try? FileManager.default.removeItem(
+                at: Self.finishedFile(repo: repo, quantization: quantization, in: directory))
         }
 
         /// Queued, eight steps of running, verifying, done, one step apart,
@@ -142,15 +144,15 @@
                 throw OnDeviceError.internal(
                     message: "\(quantization) of \(repo) is not a model gglib runs on its own.")
             }
-            let name = Self.installedName(repo: repo, quantization: quantization)
             let walk = DownloadWalk(
                 id: "\(repo):\(quantization)", total: offer.totalBytes, sleeper: sleeper, stepDelay: stepDelay,
-                catalogue: catalogue, partial: directory.map { Self.partialFile(name, in: $0) },
-                finished: directory.map { Self.finishedFile(name, in: $0) })
+                catalogue: catalogue,
+                partial: directory.map { Self.partialFile(repo: repo, quantization: quantization, in: $0) },
+                finished: directory.map { Self.finishedFile(repo: repo, quantization: quantization, in: $0) })
             let (stream, continuation) = AsyncStream.makeStream(of: DownloadProgress.self)
             let walking = Task { [catalogue] in
                 if await walk.run(saying: { continuation.yield($0) }) {
-                    catalogue.install(offer, of: repo, as: name)
+                    catalogue.install(offer, of: repo, as: Self.installedName(repo: repo))
                     continuation.yield(walk.step(walk.total, .done))
                 }
                 continuation.finish()
@@ -169,21 +171,24 @@
             catalogue.resume()
         }
 
-        /// What the engine lists a downloaded quantization as:
-        /// `mock-phone-1.7b-Q4_K_M` for `Q4_K_M` of `mock/phone-1.7b-GGUF`.
-        public static func installedName(repo: String, quantization: String) -> String {
-            let base = repo.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: "-GGUF", with: "")
-            return "\(base)-\(quantization)"
+        /// The name a model downloaded from `repo` is installed under, as
+        /// its header would name it: `mock-phone-1.7b` for
+        /// `mock/phone-1.7b-GGUF`, whichever quantization. So a download from
+        /// the phone's repository shares its name with ``MockEngine/model``,
+        /// as two quantizations of one model share theirs in gglib.
+        public static func installedName(repo: String) -> String {
+            repo.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: "-GGUF", with: "")
         }
 
-        /// Where a download of `name` keeps what it has so far.
-        public static func partialFile(_ name: String, in directory: URL) -> URL {
-            directory.appending(path: "\(name).gguf.part")
+        /// Where a download of `quantization` of `repo` keeps what it has so
+        /// far.
+        public static func partialFile(repo: String, quantization: String, in directory: URL) -> URL {
+            directory.appending(path: "\(installedName(repo: repo))-\(quantization).gguf.part")
         }
 
-        /// Where a finished download of `name` is kept.
-        public static func finishedFile(_ name: String, in directory: URL) -> URL {
-            directory.appending(path: "\(name).gguf")
+        /// Where a finished download of `quantization` of `repo` is kept.
+        public static func finishedFile(repo: String, quantization: String, in directory: URL) -> URL {
+            directory.appending(path: "\(installedName(repo: repo))-\(quantization).gguf")
         }
     }
 

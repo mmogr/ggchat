@@ -1195,7 +1195,10 @@ Each claim names the test that keeps it true.
   on from them, while the mock deletes its partial file. Under "On this
   iPhone" the same download is one line, the model, its bar, how far it
   has come and a cross that calls it off; once done, its row on the
-  repository's page is marked as on this iPhone.
+  repository's page is marked as on this iPhone, as is every variant
+  installed from that repository, by the repository and the quantization
+  gglib says each installed model came from, so the marks outlast a
+  launch. Removing a model unmarks its variant alone.
   Going to the background pauses every download beside the replies, the row
   saying "Paused, resumes when ggchat is open", and coming back resumes them
   from the bytes they had; the library hears the pauses and resumes in the
@@ -1203,7 +1206,8 @@ Each claim names the test that keeps it true.
   at once, the list being what the library has installed, and an engine that
   is serving lists it again too. The browser's "On this iPhone" lists the
   models installed with their sizes and chips above the downloads on their
-  way, and Settings says what the models on this iPhone take. An installed
+  way, each named with the quantization gglib labels it with, "Qwen3 4B ·
+  Q4_K_M", as the model list, the pill and the chat's panel name it, and Settings says what the models on this iPhone take. An installed
   one is removed by a swipe, by Remove… in the menu a long press on its row
   opens, or by the section's Edit, and each asks first, naming the model
   and the room it frees. One no longer listed as installed is refused
@@ -1228,6 +1232,8 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelDownloadTests.testADownloadsBarOnlyGoesUpThroughAPauseAndAResume -->
   <!-- test: AppModelDownloadTests.testCancelTakesTheRowAndThePartialAway -->
   <!-- test: AppModelDownloadTests.testAFinishedDownloadJoinsThisIPhonesModels -->
+  <!-- test: OnThisIPhoneMarksTests.testAModelOnThisIPhoneIsShownWithItsQuantization -->
+  <!-- test: OnThisIPhoneMarksTests.testTheBrowserMarksWhatIsInstalledAndARemovalUnmarksItAlone -->
   <!-- test: AppModelDownloadTests.testADownloadThereIsNoRoomForIsRefused -->
   <!-- test: ModelsDirectoryTests.testTheDirectoryIsPrivateAndOutOfTheBackup -->
   <!-- test: ModelsDirectoryTests.testTheLaunchMarksADirectoryMadeWithoutTheMark -->

@@ -59,7 +59,7 @@ final class ThisIPhoneTwinsTests: XCTestCase {
                 .first { $0.id == config.id }
         ).rows
         XCTAssertEqual(rows.map(\.modelID), ["1", "2"])
-        XCTAssertEqual(rows.map(\.name), [modelName, modelName])
+        XCTAssertEqual(rows.map(\.name), [modelName, "\(modelName) · Q8_0"])
         XCTAssertEqual(rows.map(\.isCurrent), [true, false])
 
         model.pick(model: "2", on: config.id, for: conversation.id)
