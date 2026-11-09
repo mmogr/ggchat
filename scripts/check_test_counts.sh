@@ -994,8 +994,12 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # whose `said` stops being read, or stops being shown as it came, falls back
 # to words made here that match gglib's for a load, and fails nothing else, so
 # these three and their markers are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1125
+#
+# 2026-11-10: 1125 -> 1130 and 1021 -> 1026 for the list's search. A search
+# that stops finding a chat by what was said in it fails nothing else, so
+# these five and their markers are the whole of that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1130
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 1021
+floor "README test markers" "${markers:-0}" 1026
 
 exit $status

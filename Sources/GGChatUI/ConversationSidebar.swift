@@ -91,24 +91,33 @@ struct ConversationSidebar: View {
     /// The chat whose Rename was chosen from its row's menu, while it is
     /// being named.
     @State private var renaming: UUID?
+    /// What the search field holds.
+    @State private var query = ""
 
     var body: some View {
         @Bindable var model = model
+        let search = ChatSearch(query)
+        let shown = model.conversations.filter(search.finds)
         List(selection: $model.selection) {
             Section {
-                ForEach(model.conversations) { conversation in
+                ForEach(shown) { conversation in
                     ConversationRow(conversation: conversation)
                         .tag(SidebarSelection.local(conversation.id))
+                        // Delete as a swipe does, with no question asked.
                         .contextMenu {
                             Button("Rename", systemImage: "pencil") { renaming = conversation.id }
+                            Button("Delete", systemImage: "trash", role: .destructive) {
+                                model.deleteConversation(conversation.id)
+                            }
                         }
                         // The row is one element to VoiceOver, so its menu's
-                        // action is offered on it too.
+                        // actions are offered on it too.
                         .accessibilityAction(named: "Rename") { renaming = conversation.id }
+                        .accessibilityAction(named: "Delete") { model.deleteConversation(conversation.id) }
                 }
                 .onDelete { offsets in
                     for index in offsets {
-                        model.deleteConversation(model.conversations[index].id)
+                        model.deleteConversation(shown[index].id)
                     }
                 }
             } header: {
@@ -116,19 +125,32 @@ struct ConversationSidebar: View {
                 if !model.hubProviders.isEmpty { Text("On this phone") }
             } footer: {
                 // A footer, not a row, which a sidebar draws as a card. Only
-                // beside a paired Mac's section, whose chats these are not.
-                if !model.hubProviders.isEmpty {
+                // beside a paired Mac's section, whose chats these are not,
+                // and not while searching.
+                if !model.hubProviders.isEmpty, search.isEmpty {
                     Text(
                         model.conversations.isEmpty
                             ? "No conversations on this phone yet." : "The Mac doesn't keep these.")
                 }
             }
             ForEach(model.hubProviders) { config in
-                HubChatsSection(config: config)
+                HubChatsSection(config: config, search: search)
             }
         }
         .refreshable { await model.refreshHubChats() }
         .renamingChat($renaming)
+        #if os(iOS)
+            // At the top, under the title, where a bar at the foot of a
+            // column holds Providers and Settings.
+            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search chats")
+        #else
+            .searchable(text: $query, prompt: "Search chats")
+        #endif
+        .overlay {
+            if !search.isEmpty, shown.isEmpty, !model.hubProviders.contains(where: { finds(search, on: $0) }) {
+                ContentUnavailableView.search(text: query)
+            }
+        }
         .overlay {
             if model.conversations.isEmpty, model.hubProviders.isEmpty {
                 // The way in on a phone, where the detail pane and its call
@@ -183,6 +205,11 @@ struct ConversationSidebar: View {
                 ToolbarItem(placement: .automatic) { providersButton }
             #endif
         }
+    }
+
+    /// Whether `search` finds any of the chats a paired Mac listed.
+    private func finds(_ search: ChatSearch, on config: ProviderConfig) -> Bool {
+        (model.hubChats[config.id] ?? []).contains { search.finds(title: $0.title) }
     }
 
     private var providersButton: some View {
