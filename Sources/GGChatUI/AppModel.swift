@@ -201,6 +201,9 @@ public final class AppModel {
         prepareModelsDirectory()
         resumeRuns()
         Task { await refreshHubChats() }
+        // This iPhone's chats name their models by id, and what is installed
+        // names each, so the pill and the list show a name from the start.
+        if thisIPhoneID != nil { Task { await refreshInstalled() } }
     }
 
     private func loadFromTheStore() {

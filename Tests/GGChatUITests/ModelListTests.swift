@@ -78,7 +78,7 @@ final class ModelListTests: XCTestCase {
             store: InMemoryStore(), secrets: InMemorySecrets(), log: NoopLogSink(), registry: registry,
             pipeConnector: connector(registry), engine: MockEngine(registry: registry), library: MockLibrary(),
             diagnostics: Diagnostics(defaults: defaults), now: { Date(timeIntervalSince1970: 1_700_000_000) })
-        let iPhone = try model.addThisIPhone(defaultModel: MockEngine.model.id)
+        let iPhone = try model.addThisIPhone(defaultModel: MockEngine.model.key)
         let home = ProviderConfig(
             name: "home", kind: .pipe(ticketDigest: Ticket.digest(ticket)), defaultModel: "mock-27b")
         try model.addProvider(home, credentials: [.ticket: ticket, .token: "secret-token"])
@@ -120,7 +120,11 @@ final class ModelListTests: XCTestCase {
         XCTAssertEqual(listed.map(\.offersConnect), [false, true, false], "only the pipe with nothing offers Connect")
         XCTAssertEqual(
             listed[0].rows,
-            [ModelListRow(modelID: MockEngine.model.id, detail: Sizes.download(1_073_741_824), isCurrent: true)])
+            [
+                ModelListRow(
+                    modelID: MockEngine.model.key, name: MockEngine.model.id,
+                    detail: Sizes.download(1_073_741_824), isCurrent: true)
+            ])
         XCTAssertEqual(listed[1].rows, [])
         XCTAssertEqual(listed[2].rows, [ModelListRow(modelID: "Qwen3-4B", detail: "4B · Q8_0", isCurrent: false)])
         XCTAssertFalse(listed.contains(where: \.isStale))
@@ -197,7 +201,7 @@ final class ModelListTests: XCTestCase {
 
         model.pick(model: "Qwen3-4B", on: server.id, for: conversation.id)
         XCTAssertEqual(model.selectedConversation?.providerID, iPhone.id)
-        XCTAssertEqual(model.selectedConversation?.model, MockEngine.model.id)
+        XCTAssertEqual(model.selectedConversation?.model, MockEngine.model.key)
 
         model.pick(model: "another-phone-model", on: iPhone.id, for: conversation.id)
         XCTAssertEqual(model.selectedConversation?.model, "another-phone-model")
