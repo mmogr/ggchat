@@ -82,30 +82,37 @@
         }
 
         /// A quantization for each verdict there is, of the phone's
-        /// repository; every one of any other is too big.
+        /// repository, then a projector and a draft, which gglib lists and
+        /// never downloads on their own; every one of any other is too big.
         func offers(of repo: String) -> [QuantOffer] {
             guard repo == Self.phoneRepo else {
                 return [
                     QuantOffer(
-                        name: "Q4_K_M", totalBytes: 16 * Self.gigabyte, shardCount: 1, verdict: Self.tooBig,
+                        label: "Q4_K_M", totalBytes: 16 * Self.gigabyte, shardCount: 1, verdict: Self.tooBig,
                         why: Self.why)
                 ]
             }
             return [
                 QuantOffer(
-                    name: "Q4_K_M", totalBytes: Self.gigabyte, shardCount: 1,
+                    label: "Q4_K_M", totalBytes: Self.gigabyte, shardCount: 1,
                     verdict: behaviour == .tooBig ? Self.tooBig : .fits(ctx: 16_384), why: Self.why),
                 QuantOffer(
-                    name: "Q8_0", totalBytes: 2 * Self.gigabyte, shardCount: 1, verdict: .tight(ctx: 4_096),
+                    label: "Q8_0", totalBytes: 2 * Self.gigabyte, shardCount: 1, verdict: .tight(ctx: 4_096),
                     why: Self.why),
                 QuantOffer(
-                    name: "F16", totalBytes: 4 * Self.gigabyte, shardCount: 2, verdict: Self.tooBig, why: Self.why),
+                    label: "F16", totalBytes: 4 * Self.gigabyte, shardCount: 2, verdict: Self.tooBig, why: Self.why),
                 QuantOffer(
-                    name: "IQ2_XS", totalBytes: Self.gigabyte / 2, shardCount: 1,
+                    label: "IQ2_XS", totalBytes: Self.gigabyte / 2, shardCount: 1,
                     verdict: .unknown(missing: .kvShape, cutOff: true),
                     why: FitWhy(
                         weightsBytes: Self.gigabyte / 2, kvBytesPerToken: nil, budgetBytes: Self.budget, trainedCtx: nil
                     )),
+                QuantOffer(
+                    label: "mmproj-F16", role: .projector, totalBytes: Self.gigabyte / 4, shardCount: 1,
+                    verdict: .fits(ctx: 16_384), why: Self.why),
+                QuantOffer(
+                    label: "MTP-Q8_0", role: .draftOrHelper, totalBytes: Self.gigabyte / 8, shardCount: 1,
+                    verdict: .fits(ctx: 16_384), why: Self.why),
             ]
         }
 
@@ -116,9 +123,11 @@
         /// Refuses an id that is not installed, as gglib does, and takes
         /// the model out of the catalogue and its file off the disk.
         public func remove(id: Int64) async throws {
-            let name = catalogue.installed.first { $0.id == id }?.name
-            guard let name, catalogue.remove(id: id) else { throw OnDeviceError.notFound }
-            if let directory { try? FileManager.default.removeItem(at: Self.finishedFile(name, in: directory)) }
+            let model = catalogue.installed.first { $0.id == id }
+            guard let model, catalogue.remove(id: id) else { throw OnDeviceError.notFound }
+            guard let directory, let repo = model.repo, let quantization = model.quantization else { return }
+            try? FileManager.default.removeItem(
+                at: Self.finishedFile(repo: repo, quantization: quantization, in: directory))
         }
 
         /// Queued, eight steps of running, verifying, done, one step apart,
@@ -127,19 +136,23 @@
         /// stream stops the walk.
         public func download(repo: String, quantization: String) async throws -> AsyncStream<DownloadProgress> {
             let offer =
-                offers(of: repo).first { $0.name == quantization }
+                offers(of: repo).first { $0.label == quantization }
                 ?? QuantOffer(
-                    name: quantization, totalBytes: Self.gigabyte, shardCount: 1, verdict: .fits(ctx: 16_384),
+                    label: quantization, totalBytes: Self.gigabyte, shardCount: 1, verdict: .fits(ctx: 16_384),
                     why: Self.why)
-            let name = Self.installedName(repo: repo, quantization: quantization)
+            guard offer.role == .model else {
+                throw OnDeviceError.internal(
+                    message: "\(quantization) of \(repo) is not a model gglib runs on its own.")
+            }
             let walk = DownloadWalk(
                 id: "\(repo):\(quantization)", total: offer.totalBytes, sleeper: sleeper, stepDelay: stepDelay,
-                catalogue: catalogue, partial: directory.map { Self.partialFile(name, in: $0) },
-                finished: directory.map { Self.finishedFile(name, in: $0) })
+                catalogue: catalogue,
+                partial: directory.map { Self.partialFile(repo: repo, quantization: quantization, in: $0) },
+                finished: directory.map { Self.finishedFile(repo: repo, quantization: quantization, in: $0) })
             let (stream, continuation) = AsyncStream.makeStream(of: DownloadProgress.self)
             let walking = Task { [catalogue] in
                 if await walk.run(saying: { continuation.yield($0) }) {
-                    catalogue.install(offer, of: repo, as: name)
+                    catalogue.install(offer, of: repo, as: Self.installedName(repo: repo))
                     continuation.yield(walk.step(walk.total, .done))
                 }
                 continuation.finish()
@@ -158,21 +171,24 @@
             catalogue.resume()
         }
 
-        /// What the engine lists a downloaded quantization as:
-        /// `mock-phone-1.7b-Q4_K_M` for `Q4_K_M` of `mock/phone-1.7b-GGUF`.
-        public static func installedName(repo: String, quantization: String) -> String {
-            let base = repo.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: "-GGUF", with: "")
-            return "\(base)-\(quantization)"
+        /// The name a model downloaded from `repo` is installed under, as
+        /// its header would name it: `mock-phone-1.7b` for
+        /// `mock/phone-1.7b-GGUF`, whichever quantization. So a download from
+        /// the phone's repository shares its name with ``MockEngine/model``,
+        /// as two quantizations of one model share theirs in gglib.
+        public static func installedName(repo: String) -> String {
+            repo.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: "-GGUF", with: "")
         }
 
-        /// Where a download of `name` keeps what it has so far.
-        public static func partialFile(_ name: String, in directory: URL) -> URL {
-            directory.appending(path: "\(name).gguf.part")
+        /// Where a download of `quantization` of `repo` keeps what it has so
+        /// far.
+        public static func partialFile(repo: String, quantization: String, in directory: URL) -> URL {
+            directory.appending(path: "\(installedName(repo: repo))-\(quantization).gguf.part")
         }
 
-        /// Where a finished download of `name` is kept.
-        public static func finishedFile(_ name: String, in directory: URL) -> URL {
-            directory.appending(path: "\(name).gguf")
+        /// Where a finished download of `quantization` of `repo` is kept.
+        public static func finishedFile(repo: String, quantization: String, in directory: URL) -> URL {
+            directory.appending(path: "\(installedName(repo: repo))-\(quantization).gguf")
         }
     }
 

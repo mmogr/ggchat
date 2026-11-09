@@ -12,7 +12,8 @@
         /// for `MockPairings`' reason. DEBUG builds only.
         public final class Catalogue: Sendable {
             /// One installed model, as the library lists it and as the
-            /// engine's model list carries it.
+            /// engine's model list carries it, under its name; ``listed``
+            /// gives it the id gglib lists it by.
             struct Entry: Sendable {
                 var installed: InstalledModel
                 var listed: ModelInfo
@@ -33,7 +34,8 @@
             public init(behaviour: MockEngine.Behaviour = .ready) {
                 let canned = Entry(
                     installed: InstalledModel(
-                        id: 1, name: MockEngine.model.id, bytes: MockLibrary.gigabyte, trainedCtx: 40_960,
+                        id: MockEngine.modelID, name: MockEngine.model.id, bytes: MockLibrary.gigabyte,
+                        trainedCtx: 40_960,
                         capabilities: MockEngine.model.capabilities ?? [],
                         verdict: behaviour == .tooBig ? MockLibrary.tooBig : .fits(ctx: 16_384)),
                     listed: MockEngine.model)
@@ -45,25 +47,41 @@
                 state.withLock { $0.entries.map(\.installed) }
             }
 
-            /// What the engine lists as its models, in the same order.
+            /// What the engine lists as its models, in the same order, each
+            /// under the id gglib's proxy gives it: its name, or where
+            /// another model shares the name, `name@QUANT`, or `name@<id>`
+            /// for one with no quantization.
             public var listed: [ModelInfo] {
-                state.withLock { $0.entries.map(\.listed) }
+                state.withLock { state in
+                    let names = state.entries.map(\.installed.name)
+                    return state.entries.map { entry in
+                        var listed = entry.listed
+                        let model = entry.installed
+                        if names.count(where: { $0 == model.name }) > 1 {
+                            listed.id = "\(model.name)@\(model.quantization ?? String(model.id))"
+                        }
+                        return listed
+                    }
+                }
             }
 
-            /// Installs `offer` of `repo` as `name`, in place of one already
-            /// installed under that name.
+            /// Installs `offer` of `repo` as `name`, in place of the same
+            /// quantization of the same repository installed before.
             func install(_ offer: QuantOffer, of repo: String, as name: String) {
                 state.withLock { state in
-                    let id = state.entries.first { $0.installed.name == name }?.installed.id ?? state.nextID
+                    let before = state.entries.first {
+                        $0.installed.repo == repo && $0.installed.quantization == offer.label
+                    }
+                    let id = before?.installed.id ?? state.nextID
                     if id == state.nextID { state.nextID += 1 }
-                    state.entries.removeAll { $0.installed.name == name }
+                    state.entries.removeAll { $0.installed.id == id }
                     state.entries.append(
                         Entry(
                             installed: InstalledModel(
-                                id: id, name: name, bytes: offer.totalBytes, trainedCtx: offer.why.trainedCtx,
-                                capabilities: ["reasoning"], verdict: offer.verdict),
+                                id: id, name: name, quantization: offer.label, repo: repo, bytes: offer.totalBytes,
+                                trainedCtx: offer.why.trainedCtx, capabilities: ["reasoning"], verdict: offer.verdict),
                             listed: ModelInfo(
-                                id: name, ownedBy: "ggchat", description: "downloaded from \(repo)",
+                                id: name, gglibID: id, ownedBy: "ggchat", description: "downloaded from \(repo)",
                                 contextWindow: offer.why.trainedCtx.map { Int(clamping: $0) },
                                 capabilities: ["reasoning"])))
                 }
