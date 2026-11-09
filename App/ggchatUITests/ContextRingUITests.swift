@@ -70,15 +70,23 @@ final class ContextRingUITests: XCTestCase {
         shot.lifetime = .keepAlways
         add(shot)
 
-        // Outside the bubble: the system's own region for that, or failing
-        // it the top of the window, well away from the ring at the bottom.
+        tapOutsideBubble(in: app)
+        XCTAssertTrue(counts.waitForNonExistence(timeout: 10), "the bubble did not close on a tap outside it")
+        XCTAssertTrue(ring.exists, "the ring went with its bubble")
+    }
+}
+
+extension XCTestCase {
+    /// Closes the ring's bubble as a person does, by a tap outside it: on
+    /// the system's own region for that, or failing it the top of the
+    /// window, well away from the ring at the bottom.
+    @MainActor
+    func tapOutsideBubble(in app: XCUIApplication) {
         let outside = app.otherElements["PopoverDismissRegion"].firstMatch
         if outside.exists {
             outside.tap()
         } else {
             app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)).tap()
         }
-        XCTAssertTrue(counts.waitForNonExistence(timeout: 10), "the bubble did not close on a tap outside it")
-        XCTAssertTrue(ring.exists, "the ring went with its bubble")
     }
 }
