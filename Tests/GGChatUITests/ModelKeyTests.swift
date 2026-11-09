@@ -152,34 +152,50 @@ final class ModelKeyTests: XCTestCase {
         XCTAssertEqual(model.providers.first?.defaultModel, "1", "a list that names models by name replaced it")
     }
 
-    /// This iPhone's list is kept by name: its library and its engine name
-    /// a model by what it is installed as, so the id its own gglib lists is
-    /// dropped when the list is read, and its default and the Thinking
-    /// lookup still find the model by name. Any other provider's list is
-    /// kept as it came.
-    func testThisIPhonesModelsAreKeyedByName() async throws {
+    /// This iPhone's models are keyed by gglib's id, as a gglib Mac's are:
+    /// two quantizations of one model share its name, and each is its own
+    /// key, shown by the name it is installed as, before the engine has
+    /// listed anything and after. A chat saved with a name, as before chats
+    /// on the phone were keyed by id, runs on the default. A profile variant
+    /// is its base model's id with the profile after it.
+    func testThisIPhonesModelsAreKeyedByID() async throws {
         let name = MockEngine.model.id
+        let catalogue = MockLibrary.Catalogue()
+        let library = MockLibrary(catalogue: catalogue)
+        let offers = try await library.quantizations(
+            repo: MockLibrary.phoneRepo,
+            reading: DeviceReading(physicalBytes: 8 << 30, availableBytes: 4 << 30, isSimulator: true))
+        catalogue.install(try XCTUnwrap(offers.first { $0.label == "Q8_0" }), of: MockLibrary.phoneRepo, as: name)
         let listed = [
-            ModelInfo(id: name, gglibID: 4, capabilities: ["reasoning"]),
-            ModelInfo(id: "\(name):fast", gglibID: 4, profile: "fast"),
+            ModelInfo(id: "\(name)@1", gglibID: 1, capabilities: ["reasoning"]),
+            ModelInfo(id: "\(name)@1:fast", gglibID: 1, profile: "fast"),
+            ModelInfo(id: "\(name)@Q8_0", gglibID: 2),
         ]
         let registry = LoopbackProviderRegistry()
         let model = AppModel(
             store: InMemoryStore(), secrets: InMemorySecrets(), log: NoopLogSink(), registry: registry,
             pipeConnector: MockPipeConnector(sleeper: ImmediateSleeper(), registry: registry),
-            engine: MockEngine(registry: registry, provider: listing(listed)), library: MockLibrary(),
+            engine: MockEngine(registry: registry, provider: listing(listed), catalogue: catalogue), library: library,
             diagnostics: Diagnostics(defaults: UserDefaults(suiteName: "ModelKeyTests.\(UUID().uuidString)")!),
             now: { Date(timeIntervalSince1970: 1_700_000_000) })
-        let phone = try model.addThisIPhone(defaultModel: name)
+        let phone = try model.addThisIPhone(defaultModel: "1")
         model.newConversation()
+        await model.refreshInstalled()
+        XCTAssertEqual(
+            model.name(of: "2", on: phone.id), "\(name) · Q8_0", "the twin is not shown by its name before a listing")
+
         await model.open(phone).value
         await model.refreshModels(for: phone)
-        XCTAssertEqual(model.models(for: phone.id).map(\.key), [name, "\(name):fast"], "the phone kept gglib's ids")
-        XCTAssertEqual(model.providers.first { $0.id == phone.id }?.defaultModel, name)
-        let conversation = try XCTUnwrap(model.selectedConversation)
-        XCTAssertTrue(model.offersThinking(for: conversation), "the phone's model was not found by name")
+        XCTAssertEqual(model.models(for: phone.id).map(\.key), ["1", "1:fast", "2"], "the phone dropped gglib's ids")
+        XCTAssertEqual(model.name(of: "2", on: phone.id), "\(name) · Q8_0")
+        XCTAssertEqual(model.name(of: "1", on: phone.id), name, "a model with no quantization is not shown by its name")
+        XCTAssertEqual(model.engineID(of: "1:fast"), 1, "a profile variant is not its base model's")
+        XCTAssertEqual(model.providers.first { $0.id == phone.id }?.defaultModel, "1")
+        var conversation = try XCTUnwrap(model.selectedConversation)
+        XCTAssertTrue(model.offersThinking(for: conversation), "the phone's model was not found by its id")
 
-        let server = ProviderConfig(name: "home", kind: .openAICompatible(baseURL: MockEngine.baseURL))
-        XCTAssertEqual(model.kept(listed, from: server).map(\.key), ["4", "4:fast"])
+        conversation.model = name
+        model.update(conversation)
+        XCTAssertEqual(model.model(for: try XCTUnwrap(model.selectedConversation)), "1", "a saved name was sent")
     }
 }

@@ -73,16 +73,31 @@ extension GGChatCore.SearchPage {
 extension GGChatCore.QuantOffer {
     init(_ offer: GGLib.QuantOffer) {
         self.init(
-            name: offer.name, totalBytes: offer.totalBytes, shardCount: offer.shardCount,
-            verdict: GGChatCore.FitVerdict(offer.verdict), why: GGChatCore.FitWhy(offer.why))
+            label: offer.label, role: GGChatCore.VariantRole(offer.role), totalBytes: offer.totalBytes,
+            shardCount: offer.shardCount, verdict: GGChatCore.FitVerdict(offer.verdict),
+            why: GGChatCore.FitWhy(offer.why))
     }
 }
 
+extension GGChatCore.VariantRole {
+    init(_ role: GGLib.VariantRole) {
+        switch role {
+        case .model: self = .model
+        case .draftOrHelper: self = .draftOrHelper
+        case .projector: self = .projector
+        }
+    }
+}
+
+/// `listedId` is left behind: a chat names a model on this device by its
+/// `id`, which a second quantization of the same model leaves as it was,
+/// where it changes the listed id from the name to `name@QUANT`.
 extension GGChatCore.InstalledModel {
     init(_ model: GGLib.InstalledModel) {
         self.init(
-            id: model.id, name: model.name, bytes: model.bytes, trainedCtx: model.trainedCtx,
-            capabilities: model.capabilities, verdict: GGChatCore.FitVerdict(model.verdict))
+            id: model.id, name: model.name, quantization: model.quantization, repo: model.repo, bytes: model.bytes,
+            trainedCtx: model.trainedCtx, capabilities: model.capabilities,
+            verdict: GGChatCore.FitVerdict(model.verdict))
     }
 }
 
@@ -108,16 +123,16 @@ extension GGChatCore.DownloadState {
 }
 
 extension EngineStatus {
-    /// gglib's engine state, case for case. The model is passed through as
-    /// gglib names it, which is the name its proxy lists the model under in
-    /// `/v1/models`, the id a conversation holds; the status pill finds the
-    /// conversation's model by that.
+    /// gglib's engine state, case for case. The status pill finds the
+    /// conversation's model by `id`, gglib's id for it, which is what a chat
+    /// on This iPhone names its model by; `model` is its name, which two
+    /// quantizations of one model share.
     init(_ state: GGLib.EngineState) {
         switch state {
         case .idle: self = .idle
-        case .loading(let model, let fraction): self = .loading(model: model, fraction: fraction)
-        case .ready(let model, let nCtx): self = .ready(model: model, nCtx: nCtx)
-        case .failed(let model, let reason): self = .failed(model: model, reason: reason)
+        case .loading(let id, let model, let fraction): self = .loading(id: id, model: model, fraction: fraction)
+        case .ready(let id, let model, let nCtx): self = .ready(id: id, model: model, nCtx: nCtx)
+        case .failed(let id, let model, let reason): self = .failed(id: id, model: model, reason: reason)
         case .stopped: self = .stopped
         }
     }

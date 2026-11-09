@@ -87,7 +87,8 @@ and resume on the way back.
 
 - **Reading:** the lines ggchat logs as the engine loads a model, under the
   subsystem `com.mattogrady.ggchat` and the category `app`: "engine loading
-  <model>" and then "engine ready with <model>, context <n>". They are
+  <model>, id <id>" and then "engine ready with <model>, id <id>, context
+  <n>". They are
   info lines, which the phone keeps in memory only, so they are read live:
   the phone streamed in Console on a Mac, with Action › Include Info
   Messages on, while it is used. The time between the two after each

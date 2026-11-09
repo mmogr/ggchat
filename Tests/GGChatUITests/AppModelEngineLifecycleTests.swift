@@ -37,7 +37,7 @@ final class AppModelEngineLifecycleTests: XCTestCase {
     /// This iPhone added, with a conversation open on it that has not been
     /// opened: nothing is served until the test asks.
     private func addThisIPhone(to model: AppModel) throws -> (ProviderConfig, Conversation) {
-        let config = try model.addThisIPhone(defaultModel: MockEngine.model.id)
+        let config = try model.addThisIPhone(defaultModel: MockEngine.model.key)
         return (config, model.newConversation(with: config))
     }
 

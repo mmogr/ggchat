@@ -76,7 +76,7 @@ final class GglibEngineTests: XCTestCase {
     func testTheStreamWalksFromWhereTheEngineStandsAndFinishesAfterStopped() async throws {
         let server = FakeServer.make()
         let session = try await engine(FakeLibrary(serving: { server })).serve(reading: reading)
-        server.move(to: .loading(model: "tinygemma3", fraction: 0.5))
+        server.move(to: .loading(id: 1, model: "tinygemma3", fraction: 0.5))
         // Collected in the task itself: Xcode 26.6's region checker
         // cannot follow a call to `collect` out of one.
         let status = session.status
@@ -87,7 +87,7 @@ final class GglibEngineTests: XCTestCase {
         }
         let first = await waitUntil { server.pulls >= 2 }
         XCTAssertTrue(first, "the stream never asked past where the engine stood")
-        server.move(to: .ready(model: "tinygemma3", nCtx: 4_096))
+        server.move(to: .ready(id: 1, model: "tinygemma3", nCtx: 4_096))
         let readied = await waitUntil { server.pulls >= 3 }
         XCTAssertTrue(readied, "the stream never asked past ready")
         await session.shutdown()
@@ -95,7 +95,10 @@ final class GglibEngineTests: XCTestCase {
         let said = await following.value
         XCTAssertEqual(
             said,
-            [.loading(model: "tinygemma3", fraction: 0.5), .ready(model: "tinygemma3", nCtx: 4_096), .stopped])
+            [
+                .loading(id: 1, model: "tinygemma3", fraction: 0.5), .ready(id: 1, model: "tinygemma3", nCtx: 4_096),
+                .stopped,
+            ])
     }
 
     /// A consumer that stops listening stops the pulling: the step already
@@ -111,8 +114,8 @@ final class GglibEngineTests: XCTestCase {
         XCTAssertTrue(waiting, "the stream never asked past idle")
         following.cancel()
         await following.value
-        server.move(to: .loading(model: "tinygemma3", fraction: 0.1))
-        server.move(to: .ready(model: "tinygemma3", nCtx: 2_048))
+        server.move(to: .loading(id: 1, model: "tinygemma3", fraction: 0.1))
+        server.move(to: .ready(id: 1, model: "tinygemma3", nCtx: 2_048))
         for _ in 0..<50 { try? await Task.sleep(for: .milliseconds(2)) }
         XCTAssertEqual(server.pulls, 2, "a stream nobody listens to went on asking")
     }

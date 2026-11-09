@@ -995,19 +995,25 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # to words made here that match gglib's for a load, and fails nothing else, so
 # these three and their markers are the whole of that guard.
 #
-# 2026-11-10: 42 -> 43 and 1021 -> 1022 for an upright open Duo's panel. The
+# 2026-11-09: 1125 -> 1134 and 1021 -> 1028 for gglib 0.31.0. A variant's
+# role, a model's id in the engine's status, and an installed model's
+# quantization and repository are read nowhere else: a draft offered for
+# download, twins keyed by one name, a pill following the wrong twin, or a
+# removal that clears both, would fail only these.
+#
+# 2026-11-10: 42 -> 43 and 1028 -> 1029 for an upright open Duo's panel. The
 # chat's controls going back into its top bar there fails no unit test, so
 # this walk and its marker are the whole of that guard.
 #
-# 2026-11-10: 43 -> 44 and 1022 -> 1023 for Providers and Settings over the
+# 2026-11-10: 43 -> 44 and 1029 -> 1030 for Providers and Settings over the
 # chat on an open Duo. A pane that goes back to a sheet there fails no unit
 # test, so this walk and its marker are the whole of that guard.
 #
-# 2026-11-10: 44 -> 45 and 1023 -> 1024 for a provider saved over the chat
+# 2026-11-10: 44 -> 45 and 1030 -> 1031 for a provider saved over the chat
 # with Providers still open. Pushed on a folded phone's list, Save took
 # Providers with it; the walk on its side is what holds the open Duo to it.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1125
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1134
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 45
-floor "README test markers" "${markers:-0}" 1024
+floor "README test markers" "${markers:-0}" 1031
 
 exit $status
