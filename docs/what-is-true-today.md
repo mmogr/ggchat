@@ -1470,7 +1470,17 @@ Each claim names the test that keeps it true.
   `X` with a thick space either side, `\dots`, `\lvert`, `\rvert`,
   `\lVert`, `\rVert` and `\:`. Math it still cannot read is shown as
   written. Selected text copies an object character where math was drawn,
-  so a message's menu has Copy, which copies the message as written.
+  so a message's menu has Copy, which copies the message as written, and
+  Share, which shares it the same way.
+- A long press on a message lifts a card of it above its menu, not the
+  whole row shrunk to fit: its role and its opening blocks at their own
+  size, whole blocks from the top up to about 700 characters, at one width
+  and no taller than 420 points, fading out where it is cut. Its reasoning
+  and tool calls are left out, and a message of only images shows its first.
+  <!-- test: MarkdownPreviewTests.testAShortMessageLiftsWhole -->
+  <!-- test: MarkdownPreviewTests.testALongReplyLiftsOnlyTheBlocksThatFitTheBudget -->
+  <!-- test: MarkdownPreviewTests.testAFirstBlockOverTheBudgetIsStillTaken -->
+  <!-- test: MarkdownPreviewTests.testCodeListsQuotesAndTablesCountTheCharactersTheyShow -->
   <!-- test: MathSpanTests.testEachMathSpanIsMarkedWithItsLaTeX -->
   <!-- test: MathSpanTests.testMathIsMarkedInListsAndTables -->
   <!-- test: MathSpanTests.testDisplayMathAloneInAParagraphStandsAlone -->
