@@ -1000,8 +1000,11 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # quantization and repository are read nowhere else: a draft offered for
 # download, twins keyed by one name, a pill following the wrong twin, or a
 # removal that clears both, would fail only these.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1134
+#
+# 2026-11-10: 1134 -> 1135 and 1028 -> 1029 for the store opened off the
+# main actor while the window draws (#59).
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1135
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 1028
+floor "README test markers" "${markers:-0}" 1029
 
 exit $status

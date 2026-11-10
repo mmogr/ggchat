@@ -163,4 +163,20 @@ final class StoreDirectoryTests: XCTestCase {
         XCTAssertNil(opened.notice)
         XCTAssertEqual(opened.container.configurations.first?.isStoredInMemoryOnly, false)
     }
+
+    /// The store opens off the main actor, as a launch opens it while the
+    /// window draws (#59), and what it holds is read on the main actor after.
+    @MainActor
+    func testTheStoreOpensOffTheMainActorAndIsReadOnIt() async throws {
+        let location = scratch.location
+        let first = SwiftDataStore(container: SwiftDataStore.open(at: location, log: NoopLogSink()).container)
+        try first.save(conversation: StoreScratch.conversations(1, providerID: UUID())[0])
+
+        let opened = await Task.detached {
+            XCTAssertFalse(Thread.isMainThread, "the store was opened on the main thread")
+            return SwiftDataStore.open(at: location, log: NoopLogSink())
+        }.value
+        XCTAssertNil(opened.notice)
+        XCTAssertEqual(try SwiftDataStore(container: opened.container).loadConversations().count, 1)
+    }
 }
