@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.18.0](https://github.com/mmogr/ggchat/compare/v0.17.0...v0.18.0) (2026-11-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* **local:** a chat on This iPhone, or This iPhone's default, saved by a model's name before this asks for a model again; its context ring comes back with its next reply.
+
+### What the app now does
+
+* **chat:** a chat's menu deletes it, and the list searches ([#298](https://github.com/mmogr/ggchat/issues/298)) ([bb33761](https://github.com/mmogr/ggchat/commit/bb337610473173d15e16060cea8316b5cccd04aa))
+* **chat:** a long-pressed message lifts as a card of its opening ([#294](https://github.com/mmogr/ggchat/issues/294)) ([b46bbfe](https://github.com/mmogr/ggchat/commit/b46bbfefe074e21b16db37d3df3b9d835227bfc1))
+* **composer:** the context ring's counts open in a bubble, and its figure always shows ([#295](https://github.com/mmogr/ggchat/issues/295)) ([0fa1647](https://github.com/mmogr/ggchat/commit/0fa16475727125e21c22bf103b3e3fdb675a6475))
+* **duo:** an upright open Duo keeps the chat's controls in its panel ([#293](https://github.com/mmogr/ggchat/issues/293)) ([49f0cfc](https://github.com/mmogr/ggchat/commit/49f0cfca4c29017b5bc194f7c16ce5d0884dc366))
+* **duo:** Find a model… opens the browser in the chat's column on an open Duo ([#302](https://github.com/mmogr/ggchat/issues/302)) ([3947f9c](https://github.com/mmogr/ggchat/commit/3947f9c0a0dc0161df712f038c0f07583cd9ea60))
+* **duo:** Providers and Settings open in the chat's column on an open Duo ([#299](https://github.com/mmogr/ggchat/issues/299)) ([e05ad62](https://github.com/mmogr/ggchat/commit/e05ad625ed3dce8ea022242eb63b3d1c935bccab))
+
+
+### What the app stopped getting wrong
+
+* **chat:** the list keeps at most one untouched conversation ([#296](https://github.com/mmogr/ggchat/issues/296)) ([154b681](https://github.com/mmogr/ggchat/commit/154b681a45fd0e751cf33bafce27836c28c86a94))
+* **ci:** every commit on main gets a CI run of its own ([#307](https://github.com/mmogr/ggchat/issues/307)) ([e53d545](https://github.com/mmogr/ggchat/commit/e53d5454028f3baed7d4079aede428601dd669e9))
+* **ci:** the package caches keep no SwiftPM clones ([#306](https://github.com/mmogr/ggchat/issues/306)) ([25383f7](https://github.com/mmogr/ggchat/commit/25383f77c5c60e6af9561464bcec18e75d55adb0))
+* **launch:** the window draws before the store opens ([#300](https://github.com/mmogr/ggchat/issues/300)) ([e113a25](https://github.com/mmogr/ggchat/commit/e113a254bf9db9a30932cc84a0c278d02d5d73b6)), closes [#59](https://github.com/mmogr/ggchat/issues/59)
+* **local:** This iPhone runs gglib 0.31.0 and tells two quants of one model apart ([#292](https://github.com/mmogr/ggchat/issues/292)) ([d3a362c](https://github.com/mmogr/ggchat/commit/d3a362c3d2d05a4f9993fbea501f99bb50ebe68e))
+* **ui:** the sidebar's notes are footers, and say less ([#297](https://github.com/mmogr/ggchat/issues/297)) ([c3d43f2](https://github.com/mmogr/ggchat/commit/c3d43f2a1e14bf894ce7b468118bd610e379a471))
+
 ## [0.17.0](https://github.com/mmogr/ggchat/compare/v0.16.0...v0.17.0) (2026-11-09)
 
 
