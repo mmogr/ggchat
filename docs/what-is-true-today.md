@@ -129,6 +129,18 @@ Each claim names the test that keeps it true.
   <!-- test: ImageStoreTests.testAStoreOpensAcrossTheImagesChangeInBothDirections -->
   <!-- test: ImageStoreTests.testTheResetLeavesNoImageFileBehind -->
   <!-- test: FirstRunUITests.testAPastedImageIsSentAloneAndDrawnInTheTranscript -->
+- The list keeps at most one untouched conversation, the one open: one
+  with nothing asked, no name, no system prompt, and its model, Thinking,
+  picture model and tools still its provider's. New conversation on such a
+  one with the same provider is that one again, opening another
+  conversation or a Mac's chat deletes it, Back keeps it, and a launch
+  deletes those an older build left. Anything chosen in it keeps it.
+  <!-- test: UntouchedConversationTests.testNewConversationOnAnUntouchedOneIsThatOneAgain -->
+  <!-- test: UntouchedConversationTests.testBackKeepsAnUntouchedConversation -->
+  <!-- test: UntouchedConversationTests.testLeavingAnUntouchedConversationDeletesIt -->
+  <!-- test: UntouchedConversationTests.testANewConversationWithAnotherProviderLeavesOneUntouched -->
+  <!-- test: UntouchedConversationTests.testAnythingChosenKeepsIt -->
+  <!-- test: UntouchedConversationTests.testALaunchClearsTheUntouchedOnesAnOlderBuildLeft -->
 - A new conversation, from the list or the app's icon, is with the
   provider of the one open, a Mac's chat included, and with the first
   provider when none is open or the open one's provider was removed.
@@ -1633,6 +1645,17 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelRenameTests.testAClearedNameGivesBackTheFirstQuestionsTitle -->
   <!-- test: AppModelRenameTests.testTheTitleAlreadyShownAndAChatNotHereChangeNothing -->
   <!-- test: RenameUITests.testAChatIsRenamedAndClearedFromItsRow -->
+- The same menu, and VoiceOver's actions on the row, offer Delete, which
+  deletes the conversation at once as a swipe does. A search field at the
+  top of the list finds a conversation kept here by its title or anything
+  said in it, and a Mac's chat by its title, ignoring case and accents and
+  finding every word in any order; a Mac with no chat it finds has no
+  section while it searches, and nothing found says so.
+  <!-- test: ChatSearchTests.testAConversationIsFoundByItsTitleOrAnythingSaidInIt -->
+  <!-- test: ChatSearchTests.testAnUntitledConversationIsFoundByTheTitleItsFirstQuestionGivesIt -->
+  <!-- test: ChatSearchTests.testEveryWordMustBeFoundInAnyOrderAndInAnyMessage -->
+  <!-- test: ChatSearchTests.testAMacsChatIsFoundByItsTitle -->
+  <!-- test: ChatSearchTests.testOnlySpacesSearchForNothing -->
 - The conversation list says, beside a title, "Writing" while a reply is still
   being written, in front or by the hub, and "New" when one finished, failed
   or was given up while its chat was not on screen with the app in front,

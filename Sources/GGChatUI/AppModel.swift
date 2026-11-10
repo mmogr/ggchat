@@ -218,6 +218,7 @@ public final class AppModel {
             if selectedConversationID == nil {
                 selectedConversationID = conversations.first?.id
             }
+            dropUntouchedLeftBehind()
         } catch {
             report(error)
         }
@@ -233,20 +234,11 @@ public final class AppModel {
         newConversation(with: providerOfTheOpenConversation)
     }
 
-    /// The provider a new conversation starts with: see `newConversation()`.
-    var providerOfTheOpenConversation: ProviderConfig? {
-        let open: UUID? =
-            switch selection {
-            case .local(let id)?: conversations.first { $0.id == id }?.providerID
-            case .hub(let providerID, _)?: providerID
-            case nil: nil
-            }
-        return providers.first { $0.id == open } ?? providers.first
-    }
-
-    /// A new conversation with `provider`, at the top of the list and open.
+    /// A new conversation with `provider`, at the top of the list and open:
+    /// the open one, when that is untouched and with `provider` already.
     @discardableResult
     func newConversation(with provider: ProviderConfig?) -> Conversation {
+        if let open = untouchedOpenConversation(with: provider) { return open }
         let stamp = now()
         let conversation = Conversation(
             providerID: provider?.id, model: provider?.defaultModel, createdAt: stamp, updatedAt: stamp)
