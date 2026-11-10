@@ -107,13 +107,15 @@ public struct OpenHubChat: Equatable, Sendable {
 extension AppModel {
     /// The list's selection: a local conversation, as `selectedConversationID`
     /// holds it, or a Mac's chat. Choosing one drops the other; choosing
-    /// nothing, as Back does on a phone, drops both.
+    /// nothing, as Back does on a phone, drops both. Leaving an untouched
+    /// conversation deletes it (`AppModel+Untouched`).
     public var selection: SidebarSelection? {
         get {
             if let id = selectedConversationID { return .local(id) }
             return openedHubChat.map { .hub(providerID: $0.providerID, chatID: $0.chatID) }
         }
         set {
+            dropUntouched(leavingFor: newValue)
             switch newValue {
             case .local(let id)?:
                 dropHubChat()

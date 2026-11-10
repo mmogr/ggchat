@@ -43,6 +43,8 @@ final class QuickActionTests: XCTestCase {
         model.perform(.newChat)
         XCTAssertEqual(model.selectedConversation?.providerID, model.providers[0].id)
         XCTAssertNil(model.composerStart)
+        // Named, so the camera's starts another (`AppModel+Untouched`).
+        model.renameConversation(try XCTUnwrap(model.selectedConversation).id, to: "First")
 
         model.perform(.camera)
         let started = try XCTUnwrap(model.selectedConversation)
@@ -59,6 +61,8 @@ final class QuickActionTests: XCTestCase {
     func testDrawStartsWithThePairedMacAndNothingWithoutOne() async throws {
         let (model, mac) = try await DrawingRunTests.makeModel(behind: FakeRunHub(frames: []))
         model.providers.insert(addressed(), at: 0)
+        // Named, so Draw starts another (`AppModel+Untouched`).
+        model.renameConversation(try XCTUnwrap(model.selectedConversation).id, to: "Open")
         let before = model.conversations.count
         model.perform(.draw)
         let started = try XCTUnwrap(model.selectedConversation)

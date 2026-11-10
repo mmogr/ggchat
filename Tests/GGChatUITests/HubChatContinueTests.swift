@@ -25,6 +25,9 @@ final class HubChatContinueTests: XCTestCase {
     ) async throws -> (AppModel, ProviderConfig) {
         let (model, config) = try await AppModelRunTests.makeModel(behind: hub, store: store, sleeper: sleeper)
         try await AppModelRunTests.until("the list") { model.hubChats[config.id] != nil && model.hubListing.isEmpty }
+        // Named, so the chat kept here stays when the Mac's opens, as the
+        // tests that watch it need (`AppModel+Untouched`).
+        if let kept = model.selectedConversation { model.renameConversation(kept.id, to: "Kept here") }
         model.selection = .hub(providerID: config.id, chatID: 12)
         try await AppModelRunTests.until("the rows") { model.openedHubChat?.state.showsRows == true }
         try await AppModelRunTests.until("the models") { model.models(for: config.id) == hub.with(\.models) }

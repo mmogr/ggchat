@@ -1001,19 +1001,32 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # download, twins keyed by one name, a pill following the wrong twin, or a
 # removal that clears both, would fail only these.
 #
-# 2026-11-10: 42 -> 43 and 1028 -> 1029 for an upright open Duo's panel. The
+# 2026-11-10: 1134 -> 1135 and 1028 -> 1029 for the store opened off the
+# main actor while the window draws (#59).
+#
+# 2026-11-10: 1135 -> 1140 and 1029 -> 1034 for the list's search. A search
+# that stops finding a chat by what was said in it fails nothing else, so
+# these five and their markers are the whole of that guard.
+#
+# 2026-11-10: 1140 -> 1146 and 1034 -> 1040 for the one untouched chat the
+# list keeps. A list that keeps every New conversation again fails nothing
+# else, so these six and their markers are the whole of that guard.
+#
+# 2026-11-10: 1146 -> 1151 and 1040 -> 1044 for the card a long-pressed
+# message lifts. A preview that goes back to the whole row fails nothing
+# else, so these and their markers are the whole of that guard.
+#
+# 2026-11-10: 42 -> 43 and 1044 -> 1045 for an upright open Duo's panel. The
 # chat's controls going back into its top bar there fails no unit test, so
 # this walk and its marker are the whole of that guard.
 #
-# 2026-11-10: 43 -> 44 and 1029 -> 1030 for Providers and Settings over the
-# chat on an open Duo. A pane that goes back to a sheet there fails no unit
-# test, so this walk and its marker are the whole of that guard.
-#
-# 2026-11-10: 44 -> 45 and 1030 -> 1031 for a provider saved over the chat
-# with Providers still open. Pushed on a folded phone's list, Save took
-# Providers with it; the walk on its side is what holds the open Duo to it.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1134
+# 2026-11-10: 43 -> 45 and 1045 -> 1047 for Providers and Settings over the
+# chat on an open Duo, and a provider saved there with Providers still open.
+# A pane that goes back to a sheet there, or Save taking Providers with it,
+# fails no unit test, so these walks and their markers are the whole of
+# that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1151
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 45
-floor "README test markers" "${markers:-0}" 1031
+floor "README test markers" "${markers:-0}" 1047
 
 exit $status
