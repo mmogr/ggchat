@@ -17,9 +17,9 @@ import PackageDescription
 // that does nothing else cannot catch a neighbour, and the script refuses a
 // rewrite that left the file as it was. A checksum of zeros pins nothing: it
 // names a release that has not been published.
-let gglibVersion = "0.31.0"
-let gglibChecksum = "011f3b319e7546398a0f541c5294c0edfc034df7397f5fcf23e669b54df3d1ce"
-let llamaChecksum = "0a094ebf3a021e9814df28793f1f262a640a39ff03cb7f920a8dfc3fb5626ce4"
+let gglibVersion = "0.32.0"
+let gglibChecksum = "47f5fa08879476dfc5a1fcfd08369656308c97edf4deedad6bb90782a9985b48"
+let llamaChecksum = "d986e654c23fbb3ebe31ea446c3384dee4212ca3927524ac416b65cdc824bdc6"
 
 // Local development: `GGLIB_FFI_LOCAL_XCFRAMEWORK=1` swaps both downloads for
 // the frameworks in `build/`, which `scripts/pin_gglib.sh --local <gglib
