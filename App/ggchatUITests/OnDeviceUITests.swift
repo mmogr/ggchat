@@ -47,20 +47,18 @@ final class OnDeviceUITests: XCTestCase {
         let spoken = (ring.value as? String) ?? ""
         XCTAssertTrue(spoken.hasSuffix("percent of context used"), "VoiceOver hears \"\(spoken)\" for the ring")
 
-        // The engine said the context it loaded, 4096, so the sheet reads
+        // The engine said the context it loaded, 4096, so the bubble reads
         // it, grouped as the locale groups digits.
         let size = app.staticTexts.matching(
             NSPredicate(format: "label CONTAINS ' tokens (' AND label CONTAINS '096 tokens'")
         ).firstMatch
-        XCTAssertTrue(tap(ring, untilExists: size), "the ring's sheet does not read the engine's context")
+        XCTAssertTrue(tap(ring, untilExists: size), "the ring's bubble does not read the engine's context")
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = "on-device-ring"
         shot.lifetime = .keepAlways
         add(shot)
-        let done = app.buttons["Done"].firstMatch
-        XCTAssertTrue(waitUntilHittable(done, timeout: 10), "the sheet offers no Done")
-        done.tap()
-        XCTAssertTrue(size.waitForNonExistence(timeout: 10), "the sheet did not close after Done")
+        tapOutsideBubble(in: app)
+        XCTAssertTrue(size.waitForNonExistence(timeout: 10), "the bubble did not close on a tap outside it")
     }
 
     /// The model is not loaded when the conversation opens; the first send

@@ -46,18 +46,20 @@ public protocol EngineSession: Sendable {
 }
 
 /// The engine's state as the app sees it, mirroring gglib-ffi's
-/// `EngineState`: one model resident at most.
+/// `EngineState`: one model resident at most. `id` is the model's id in
+/// gglib's library, which a chat on This iPhone names it by; `model` is its
+/// name, which two quantizations of one model share.
 public enum EngineStatus: Sendable, Equatable, Hashable {
     /// Serving, with no model loaded.
     case idle
-    /// `model` is being loaded; `fraction` runs from 0 to 1.
-    case loading(model: String, fraction: Double)
-    /// `model` is loaded with a context of `nCtx` tokens, the size the
+    /// The model is being loaded; `fraction` runs from 0 to 1.
+    case loading(id: Int64, model: String, fraction: Double)
+    /// The model is loaded with a context of `nCtx` tokens, the size the
     /// context ring reads against.
-    case ready(model: String, nCtx: UInt64)
-    /// `model` could not be loaded; `reason` is the engine's sentence. The
-    /// next request that names a model tries again.
-    case failed(model: String, reason: String)
+    case ready(id: Int64, model: String, nCtx: UInt64)
+    /// The model could not be loaded; `reason` is the engine's sentence.
+    /// The next request that names a model tries again.
+    case failed(id: Int64, model: String, reason: String)
     /// The session has ended. Nothing follows it.
     case stopped
 }

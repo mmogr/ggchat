@@ -2,8 +2,8 @@ import XCTest
 
 /// gglib's own engine on a real iPhone, not the mock: `make
 /// uitest-device-engine` on the owner's phone, with
-/// `GGCHAT_LIVE_ENGINE_MODEL` naming a model already downloaded to it as its
-/// model list names it. Skipped unless that is set, so the simulator walks
+/// `GGCHAT_LIVE_ENGINE_MODEL` naming a model already downloaded to it by the
+/// name its library gives it, which the app chooses by its id. Skipped unless that is set, so the simulator walks
 /// and CI never take it; no simulator runs gglib's engine.
 ///
 /// `-ggchat-live-engine-model` adds This iPhone at launch with that model
@@ -36,10 +36,9 @@ final class OnDeviceLiveUITests: XCTestCase {
         shot.lifetime = .keepAlways
         add(shot)
         let size = app.staticTexts.matching(NSPredicate(format: "label CONTAINS ' tokens ('")).firstMatch
-        XCTAssertTrue(tap(ring, untilExists: size), "the ring's sheet does not read the engine's context")
-        let done = app.buttons["Done"].firstMatch
-        XCTAssertTrue(waitUntilHittable(done, timeout: 10), "the sheet offers no Done")
-        done.tap()
+        XCTAssertTrue(tap(ring, untilExists: size), "the ring's bubble does not read the engine's context")
+        tapOutsideBubble(in: app)
+        XCTAssertTrue(size.waitForNonExistence(timeout: 10), "the bubble did not close on a tap outside it")
 
         XCUIDevice.shared.press(.home)
         _ = app.wait(for: .runningBackgroundSuspended, timeout: 30)

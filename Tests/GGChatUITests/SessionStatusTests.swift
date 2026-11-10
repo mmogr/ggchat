@@ -55,14 +55,14 @@ final class SessionStatusTests: XCTestCase {
         let server = ProviderConfig(name: "desk", kind: .openAICompatible(baseURL: AppModel.mockBaseURL))
         try none.addProvider(server, credentials: [:])
         XCTAssertNil(none.sessionStatus(for: none.newConversation(with: server)))
-        let unrun = try none.addThisIPhone(defaultModel: MockEngine.model.id)
+        let unrun = try none.addThisIPhone(defaultModel: MockEngine.model.key)
         XCTAssertNil(none.sessionStatus(for: none.newConversation(with: unrun)))
 
         let registry = LoopbackProviderRegistry()
         let model = makeModel(engine: MockEngine(registry: registry), registry: registry)
-        let config = try model.addThisIPhone(defaultModel: MockEngine.model.id)
+        let config = try model.addThisIPhone(defaultModel: MockEngine.model.key)
         let other = model.newConversation(with: config)
-        model.select(model: "another-model", for: other.id)
+        model.select(model: "7", for: other.id)
         let conversation = model.newConversation(with: config)
         await model.open(config).value
         try await XCTUnwrap(model.send("hi")).value
@@ -79,7 +79,7 @@ final class SessionStatusTests: XCTestCase {
     func testATooBigModelSaysSoAndThePillOpensTheBrowser() async throws {
         let registry = LoopbackProviderRegistry()
         let model = makeModel(engine: MockEngine(behaviour: .tooBig, registry: registry), registry: registry)
-        let config = try model.addThisIPhone(defaultModel: MockEngine.model.id)
+        let config = try model.addThisIPhone(defaultModel: MockEngine.model.key)
         let conversation = model.newConversation(with: config)
         await model.open(config).value
         XCTAssertEqual(model.sessionStatus(for: conversation), .engine(.notLoaded))
@@ -91,10 +91,10 @@ final class SessionStatusTests: XCTestCase {
         model.press(.engine(.tooBig), in: conversation)
         XCTAssertNotNil(model.onDevice.modelBrowser, "Too big did not open the model browser")
 
-        model.select(model: "a-smaller-model", for: conversation.id)
+        model.select(model: "8", for: conversation.id)
         let smaller = try XCTUnwrap(model.selectedConversation)
         XCTAssertEqual(model.sessionStatus(for: smaller), .engine(.notLoaded))
-        model.select(model: MockEngine.model.id, for: conversation.id)
+        model.select(model: MockEngine.model.key, for: conversation.id)
         await model.shutDownEngine()
         await model.serveEngine()
         XCTAssertEqual(model.sessionStatus(for: try XCTUnwrap(model.selectedConversation)), .engine(.notLoaded))
