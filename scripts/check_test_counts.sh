@@ -1001,11 +1001,14 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # download, twins keyed by one name, a pill following the wrong twin, or a
 # removal that clears both, would fail only these.
 #
-# 2026-11-10: 42 -> 43 and 1028 -> 1029 for an upright open Duo's panel. The
+# 2026-11-10: 1134 -> 1135 and 1028 -> 1029 for the store opened off the
+# main actor while the window draws (#59).
+#
+# 2026-11-10: 42 -> 43 and 1029 -> 1030 for an upright open Duo's panel. The
 # chat's controls going back into its top bar there fails no unit test, so
 # this walk and its marker are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1134
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1135
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 43
-floor "README test markers" "${markers:-0}" 1029
+floor "README test markers" "${markers:-0}" 1030
 
 exit $status

@@ -1,7 +1,10 @@
 import GGChatCore
 import SwiftUI
 
-/// "On home": a paired Mac's chats, in the list below this phone's own.
+/// "On home": a paired Mac's chats, in the list below this phone's own, and
+/// under them, in the section's footer, what there is to say about the Mac:
+/// a footer and not a row, which a sidebar draws as a card as tall as a
+/// chat's.
 struct HubChatsSection: View {
     @Environment(AppModel.self) private var model
     @Environment(\.locale) private var locale
@@ -9,15 +12,16 @@ struct HubChatsSection: View {
     let config: ProviderConfig
 
     var body: some View {
-        Section("On \(config.name)") {
+        Section {
             ForEach(model.hubChats[config.id] ?? []) { chat in
                 HubChatRow(chat: chat, providerID: config.id)
                     .tag(SidebarSelection.hub(providerID: config.id, chatID: chat.id))
             }
+        } header: {
+            Text("On \(config.name)")
+        } footer: {
             if let line = model.hubLine(for: config.id, locale: locale, calendar: calendar) {
                 Text(line)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
         }
     }

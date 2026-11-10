@@ -111,18 +111,16 @@ struct ConversationSidebar: View {
                         model.deleteConversation(model.conversations[index].id)
                     }
                 }
-                if model.conversations.isEmpty, !model.hubProviders.isEmpty {
-                    Text("No conversations on this phone yet.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
             } header: {
                 // Named only when a paired Mac's section follows it.
                 if !model.hubProviders.isEmpty { Text("On this phone") }
             } footer: {
-                // Said of the chats here, so not while there are none.
-                if !model.hubProviders.isEmpty, !model.conversations.isEmpty {
-                    Text("These chats are kept only on this phone. The Mac does not keep them.")
+                // A footer, not a row, which a sidebar draws as a card. Only
+                // beside a paired Mac's section, whose chats these are not.
+                if !model.hubProviders.isEmpty {
+                    Text(
+                        model.conversations.isEmpty
+                            ? "No conversations on this phone yet." : "The Mac doesn't keep these.")
                 }
             }
             ForEach(model.hubProviders) { config in
