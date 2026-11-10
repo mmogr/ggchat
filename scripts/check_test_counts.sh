@@ -1019,8 +1019,14 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # 2026-11-10: 42 -> 43 and 1044 -> 1045 for an upright open Duo's panel. The
 # chat's controls going back into its top bar there fails no unit test, so
 # this walk and its marker are the whole of that guard.
+#
+# 2026-11-10: 43 -> 45 and 1045 -> 1047 for Providers and Settings over the
+# chat on an open Duo, and a provider saved there with Providers still open.
+# A pane that goes back to a sheet there, or Save taking Providers with it,
+# fails no unit test, so these walks and their markers are the whole of
+# that guard.
 floor "package test cases" "$(test_cases "$ROOT/Tests")" 1151
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 43
-floor "README test markers" "${markers:-0}" 1045
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 45
+floor "README test markers" "${markers:-0}" 1047
 
 exit $status

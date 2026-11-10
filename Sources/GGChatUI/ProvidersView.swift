@@ -2,78 +2,95 @@ import GGChatCore
 import SwiftUI
 
 /// List, add, edit, remove. A provider's model is picked in the composer;
-/// a row here is the way to its name and its credentials.
+/// a row here is the way to its name and its credentials. A sheet with a
+/// stack of its own, or, beside the list on an open Duo, a page pushed over
+/// the chat (`RootPane`); Done closes either.
 struct ProvidersView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @State private var adding = false
+    /// Whether it is a sheet with a stack of its own, rather than a page
+    /// pushed on another.
+    var ownStack = true
 
     var body: some View {
-        NavigationStack {
-            List {
-                ForEach(model.providers) { provider in
-                    // The row is the edit affordance. Before this it was not
-                    // a control of any kind, so a pipe that needed a new code
-                    // or ticket could only be deleted and built again.
-                    NavigationLink {
-                        EditProviderView(provider: provider)
-                    } label: {
-                        ProviderRow(provider: provider)
-                    }
-                }
-                .onDelete { offsets in
-                    for index in offsets {
-                        model.removeProvider(model.providers[index].id)
-                    }
-                }
-            }
-            .overlay {
-                if model.providers.isEmpty {
-                    ContentUnavailableView(
-                        "No providers", systemImage: "server.rack",
-                        description: Text(
-                            model.runsModelsHere
-                                ? "Add a server by address, a modelpipe ticket, or a model to run on this iPhone."
-                                : "Add a server by address, or a modelpipe ticket."))
-                }
-            }
-            .navigationTitle("Providers")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button("Add provider", systemImage: "plus") { adding = true }
-                }
-                #if DEBUG
-                    ToolbarItem(placement: .automatic) {
-                        Button("Add mock provider", systemImage: "wand.and.sparkles") {
-                            try? model.addProvider(
-                                ProviderConfig(
-                                    name: "Mock", kind: .openAICompatible(baseURL: AppModel.mockBaseURL),
-                                    defaultModel: "mock-27b"),
-                                credentials: [:])
-                        }
-                    }
-                    ToolbarItem(placement: .automatic) {
-                        Button("Add refusing mock provider", systemImage: "hand.raised") {
-                            try? model.addProvider(
-                                ProviderConfig(
-                                    name: "Refusing mock",
-                                    kind: .openAICompatible(baseURL: AppModel.refusingMockBaseURL),
-                                    defaultModel: "mock-27b"),
-                                credentials: [:])
-                        }
-                    }
-                #endif
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
-            .sheet(isPresented: $adding) {
-                AddProviderView()
+        Group {
+            if ownStack {
+                NavigationStack { list }
+            } else {
+                list
             }
         }
         #if os(macOS)
             .frame(minWidth: 440, minHeight: 360)
         #endif
+    }
+
+    private var list: some View {
+        List {
+            ForEach(model.providers) { provider in
+                // The row is the edit affordance. Before this it was not
+                // a control of any kind, so a pipe that needed a new code
+                // or ticket could only be deleted and built again.
+                NavigationLink {
+                    EditProviderView(provider: provider)
+                } label: {
+                    ProviderRow(provider: provider)
+                }
+            }
+            .onDelete { offsets in
+                for index in offsets {
+                    model.removeProvider(model.providers[index].id)
+                }
+            }
+        }
+        .overlay {
+            if model.providers.isEmpty {
+                ContentUnavailableView(
+                    "No providers", systemImage: "server.rack",
+                    description: Text(
+                        model.runsModelsHere
+                            ? "Add a server by address, a modelpipe ticket, or a model to run on this iPhone."
+                            : "Add a server by address, or a modelpipe ticket."))
+            }
+        }
+        .navigationTitle("Providers")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Add provider", systemImage: "plus") { adding = true }
+            }
+            #if DEBUG
+                ToolbarItem(placement: .automatic) {
+                    Button("Add mock provider", systemImage: "wand.and.sparkles") {
+                        try? model.addProvider(
+                            ProviderConfig(
+                                name: "Mock", kind: .openAICompatible(baseURL: AppModel.mockBaseURL),
+                                defaultModel: "mock-27b"),
+                            credentials: [:])
+                    }
+                }
+                ToolbarItem(placement: .automatic) {
+                    Button("Add refusing mock provider", systemImage: "hand.raised") {
+                        try? model.addProvider(
+                            ProviderConfig(
+                                name: "Refusing mock",
+                                kind: .openAICompatible(baseURL: AppModel.refusingMockBaseURL),
+                                defaultModel: "mock-27b"),
+                            credentials: [:])
+                    }
+                }
+            #endif
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Done") { dismiss() }
+            }
+        }
+        #if os(iOS)
+            // Pushed, Done is the one way back, as it is from the sheet.
+            .navigationBarBackButtonHidden(!ownStack)
+        #endif
+        .sheet(isPresented: $adding) {
+            AddProviderView()
+        }
     }
 }
 

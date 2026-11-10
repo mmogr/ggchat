@@ -41,4 +41,43 @@ final class ThisChatUprightUITests: XCTestCase {
 
         XCTAssertTrue(tap(panelButton, untilExists: compose), "the panel button did not put the list back")
     }
+
+    /// Providers opens in the chat's column, over the chat, with the list
+    /// where it was; Done takes it away and the chat's draft is as it was.
+    @MainActor
+    func testProvidersOpenOverTheChatAndLeaveItsDraft() throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .phone, "an iPad keeps the system's split view")
+        let app = launchFreshApp()
+        let window = app.windows.firstMatch
+        XCTAssertTrue(window.waitForExistence(timeout: 10))
+        try XCTSkipUnless(
+            window.frame.height > window.frame.width && window.frame.width >= 600,
+            "this simulator is not an open Duo held upright")
+
+        openProviderForm(in: app)
+        app.buttons["Cancel"].firstMatch.tap()
+        let providers = app.buttons["Providers"].firstMatch
+        providers.tap()
+        let mock = app.buttons["Add mock provider"].firstMatch
+        XCTAssertTrue(mock.waitForExistence(timeout: 10))
+        mock.tap()
+        app.buttons["Done"].firstMatch.tap()
+        openConversation(in: app)
+        let field = composer(in: app)
+        XCTAssertTrue(caret(in: field, of: app), "the composer never took the caret")
+        field.typeText("Kept under")
+        let column = field.frame
+
+        XCTAssertTrue(tap(providers, untilExists: mock), "Providers did not open")
+        XCTAssertGreaterThanOrEqual(mock.frame.minX, column.minX - 1, "Providers did not open in the chat's column")
+        let compose = app.buttons["New conversation"].firstMatch
+        XCTAssertTrue(compose.exists, "the list went when Providers opened")
+        XCTAssertTrue(providers.isSelected, "the Providers button is not shown as chosen")
+
+        app.buttons["Done"].firstMatch.tap()
+        XCTAssertTrue(mock.waitForNonExistence(timeout: 10), "Done did not take Providers away")
+        XCTAssertTrue(
+            ((composer(in: app).value as? String) ?? "").contains("Kept under"),
+            "the draft was lost under Providers")
+    }
 }

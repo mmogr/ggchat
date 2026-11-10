@@ -5,7 +5,9 @@ import SwiftUI
 /// About, with the gglib and llama.cpp this build carries, when it stops
 /// opening, how many distinct tickets this device has connected to and,
 /// where it runs models, what they take, which leads to the model browser,
-/// and then each pipe and what it says about itself.
+/// and then each pipe and what it says about itself. A sheet with a stack
+/// of its own, or, beside the list on an open Duo, a page pushed over the
+/// chat (`RootPane`); Done closes either.
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.locale) private var locale
@@ -16,93 +18,106 @@ struct SettingsView: View {
     /// When this build stops opening; nil, and no row, for a build with no
     /// profile in it.
     private let buildExpiry: Date?
+    /// Whether it is a sheet with a stack of its own, rather than a page
+    /// pushed on another.
+    private let ownStack: Bool
 
-    init(buildExpiry: Date? = SettingsView.installedBuildExpiry) {
+    init(buildExpiry: Date? = SettingsView.installedBuildExpiry, ownStack: Bool = true) {
         self.buildExpiry = buildExpiry
+        self.ownStack = ownStack
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("About") {
-                    LabeledContent("Version", value: Self.version)
-                    Text(Self.carriedLine(Self.carried))
-                    if let line = Self.expiryLine(buildExpiry, locale: locale, calendar: calendar) {
-                        Text(line)
-                    }
-                    LabeledContent("Distinct tickets connected", value: "\(model.diagnostics.ticketDigests.count)")
-                    if model.runsModelsHere {
-                        // The way back to the browser from anywhere, pushed
-                        // in this sheet's own stack rather than a sheet over it.
-                        NavigationLink {
-                            ModelBrowserPage()
-                        } label: {
-                            LabeledContent("Models on this iPhone", value: model.installedSize)
-                        }
-                        .task { await model.refreshInstalled() }
-                    }
-                    Link("Source", destination: URL(string: "https://github.com/mmogr/ggchat")!)
-                }
-                ConnectionsSection()
-                #if DEBUG
-                    // Only the pipes this button can actually close. It works
-                    // by downcasting to the mock, so against any other session
-                    // it is a control that looks live, is pressable, and does
-                    // nothing — and it is the only way to exercise the
-                    // reconnect UI by hand, so a silent no-op there costs the
-                    // one affordance that would have shown it was broken.
-                    let forceable = connectedPipes.filter {
-                        model.pipeSession(for: $0.id) is MockPipeSession
-                    }
-                    if !forceable.isEmpty {
-                        Section("Debug") {
-                            ForEach(forceable) { provider in
-                                Button("Force \(provider.name) closed", systemImage: "bolt.slash") {
-                                    (model.pipeSession(for: provider.id) as? MockPipeSession)?.forceClosed()
-                                }
-                            }
-                            // The other close, and the one with no button
-                            // until now: a machine that stops answering
-                            // without saying so. "Force closed" reports a
-                            // shutdown, honestly, because a person pressed it
-                            // — so it could never exercise the sentence that
-                            // only an unexpected close produces.
-                            //
-                            // The label deliberately does not begin with
-                            // "Force ": `RemainingScreensUITests` matches
-                            // `label BEGINSWITH 'Force '` with `.firstMatch`,
-                            // and a second button under that prefix would make
-                            // which one it taps a matter of layout order.
-                            ForEach(forceable) { provider in
-                                Button("Drop \(provider.name)", systemImage: "antenna.radiowaves.left.and.right.slash")
-                                {
-                                    (model.pipeSession(for: provider.id) as? MockPipeSession)?.dropped()
-                                }
-                            }
-                        }
-                    }
-                #endif
-                Section {
-                    Text(
-                        "Nothing you say leaves your devices. Credentials live in the Keychain; "
-                            + "conversations stay on this device."
-                    )
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                }
+        Group {
+            if ownStack {
+                NavigationStack { form }
+            } else {
+                form
             }
-            .formStyle(.grouped)
-            .navigationTitle("Settings")
-            #if os(iOS)
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Done") { dismiss() }
-                    }
-                }
-            #endif
         }
         #if os(macOS)
             .frame(minWidth: 440, minHeight: 360)
+        #endif
+    }
+
+    private var form: some View {
+        Form {
+            Section("About") {
+                LabeledContent("Version", value: Self.version)
+                Text(Self.carriedLine(Self.carried))
+                if let line = Self.expiryLine(buildExpiry, locale: locale, calendar: calendar) {
+                    Text(line)
+                }
+                LabeledContent("Distinct tickets connected", value: "\(model.diagnostics.ticketDigests.count)")
+                if model.runsModelsHere {
+                    // The way back to the browser from anywhere, pushed
+                    // in this sheet's own stack rather than a sheet over it.
+                    NavigationLink {
+                        ModelBrowserPage()
+                    } label: {
+                        LabeledContent("Models on this iPhone", value: model.installedSize)
+                    }
+                    .task { await model.refreshInstalled() }
+                }
+                Link("Source", destination: URL(string: "https://github.com/mmogr/ggchat")!)
+            }
+            ConnectionsSection()
+            #if DEBUG
+                // Only the pipes this button can actually close. It works
+                // by downcasting to the mock, so against any other session
+                // it is a control that looks live, is pressable, and does
+                // nothing — and it is the only way to exercise the
+                // reconnect UI by hand, so a silent no-op there costs the
+                // one affordance that would have shown it was broken.
+                let forceable = connectedPipes.filter {
+                    model.pipeSession(for: $0.id) is MockPipeSession
+                }
+                if !forceable.isEmpty {
+                    Section("Debug") {
+                        ForEach(forceable) { provider in
+                            Button("Force \(provider.name) closed", systemImage: "bolt.slash") {
+                                (model.pipeSession(for: provider.id) as? MockPipeSession)?.forceClosed()
+                            }
+                        }
+                        // The other close, and the one with no button
+                        // until now: a machine that stops answering
+                        // without saying so. "Force closed" reports a
+                        // shutdown, honestly, because a person pressed it
+                        // — so it could never exercise the sentence that
+                        // only an unexpected close produces.
+                        //
+                        // The label deliberately does not begin with
+                        // "Force ": `RemainingScreensUITests` matches
+                        // `label BEGINSWITH 'Force '` with `.firstMatch`,
+                        // and a second button under that prefix would make
+                        // which one it taps a matter of layout order.
+                        ForEach(forceable) { provider in
+                            Button("Drop \(provider.name)", systemImage: "antenna.radiowaves.left.and.right.slash") {
+                                (model.pipeSession(for: provider.id) as? MockPipeSession)?.dropped()
+                            }
+                        }
+                    }
+                }
+            #endif
+            Section {
+                Text(
+                    "Nothing you say leaves your devices. Credentials live in the Keychain; "
+                        + "conversations stay on this device."
+                )
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .navigationTitle("Settings")
+        #if os(iOS)
+            // Pushed, Done is the one way back, as it is from the sheet.
+            .navigationBarBackButtonHidden(!ownStack)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
         #endif
     }
 

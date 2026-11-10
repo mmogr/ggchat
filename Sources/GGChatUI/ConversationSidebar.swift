@@ -81,8 +81,8 @@ enum BookPages {
 
 struct ConversationSidebar: View {
     @Environment(AppModel.self) private var model
-    @Binding var showingProviders: Bool
-    @Binding var showingSettings: Bool
+    /// Providers or Settings, while one is open (`RootPane`).
+    @Binding var pane: RootPane?
     @Binding var addingProvider: Bool
     /// Whether the list is a column beside the chat, where its header has
     /// room for its title and one button: Providers and Settings go to a bar
@@ -98,7 +98,16 @@ struct ConversationSidebar: View {
         @Bindable var model = model
         let search = ChatSearch(query)
         let shown = model.conversations.filter(search.finds)
-        List(selection: $model.selection) {
+        // A chat chosen closes a pane over the chat, the one already open
+        // included, so the chat is what is on screen.
+        List(
+            selection: Binding(
+                get: { model.selection },
+                set: {
+                    pane = nil
+                    model.selection = $0
+                })
+        ) {
             Section {
                 ForEach(shown) { conversation in
                     ConversationRow(conversation: conversation)
@@ -212,17 +221,24 @@ struct ConversationSidebar: View {
         (model.hubChats[config.id] ?? []).contains { search.finds(title: $0.title) }
     }
 
+    /// Providers, tinted and read as selected while it is open over the chat.
     private var providersButton: some View {
         Button("Providers", systemImage: "server.rack") {
-            showingProviders = true
+            pane = .providers
         }
+        .foregroundStyle(pane == .providers ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
+        .accessibilityAddTraits(pane == .providers ? .isSelected : [])
     }
 
     #if os(iOS)
+        /// Settings, filled and read as selected while it is open over the
+        /// chat.
         private var settingsButton: some View {
-            Button("Settings", systemImage: "gearshape") {
-                showingSettings = true
+            Button("Settings", systemImage: pane == .settings ? "gearshape.fill" : "gearshape") {
+                pane = .settings
             }
+            .foregroundStyle(pane == .settings ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
+            .accessibilityAddTraits(pane == .settings ? .isSelected : [])
         }
     #endif
 }

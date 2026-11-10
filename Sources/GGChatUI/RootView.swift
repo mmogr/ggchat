@@ -9,14 +9,13 @@ import SwiftUI
 public struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
-    // Read only through their bindings (`$showingProviders` and the rest),
+    // Read only through their bindings (`$pane` and the rest),
     // which the Swift 6.4 indexer records as no read of the property, so
     // periphery reports each as unused. Periphery's repository was archived
     // in August 2026 and will not learn otherwise; the indexer may.
     // periphery:ignore - read only through its binding, see above
-    @State private var showingProviders = false
-    // periphery:ignore - read only through its binding, see above
-    @State private var showingSettings = false
+    /// Providers or Settings, while one is open; see `RootPane`.
+    @State private var pane: RootPane?
     // periphery:ignore - read only through its binding, see above
     @State private var addingProvider = false
     // periphery:ignore - read only through its binding, see above
@@ -85,14 +84,11 @@ public struct RootView: View {
                 StoreNoticeView(notice: storeNotice, lines: noticeLines)
             }
         }
-        .sheet(isPresented: $showingProviders) {
-            ProvidersView()
+        .sheet(item: paneBinding(for: .sheet)) { pane in
+            RootPaneSheet(pane: pane)
         }
         .sheet(isPresented: $addingProvider) {
             AddProviderView()
-        }
-        .sheet(isPresented: $showingSettings) {
-            SettingsView()
         }
         // Here, as the enlarged picture is, so every way in opens the same
         // one: the composer's model list and the panel's, and the empty
@@ -154,7 +150,7 @@ extension RootView {
     fileprivate var layout: some View {
         #if os(iOS)
             if phoneLayout != .system {
-                PhoneColumns(layout: phoneLayout, folds: folds) {
+                PhoneColumns(layout: phoneLayout, folds: folds, pane: paneBinding(for: .chatColumn)) {
                     sidebar(beside: true)
                 } detail: {
                     detail
@@ -187,10 +183,24 @@ extension RootView {
     }
 
     private func sidebar(beside: Bool) -> some View {
-        ConversationSidebar(
-            showingProviders: $showingProviders, showingSettings: $showingSettings,
-            addingProvider: $addingProvider, beside: beside
-        )
+        ConversationSidebar(pane: $pane, addingProvider: $addingProvider, beside: beside)
+    }
+
+    /// How a pane is shown here: pushed over the chat where the app lays the
+    /// list beside it, and a sheet wherever the system lays it out.
+    private var panePresentation: RootPane.Presentation {
+        #if os(iOS)
+            if phoneLayout != .system { return .chatColumn }
+        #endif
+        return .sheet
+    }
+
+    /// The pane, for the one presentation of it that is `presentation`;
+    /// nil for the others, so only one shows it.
+    private func paneBinding(for presentation: RootPane.Presentation) -> Binding<RootPane?> {
+        Binding(
+            get: { panePresentation == presentation ? pane : nil },
+            set: { pane = $0 })
     }
 
     @ViewBuilder
