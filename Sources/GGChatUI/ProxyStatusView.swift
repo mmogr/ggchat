@@ -31,7 +31,7 @@ struct ProxyStatusView: View {
 }
 
 /// The pane's rows, for its own list or the panel beside the chat on an open
-/// iPhone Duo on its side: what the last snapshot said, or why there is none.
+/// iPhone Duo: what the last snapshot said, or why there is none.
 /// Whoever lays them out follows the stream with `followsProxyStatus`, on
 /// the list itself, which is one view where these rows are many.
 struct ProxyStatusSections: View {

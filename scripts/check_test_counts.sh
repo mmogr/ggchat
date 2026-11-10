@@ -1015,8 +1015,12 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # 2026-11-10: 1146 -> 1151 and 1040 -> 1044 for the card a long-pressed
 # message lifts. A preview that goes back to the whole row fails nothing
 # else, so these and their markers are the whole of that guard.
+#
+# 2026-11-10: 42 -> 43 and 1044 -> 1045 for an upright open Duo's panel. The
+# chat's controls going back into its top bar there fails no unit test, so
+# this walk and its marker are the whole of that guard.
 floor "package test cases" "$(test_cases "$ROOT/Tests")" 1151
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 1044
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 43
+floor "README test markers" "${markers:-0}" 1045
 
 exit $status

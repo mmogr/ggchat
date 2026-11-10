@@ -1689,12 +1689,16 @@ Each claim names the test that keeps it true.
   over the chat whatever it is asked, the app lays the two side by side
   itself, the list at three eighths of the width as Claude's own app keeps
   it and never under 240 points, with the sidebar button at the chat's
-  leading edge. Wherever the list is a column beside the chat, its header
-  holds its title and the new-conversation button, and Providers and
-  Settings sit in a bar at its foot; where the app lays it out itself, its
-  rows are a sidebar's, not inset cards. The window is read by its width and
-  the tallest height seen at it, so the keyboard, which only takes height
-  away, never changes the layout under the field being typed in.
+  leading edge. On an open Duo held upright, as on one on its side, the
+  chat's top bar is the list button, its title and the panel button, and
+  the chat's own controls are in the panel, "This chat", which takes the
+  list's place beside the chat. Wherever the list is a column beside the
+  chat, its header holds its title and the new-conversation button, and
+  Providers and Settings sit in a bar at its foot; where the app lays it out
+  itself, its rows are a sidebar's, not inset cards. The window is read by
+  its width and the tallest height seen at it, so the keyboard, which only
+  takes height away, never changes the layout under the field being typed
+  in.
   <!-- test: SidebarPinningTests.testAnOpenDuoHeldUprightKeepsTheListBesideTheChat -->
   <!-- test: SidebarPinningTests.testAWideWindowLeavesTheListToTheSystem -->
   <!-- test: SidebarPinningTests.testAFoldedDuoIsAPhoneWithItsListAScreenBack -->
@@ -1706,6 +1710,7 @@ Each claim names the test that keeps it true.
   <!-- test: SidebarPinningTests.testTheKeyboardTakingHeightLeavesAnOpenDuoReadAsTall -->
   <!-- test: SidebarPinningTests.testTurningOrFoldingIsReadAfresh -->
   <!-- test: SidebarPinningTests.testTheFirstReadingIsTakenAsItIs -->
+  <!-- test: ThisChatUprightUITests.testAnUprightOpenDuoKeepsTheChatsControlsInItsPanel -->
 - An iPhone Duo open on its side and half open is a book. The chat is on
   the trailing page, the size of the outside screen and drawn as it is
   there, and the conversation list is on the leading page, the two meeting
@@ -1723,7 +1728,8 @@ Each claim names the test that keeps it true.
   and prompt being the Mac's. Laid flat, the list is beside the chat at
   three eighths of the width, as on an open Duo held upright, and the
   chat's controls stay in the panel; each half opening or laying flat puts
-  a hidden list back, and a hide holds until then. A window less
+  a hidden list back, and a hide holds until then, while a panel that was up
+  stays up. A window less
   than 600 points high, a folded Duo or a large iPhone on its side, is not
   read as an open Duo. The chat is laid out once whatever is beside it, so
   turning, half opening, laying flat and hiding the list keep its draft.

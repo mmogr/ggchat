@@ -84,7 +84,7 @@ nonisolated public struct ToolsMenu: Equatable, Sendable {
     static let newTools = ", new tools available"
 
     /// The name of the button that shows the panel beside a chat on an open
-    /// iPhone Duo on its side, where the wrench is: it says new tools are on
+    /// iPhone Duo, where the wrench is: it says new tools are on
     /// offer while the chat is badged and its panel is not up.
     static func thisChatTitle(showsPanel: Bool, badged: Bool) -> String {
         showsPanel ? "Hide this chat's panel" : "Show this chat's panel" + (badged ? newTools : "")
@@ -104,7 +104,7 @@ nonisolated public struct ToolsMenu: Equatable, Sendable {
     }
 
     /// The rows of the tools Section in the panel beside a chat on an open
-    /// iPhone Duo on its side, as `ToolsPanelRows` titles them: the master
+    /// iPhone Duo, as `ToolsPanelRows` titles them: the master
     /// switch, then the servers.
     static func panelRowTitles(_ menu: ToolsMenu) -> [String] {
         [menu.label] + menu.rows.map(\.title)

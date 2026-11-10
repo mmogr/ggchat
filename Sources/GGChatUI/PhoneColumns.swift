@@ -2,7 +2,8 @@ import SwiftUI
 
 extension EnvironmentValues {
     /// Whether a chat's own controls are on a page beside it, so its top bar
-    /// leaves them out: on an open Duo on its side. Never on a Mac.
+    /// leaves them out: on an open Duo, upright or on its side. Never on a
+    /// Mac.
     @Entry var chatControlsOnPage = false
 }
 
@@ -10,16 +11,12 @@ extension EnvironmentValues {
     /// How a phone lays out the list and the chat: as the system does, the
     /// list beside the chat on a tall open Duo, or a Duo on its side, as a
     /// book while half open or with the list beside the chat while flat.
+    /// In each but the system's, the chat's controls are in its panel.
     enum PhoneLayout {
         case system, listBeside, pages, flat
-
-        /// Whether the chat's controls are in its panel; see `BookPages`.
-        var isBook: Bool {
-            self == .pages || self == .flat
-        }
     }
 
-    /// The leading page of a Duo on its side.
+    /// The leading page of an open Duo.
     enum LeadingPage {
         case list, thisChat
     }
@@ -60,24 +57,26 @@ extension EnvironmentValues {
                     chatColumn
                 }
             }
-            // The list is put back on each unfolding, each turn and each
-            // half opening or laying flat, and a hide holds until then.
+            // The leading page is put back on each unfolding, each turn and
+            // each half opening or laying flat, and a hide holds until then.
+            // Whichever page it was, list or panel, it stays.
             .onChange(of: layout, initial: true) { _, layout in
                 switch layout {
                 case .listBeside, .pages, .flat: listShown = true
                 case .system: break
                 }
-                if !layout.isBook { leadingPage = .list }
             }
         }
 
-        /// The chat with its sidebar button, in its own navigation stack. On
-        /// a Duo on its side its top bar is the list button, the title and
-        /// the panel button, and the chat's own controls are in the panel.
+        /// The chat with its sidebar button, in its own navigation stack. Its
+        /// top bar is the list button, the title and the panel button, and
+        /// the chat's own controls are in the panel, so a bar a third of an
+        /// open Duo wide is not crowded into a More button and keeps the
+        /// chat's title.
         private var chatColumn: some View {
             NavigationStack {
                 detail()
-                    .environment(\.chatControlsOnPage, layout.isBook)
+                    .environment(\.chatControlsOnPage, true)
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
                             Button(listButtonLabel, systemImage: "sidebar.leading") {
@@ -85,7 +84,7 @@ extension EnvironmentValues {
                             }
                             .accessibilityIdentifier("conversation-list")
                         }
-                        if layout.isBook, model.selectedConversation != nil || model.openedHubChat != nil {
+                        if model.selectedConversation != nil || model.openedHubChat != nil {
                             ToolbarItem(placement: .topBarTrailing) {
                                 Button(
                                     ToolsMenu.thisChatTitle(showsPanel: showsPanel, badged: toolsBadged),
@@ -101,7 +100,7 @@ extension EnvironmentValues {
             }
         }
 
-        /// The list, or on a Duo on its side the chat's panel if asked for.
+        /// The list, or the chat's panel if asked for.
         /// A stack of its own for each, so what one pushed is not left on
         /// the other.
         private var leadingColumn: some View {
