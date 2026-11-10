@@ -49,9 +49,19 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
+      # Without SwiftPM's clones: the mirrors under repositories/ and the
+      # working copies under checkouts/, which share the mirrors' objects. A
+      # mirror restored through restore-keys outlives refs its remote has
+      # since deleted, and on 2026-11-10 one holding a September release-plz
+      # branch stopped every checkout of modelpipe-ffi 0.4.4 with "bad object".
+      # Cloning is seconds; what is worth keeping is the downloaded artifacts
+      # and the build, and those are still cached.
       - uses: actions/cache@v6
         with:
-          path: .build
+          path: |
+            .build
+            !.build/repositories
+            !.build/checkouts
           key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}
           restore-keys: spm-${{ runner.os }}-
       - name: Toolchain
