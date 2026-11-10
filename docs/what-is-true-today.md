@@ -68,7 +68,7 @@ Each claim names the test that keeps it true.
   the glass, with the add-image control and Draw in a toolbar under it and
   Send at the toolbar's trailing end, so the field is as wide as the
   composer however many controls the toolbar holds.
-  <!-- test: ContextRingUITests.testAReplyRaisesTheRingAndItsSheetSaysTheCounts -->
+  <!-- test: ContextRingUITests.testAReplyRaisesTheRingAndItsBubbleSaysTheCounts -->
 - A transcript scrolled more than half a screen up offers a round button
   above the composer that takes it back to the latest message, and the
   next reply is followed from there; at its latest, and in a chat shorter
@@ -1913,12 +1913,15 @@ Each claim names the test that keeps it true.
   <!-- test: SwiftDataStoreTests.testASystemPromptSurvivesTheRoundTrip -->
   <!-- test: WireTests.testASystemMessageIsSentWithTheSystemRole -->
 - After a reply, a ring at the end of the model's row shows how much of the
-  model's context the conversation uses, and pressing it gives the counts,
-  what was trimmed and whether the reply was cut off; from 70% it shows the
-  figure and from 90% a mark.
+  model's context the conversation uses, with the figure always beside it,
+  so a ring a few percent full is not taken for a spinner, and from 90% a
+  mark in it. Pressing it opens a bubble over it, on every screen the
+  narrowest included, with the figure large, a bar filled as far as the
+  ring, the counts, what was trimmed and whether the reply was cut off; a
+  tap outside closes it.
   <!-- test: ContextReadingTests.testThePercentRoundsAHalfUpAndNeverPassesAHundred -->
   <!-- test: ContextReadingTests.testSeverityTurnsAtSeventyAndNinetyAndEachHasAWord -->
-  <!-- test: ContextReadingTests.testTheFigureShowsFromSeventyAndTheMarkFromNinety -->
+  <!-- test: ContextReadingTests.testTheMarkShowsFromNinety -->
   <!-- test: ContextReadingTests.testTheSheetSaysTheCountsTheTrimAndACutOffReply -->
   <!-- test: ContextReadingTests.testNumbersUseTheLocalesDigits -->
   <!-- test: ContextReadingTests.testVoiceOverHearsThePercentAndTheSeverityWord -->
@@ -1929,7 +1932,7 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelContextTests.testAReplyCutOffSaysSo -->
   <!-- test: ContextStoreTests.testTheReadingIsKeptAndAnUnchangedOneMarksNoRow -->
   <!-- test: ContextStoreTests.testAStoreOpensAcrossTheReadingInBothDirections -->
-  <!-- test: ContextRingUITests.testAReplyRaisesTheRingAndItsSheetSaysTheCounts -->
+  <!-- test: ContextRingUITests.testAReplyRaisesTheRingAndItsBubbleSaysTheCounts -->
 - The numbers are gglib's and nothing is estimated, so there is no ring when
   gglib reports no context size, and a Mac chat's reading is held in memory
   only.
