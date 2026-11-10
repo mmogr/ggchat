@@ -1001,11 +1001,14 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # download, twins keyed by one name, a pill following the wrong twin, or a
 # removal that clears both, would fail only these.
 #
-# 2026-11-10: 1134 -> 1140 and 1028 -> 1034 for the one untouched chat the
+# 2026-11-10: 1134 -> 1135 and 1028 -> 1029 for the store opened off the
+# main actor while the window draws (#59).
+#
+# 2026-11-10: 1135 -> 1141 and 1029 -> 1035 for the one untouched chat the
 # list keeps. A list that keeps every New conversation again fails nothing
 # else, so these six and their markers are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1140
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1141
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 1034
+floor "README test markers" "${markers:-0}" 1035
 
 exit $status

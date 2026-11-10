@@ -1524,7 +1524,11 @@ Each claim names the test that keeps it true.
   the backup, and a store an earlier build left where SwiftData put it moves in
   with every conversation, the main file last, never replacing a file already
   there. When the store cannot be kept there, the app runs from memory with a
-  notice saying so, and does not open the old place.
+  notice saying so, and does not open the old place. The store is opened off
+  the main actor while the window draws a plain launch view, the system's
+  background and, after a moment, a spinner, so a launch never shows a
+  blank white window while the store opens.
+  <!-- test: StoreDirectoryTests.testTheStoreOpensOffTheMainActorAndIsReadOnIt -->
   <!-- test: StoreDirectoryTests.testTheStoreOpensInsideADirectoryNoBackupCarries -->
   <!-- test: StoreDirectoryTests.testADirectoryMadeWithoutTheMarkIsMarkedWhenTheStoreOpens -->
   <!-- test: StoreDirectoryTests.testTheStoresDirectoryAndFileNamesDoNotMove -->
