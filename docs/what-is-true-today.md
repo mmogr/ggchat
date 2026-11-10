@@ -129,6 +129,18 @@ Each claim names the test that keeps it true.
   <!-- test: ImageStoreTests.testAStoreOpensAcrossTheImagesChangeInBothDirections -->
   <!-- test: ImageStoreTests.testTheResetLeavesNoImageFileBehind -->
   <!-- test: FirstRunUITests.testAPastedImageIsSentAloneAndDrawnInTheTranscript -->
+- The list keeps at most one untouched conversation, the one open: one
+  with nothing asked, no name, no system prompt, and its model, Thinking,
+  picture model and tools still its provider's. New conversation on such a
+  one with the same provider is that one again, opening another
+  conversation or a Mac's chat deletes it, Back keeps it, and a launch
+  deletes those an older build left. Anything chosen in it keeps it.
+  <!-- test: UntouchedConversationTests.testNewConversationOnAnUntouchedOneIsThatOneAgain -->
+  <!-- test: UntouchedConversationTests.testBackKeepsAnUntouchedConversation -->
+  <!-- test: UntouchedConversationTests.testLeavingAnUntouchedConversationDeletesIt -->
+  <!-- test: UntouchedConversationTests.testANewConversationWithAnotherProviderLeavesOneUntouched -->
+  <!-- test: UntouchedConversationTests.testAnythingChosenKeepsIt -->
+  <!-- test: UntouchedConversationTests.testALaunchClearsTheUntouchedOnesAnOlderBuildLeft -->
 - A new conversation, from the list or the app's icon, is with the
   provider of the one open, a Mac's chat included, and with the first
   provider when none is open or the open one's provider was removed.

@@ -1007,8 +1007,12 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # 2026-11-10: 1135 -> 1140 and 1029 -> 1034 for the list's search. A search
 # that stops finding a chat by what was said in it fails nothing else, so
 # these five and their markers are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1140
+#
+# 2026-11-10: 1140 -> 1146 and 1034 -> 1040 for the one untouched chat the
+# list keeps. A list that keeps every New conversation again fails nothing
+# else, so these six and their markers are the whole of that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1146
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 1034
+floor "README test markers" "${markers:-0}" 1040
 
 exit $status
