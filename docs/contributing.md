@@ -185,10 +185,11 @@ out, seven days after the profile was issued, so this is the refresh in one
 command. Run it on or after the day Settings shows: a build made while the
 old profile is still valid may keep its date.
 
-A launch can be timed on the phone. Before the window draws anything,
-ggchat opens its store and makes its model, and then, as the window's first
-task, loads every conversation. Each step is a Points of Interest interval
-of `com.mattogrady.ggchat`, in Release builds as well:
+A launch can be timed on the phone. The window first draws a plain launch
+view while ggchat opens its store off the main actor; it then makes its
+model, swaps the app in and, as the app's first task, loads every
+conversation. Each step is a Points of Interest interval of
+`com.mattogrady.ggchat`, in Release builds as well:
 
 1. `make phone`, then open ggchat once and force-quit it, so the launch
    timed is a cold one over the conversations already on the phone.

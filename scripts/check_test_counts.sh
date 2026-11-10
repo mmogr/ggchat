@@ -1001,11 +1001,14 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # download, twins keyed by one name, a pill following the wrong twin, or a
 # removal that clears both, would fail only these.
 #
-# 2026-11-10: 1134 -> 1139 and 1028 -> 1032 for the card a long-pressed
+# 2026-11-10: 1134 -> 1135 and 1028 -> 1029 for the store opened off the
+# main actor while the window draws (#59).
+#
+# 2026-11-10: 1135 -> 1140 and 1029 -> 1033 for the card a long-pressed
 # message lifts. A preview that goes back to the whole row fails nothing
 # else, so these and their markers are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1139
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1140
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 42
-floor "README test markers" "${markers:-0}" 1032
+floor "README test markers" "${markers:-0}" 1033
 
 exit $status

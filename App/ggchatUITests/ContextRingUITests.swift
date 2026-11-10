@@ -3,15 +3,12 @@ import XCTest
 /// The context ring, walked on the DEBUG mock, which reports a context size
 /// beside its counts as gglib does: no ring before the first reply, a ring
 /// at the trailing end of the model's row once one finishes, which stays
-/// where it is while the model list is open, and a sheet that says the
-/// counts and closes with Done. The same mock lists a model that thinks and
-/// is not gglib, so the walk also finds no Thinking switch.
-///
-/// The sheet's one button is titled "Done", which no sweep reaches for, so
-/// the waits in here may sweep.
+/// where it is while the model list is open, and a bubble over it that says
+/// the counts and closes with a tap outside it. The same mock lists a model
+/// that thinks and is not gglib, so the walk also finds no Thinking switch.
 final class ContextRingUITests: XCTestCase {
     @MainActor
-    func testAReplyRaisesTheRingAndItsSheetSaysTheCounts() {
+    func testAReplyRaisesTheRingAndItsBubbleSaysTheCounts() {
         let app = launchFreshApp()
         openProviderForm(in: app)
         app.buttons["Cancel"].firstMatch.tap()
@@ -64,16 +61,32 @@ final class ContextRingUITests: XCTestCase {
         let counts = app.staticTexts.matching(
             NSPredicate(format: "label CONTAINS ' tokens (' AND label ENDSWITH 'after the last finished reply.'")
         ).firstMatch
-        XCTAssertTrue(tap(ring, untilExists: counts), "the ring's sheet never said the counts")
+        XCTAssertTrue(tap(ring, untilExists: counts), "the ring's bubble never said the counts")
+        // A bubble, not a sheet: it is narrower than the window.
+        XCTAssertLessThan(
+            counts.frame.width, app.windows.firstMatch.frame.width - 40, "the counts opened as a sheet, not a bubble")
         let shot = XCTAttachment(screenshot: app.screenshot())
-        shot.name = "context-sheet"
+        shot.name = "context-bubble"
         shot.lifetime = .keepAlways
         add(shot)
 
-        let done = app.buttons["Done"].firstMatch
-        XCTAssertTrue(waitUntilHittable(done, timeout: 10), "the sheet offers no Done")
-        done.tap()
-        XCTAssertTrue(counts.waitForNonExistence(timeout: 10), "the sheet did not close after Done")
-        XCTAssertTrue(ring.exists, "the ring went with its sheet")
+        tapOutsideBubble(in: app)
+        XCTAssertTrue(counts.waitForNonExistence(timeout: 10), "the bubble did not close on a tap outside it")
+        XCTAssertTrue(ring.exists, "the ring went with its bubble")
+    }
+}
+
+extension XCTestCase {
+    /// Closes the ring's bubble as a person does, by a tap outside it: on
+    /// the system's own region for that, or failing it the top of the
+    /// window, well away from the ring at the bottom.
+    @MainActor
+    func tapOutsideBubble(in app: XCUIApplication) {
+        let outside = app.otherElements["PopoverDismissRegion"].firstMatch
+        if outside.exists {
+            outside.tap()
+        } else {
+            app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)).tap()
+        }
     }
 }
