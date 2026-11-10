@@ -14,24 +14,29 @@ enum RootPane: Hashable, Identifiable {
 
     /// How a pane is shown in a layout.
     enum Presentation: Equatable {
-        /// Pushed over the chat, in the chat's column.
-        case chatColumn
+        #if os(iOS)
+            /// Pushed over the chat, in the chat's column.
+            case chatColumn
+        #endif
         /// A sheet over everything.
         case sheet
     }
 }
 
-/// The page itself, without a stack of its own: whoever pushes it owns one.
-struct RootPanePage: View {
-    let pane: RootPane
+#if os(iOS)
+    /// The page itself, without a stack of its own: whoever pushes it owns
+    /// one. Only a phone's columns push it.
+    struct RootPanePage: View {
+        let pane: RootPane
 
-    var body: some View {
-        switch pane {
-        case .providers: ProvidersView(ownStack: false)
-        case .settings: SettingsView(ownStack: false)
+        var body: some View {
+            switch pane {
+            case .providers: ProvidersView(ownStack: false)
+            case .settings: SettingsView(ownStack: false)
+            }
         }
     }
-}
+#endif
 
 /// The page as a sheet, with a stack of its own.
 struct RootPaneSheet: View {
