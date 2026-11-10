@@ -10,7 +10,8 @@ import SwiftUI
 /// question with no reply, with Retry and the reason when something gave
 /// one. A reply a hub is still writing away from this device offers neither,
 /// says where it is being written, and offers Stop. A turn offers
-/// Edit, Regenerate and Branch from here in its menu, and where the chat's
+/// Copy, Share, Edit, Regenerate and Branch from here in its menu, lifted
+/// as a card of its opening (`MessagePreviewCard`), and where the chat's
 /// family parts at it, the switcher (ADR 0010).
 struct MessageRow: View {
     @Environment(AppModel.self) private var model
@@ -66,9 +67,11 @@ struct MessageRow: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .contextMenu {
             // As written, so math comes out as its LaTeX: copying selected
-            // text gives an object character where math was drawn.
+            // text gives an object character where math was drawn. Shared
+            // the same way.
             if !message.content.isEmpty {
                 Button("Copy", systemImage: "doc.on.doc") { Clipboard.copy(message.content) }
+                ShareLink(item: message.content)
             }
             if let changes, !message.isBeingWritten {
                 Button("Edit", systemImage: "pencil") { changes.edit(message) }
@@ -77,6 +80,8 @@ struct MessageRow: View {
                 }
                 Button("Branch from here", systemImage: "arrow.triangle.branch") { changes.branch(message.id) }
             }
+        } preview: {
+            MessagePreviewCard(message: message, picture: previewPicture)
         }
     }
 
@@ -93,6 +98,13 @@ struct MessageRow: View {
             .buttonStyle(.bordered)
         }
         .padding(.top, 2)
+    }
+
+    /// The first picture of a message with no words, for its long-press
+    /// card; read here, where the model is.
+    private var previewPicture: CGImage? {
+        guard message.content.isEmpty, let image = message.images.first else { return nil }
+        return imagesFromHub ? model.hubThumbnail(of: image) : model.thumbnail(of: image)
     }
 
     private var partialFooter: some View {

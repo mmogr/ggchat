@@ -1,23 +1,33 @@
 import GGChatCore
 import SwiftUI
 
-/// "On home": a paired Mac's chats, in the list below this phone's own.
+/// "On home": a paired Mac's chats, in the list below this phone's own, and
+/// under them, in the section's footer, what there is to say about the Mac:
+/// a footer and not a row, which a sidebar draws as a card as tall as a
+/// chat's.
 struct HubChatsSection: View {
     @Environment(AppModel.self) private var model
     @Environment(\.locale) private var locale
     @Environment(\.calendar) private var calendar
     let config: ProviderConfig
+    /// What the list's search field finds; a Mac with no chat it finds has
+    /// no section while it searches.
+    var search = ChatSearch("")
 
     var body: some View {
-        Section("On \(config.name)") {
-            ForEach(model.hubChats[config.id] ?? []) { chat in
-                HubChatRow(chat: chat, providerID: config.id)
-                    .tag(SidebarSelection.hub(providerID: config.id, chatID: chat.id))
-            }
-            if let line = model.hubLine(for: config.id, locale: locale, calendar: calendar) {
-                Text(line)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        let chats = (model.hubChats[config.id] ?? []).filter { search.finds(title: $0.title) }
+        if search.isEmpty || !chats.isEmpty {
+            Section {
+                ForEach(chats) { chat in
+                    HubChatRow(chat: chat, providerID: config.id)
+                        .tag(SidebarSelection.hub(providerID: config.id, chatID: chat.id))
+                }
+            } header: {
+                Text("On \(config.name)")
+            } footer: {
+                if search.isEmpty, let line = model.hubLine(for: config.id, locale: locale, calendar: calendar) {
+                    Text(line)
+                }
             }
         }
     }

@@ -133,6 +133,8 @@ final class AppModelListMarkLaunchTests: XCTestCase {
         let hub = hub()
         let (model, _) = try await Runs.makeModel(behind: hub)
         let first = try XCTUnwrap(model.selectedConversationID)
+        // Named, so it is kept when the next opens (`AppModel+Untouched`).
+        model.renameConversation(first, to: "First")
         model.chatAppeared(first)
         model.selectedConversationID = nil
         let started = model.newConversation()

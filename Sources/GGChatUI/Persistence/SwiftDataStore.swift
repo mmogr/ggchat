@@ -14,7 +14,7 @@ public final class SwiftDataStore: Store {
         self.context = container.mainContext
     }
 
-    public static let schema = Schema([
+    nonisolated public static let schema = Schema([
         ProviderRecord.self, ConversationRecord.self, MessageRecord.self, ImageRecord.self,
     ])
 
@@ -22,7 +22,7 @@ public final class SwiftDataStore: Store {
     /// app runs from for a launch in which its store cannot be kept in
     /// `ggchat-store`. The on-disk store is opened by `open(log:)`, in
     /// `StoreDirectory.swift`.
-    public static func inMemoryContainer() -> ModelContainer {
+    nonisolated public static func inMemoryContainer() -> ModelContainer {
         do {
             let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
             return try ModelContainer(for: schema, configurations: [configuration])

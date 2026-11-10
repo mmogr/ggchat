@@ -36,10 +36,9 @@ final class OnDeviceLiveUITests: XCTestCase {
         shot.lifetime = .keepAlways
         add(shot)
         let size = app.staticTexts.matching(NSPredicate(format: "label CONTAINS ' tokens ('")).firstMatch
-        XCTAssertTrue(tap(ring, untilExists: size), "the ring's sheet does not read the engine's context")
-        let done = app.buttons["Done"].firstMatch
-        XCTAssertTrue(waitUntilHittable(done, timeout: 10), "the sheet offers no Done")
-        done.tap()
+        XCTAssertTrue(tap(ring, untilExists: size), "the ring's bubble does not read the engine's context")
+        tapOutsideBubble(in: app)
+        XCTAssertTrue(size.waitForNonExistence(timeout: 10), "the bubble did not close on a tap outside it")
 
         XCUIDevice.shared.press(.home)
         _ = app.wait(for: .runningBackgroundSuspended, timeout: 30)
