@@ -6,7 +6,13 @@ on:
   pull_request:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # On main, each commit is a group of its own. `cancel-in-progress: false`
+  # keeps a run that is running, not one that is waiting: a group holds one
+  # running run and one pending, and the next push replaces the pending one,
+  # which GitHub then cancels. A main run whose jobs are all waiting for a
+  # macOS runner counts as pending, so on 2026-11-10 the merge of #306
+  # cancelled #305's run on main part-way through.
+  group: ci-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
   # Superseding a push to a branch is the point of this: the older run is
   # testing a commit nobody will merge. A push to `main` is the opposite --
   # it is the only run that tests two PRs together, each of which was green
