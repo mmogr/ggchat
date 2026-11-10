@@ -104,9 +104,19 @@ jobs:
       # Every package cache is keyed on Package.swift as well: gglib's
       # frameworks are root binary targets pinned there, which Package.resolved
       # never records, so a new pin is a new key and its downloads are saved.
+      # Without SwiftPM's clones: the mirrors under repositories/ and the
+      # working copies under checkouts/, which share the mirrors' objects. A
+      # mirror restored through restore-keys outlives refs its remote has
+      # since deleted, and on 2026-11-10 one holding a September release-plz
+      # branch stopped every checkout of modelpipe-ffi 0.4.4 with "bad object".
+      # Cloning is seconds; what is worth keeping is the downloaded artifacts
+      # and the build, and those are still cached.
       - uses: actions/cache@v6
         with:
-          path: .build
+          path: |
+            .build
+            !.build/repositories
+            !.build/checkouts
           key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}
           restore-keys: spm-${{ runner.os }}-
       - name: Toolchain
@@ -141,9 +151,13 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
+      # Without SwiftPM's clones, for the reason the first job's cache gives.
       - uses: actions/cache@v6
         with:
-          path: .build
+          path: |
+            .build
+            !.build/repositories
+            !.build/checkouts
           key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}
           restore-keys: spm-${{ runner.os }}-
       - name: Lockfile guard
@@ -253,10 +267,14 @@ jobs:
       # Not the `.build` the other jobs cache: xcodebuild resolves the package
       # into its own cloned-source-packages directory and never reads .build,
       # so caching that here would restore something this job cannot use.
-      # This saves the clone, not the compile.
+      # This saves the downloads, not the clones or the compile.
+      # Without the clones, for the reason the first job's cache gives.
       - uses: actions/cache@v6
         with:
-          path: .build/xcode-spm
+          path: |
+            .build/xcode-spm
+            !.build/xcode-spm/repositories
+            !.build/xcode-spm/checkouts
           key: xcode-spm-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}
           restore-keys: xcode-spm-${{ runner.os }}-
       - name: Pick a booted simulator
@@ -404,9 +422,13 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
+      # Without SwiftPM's clones, for the reason the first job's cache gives.
       - uses: actions/cache@v6
         with:
-          path: .build
+          path: |
+            .build
+            !.build/repositories
+            !.build/checkouts
           key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}
           restore-keys: spm-${{ runner.os }}-
       - name: Install periphery
@@ -419,9 +441,13 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
+      # Without SwiftPM's clones, for the reason the first job's cache gives.
       - uses: actions/cache@v6
         with:
-          path: .build
+          path: |
+            .build
+            !.build/repositories
+            !.build/checkouts
           key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}
           restore-keys: spm-${{ runner.os }}-
       - name: Build DocC with warnings as errors
