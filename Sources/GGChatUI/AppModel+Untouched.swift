@@ -1,11 +1,22 @@
 import Foundation
 import GGChatCore
 
-// The list keeps at most one untouched conversation, the one open
-// (`Conversation.isUntouched(defaultModel:)`): New conversation on it is
-// that one again, it goes when another is opened, and a launch clears any
-// an older build left behind.
+// What New conversation starts from. The list keeps at most one untouched
+// conversation, the one open (`Conversation.isUntouched(defaultModel:)`):
+// New conversation on it is that one again, it goes when another is opened,
+// and a launch clears any an older build left behind.
 extension AppModel {
+    /// The provider a new conversation starts with: see `newConversation()`.
+    var providerOfTheOpenConversation: ProviderConfig? {
+        let open: UUID? =
+            switch selection {
+            case .local(let id)?: conversations.first { $0.id == id }?.providerID
+            case .hub(let providerID, _)?: providerID
+            case nil: nil
+            }
+        return providers.first { $0.id == open } ?? providers.first
+    }
+
     /// Whether `conversation` holds nothing a person chose and has no reply
     /// in flight, so nothing is lost if it goes.
     func isUntouched(_ conversation: Conversation) -> Bool {
