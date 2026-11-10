@@ -68,7 +68,7 @@ Each claim names the test that keeps it true.
   the glass, with the add-image control and Draw in a toolbar under it and
   Send at the toolbar's trailing end, so the field is as wide as the
   composer however many controls the toolbar holds.
-  <!-- test: ContextRingUITests.testAReplyRaisesTheRingAndItsSheetSaysTheCounts -->
+  <!-- test: ContextRingUITests.testAReplyRaisesTheRingAndItsBubbleSaysTheCounts -->
 - A transcript scrolled more than half a screen up offers a round button
   above the composer that takes it back to the latest message, and the
   next reply is followed from there; at its latest, and in a chat shorter
@@ -1635,6 +1635,17 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelRenameTests.testAClearedNameGivesBackTheFirstQuestionsTitle -->
   <!-- test: AppModelRenameTests.testTheTitleAlreadyShownAndAChatNotHereChangeNothing -->
   <!-- test: RenameUITests.testAChatIsRenamedAndClearedFromItsRow -->
+- The same menu, and VoiceOver's actions on the row, offer Delete, which
+  deletes the conversation at once as a swipe does. A search field at the
+  top of the list finds a conversation kept here by its title or anything
+  said in it, and a Mac's chat by its title, ignoring case and accents and
+  finding every word in any order; a Mac with no chat it finds has no
+  section while it searches, and nothing found says so.
+  <!-- test: ChatSearchTests.testAConversationIsFoundByItsTitleOrAnythingSaidInIt -->
+  <!-- test: ChatSearchTests.testAnUntitledConversationIsFoundByTheTitleItsFirstQuestionGivesIt -->
+  <!-- test: ChatSearchTests.testEveryWordMustBeFoundInAnyOrderAndInAnyMessage -->
+  <!-- test: ChatSearchTests.testAMacsChatIsFoundByItsTitle -->
+  <!-- test: ChatSearchTests.testOnlySpacesSearchForNothing -->
 - The conversation list says, beside a title, "Writing" while a reply is still
   being written, in front or by the hub, and "New" when one finished, failed
   or was given up while its chat was not on screen with the app in front,
@@ -1724,9 +1735,11 @@ Each claim names the test that keeps it true.
   chats gglib keeps there, listed at launch, when its pipe comes up and on a
   pull, each with the time it last changed (the date too when not today),
   and marked "Writing" while the Mac is writing a reply to one. The
-  phone's own chats are then headed "On this phone", with a line under them,
-  while there are any, saying they are kept only on this phone and the Mac
-  does not keep them.
+  phone's own chats are then headed "On this phone", with a short line under
+  them, while there are any, saying the Mac doesn't keep them. What there is
+  to say about a Mac, that it has no chats yet, when it was last seen, or
+  that it does not share them, is a line in its section's footer, not a row
+  of the list.
   Opening one reads its questions and replies live, and Back drops them:
   no conversation and no message row comes from the Mac into the store
   (ADR 0007). A Mac that reads its chats only to a device through its tunnel
@@ -1925,12 +1938,15 @@ Each claim names the test that keeps it true.
   <!-- test: SwiftDataStoreTests.testASystemPromptSurvivesTheRoundTrip -->
   <!-- test: WireTests.testASystemMessageIsSentWithTheSystemRole -->
 - After a reply, a ring at the end of the model's row shows how much of the
-  model's context the conversation uses, and pressing it gives the counts,
-  what was trimmed and whether the reply was cut off; from 70% it shows the
-  figure and from 90% a mark.
+  model's context the conversation uses, with the figure always beside it,
+  so a ring a few percent full is not taken for a spinner, and from 90% a
+  mark in it. Pressing it opens a bubble over it, on every screen the
+  narrowest included, with the figure large, a bar filled as far as the
+  ring, the counts, what was trimmed and whether the reply was cut off; a
+  tap outside closes it.
   <!-- test: ContextReadingTests.testThePercentRoundsAHalfUpAndNeverPassesAHundred -->
   <!-- test: ContextReadingTests.testSeverityTurnsAtSeventyAndNinetyAndEachHasAWord -->
-  <!-- test: ContextReadingTests.testTheFigureShowsFromSeventyAndTheMarkFromNinety -->
+  <!-- test: ContextReadingTests.testTheMarkShowsFromNinety -->
   <!-- test: ContextReadingTests.testTheSheetSaysTheCountsTheTrimAndACutOffReply -->
   <!-- test: ContextReadingTests.testNumbersUseTheLocalesDigits -->
   <!-- test: ContextReadingTests.testVoiceOverHearsThePercentAndTheSeverityWord -->
@@ -1941,7 +1957,7 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelContextTests.testAReplyCutOffSaysSo -->
   <!-- test: ContextStoreTests.testTheReadingIsKeptAndAnUnchangedOneMarksNoRow -->
   <!-- test: ContextStoreTests.testAStoreOpensAcrossTheReadingInBothDirections -->
-  <!-- test: ContextRingUITests.testAReplyRaisesTheRingAndItsSheetSaysTheCounts -->
+  <!-- test: ContextRingUITests.testAReplyRaisesTheRingAndItsBubbleSaysTheCounts -->
 - The numbers are gglib's and nothing is estimated, so there is no ring when
   gglib reports no context size, and a Mac chat's reading is held in memory
   only.

@@ -99,13 +99,12 @@ final class ContextReadingTests: XCTestCase {
         XCTAssertEqual(ContextReading.Severity.danger.word, "almost full")
     }
 
-    /// The colour is never alone: the figure stands beside the ring from 70
-    /// percent and a mark sits in it from 90, and neither a percent sooner.
-    func testTheFigureShowsFromSeventyAndTheMarkFromNinety() throws {
+    /// The colour is never alone: the figure always stands beside the ring,
+    /// and a mark sits in it from 90 percent, and not a percent sooner.
+    func testTheMarkShowsFromNinety() throws {
         for percent in [0, 69, 70, 89, 90, 100] {
             let made = try XCTUnwrap(reading(percent, 0, of: 100))
             XCTAssertEqual(made.percent, percent)
-            XCTAssertEqual(made.showsFigure, percent >= 70, "the figure at \(percent) percent")
             XCTAssertEqual(made.showsMark, percent >= 90, "the mark at \(percent) percent")
         }
     }
