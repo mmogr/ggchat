@@ -95,6 +95,35 @@ final class BookPagesUITests: XCTestCase {
         attach(app, name: "book-pages-provider-saved")
     }
 
+    /// Find a model… opens the browser over the chat, on the trailing page,
+    /// with the list still beside it, and Back brings the chat back.
+    @MainActor
+    func testFindAModelOpensTheBrowserOverTheChat() throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .phone, "an iPad keeps the system's split view")
+        XCUIDevice.shared.orientation = .landscapeLeft
+        addTeardownBlock { @MainActor in XCUIDevice.shared.orientation = .portrait }
+        let app = launchFreshApp(arguments: ["-ggchat-fold", "YES", "-ggchat-mock-engine", "no-models"])
+        let window = app.windows.firstMatch
+        XCTAssertTrue(window.waitForExistence(timeout: 10))
+        try XCTSkipIf(window.frame.width <= window.frame.height, "this simulator did not turn on its side")
+
+        let pill = openConversation(in: app)
+        let find = app.buttons["Find a model…"].firstMatch
+        XCTAssertTrue(tap(pill, untilExists: find), "an iPhone with no model did not offer to find one")
+        let suggestion = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "phone-1.7b-GGUF")).firstMatch
+        XCTAssertTrue(tap(find, untilExists: suggestion), "Find a model… did not open the browser on a suggestion")
+        let middle = window.frame.midX
+        XCTAssertGreaterThanOrEqual(suggestion.frame.minX, middle - 1, "the browser is not on the chat's page")
+        XCTAssertLessThan(
+            app.buttons["New conversation"].firstMatch.frame.maxX, middle, "the list did not stay beside the browser")
+        XCTAssertFalse(app.buttons["Done"].firstMatch.exists, "the browser opened in a sheet, not over the chat")
+        attach(app, name: "book-pages-model-browser")
+
+        let back = app.navigationBars["Find a model"].buttons.element(boundBy: 0)
+        XCTAssertTrue(tap(back, untilExists: composer(in: app)), "Back did not bring the chat back")
+        XCTAssertTrue(suggestion.waitForNonExistence(timeout: 10), "Back left the browser up")
+    }
+
     @MainActor
     private func addMockProvider(in app: XCUIApplication) {
         openProviderForm(in: app)

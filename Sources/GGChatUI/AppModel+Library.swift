@@ -71,8 +71,9 @@ extension AppModel {
     /// What the browser says when this device's memory could not be read.
     static let unreadDevice = "This device's memory could not be read, so nothing can be said about what fits it."
 
-    /// Opens the browser in a sheet of its own, reading this device once
-    /// for it.
+    /// Opens the browser, reading this device once for it: in a sheet of
+    /// its own, or over the chat in its column where a phone lays the list
+    /// beside it.
     public func openModelBrowser() {
         openModelBrowser(sample: DeviceReadingSampler.sample)
     }
@@ -82,6 +83,12 @@ extension AppModel {
     func openModelBrowser(sample: () -> DeviceReading?) {
         guard let browser = makeModelBrowser(sample: sample) else { return }
         onDevice.modelBrowser = browser
+    }
+
+    /// Closes the browser `openModelBrowser()` opened: Done on its sheet,
+    /// Back where it is pushed over the chat, or another chat chosen there.
+    func closeModelBrowser() {
+        onDevice.modelBrowser = nil
     }
 
     /// One opening of the browser for a view that shows it in place, as Add

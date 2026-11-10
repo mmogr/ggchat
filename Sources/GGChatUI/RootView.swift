@@ -92,8 +92,9 @@ public struct RootView: View {
         }
         // Here, as the enlarged picture is, so every way in opens the same
         // one: the composer's model list and the panel's, and the empty
-        // screens.
-        .sheet(item: Bindable(model.onDevice).modelBrowser) { browser in
+        // screens. Where a phone lays the list beside the chat, it is pushed
+        // over the chat instead, as Providers is.
+        .sheet(item: browserSheet) { browser in
             ModelBrowserView(browser: browser)
         }
         // Here and not on the row that opened it: a row is torn down when
@@ -201,6 +202,13 @@ extension RootView {
         Binding(
             get: { panePresentation == presentation ? pane : nil },
             set: { pane = $0 })
+    }
+
+    /// The model browser, while it is open and shown as a sheet here.
+    private var browserSheet: Binding<ModelBrowser?> {
+        Binding(
+            get: { panePresentation == .sheet ? model.onDevice.modelBrowser : nil },
+            set: { if $0 == nil { model.closeModelBrowser() } })
     }
 
     @ViewBuilder

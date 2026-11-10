@@ -1025,8 +1025,13 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # A pane that goes back to a sheet there, or Save taking Providers with it,
 # fails no unit test, so these walks and their markers are the whole of
 # that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1151
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 45
-floor "README test markers" "${markers:-0}" 1047
+#
+# 2026-11-10: 1151 -> 1152, 45 -> 46 and 1047 -> 1049 for the model browser
+# over the chat on an open Duo. A browser that goes back to a sheet there,
+# or one Back leaves open, fails nothing else, so this walk, the closing it
+# rests on and their markers are the whole of that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1152
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 46
+floor "README test markers" "${markers:-0}" 1049
 
 exit $status

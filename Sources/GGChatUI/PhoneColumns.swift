@@ -79,14 +79,23 @@ extension EnvironmentValues {
         ///
         /// Providers and Settings are pushed on this stack, over the chat,
         /// which stays its root: its draft and its place are under the page
-        /// when Done, or a chat chosen in the list, takes it away.
+        /// when Done, or a chat chosen in the list, takes it away. So is the
+        /// model browser, which Back takes away.
         private var chatColumn: some View {
             NavigationStack {
                 detail()
                     .navigationDestination(item: $pane) { pane in
                         RootPanePage(pane: pane)
                     }
-                    .onChange(of: model.selection) { pane = nil }
+                    .navigationDestination(isPresented: browserShown) {
+                        if let browser = model.onDevice.modelBrowser {
+                            ModelBrowserList(browser: browser).navigationTitle("Find a model")
+                        }
+                    }
+                    .onChange(of: model.selection) {
+                        pane = nil
+                        model.closeModelBrowser()
+                    }
                     .environment(\.chatControlsOnPage, true)
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
@@ -131,6 +140,14 @@ extension EnvironmentValues {
         /// share beside the chat; see `SidebarPinning.listWidth`.
         private func bookPages(in size: CGSize) -> BookPages.Pages? {
             layout == .pages ? BookPages.pages(in: size, folds: folds) : nil
+        }
+
+        /// Whether the model browser is pushed over the chat: whenever one
+        /// is open, as the root shows it in a sheet in the other layouts.
+        private var browserShown: Binding<Bool> {
+            Binding(
+                get: { model.onDevice.modelBrowser != nil },
+                set: { if !$0 { model.closeModelBrowser() } })
         }
 
         private var showsPanel: Bool {
