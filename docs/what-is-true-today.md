@@ -1165,8 +1165,10 @@ Each claim names the test that keeps it true.
   which first run names, on the conversation list and in the detail pane;
   Settings' "Models on this iPhone", which leads to it; and "Find a
   model…" under This iPhone in the model list, the composer's and the
-  panel's, which opens the browser in a sheet of its own. Looking adds
-  nothing. Add provider keeps what is typed in Server and Pipe as the kind
+  panel's, which opens the browser in a sheet of its own; where a phone
+  lays the list beside the chat, on an open Duo, it opens in the chat's
+  column instead, over the chat, as Providers does, and Back, or a chat
+  chosen in the list, takes it away. Looking adds nothing. Add provider keeps what is typed in Server and Pipe as the kind
   changes, and holds the kind while a code is being redeemed. None of it
   is shown where the build runs no model, so the simulator without the
   mock and the Mac show Server and Pipe alone.
@@ -1177,6 +1179,8 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelLibraryTests.testTheBrowserSaysWhenItReadTheDevice -->
   <!-- test: AppModelLibraryTests.testASearchGoesOnAPageAtATime -->
   <!-- test: AppModelLibraryTests.testWithNoEngineNothingIsBrowsedOrDownloaded -->
+  <!-- test: AppModelLibraryTests.testClosingTheBrowserLeavesNoneOpenAndTheNextOpeningIsNew -->
+  <!-- test: BookPagesUITests.testFindAModelOpensTheBrowserOverTheChat -->
   <!-- test: AppModelLibraryTests.testTheChipSaysEachVerdictInAFewWords -->
   <!-- test: AppModelLibraryTests.testTheWhySheetSaysEachFigureOrThatItIsNotKnown -->
   <!-- test: AppModelLibraryTests.testOnlyACutOffHeaderPromisesThatADownloadWillTell -->

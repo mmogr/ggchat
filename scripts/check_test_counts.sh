@@ -1012,8 +1012,13 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # 2026-11-10: 44 -> 45 and 1030 -> 1031 for a provider saved over the chat
 # with Providers still open. Pushed on a folded phone's list, Save took
 # Providers with it; the walk on its side is what holds the open Duo to it.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1134
-floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 45
-floor "README test markers" "${markers:-0}" 1031
+#
+# 2026-11-10: 1134 -> 1135, 45 -> 46 and 1031 -> 1033 for the model browser
+# over the chat on an open Duo. A browser that goes back to a sheet there,
+# or one Back leaves open, fails nothing else, so this walk, the closing it
+# rests on and their markers are the whole of that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1135
+floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 46
+floor "README test markers" "${markers:-0}" 1033
 
 exit $status

@@ -204,6 +204,19 @@ final class AppModelLibraryTests: XCTestCase {
         XCTAssertNil(browser.searched)
     }
 
+    /// Closing the browser, by Done on its sheet or Back where it is pushed
+    /// over the chat, leaves none open, and the next opening is a new one.
+    func testClosingTheBrowserLeavesNoneOpenAndTheNextOpeningIsNew() throws {
+        let model = makeModel()
+        var samples = 0
+        let first = try open(model, with: reading, counting: &samples)
+        model.closeModelBrowser()
+        XCTAssertNil(model.onDevice.modelBrowser, "the browser stayed open")
+        let second = try open(model, with: reading, counting: &samples)
+        XCTAssertNotIdentical(first, second, "the browser opened again on the opening it was closed on")
+        XCTAssertEqual(samples, 2, "the second opening did not read the device again")
+    }
+
     /// A build with no engine opens no browser and downloads nothing, and a
     /// library that cannot answer says why under the section.
     func testWithNoEngineNothingIsBrowsedOrDownloaded() async throws {
