@@ -53,7 +53,7 @@ extension AppModelRunTests {
         if direct {
             registry.register(hub, at: url)
             try model.addProvider(config, credentials: [:])
-            model.proxyStatusAvailability[config.id] = true
+            model.gglibAnswers[config.id] = .server(.serving("0.35.0"))
         } else {
             try model.addProvider(config, credentials: [.ticket: ticket, .token: "secret-token"])
             await model.connectPipe(for: config)

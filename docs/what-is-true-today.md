@@ -244,15 +244,18 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingModelListTests.testTheDefaultModelIsTheFirstThatCanChat -->
 - Whether a hub can draw is asked of it, `GET /v1/images/drawing`, and never
   guessed: when a chat opens on it and each time its pipe comes up, for a
-  paired Mac and for no other server. gglib draws only for a device it has
-  paired, so a gglib reached by its address is not asked, and a conversation
-  on it has the switch dimmed, saying "Drawing needs a paired Mac." What it says is kept in memory: the image model when it can,
-  and when it cannot, gglib's own reason, said as "home cannot draw: ...". A
-  gglib from before drawing has no such route, and its 404 reads as a hub
-  that cannot draw and needs updating. A hub not asked yet is not known to
-  draw, an ask that fails keeps the answer before, and a removed provider
-  takes its answer with it.
-  <!-- test: DrawingWireTests.testAHubSaysWhetherItCanDrawAndAnOlderOneCannot -->
+  paired Mac whose gglib says it serves drawing and for no other server.
+  gglib draws only for a device it has paired, so a gglib reached by its
+  address is not asked, and a conversation on it has the switch dimmed,
+  saying "Drawing needs a paired Mac." What it says is kept in memory: the
+  image model when it can, and when it cannot, gglib's own reason, said as
+  "home cannot draw: ...". A Mac whose gglib says nothing of itself, one from
+  before 0.35.0, is not asked and "needs updating before it can draw"; one
+  whose gglib does not serve drawing is not asked and "cannot draw". A hub
+  not asked yet is not known to draw, an ask that fails keeps the answer
+  before, and a removed provider takes its answer with it.
+  <!-- test: DrawingWireTests.testAHubSaysWhetherItCanDrawAndAFailedAskIsAnError -->
+  <!-- test: DrawingAvailabilityTests.testAMacWhoseGGLibDoesNotServeDrawingIsNotAsked -->
   <!-- test: DrawingAvailabilityTests.testAHubIsAskedWhetherItCanDrawAndItsAnswerIsTheReason -->
   <!-- test: DrawingAvailabilityTests.testAnAskThatFailsKeepsTheAnswerBefore -->
   <!-- test: DrawingAvailabilityTests.testOnlyGGLibIsAskedAndOfferedTheSwitch -->
@@ -1061,7 +1064,7 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelLastHeardTests.testAPipeThatGoesQuietKeepsItsTime -->
   <!-- test: AppModelLastHeardTests.testARefusalWrittenOnThisSideIsNotHearing -->
   <!-- test: AppModelLastHeardTests.testAFinishedReplyIsHeard -->
-  <!-- test: AppModelLastHeardTests.testAModelListAndAStatusAnswerAreHeard -->
+  <!-- test: AppModelLastHeardTests.testAModelListIsHeard -->
   <!-- test: AppModelLastHeardTests.testRemovingTheProviderForgetsWhenItWasHeard -->
   <!-- test: AppModelLastHeardTests.testTheLineSaysTheTimeAndTheDateWhenItWasNotToday -->
   <!-- test: LastHeardStoreTests.testTheTimeSurvivesARelaunchOfTheStore -->
@@ -1131,8 +1134,7 @@ Each claim names the test that keeps it true.
   <!-- test: ProviderConfigTests.testThisIPhonesEngineHasASession -->
   <!-- test: ProviderConfigTests.testThisIPhonesEngineIsNotAPairedMac -->
   <!-- test: SpeaksGGLibTests.testThisIPhonesEngineSpeaksGGLib -->
-  <!-- test: SpeaksGGLibTests.testThisIPhonesEngineHasNoRuns -->
-  <!-- test: SpeaksGGLibTests.testThisIPhonesEngineHasNoDrawSwitch -->
+  <!-- test: SpeaksGGLibTests.testThisIPhonesEngineHasNoRunsPaneOrDrawSwitch -->
   <!-- test: UnavailableEngineTests.testABuildWithNoEngineOffersNoneAndRefusesToServe -->
   <!-- test: MockEngineTests.testTheStatusWalksFromIdleToReadyAndEndsStopped -->
   <!-- test: MockEngineTests.testTooBigIsRefusedAs507ModelDoesNotFitAndLoadsNothing -->
@@ -1398,28 +1400,32 @@ Each claim names the test that keeps it true.
   <!-- test: RedactedDescriptionTests.testAReadPairingPrintsItsDigestAndNeverItsTicket -->
   <!-- test: PairedDescriptionTests.testPairedPrintsItsDeviceAndNeverItsKey -->
   <!-- test: RedactedDescriptionTests.testAProviderPrintsItsAddressAndNeverItsKey -->
-- gglib's proxy status endpoint decodes when it answers and is `nil` on 404.
-  A loop-guard trip is read under the key gglib sends, and under the one an
-  older hub sent.
-  <!-- test: OpenAICompatibleProviderTests.testProxyStatusIsNilOn404AndDecodesOn200 -->
+- gglib's proxy status endpoint decodes when it answers, and a 404 is an
+  error like any other. A loop-guard trip is read under the key gglib sends,
+  and under the one an older hub sent.
+  <!-- test: OpenAICompatibleProviderTests.testProxyStatusDecodesOn200AndA404IsAnError -->
   <!-- test: ProxyStatusHelperTests.testTheLoopGuardIsReadUnderTheKeyGGLibSendsAndTheOldOne -->
-- A pipe with no session is not asked for its status pane, so the probe as a
-  conversation opens raises no alert and keeps no answer. The pane is asked
-  for again each time a pipe a conversation has been opened on comes up, and a
-  probe called off before it was answered keeps nothing.
-  <!-- test: AppModelProxyStatusTests.testProbingAPipeWithNoSessionRaisesNothingAndCachesNothing -->
-  <!-- test: AppModelProxyStatusTests.testTheStatusPaneIsAskedForAgainWhenThePipeConnects -->
-  <!-- test: AppModelProxyStatusTests.testAProbeCalledOffBeforeItsAnswerKeepsNothing -->
-  <!-- test: AppModelProxyStatusTests.testAnAnswerThatArrivesAfterThePipeReconnectedIsNotKept -->
+- A server's model list says what its gglib serves, as gglib 0.35.0 writes it
+  beside `machine_name`: `"gglib": {"version": "0.35.0", "features":
+  ["chats", "runs", "drawing", "status"]}`. That, and no probe of a route,
+  is what decides whether a server by address is gglib, whether a reply is a
+  run, and whether there are the desk's chats, drawing and the status pane.
+  A field or a feature word this build does not know means nothing, and an
+  object that does not read is none and costs the list nothing. The answer
+  is kept from each list, through a pipe coming up, until the next list; a
+  step that needs it before any list has been read lists first, and steps
+  that need it at once ask once between them. A list that fails leaves it
+  unknown, and nothing is offered meanwhile.
+  <!-- test: GGLibServerWireTests.testAGGLibSaysItsVersionAndWhatItServes -->
+  <!-- test: GGLibServerWireTests.testUnknownFieldsAndWordsMeanNothing -->
+  <!-- test: GGLibServerWireTests.testAServerThatSaysNothingIsNoGGLib -->
+  <!-- test: GGLibServerWireTests.testAGGLibObjectThatDoesNotReadCostsNothingElse -->
+  <!-- test: SpeaksGGLibTests.testAReplyIsARunOnlyWhereTheGGLibSaysItServesRuns -->
   <!-- test: AppModelOpeningTests.testThePaneIsAskedAboutWhenAFollowedPipeComesUp -->
-  A probe that fails, the server out of reach or answering with an error,
-  keeps nothing either, so the next one asks. A 404 is kept: that server is
-  not asked again.
-  <!-- test: AppModelProxyStatusTests.testAProbeThatFailsKeepsNothingAndTheNextOneAsks -->
-  <!-- test: AppModelProxyStatusTests.testA404IsKeptAndNotAskedAgain -->
+  <!-- test: AppModelOpeningTests.testAPipeNotAnsweringYetWhenTheConversationOpensListsItsModelsOnceItIs -->
 - Opening a conversation hands its provider to the model, which dials it if
-  it is down, lists its models once the pipe is up, and asks about its status
-  pane; a server added by address is asked at once. The work is the model's
+  it is down and lists its models once the pipe is up, which say what its
+  gglib serves; a server added by address is asked at once. The work is the model's
   own, so a view task that SwiftUI calls off as it starts does not call it
   off. A pipe that was not answering yet when the conversation opened lists
   its models when it comes up, and one whose last try failed asks again the
@@ -1588,8 +1594,8 @@ Each claim names the test that keeps it true.
   <!-- test: HeldChatStreamTests.testAChunkThatComesAfterTheReaderWaitedIsPassedOnAfterTheOnesBefore -->
   <!-- test: HeldChatStreamTests.testCancellingTheReaderMidEventStopsTheRequestOnce -->
   <!-- test: HeldChatStreamTests.testAStopBetweenChunksStopsTheRequestAndLogsNoError -->
-- A reply to gglib is a run the hub owns, under an id minted on the phone, so
-  locking the phone mid-reply loses none of it. Going to the background, or a
+- A reply to a gglib that says it serves runs is a run the hub owns, under
+  an id minted on the phone, so locking the phone mid-reply loses none of it. Going to the background, or a
   connection dropping, stops reading and keeps what arrived with the run's id
   and the number of the last event read; coming back, a launch or the pipe
   coming up reads on after that number, nothing twice and nothing skipped,
@@ -1601,11 +1607,15 @@ Each claim names the test that keeps it true.
   one the hub no longer has, or refuses to send, keeps its partial with
   Continue and a sentence saying why. A page that is not an event stream, as a
   captive portal answers with, is a drop to read on after, not a refusal.
-  Stop, a deletion or removing the provider cancels a run. A hub without runs
-  is sent the chat request as before, asked once, with nothing shown. Nothing
-  but the run's id leaves the phone, and no log line carries it, the reply or
-  an address.
-  <!-- test: RunProviderTests.testAPutStartsARunAndAHubWithoutTheRouteIsUnsupported -->
+  Stop, a deletion or removing the provider cancels a run. A hub whose gglib
+  does not say it serves runs, one from before 0.35.0 among them, is sent the
+  chat request with nothing shown and never a run; a paired Mac's list is
+  read before its first reply. A reply such a Mac went on writing is not
+  read on: it is given up at once, saying the Mac needs gglib 0.35.0 or
+  later, and what arrived keeps Continue. Nothing but the
+  run's id leaves the phone, and no log line carries it, the reply or an
+  address.
+  <!-- test: RunProviderTests.testAPutStartsARunAndAnyRefusalIsAFailure -->
   <!-- test: RunProviderTests.testEventsAreFramesNumberedFromOneThenTheRunsReport -->
   <!-- test: RunProviderTests.testAStreamCutAtEveryByteReadsOnFromItsCursorToTheSameReply -->
   <!-- test: RunProviderTests.testAnEventAtOrBelowTheCursorIsNotAppliedAgain -->
@@ -1616,7 +1626,8 @@ Each claim names the test that keeps it true.
   <!-- test: RunStoreTests.testARunsIDAndCursorAreKeptWithItsMessage -->
   <!-- test: RunStoreTests.testAStoreOpensAcrossTheChangeInBothDirections -->
   <!-- test: AppModelRunTests.testASendToGGLibIsARunAndAnythingElseGoesTheOldWay -->
-  <!-- test: AppModelRunTests.testAHubWithoutRunsIsAskedOnceAndTheReplyGoesTheOldWay -->
+  <!-- test: AppModelRunTests.testAMacWhoseGGLibServesNoRunsIsSentTheReplyThroughTheChatRoute -->
+  <!-- test: AppModelRunReadOnTests.testAReplyOnAMacWhoseGGLibServesNoRunsIsGivenUp -->
   <!-- test: AppModelRunTests.testARefusedRunIsAFailureOnTheQuestion -->
   <!-- test: AppModelRunTests.testStopCancelsTheRunAndTheBackgroundDoesNot -->
   <!-- test: AppModelRunTests.testAReplyStillBeingWrittenOffersNeitherContinueNorRetry -->
@@ -1780,9 +1791,13 @@ Each claim names the test that keeps it true.
   failed, its section shows the titles its list last showed with "last seen
   22:13", kept on the provider's row through a relaunch and gone with it, and
   opening one says the Mac is unreachable; a failed list keeps them as they
-  were. A pull lists again, and the background stops it dialling. A gglib too
-  old to share its chats has no section until a list works, and a Mac this
-  device has lost its ticket for says to pair again. A chat on screen keeps
+  were. A pull lists again, and the background stops it dialling. Its chats
+  are listed only once its model list has said its gglib serves them: a Mac
+  whose list says nothing, one from before 0.35.0, keeps its section, which
+  says "The gglib on home needs updating to share its chats.", as a chat of
+  it opened does, and a pull asks its list again; one whose gglib says it
+  serves no chats has no section. A Mac this device has lost its ticket for
+  says to pair again. A chat on screen keeps
   its rows while it is read again. The wire shapes replay the bodies gglib records, and a row
   whose metadata cannot be read still opens without it.
   <!-- test: HubChatsWireTests.testTheListReadsEveryChatInTheHubsOrder -->
@@ -1817,7 +1832,8 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatsWireTests.testATimeInAnotherShapeReadsAsNothing -->
   <!-- test: HubChatsOutcomeTests.testAFailedListKeepsWhatWasSeenAndSaysWhen -->
   <!-- test: HubChatsOutcomeTests.testAPullListsAgainThroughAPipeThatIsUp -->
-  <!-- test: HubChatsOutcomeTests.testAnOlderGglibHasNoSectionUntilItLists -->
+  <!-- test: HubChatsOutcomeTests.testAMacWhoseGGLibSaysNothingNeedsUpdatingUntilItSays -->
+  <!-- test: HubChatsOutcomeTests.testAMacWhoseGGLibServesNoChatsHasNoSection -->
   <!-- test: HubChatsOutcomeTests.testAMacWithNothingToDialWithSaysToPairAgain -->
   <!-- test: HubChatsOutcomeTests.testTheBackgroundStopsARefreshFromDialling -->
   <!-- test: HubChatsOutcomeTests.testAChatOnScreenKeepsItsRowsWhileItIsReadAgain -->
@@ -1909,12 +1925,13 @@ Each claim names the test that keeps it true.
   images without sending them again. A refused or unsent turn gives back its
   text and its images. A chat whose model this phone knows cannot read images
   refuses them here with gglib's sentence, and any other is sent them, for the
-  Mac to refuse by name. A Mac whose gglib is from before images, with no
-  upload route or refusing the key, says its gglib needs updating.
+  Mac to refuse by name. A Mac whose gglib refuses the key, from before
+  images, says its gglib needs updating; an upload refused with a bare 404
+  is a refusal like any other.
   <!-- test: HubChatsWireTests.testATurnWithImagesIsTheRecordedBodyWithItsImageIDs -->
   <!-- test: HubChatsWireTests.testAnUploadIsAnsweredWithTheImagesReference -->
   <!-- test: HubImagesProviderTests.testAnImageIsUploadedAsItsBytesAndNamedAsTheHubAnswers -->
-  <!-- test: HubImagesProviderTests.testAnUploadToAGglibWithoutImagesTakesNoImagesAndTheRestAreRefusals -->
+  <!-- test: HubImagesProviderTests.testAnUploadRefusalCarriesItsSentenceAndNoAnswerIsALostOne -->
   <!-- test: HubImagesProviderTests.testAnImageIsFetchedAsItsBytes -->
   <!-- test: HubImagesProviderTests.testAFetchTheHubCannotAnswerIsNotFoundOrADrop -->
   <!-- test: HubImagesProviderTests.testAFetchedImageIsNeverKeptInAURLCache -->
@@ -2028,9 +2045,10 @@ Each claim names the test that keeps it true.
 - A Mac's chat has the same switch and the Mac remembers it: the chat opens
   showing what the Mac remembers, the one turn that changes it says `off` or
   `default`, and this phone stores nothing of it, looking the chat's model up
-  by its id in that Mac's model list, which it reads when a chat is opened
-  while it holds no list for that Mac, and again when the pipe comes up. A
-  model renamed on the Mac is still found.
+  by its id in that Mac's model list, which it reads before the Mac's chats,
+  since it says whether its gglib serves them, and again when the pipe comes
+  up once a chat is open. A list that fails raises no alert, and the chats
+  wait for one that works. A model renamed on the Mac is still found.
   <!-- test: HubChatsWireTests.testAnOpenedChatReadsTheThinkingItRemembersAndItsModel -->
   <!-- test: HubChatsWireTests.testATurnThatChangesThinkingIsTheRecordedBody -->
   <!-- test: HubTurnProviderTests.testATurnThatSaysTheThinkingChoiceIsPutWithIt -->
@@ -2044,8 +2062,8 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatThinkingTests.testTheChoiceIsNeverStoredAndGoesWithTheChat -->
   <!-- test: HubChatModelListTests.testTheSwitchIsHiddenWhenTheModelIsNotInTheMacsList -->
   <!-- test: HubChatModelListTests.testAChatOpenedWithoutAModelIDTakesTheOneItsListRowGives -->
-  <!-- test: HubChatModelListTests.testOpeningAChatListsTheMacsModels -->
-  <!-- test: HubChatModelListTests.testAListThatFailsOnOpeningAChatRaisesNoAlert -->
+  <!-- test: HubChatModelListTests.testTheMacsModelsAreListedWithItsChatsAndNotAgainOnOpening -->
+  <!-- test: HubChatModelListTests.testAListThatFailsBeforeTheChatsRaisesNoAlertAndTheChatsWait -->
   <!-- test: HubChatModelListTests.testAPipeComingUpListsAgainAndAFailedListKeepsTheOld -->
 - A request refused before anything arrived has no reply to sit under, so
   the sentence that says why, the line about where to look and a Retry
@@ -2118,8 +2136,8 @@ Each claim names the test that keeps it true.
   long prompt the reply shows a bar filled by the tokens read, with "Reading
   8,200 of 11,000 tokens" under it, until its first thought or word, and
   only while that is the latest the reply has heard. Only gglib is asked for
-  that progress, over a pipe or from a server that answered the status probe
-  at its current address, and none of it is kept. A run with tools sends it
+  that progress, over a pipe or from a server whose list at its current
+  address said it is gglib, and none of it is kept. A run with tools sends it
   as an agent event of its own, read the same, and a Mac's own chat carried
   on here shows the same bar.
   <!-- test: PromptProgressTests.testAProviderTheRegistryBuildsStreamsOnASessionThatWaitsTenMinutes -->
@@ -2130,7 +2148,7 @@ Each claim names the test that keeps it true.
   <!-- test: PromptProgressTests.testAProgressMemberThatDoesNotReadIsDroppedAndTheRestOfTheChunkIsRead -->
   <!-- test: PromptProgressTests.testAnAgentRunsPromptProgressThatCannotBeReadMeansNothing -->
   <!-- test: HubTurnProviderTests.testAnAgentRunsEventsAreItsTextReasoningAndToolLines -->
-  <!-- test: AppModelPromptProgressTests.testOnlyAPipeOrAServerThatAnsweredTheStatusProbeIsAskedForProgress -->
+  <!-- test: AppModelPromptProgressTests.testOnlyAPipeOrAServerWhoseListSaidGGLibIsAskedForProgress -->
   <!-- test: AppModelPromptProgressTests.testAServerMovedAwayFromGGLibIsNotAskedForProgress -->
   <!-- test: AppModelPromptProgressTests.testTheLiveReplyHoldsTheLatestProgressAndNothingOfItIsKept -->
   <!-- test: PromptReadingTests.testTheCountUnderTheBarIsInTheLocalesDigits -->
@@ -2149,7 +2167,8 @@ Each claim names the test that keeps it true.
   accessibility type sizes.
   <!-- test: ReduceTransparencyUITests.testGlassGoesFlatWhenTransparencyIsReduced -->
 - With `GGCHAT_LIVE_BASE_URL` set, the app model adds that server by URL,
-  lists its models, streams a complete reply and probes the status endpoint.
+  lists its models, streams a complete reply and reads whether its list
+  offers the status pane.
   <!-- test: LiveAppModelTests.testAddByURLListModelsStreamAndProbeStatus -->
 - Connecting a pipe provider walks the status to direct, fires the one
   haptic once, records the ticket's digest, and streams through the
@@ -2228,19 +2247,20 @@ Each claim names the test that keeps it true.
   on the next launch that can never connect.
   <!-- test: AppModelProviderTests.testAProviderWhoseRecordWillNotDeleteKeepsItsCredentials -->
   <!-- test: AppModelProviderTests.testRemovingAProviderTakesItsRecordAndItsCredentialsTogether -->
-- A removed provider leaves nothing kept under its id: its models, its
-  status pane, its runs and whether it is followed go, and a conversation
-  opening on it is called off. A model list or a status probe it was waiting
-  for keeps nothing when it comes back, and a server moved to another
+- A removed provider leaves nothing kept under its id: its models, what its
+  gglib said of itself and whether it is followed go, and a conversation
+  opening on it is called off. A model list it was waiting for keeps nothing
+  when it comes back, and a server moved to another
   address forgets the models the old one listed, a late list from it
-  included, which no longer writes the old address back, and, where the
+  included, which no longer writes the old address back and is not waited
+  for by a list of the new one, and, where the
   old one listed gglib's ids, with them its default and the model each of
   its conversations chose. A rename made
   while a list is asked for is kept when the list names the default model.
   <!-- test: ProviderRemovalForgetsTests.testRemovingAProviderLeavesNothingKeptUnderItsID -->
   <!-- test: ProviderRemovalForgetsTests.testAModelListThatComesBackAfterItsProviderWasRemovedIsNotKept -->
   <!-- test: ProviderRemovalForgetsTests.testMovingAProviderForgetsTheModelsTheOldMachineListed -->
-  <!-- test: AppModelProxyStatusTests.testAnAnswerThatArrivesAfterItsProviderWasRemovedIsNotKept -->
+  <!-- test: ProviderRemovalForgetsTests.testAMoveLetsGoOfAListOnItsWayFromTheOldAddress -->
   <!-- test: ProviderRemovalForgetsTests.testARenameWhileTheModelsAreListedIsKept -->
 - The count of distinct tickets connected survives a relaunch, and a ticket
   connected twice counts once.
@@ -2285,7 +2305,7 @@ Each claim names the test that keeps it true.
   <!-- test: ScreenGalleryUITests.testTheProviderFormExplainsABadTicket -->
   <!-- test: ScreenGalleryUITests.testTheProvidersListAndTheTicketCountInSettings -->
 - gglib's server status pane fills in from a real server, and is not
-  offered at all by a provider that does not report one.
+  offered at all by a provider whose list does not say it serves one.
   <!-- test: RemainingScreensUITests.testTheServerStatusPaneAgainstARealServer -->
   <!-- test: RemainingScreensUITests.testTheStatusPaneIsHiddenForAServerThatDoesNotReport -->
 - A closed pipe turns its status pill into a reconnect, and pressing it

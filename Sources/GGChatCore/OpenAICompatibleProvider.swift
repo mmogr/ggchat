@@ -49,11 +49,11 @@ public struct OpenAICompatibleProvider: Provider {
         return ModelList(models: answer.data, gglib: answer.gglib)
     }
 
-    /// nil when the server answers 404: the pane is hidden for that provider.
-    public func proxyStatus() async throws -> ProxyStatus? {
+    /// One snapshot of gglib's status, for a gglib that says it serves the
+    /// pane (`GGLibFeature.status`).
+    public func proxyStatus() async throws -> ProxyStatus {
         let request = makeRequest(path: "proxy/status", method: "GET", body: nil)
         let (data, response) = try await perform(request)
-        if response.statusCode == 404 { return nil }
         try checkStatus(response, data: data)
         return try decode(ProxyStatus.self, from: data)
     }

@@ -81,8 +81,7 @@ public struct OfferedServer: Decodable, Sendable, Equatable, Hashable, Identifia
 /// A provider whose hub can be asked whether it draws.
 public protocol DrawingProvider: Provider {
     /// Whether the hub can draw for a message now: one that names
-    /// `imageModel`, or with nil one that names none. A hub from before
-    /// drawing has no such route, and cannot.
+    /// `imageModel`, or with nil one that names none.
     func drawing(judging imageModel: UInt64?) async throws(ProviderError) -> Drawing
 }
 
@@ -94,9 +93,8 @@ extension DrawingProvider {
 }
 
 extension OpenAICompatibleProvider: DrawingProvider {
-    /// `GET images/drawing`. A 404 is a gglib from before drawing, which
-    /// cannot draw and would refuse a turn's `draw` as a key it does not
-    /// know, so it is never sent one.
+    /// `GET images/drawing`, asked only of a gglib that says it serves
+    /// drawing (`GGLibFeature.drawing`).
     ///
     /// With `imageModel` it is `GET images/drawing?image_model=<id>`: the
     /// same question about a message that names that model, which gglib
@@ -111,7 +109,6 @@ extension OpenAICompatibleProvider: DrawingProvider {
             ])
         }
         let (data, response) = try await perform(request)
-        if response.statusCode == 404 { return Drawing(available: false) }
         try checkStatus(response, data: data)
         return try decode(Drawing.self, from: data)
     }

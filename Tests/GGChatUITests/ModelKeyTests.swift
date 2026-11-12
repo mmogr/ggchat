@@ -14,7 +14,7 @@ final class ModelKeyTests: XCTestCase {
     private let calendar = Calendar(identifier: .gregorian)
 
     private func listing(_ models: [ModelInfo]) -> MockProvider {
-        MockProvider(models: models, scripts: [.init(text: "fine")])
+        MockProvider(models: models, scripts: [.init(text: "fine")], gglib: .serving("0.35.0"))
     }
 
     /// The model `body` was sent for, as the request's JSON says it.

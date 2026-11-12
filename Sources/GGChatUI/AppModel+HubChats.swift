@@ -14,9 +14,6 @@ enum HubListOutcome: Equatable {
     case listed
     /// It reads its chats only to a device through its tunnel.
     case notShared
-    /// Its gglib has no chats route (404): the section is hidden until a
-    /// list works.
-    case tooOld
     /// It could not be read: the section shows what it last saw, and when.
     case failed
 }
@@ -130,9 +127,10 @@ extension AppModel {
     }
 
     /// The providers with a section of their own: the paired Macs, but for
-    /// one whose gglib is too old to have chats.
+    /// one whose gglib says it serves no chats. One from before 0.35.0 has a
+    /// section that says it needs updating (`hubLine`).
     public var hubProviders: [ProviderConfig] {
-        providers.filter { $0.isPairedMac && hubListOutcome[$0.id] != .tooOld }
+        providers.filter { $0.isPairedMac && gglib(of: $0.id)?.serves(.chats) != false }
     }
 
     /// Lists every paired Mac's chats: through a pipe that is up at once, and
@@ -160,14 +158,19 @@ extension AppModel {
         readOnHubReply()
     }
 
-    /// Lists one Mac's chats, when its pipe is up, and keeps the list in
-    /// memory. A failure keeps what was there, and is logged by its kind.
+    /// Lists one Mac's chats, when its pipe is up and its gglib says it
+    /// serves them, which is read first when it is not known yet, and keeps
+    /// the list in memory. A failure keeps what was there, and is logged by
+    /// its kind.
     func listHubChats(_ providerID: UUID) async {
         guard let config = providers.first(where: { $0.id == providerID }), let hub = reachableHubChats(for: config),
             !hubListing.contains(providerID)
         else { return }
         hubListing.insert(providerID)
         defer { hubListing.remove(providerID) }
+        // A Mac to be updated is asked again each time: it may have been.
+        if needsUpdating(config) { await listModels(of: config, quietly: true) } else { await learnGGLib(config) }
+        guard serves(.chats, config) else { return }
         let unread = unreadHubReplies(providerID)
         do {
             let list = try await hub.listChats()
@@ -181,8 +184,7 @@ extension AppModel {
             guard providers.contains(where: { $0.id == providerID }) else { return }
             switch error {
             case .notShared: hubListOutcome[providerID] = .notShared
-            case .notFound: hubListOutcome[providerID] = .tooOld
-            case .refused, .dropped: hubListOutcome[providerID] = .failed
+            case .notFound, .refused, .dropped: hubListOutcome[providerID] = .failed
             }
             log.log(.info, "\(config.name) did not list its chats: \(Self.kind(of: error))")
         }
@@ -232,6 +234,9 @@ extension AppModel {
         }
         if !open.state.showsRows { openedHubChat?.state = .reading }
         hubReading = Task { [weak self] in
+            await self?.learnGGLib(config)
+            guard let self, !Task.isCancelled else { return }
+            guard serves(.chats, config) else { return showUnserved(open, on: config) }
             let answer: Result<HubChatOpen, HubChatsFailure>
             do throws(HubChatsFailure) {
                 answer = .success(try await hub.openChat(id: open.chatID))
@@ -239,7 +244,7 @@ extension AppModel {
                 answer = .failure(error)
             }
             guard !Task.isCancelled else { return }
-            self?.show(answer, of: open, from: config)
+            show(answer, of: open, from: config)
         }
     }
 
@@ -285,12 +290,5 @@ extension AppModel {
         hubListOutcome[providerID] = nil
         if openedHubChat?.providerID == providerID { dropHubChat() }
         forgetHubReplies(providerID)
-    }
-
-    /// The provider as a hub whose chats can be read now: a paired Mac whose
-    /// pipe is up.
-    func reachableHubChats(for config: ProviderConfig) -> (any HubChatsProvider)? {
-        guard config.isPairedMac, hubIsReachable(config.id) else { return nil }
-        return makeProvider(for: config) as? any HubChatsProvider
     }
 }

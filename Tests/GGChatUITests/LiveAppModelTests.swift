@@ -28,8 +28,6 @@ final class LiveAppModelTests: XCTestCase {
         XCTAssertFalse(messages.last?.content.isEmpty ?? true)
         XCTAssertEqual(messages.last?.isPartial, false)
         XCTAssertNil(model.streamError(for: try XCTUnwrap(model.selectedConversationID)))
-
-        await model.probeProxyStatus(for: config)
         _ = model.proxyStatusAvailable(for: config.id)
     }
 }

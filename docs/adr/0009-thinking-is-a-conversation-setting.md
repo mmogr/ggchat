@@ -91,6 +91,11 @@ switch can be shown.
 > from the first probe it answers. A 404 is still kept for the run, as not
 > gglib.
 
+> **Note, 2026-11-12.** The status probe is gone. A server added by address
+> is gglib once its model list says so, as gglib 0.35.0 writes it beside
+> `machine_name` on `GET /v1/models`; a list that fails leaves it unknown,
+> and the next list asks again.
+
 ## What would undo it
 
 - **Reading:** one of a Mac's chats open on gglib's chat page and here,

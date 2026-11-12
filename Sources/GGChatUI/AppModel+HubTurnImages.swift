@@ -80,7 +80,7 @@ extension AppModel {
     /// turn naming them. A turn refused because the Mac no longer holds one
     /// of them started no run: they are sent again from the bytes held here,
     /// and the turn is put again under the same id, once.
-    func startTurn(_ reply: HubLiveReply, on hub: any HubChatsProvider) async throws(HubTurnFailure) -> RunStart {
+    func startTurn(_ reply: HubLiveReply, on hub: any HubChatsProvider) async throws(HubTurnFailure) -> RunInfo {
         do throws(HubTurnFailure) {
             return try await hub.startTurn(runID: reply.runID, turn: turn(of: reply, hub))
         } catch .imageGone where !reply.images.isEmpty {

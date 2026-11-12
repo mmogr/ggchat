@@ -49,6 +49,38 @@ final class AppModelRunReadOnTests: XCTestCase {
         XCTAssertNotNil(try Runs.last(model).runID)
     }
 
+    /// A reply a Mac went on writing is read on only from a Mac whose gglib
+    /// says it serves runs. Not known yet, as at a launch, its list is read
+    /// first; a Mac whose list says nothing, one to be updated, is not asked
+    /// for the run, and the reply is given up at once with what arrived,
+    /// which keeps Continue.
+    @MainActor
+    func testAReplyOnAMacWhoseGGLibServesNoRunsIsGivenUp() async throws {
+        let hub = hub()
+        hub.with { $0.holdAt = 3 }
+        let (model, config) = try await Runs.makeModel(behind: hub)
+        let task = try XCTUnwrap(model.send("go"))
+        try await Runs.until("three frames") { model.liveReply?.cursor == 3 }
+        await model.scene(.background).value
+        await task.value
+
+        // The Mac answers as an older gglib from now on, and this launch has
+        // not read its list yet.
+        hub.with { $0.gglib = nil }
+        model.gglibAnswers[config.id] = nil
+        await model.scene(.foreground).value
+        try await Runs.until("the reply to be given up") { Runs.settled(model) }
+        XCTAssertEqual(model.gglibAnswers[config.id], .silent)
+        XCTAssertEqual(hub.with { $0.reads.count }, 1, "a Mac whose list said nothing was asked for the run")
+        let last = try Runs.last(model)
+        XCTAssertFalse(last.isBeingWritten)
+        XCTAssertNil(last.runID)
+        XCTAssertFalse(last.holdsNothing, "what arrived was not kept")
+        XCTAssertTrue(last.isPartial, "what arrived lost its Continue")
+        XCTAssertEqual(
+            last.failure?.message, "home needs gglib 0.35.0 or later, so the rest of this reply cannot be read.")
+    }
+
     /// A `PUT` whose answer was lost keeps its id, and no Retry is offered
     /// beside it. The next reach sends it again under the same id and reads
     /// on from there, so the hub starts one run.
@@ -119,7 +151,7 @@ final class AppModelRunReadOnTests: XCTestCase {
         try await Runs.until("three more frames") { model.liveReply?.cursor == 3 }
         model.stop()
         await second.value
-        hub.with { $0.start = .unsupported }
+        hub.with { $0.start = .refused(.server(status: 429, code: RunCode.tooManyRuns, message: "busy")) }
         try await XCTUnwrap(model.send("once more")).value
 
         let ids = hub.with { $0.starts.map(\.id) }

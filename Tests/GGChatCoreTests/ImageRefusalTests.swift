@@ -87,7 +87,7 @@ final class ImageRefusalTests: XCTestCase {
         RunHub.serve(script, at: host)
         let provider = RunHub.provider(at: host)
         let started = try await provider.startRun(id: id, request)
-        guard case .started = started else { return XCTFail("the PUT was not taken: \(started)") }
+        XCTAssertEqual(started.id, id, "the PUT was not taken")
         let put = try XCTUnwrap(RunHub.requests(at: host).first)
         let sent = try JSONSerialization.jsonObject(with: try XCTUnwrap(put.httpBody ?? put.bodyStreamData))
         let chat = try JSONSerialization.jsonObject(with: try JSONEncoder().encode(ChatCompletionRequest(request)))

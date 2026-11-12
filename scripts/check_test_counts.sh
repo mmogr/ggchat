@@ -1036,8 +1036,14 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # bad one cost the models, and a Settings line that stops naming the
 # version, fail nothing else, so these five and their marker are the whole
 # of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1157
+#
+# 2026-11-12: 1157 -> 1152 and 1050 -> 1052 for what a gglib serves, read
+# from that list. The seven tests of the status probe went with it, and the
+# three of This iPhone's engine are one. A Mac to be updated asked for its
+# chats, a run or a picture, or a reply read on from it, fails nothing else,
+# so the new ones and their markers are the whole of that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1152
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 46
-floor "README test markers" "${markers:-0}" 1050
+floor "README test markers" "${markers:-0}" 1052
 
 exit $status

@@ -43,9 +43,9 @@ extension AppModel {
     /// keeps nothing.
     func putTurn(_ reply: HubLiveReply, on hub: any HubChatsProvider, _ config: ProviderConfig) async {
         guard reply.question != nil else { return }
-        let start: RunStart
+        let info: RunInfo
         do throws(HubTurnFailure) {
-            start = try await startTurn(reply, on: hub)
+            info = try await startTurn(reply, on: hub)
         } catch {
             guard !Task.isCancelled else { return await putDown(reply, on: hub, config) }
             // Lost on the way, and it may have arrived: the id is kept, and
@@ -60,7 +60,7 @@ extension AppModel {
         // A gglib that does not know turns takes one for a chat run, which
         // fails on the way to the model: it is stopped, and said as a hub
         // without them.
-        if case .started(let info) = start, info.kind != .agent {
+        if info.kind != .agent {
             cancelTurn(reply.runID, on: hub)
             return refuse(reply, Self.unsupportedLine(config), config)
         }
@@ -68,12 +68,7 @@ extension AppModel {
         hubTookTurn(reply)
         keepHubRuns(reply.providerID)
         guard !Task.isCancelled else { return await putDown(reply, on: hub, config) }
-        switch start {
-        case .started:
-            await readTurn(reply, on: hub, config)
-        case .unsupported:
-            refuse(reply, Self.unsupportedLine(config), config)
-        }
+        await readTurn(reply, on: hub, config)
     }
 
     /// Reads the run's events after the reply's cursor, each frame applied

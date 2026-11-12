@@ -44,8 +44,7 @@ final class DrawingRunWireTests: XCTestCase {
         RunHub.serve(script, at: "draws.runs.test")
         let started = try await RunHub.provider(at: "draws.runs.test").startRun(id: "run-d", request(draws: true))
         XCTAssertEqual(
-            started,
-            .started(RunInfo(id: "run-d", kind: .chat, status: .queued, createdAtMs: 1, lastSeq: 0, frames: .agent)))
+            started, RunInfo(id: "run-d", kind: .chat, status: .queued, createdAtMs: 1, lastSeq: 0, frames: .agent))
         let put = try XCTUnwrap(RunHub.requests(at: "draws.runs.test").first)
         XCTAssertEqual(put.httpMethod, "PUT")
         XCTAssertEqual(put.url?.path(), "/v1/runs/run-d")
@@ -54,8 +53,7 @@ final class DrawingRunWireTests: XCTestCase {
         script.put = (201, RunHub.report("run-d", "queued", lastSeq: 0))
         RunHub.serve(script, at: "plain.runs.test")
         let plain = try await RunHub.provider(at: "plain.runs.test").startRun(id: "run-d", request(draws: false))
-        guard case .started(let info) = plain else { return XCTFail("the run did not start") }
-        XCTAssertNil(info.frames, "a run of chunks said how its frames are written")
+        XCTAssertNil(plain.frames, "a run of chunks said how its frames are written")
         let plainPut = try XCTUnwrap(RunHub.requests(at: "plain.runs.test").first)
         XCTAssertNil(plainPut.url?.query(), "a request that does not draw gained a query")
         XCTAssertEqual(plainPut.url?.absoluteString, "http://plain.runs.test/v1/runs/run-d")
@@ -157,7 +155,7 @@ final class DrawingRunWireTests: XCTestCase {
         let want = RunInfo(
             id: "run-u", kind: .chat, status: .completed, createdAtMs: 1, lastSeq: 2, frames: .unknown)
         let started = try await hub.startRun(id: "run-u", request(draws: true))
-        XCTAssertEqual(started, .started(want))
+        XCTAssertEqual(started, want)
         var events: [RunEvent] = []
         for await event in hub.runEvents(id: "run-u", after: 0, frames: .unknown) { events.append(event) }
         XCTAssertEqual(events, [.frame(seq: 1, events: []), .frame(seq: 2, events: []), .ended(want)])

@@ -253,16 +253,17 @@ final class OpenAICompatibleProviderTests: XCTestCase {
         XCTAssertNil(StubURLProtocol.requests(host: "nokey.test").last?.value(forHTTPHeaderField: "Authorization"))
     }
 
-    func testProxyStatusIsNilOn404AndDecodesOn200() async throws {
+    /// gglib's status decodes when it answers, and a 404 is an error.
+    func testProxyStatusDecodesOn200AndA404IsAnError() async throws {
         StubURLProtocol.register(
             host: "noproxy.test", path: "/v1/proxy/status", .init(status: 404, chunks: [Data("not found".utf8)]))
         StubURLProtocol.register(
             host: "proxy.test", path: "/v1/proxy/status",
             .init(status: 200, chunks: [try Fixtures.data("gglib-proxy-status.json")]))
-        let none = try await provider(host: "noproxy.test").proxyStatus()
-        XCTAssertNil(none)
+        let none = try? await provider(host: "noproxy.test").proxyStatus()
+        XCTAssertNil(none, "a 404 was read as a status")
         let status = try await provider(host: "proxy.test").proxyStatus()
-        XCTAssertEqual(status?.slots.count, 1)
+        XCTAssertEqual(status.slots.count, 1)
     }
 
     func testUnreachableHostIsATransportError() async {

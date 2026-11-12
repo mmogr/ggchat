@@ -78,7 +78,7 @@ final class HubChatsProviderTests: XCTestCase {
             listed, .refused(.server(status: 403, code: "device_forgotten", message: "forgotten")))
     }
 
-    /// A chat the hub does not have, and a hub with no chats route at all.
+    /// A chat the hub does not have, and any other 404.
     func testA404IsNotFound() async throws {
         let host = "chats-missing.test"
         let body = #"{"error":{"message":"not found","type":"invalid_request_error","code":"not_found"}}"#
@@ -88,7 +88,7 @@ final class HubChatsProviderTests: XCTestCase {
         XCTAssertEqual(opened, .notFound)
         XCTAssertEqual(ChatsHub.requests(at: host).first?.url?.path(), "/v1/chats/7")
         let listed = await failure { () async throws(HubChatsFailure) in try await provider.listChats() }
-        XCTAssertEqual(listed, .notFound, "an older gglib's bare 404")
+        XCTAssertEqual(listed, .notFound)
     }
 
     /// A page in front of the hub, a 5xx, and no answer at all are drops:

@@ -11,9 +11,9 @@ final class DrawingAvailabilityTests: XCTestCase {
         try await AppModelRunTests.until(what, condition)
     }
 
-    /// A paired Mac is asked once its pipe is up, and each answer has its
-    /// sentence: nothing when it can draw, gglib's reason when it cannot,
-    /// and one for a gglib from before drawing, which gives none.
+    /// A paired Mac whose gglib serves drawing is asked once its pipe is up,
+    /// and each answer has its sentence: nothing when it can draw, gglib's
+    /// reason when it cannot, and a plain one when it gives none.
     func testAHubIsAskedWhetherItCanDrawAndItsAnswerIsTheReason() async throws {
         let hub = FakeRunHub(frames: [])
         hub.with { $0.drawing = .success(Drawing(available: true, model: "flux-dev")) }
@@ -35,8 +35,32 @@ final class DrawingAvailabilityTests: XCTestCase {
 
         hub.with { $0.drawing = .success(Drawing(available: false)) }
         await model.open(config).value
-        XCTAssertEqual(model.drawRefusal(for: conversation), "The gglib on home needs updating before it can draw.")
+        XCTAssertEqual(model.drawRefusal(for: conversation), "home cannot draw.")
         XCTAssertEqual(hub.with(\.drawingAsked), 3)
+    }
+
+    /// A Mac whose gglib says nothing of itself, one from before 0.35.0, needs
+    /// updating before it can draw, and one whose gglib does not serve
+    /// drawing cannot. Neither is asked, and each keeps its Draw switch,
+    /// which says why.
+    func testAMacWhoseGGLibDoesNotServeDrawingIsNotAsked() async throws {
+        let cases: [(GGLibServer?, String)] = [
+            (nil, "The gglib on home needs updating before it can draw."),
+            (.serving("0.35.0", [.chats, .runs, .status]), "home cannot draw."),
+        ]
+        for (gglib, sentence) in cases {
+            let hub = FakeRunHub(frames: [])
+            hub.with {
+                $0.drawing = .success(Drawing(available: true, model: "flux-dev"))
+                $0.gglib = gglib
+            }
+            let (model, config) = try await AppModelRunTests.makeModel(behind: hub)
+            await model.open(config).value
+            let conversation = try XCTUnwrap(model.selectedConversation)
+            XCTAssertTrue(model.offersDrawing(for: conversation), sentence)
+            XCTAssertEqual(model.drawRefusal(for: conversation), sentence)
+            XCTAssertEqual(hub.with(\.drawingAsked), 0, sentence)
+        }
     }
 
     /// An ask that fails keeps what the hub said before, and a provider
@@ -57,8 +81,8 @@ final class DrawingAvailabilityTests: XCTestCase {
         XCTAssertNil(model.drawings[config.id])
     }
 
-    /// A server added by address that never answered as gglib has no Draw
-    /// switch. One that did has it, dimmed, saying drawing needs a paired
+    /// A server added by address whose list never said it is gglib has no
+    /// Draw switch. One that did has it, dimmed, saying drawing needs a paired
     /// Mac whatever was once heard of it: gglib draws only for a device it
     /// has paired. Neither is ever asked.
     func testOnlyGGLibIsAskedAndOfferedTheSwitch() async throws {
@@ -66,12 +90,15 @@ final class DrawingAvailabilityTests: XCTestCase {
         hub.with { $0.drawing = .success(Drawing(available: true, model: "flux-dev")) }
         let (model, config) = try await AppModelRunTests.makeModel(behind: hub, direct: true)
         let conversation = try XCTUnwrap(model.selectedConversation)
-        model.proxyStatusAvailability[config.id] = false
+        hub.with { $0.gglib = nil }
+        model.gglibAnswers[config.id] = nil
         await model.open(config).value
+        XCTAssertEqual(model.gglibAnswers[config.id], .silent)
         XCTAssertFalse(model.offersDrawing(for: conversation))
         XCTAssertEqual(hub.with(\.drawingAsked), 0)
 
-        model.proxyStatusAvailability[config.id] = true
+        hub.with { $0.gglib = .serving("0.35.0") }
+        model.gglibAnswers[config.id] = nil
         await model.open(config).value
         XCTAssertTrue(model.offersDrawing(for: conversation))
         XCTAssertEqual(hub.with(\.drawingAsked), 0, "a gglib reached by address was asked whether it can draw")

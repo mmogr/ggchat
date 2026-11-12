@@ -233,9 +233,9 @@ final class AppModelThinkingTests: XCTestCase {
         model.modelsByProvider[config.id] = MockProvider.sampleModels
         XCTAssertTrue(model.offersThinking(for: conversation))
 
-        model.proxyStatusAvailability[config.id] = false
+        model.gglibAnswers[config.id] = .silent
         XCTAssertFalse(model.offersThinking(for: conversation), "a server that is not gglib was offered the switch")
-        model.proxyStatusAvailability[config.id] = nil
+        model.gglibAnswers[config.id] = nil
         XCTAssertFalse(model.offersThinking(for: conversation), "a server not probed yet was offered the switch")
         conversation.providerID = UUID()
         XCTAssertFalse(model.offersThinking(for: conversation), "a conversation with no provider was offered it")

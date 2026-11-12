@@ -7,12 +7,10 @@ import Foundation
 // A turn on one of the hub's chats: gglib's runs routes, with the run an
 // agent run the hub saves to the chat. Same base URL, same key.
 extension OpenAICompatibleProvider {
-    /// `PUT runs/{id}?kind=agent` with the turn as its whole body. A 404 or a
-    /// 405 with neither a run code nor `conversation_not_found` is a hub with
-    /// no runs route. A turn with images refused as `invalid_request` is
-    /// taken for a gglib from before images, which refuses `images` as a key
-    /// it does not know.
-    public func startTurn(runID: String, turn: HubTurn) async throws(HubTurnFailure) -> RunStart {
+    /// `PUT runs/{id}?kind=agent` with the turn as its whole body. A turn
+    /// with images refused as `invalid_request` is taken for a gglib from
+    /// before images, which refuses `images` as a key it does not know.
+    public func startTurn(runID: String, turn: HubTurn) async throws(HubTurnFailure) -> RunInfo {
         let body: Data
         do {
             body = try JSONEncoder().encode(turn)
@@ -30,18 +28,13 @@ extension OpenAICompatibleProvider {
         let (data, response) = answer
         guard (200..<300).contains(response.statusCode) else {
             let error = Self.serverError(status: response.statusCode, body: data)
-            if [404, 405].contains(response.statusCode), !Self.carriesARunCode(data),
-                error.code != HubChatsCode.conversationNotFound
-            {
-                return .unsupported
-            }
             if !turn.images.isEmpty, case .server(400, ProviderError.Code.invalidRequest.rawValue, _) = error {
                 throw .takesNoImages
             }
             throw Self.turnFailure(error)
         }
         do {
-            return .started(try decode(RunInfo.self, from: data))
+            return try decode(RunInfo.self, from: data)
         } catch {
             throw .refused(error)
         }

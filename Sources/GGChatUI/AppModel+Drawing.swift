@@ -7,14 +7,19 @@ import GGChatCore
 // sent. Whether a hub can draw is asked of it, never guessed, and a hub that
 // cannot is never sent the word.
 extension AppModel {
-    /// Asks a paired Mac whether it can draw, and keeps what it says in
-    /// memory. A server added by address is not asked: gglib draws only for
-    /// a device it has paired, which a caller by address is not. An answer
-    /// that fails keeps the one before, and is logged by its code. A hub
-    /// that lists its image models is then asked about each one a chat on
-    /// screen chose (`judgeImageChoices`).
+    /// Asks a paired Mac whose gglib says it serves drawing whether it can
+    /// draw now, and keeps what it says in memory; one that does not serve
+    /// it keeps nothing. A server added by address is not asked: gglib draws
+    /// only for a device it has paired, which a caller by address is not. An
+    /// answer that fails keeps the one before, and is logged by its code. A
+    /// hub that lists its image models is then asked about each one a chat
+    /// on screen chose (`judgeImageChoices`).
     func askAboutDrawing(_ config: ProviderConfig) async {
         guard config.isPairedMac, let hub = makeProvider(for: config) as? any DrawingProvider else { return }
+        guard serves(.drawing, config) else {
+            if gglibAnswers[config.id] != nil { drawings[config.id] = nil }
+            return
+        }
         do throws(ProviderError) {
             let answer = try await hub.drawing()
             // An edit may have moved the provider while this waited.
@@ -27,16 +32,17 @@ extension AppModel {
     }
 
     /// Why a message that names no image model cannot be drawn on
-    /// `config`'s machine now, or nil when it can: gglib's own reason, a sentence for a gglib from before
-    /// drawing, which answers nothing, and one for a hub not asked yet.
+    /// `config`'s machine now, or nil when it can: a sentence for a gglib
+    /// from before 0.35.0 and one for a gglib that does not serve drawing,
+    /// gglib's own reason, and one for a hub not asked yet.
     func drawRefusal(on config: ProviderConfig) -> String? {
+        if needsUpdating(config) { return "The gglib on \(config.name) needs updating before it can draw." }
+        if gglib(of: config.id)?.serves(.drawing) == false { return "\(config.name) cannot draw." }
         guard let answer = drawings[config.id] else {
             return "It is not known yet whether \(config.name) can draw."
         }
         if answer.available { return nil }
-        guard let reason = answer.reason, !reason.isEmpty else {
-            return "The gglib on \(config.name) needs updating before it can draw."
-        }
+        guard let reason = answer.reason, !reason.isEmpty else { return "\(config.name) cannot draw." }
         return "\(config.name) cannot draw: \(reason)"
     }
 

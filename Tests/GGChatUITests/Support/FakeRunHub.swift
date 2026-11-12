@@ -8,8 +8,6 @@ import Synchronization
 final class FakeRunHub: RunProvider, DrawingProvider {
     enum Start: Sendable {
         case runs
-        /// A 404 or 405 with no run code: an older gglib.
-        case unsupported
         case refused(ProviderError)
     }
 
@@ -22,6 +20,9 @@ final class FakeRunHub: RunProvider, DrawingProvider {
         var reportsModel: String?
         /// The models it lists, in place of `MockProvider.sampleModels`.
         var models: [ModelInfo]?
+        /// What its list says of its gglib: one that serves everything, as
+        /// it stands.
+        var gglib: GGLibServer? = .serving("0.35.0")
         /// A read passes on frames up to this seq, then holds the stream
         /// open, as a run still being written does; nil ends it.
         var holdAt: UInt32?
@@ -91,6 +92,10 @@ final class FakeRunHub: RunProvider, DrawingProvider {
         with(\.models) ?? MockProvider.sampleModels
     }
 
+    func modelList() async throws -> ModelList {
+        ModelList(models: try await models(), gglib: with(\.gglib))
+    }
+
     func drawing(judging imageModel: UInt64?) async throws(ProviderError) -> Drawing {
         try with { state in
             guard let imageModel else {
@@ -102,7 +107,7 @@ final class FakeRunHub: RunProvider, DrawingProvider {
         }.get()
     }
 
-    /// The old way, for a hub that said it has no runs.
+    /// The chat route, for a hub whose gglib does not say it serves runs.
     func stream(_ request: ChatRequest) -> AsyncStream<ChatEvent> {
         with { $0.chats.append(request) }
         return AsyncStream { continuation in
@@ -112,7 +117,7 @@ final class FakeRunHub: RunProvider, DrawingProvider {
         }
     }
 
-    func startRun(id: String, _ request: ChatRequest) async throws(ProviderError) -> RunStart {
+    func startRun(id: String, _ request: ChatRequest) async throws(ProviderError) -> RunInfo {
         let (start, lost) = with { state in
             state.starts.append((id, request))
             state.putsLost -= 1
@@ -123,8 +128,7 @@ final class FakeRunHub: RunProvider, DrawingProvider {
         case .runs:
             let agent = request.runsAgentLoop
             let frames: RunFrames? = agent && !with(\.saysNoFrames) ? with(\.saysFrames) ?? .agent : nil
-            return .started(info(id, .queued, lastSeq: 0, frames: frames))
-        case .unsupported: return .unsupported
+            return info(id, .queued, lastSeq: 0, frames: frames)
         case .refused(let error): throw error
         }
     }

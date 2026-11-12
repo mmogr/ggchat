@@ -6,7 +6,7 @@ public enum HubChatsFailure: Error, Sendable, Equatable {
     /// tunnel: `403 device_not_named`. This device reached it some other way,
     /// by its address say, so asking again the same way gets the same answer.
     case notShared
-    /// The hub has no such chat, or no chats route at all: an older gglib.
+    /// The hub has no such chat.
     case notFound
     /// Any other 4xx, or a body that cannot be read.
     case refused(ProviderError)
@@ -28,7 +28,7 @@ public protocol HubChatsProvider: Provider {
     /// Adds `turn` to one of the hub's chats, and the hub writes the reply as
     /// the agent run `runID`, an id this device minted as for its own runs. A
     /// repeated id answers with the run already there.
-    func startTurn(runID: String, turn: HubTurn) async throws(HubTurnFailure) -> RunStart
+    func startTurn(runID: String, turn: HubTurn) async throws(HubTurnFailure) -> RunInfo
     /// The reply's events numbered above `after`, then its end: its text, its
     /// reasoning and a line for each tool it calls.
     func turnEvents(runID: String, after: UInt32) -> AsyncStream<RunEvent>

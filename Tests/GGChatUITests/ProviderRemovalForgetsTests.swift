@@ -49,9 +49,8 @@ final class ProviderRemovalForgetsTests: XCTestCase {
     private func kept(_ model: AppModel, _ id: UUID) -> [String] {
         var kept: [String] = []
         if model.modelsByProvider[id] != nil { kept.append("models") }
-        if model.proxyStatusAvailability[id] != nil { kept.append("status pane") }
-        if model.providersWithoutRuns.contains(id) { kept.append("no runs") }
-        if model.probeGeneration[id] != nil { kept.append("probe generation") }
+        if model.gglibAnswers[id] != nil { kept.append("its gglib") }
+        if model.modelListing[id] != nil { kept.append("a list on its way") }
         if model.followed.contains(id) { kept.append("followed") }
         if model.opening[id] != nil { kept.append("opening") }
         if model.dialGeneration[id] != nil { kept.append("dial generation") }
@@ -59,12 +58,9 @@ final class ProviderRemovalForgetsTests: XCTestCase {
     }
 
     func testRemovingAProviderLeavesNothingKeptUnderItsID() async throws {
-        let (model, server) = try makeModel(serving: MockProvider())
+        let (model, server) = try makeModel(serving: MockProvider(gglib: .serving("0.35.0")))
         await model.open(server).value
-        await model.probeProxyStatus(for: server)
-        model.providersWithoutRuns.insert(server.id)
-        model.probeGeneration[server.id] = 1
-        XCTAssertEqual(kept(model, server.id), ["models", "status pane", "no runs", "probe generation", "followed"])
+        XCTAssertEqual(kept(model, server.id), ["models", "its gglib", "followed"])
 
         model.removeProvider(server.id)
         for _ in 0..<5_000 where !kept(model, server.id).isEmpty { await Task.yield() }
@@ -137,6 +133,30 @@ final class ProviderRemovalForgetsTests: XCTestCase {
         model.updateProvider(plain)
         XCTAssertEqual(model.providers.first?.defaultModel, "old-model", "a default named by its name was forgotten")
         XCTAssertEqual(model.selectedConversation?.model, "old-model", "a model named by its name was forgotten")
+    }
+
+    /// A list on its way from the old address is not waited for by one for
+    /// the new: the move lets it go, the new address is asked, and the old
+    /// list keeps nothing when it comes back.
+    func testAMoveLetsGoOfAListOnItsWayFromTheOldAddress() async throws {
+        let held = HeldModels()
+        let (model, server) = try makeModel(serving: held)
+        let newURL = try XCTUnwrap(URL(string: "http://127.0.0.1:49979/v1"))
+        model.registry.register(MockProvider(gglib: .serving("0.35.0")), at: newURL)
+        let old = Task { await model.listModels(of: server, quietly: true) }
+        for _ in 0..<5_000 where held.asked == 0 { await Task.yield() }
+        XCTAssertEqual(held.asked, 1, "the list was never asked for")
+
+        var moved = server
+        moved.kind = .openAICompatible(baseURL: newURL)
+        model.updateProvider(moved)
+        let new = Task { await model.listModels(of: moved, quietly: true) }
+        for _ in 0..<200 { await Task.yield() }
+        held.release()
+        await new.value
+        await old.value
+        XCTAssertEqual(model.models(for: server.id), MockProvider.sampleModels, "the new address was not asked")
+        XCTAssertEqual(model.gglibAnswers[server.id], .server(.serving("0.35.0")), "the old list was kept")
     }
 
     /// A rename made while the list was asked for is kept when the list

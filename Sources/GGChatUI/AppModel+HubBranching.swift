@@ -155,7 +155,7 @@ extension AppModel {
         let line: String? =
             switch failure {
             case .notShared: "\(config.name) does not share its chats with this phone."
-            case .notFound: "\(config.name) no longer has this chat, or needs updating to change it."
+            case .notFound: "\(config.name) no longer has this chat."
             case .refused(let error):
                 if let refusal = Self.branchRefusal(error.code) {
                     Self.sentence(for: refusal)

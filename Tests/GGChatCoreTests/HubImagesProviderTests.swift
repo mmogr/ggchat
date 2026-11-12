@@ -52,13 +52,15 @@ final class HubImagesProviderTests: XCTestCase {
         XCTAssertEqual(request.httpBody ?? request.bodyStreamData, image)
     }
 
-    /// A gglib with no `attachments` route is one from before images; any
-    /// other refusal carries its sentence, and no answer is a lost one.
-    func testAnUploadToAGglibWithoutImagesTakesNoImagesAndTheRestAreRefusals() async throws {
-        let older = "images-upload-older.test"
-        ChatsHub.serve(.init(status: 404, body: "", type: "text/plain"), at: "/v1/attachments/x", on: older)
-        let olderResult = await upload(at: older)
-        XCTAssertEqual(olderResult, .failure(.takesNoImages))
+    /// A refusal carries its sentence, a bare 404 among them, and no answer
+    /// is a lost one.
+    func testAnUploadRefusalCarriesItsSentenceAndNoAnswerIsALostOne() async throws {
+        let bare = "images-upload-bare.test"
+        ChatsHub.serve(.init(status: 404, body: "", type: "text/plain"), at: "/v1/attachments/x", on: bare)
+        let bareResult = await upload(at: bare)
+        XCTAssertEqual(
+            bareResult,
+            .failure(.refused(.server(status: 404, code: nil, message: "The server answered with HTTP 404."))))
         let large = "images-upload-large.test"
         ChatsHub.serve(.init(status: 413, body: refusal("image_too_large")), at: "/v1/attachments", on: large)
         let largeResult = await upload(at: large)

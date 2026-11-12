@@ -101,8 +101,8 @@ public enum HubTurnFailure: Error, Sendable, Equatable {
     /// attachment_not_found`. The refusal started no run, so the same turn,
     /// its images sent again, can be put under the same id.
     case imageGone
-    /// The hub's gglib is from before images: it has no `attachments` route,
-    /// or refuses a turn's `images` as a key it does not know.
+    /// The hub's gglib is from before images: it refuses a turn's `images`
+    /// as a key it does not know.
     case takesNoImages
     /// Any other refusal, a 5xx, or an answer that cannot be read.
     case refused(ProviderError)

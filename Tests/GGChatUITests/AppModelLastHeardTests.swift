@@ -100,6 +100,9 @@ final class AppModelLastHeardTests: XCTestCase {
         let (model, config) = try makeModel(clock: clock, behind: behind)
         await model.connectPipe(for: config)
         await waitForStatus(.direct, model, config.id)
+        // Listed now, while the time is the one the pipe connected at, so a
+        // send does not list it first.
+        await model.refreshModels(for: config)
         XCTAssertEqual(model.lastHeard(for: config.id), start)
         clock.now = start.addingTimeInterval(10)
         model.newConversation()
@@ -135,9 +138,9 @@ final class AppModelLastHeardTests: XCTestCase {
         XCTAssertEqual(model.lastHeard(for: config.id), clock.now)
     }
 
-    /// A model list and an answer about the status pane are the machine too.
+    /// A model list is the machine too.
     @MainActor
-    func testAModelListAndAStatusAnswerAreHeard() async throws {
+    func testAModelListIsHeard() async throws {
         let clock = HandClock(start)
         let host = "last-heard.test"
         ModelsServer.answer(.listing, at: host)
@@ -149,11 +152,6 @@ final class AppModelLastHeardTests: XCTestCase {
         await model.refreshModels(for: config)
         XCTAssertEqual(model.models(for: config.id).map(\.id), ModelsServer.listed)
         XCTAssertEqual(model.lastHeard(for: config.id), clock.now, "a model list was not heard")
-
-        clock.now = start.addingTimeInterval(40)
-        await model.probeProxyStatus(for: config)
-        XCTAssertEqual(ModelsServer.statusRequests(at: host), 1)
-        XCTAssertEqual(model.lastHeard(for: config.id), clock.now, "a status answer was not heard")
     }
 
     /// The hang-up that follows a removal stops the pipe being connected,

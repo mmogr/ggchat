@@ -154,15 +154,12 @@ public struct MockProvider: Provider {
 
 #if DEBUG
     extension MockProvider: DrawingProvider {
-        /// A Mac that cannot draw and opens `offered`, when the mock was
-        /// given servers. Otherwise no answer at all, so the app keeps
-        /// none, as it does for a hub it has not heard from, and every walk
-        /// and test that never seeds servers sees no wrench and no Draw.
+        /// A Mac that cannot draw and opens `offered`. Asked only when its
+        /// gglib says it serves drawing, which the mock pipe says only when
+        /// it was given servers, so every walk and test that never seeds
+        /// servers sees no wrench.
         public func drawing(judging imageModel: UInt64?) async throws(ProviderError) -> Drawing {
-            guard let offered else {
-                throw .server(status: 404, code: nil, message: "the mock has no drawing route")
-            }
-            return Drawing(
+            Drawing(
                 available: false, code: "drawing_unavailable", reason: "the mock has no image model",
                 mcpServers: offered)
         }

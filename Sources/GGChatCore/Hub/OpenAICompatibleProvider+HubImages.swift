@@ -10,8 +10,7 @@ import Foundation
 extension OpenAICompatibleProvider {
     /// `POST attachments` with the image as the whole body. gglib reads the
     /// type from the first bytes and answers its `AttachmentInfo`, whose
-    /// `image_tokens` is passed over here. A 404 is a gglib from before
-    /// images, with no such route.
+    /// `image_tokens` is passed over here.
     public func uploadImage(_ data: Data, mime: String) async throws(HubTurnFailure) -> ImageRef {
         var request = rawRequest(path: "attachments", method: "POST", accept: "application/json")
         request.httpBody = data
@@ -24,7 +23,6 @@ extension OpenAICompatibleProvider {
         }
         let (body, response) = answer
         guard (200..<300).contains(response.statusCode) else {
-            if response.statusCode == 404 { throw .takesNoImages }
             throw Self.turnFailure(Self.serverError(status: response.statusCode, body: body))
         }
         do {

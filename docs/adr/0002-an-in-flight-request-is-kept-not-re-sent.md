@@ -97,6 +97,13 @@ connection since 2026-09-29; see the amendment of that date below.)
 > only grows. N still counts the close a background makes mid-reply. K cannot
 > follow it, because no Continue is offered on a reply still being written.
 
+> **Note, 2026-11-12.** Whether a server is gglib, and whether it has runs,
+> is now read from its model list: gglib 0.35.0 says its version and the
+> features it serves beside `machine_name` on `GET /v1/models`. The status
+> probe and the 404 that meant "no runs" are gone. A paired Mac whose list
+> says nothing, one from before 0.35.0, is sent the request through the chat
+> route and never a run.
+
 ## Kill criteria
 
 - ~~**Reading:** two local counters in Settings › Diagnostics: "Pipe closed

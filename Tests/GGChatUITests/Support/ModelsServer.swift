@@ -3,12 +3,11 @@ import GGChatCore
 import Synchronization
 
 /// The far side of a mock pipe, for the model list: answers `GET /v1/models`
-/// the way it is told to at each host, and `GET /v1/proxy/status` with a pane.
-/// Each test uses its own host.
+/// the way it is told to at each host. Each test uses its own host.
 ///
 /// A mock pipe hands out whatever provider it was built with, so an
 /// `OpenAICompatibleProvider` over this is a pipe whose far machine is gglib
-/// with one model, Qwen3.8-27B.
+/// with one model, Qwen3.8-27B, and says so, serving the status pane alone.
 final class ModelsServer: URLProtocol, @unchecked Sendable {
     enum Answer: Sendable {
         /// The model list.
@@ -25,7 +24,6 @@ final class ModelsServer: URLProtocol, @unchecked Sendable {
 
     private static let answers = Mutex<[String: Answer]>([:])
     private static let modelsAsked = Mutex<[String: Int]>([:])
-    private static let statusAsked = Mutex<[String: Int]>([:])
     private static let held = Mutex<[String: [ModelsServer]]>([:])
 
     static func answer(_ answer: Answer, at host: String) {
@@ -34,10 +32,6 @@ final class ModelsServer: URLProtocol, @unchecked Sendable {
 
     static func modelRequests(at host: String) -> Int {
         modelsAsked.withLock { $0[host] ?? 0 }
-    }
-
-    static func statusRequests(at host: String) -> Int {
-        statusAsked.withLock { $0[host] ?? 0 }
     }
 
     /// Answers every held request at `host` with the model list, now.
@@ -62,16 +56,6 @@ final class ModelsServer: URLProtocol, @unchecked Sendable {
 
     override func startLoading() {
         guard let url = request.url, let host = url.host() else { return }
-        // A gglib from before the hub's chats, which lists none, and from
-        // before drawing.
-        if url.path().hasSuffix("/chats") || url.path().hasSuffix("/images/drawing") {
-            return respond(404, body: "")
-        }
-        if url.path().hasSuffix("/proxy/status") {
-            Self.statusAsked.withLock { $0[host, default: 0] += 1 }
-            respond(200, body: "{}")
-            return
-        }
         Self.modelsAsked.withLock { $0[host, default: 0] += 1 }
         switch Self.answers.withLock({ $0[host] }) ?? .listing {
         case .listing:
@@ -90,7 +74,8 @@ final class ModelsServer: URLProtocol, @unchecked Sendable {
 
     private func list() {
         let data = Self.listed.map { #"{"id":"\#($0)","object":"model"}"# }.joined(separator: ",")
-        respond(200, body: #"{"object":"list","data":[\#(data)]}"#)
+        let gglib = #""gglib":{"version":"0.35.0","features":["status"]}"#
+        respond(200, body: #"{"object":"list","data":[\#(data)],\#(gglib)}"#)
     }
 
     private func respond(_ status: Int, body: String) {

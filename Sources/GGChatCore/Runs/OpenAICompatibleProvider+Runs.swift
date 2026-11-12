@@ -7,8 +7,8 @@ import Foundation
 // gglib's runs routes, beside the chat route they replace for a hub that has
 // them. Same base URL, same key.
 extension OpenAICompatibleProvider: RunProvider {
-    /// `PUT runs/{id}` with the body `chat/completions` would be sent.
-    /// A 404 or a 405 with no run code is a hub without the route.
+    /// `PUT runs/{id}` with the body `chat/completions` would be sent, to a
+    /// gglib that says it serves runs (`GGLibFeature.runs`).
     ///
     /// A request that names MCP servers (`toolServers`) or draws
     /// (`runsAgentLoop`) is put as `?kind=chat&tools=<word>`, its body the
@@ -24,7 +24,7 @@ extension OpenAICompatibleProvider: RunProvider {
     /// the words, and any other would spend its agent loop on a plain chat.
     /// A gglib from before ids refuses them, and the question shows the
     /// refusal.
-    public func startRun(id: String, _ chatRequest: ChatRequest) async throws(ProviderError) -> RunStart {
+    public func startRun(id: String, _ chatRequest: ChatRequest) async throws(ProviderError) -> RunInfo {
         let body: Data
         do {
             body = try JSONEncoder().encode(ChatCompletionRequest(chatRequest))
@@ -45,9 +45,8 @@ extension OpenAICompatibleProvider: RunProvider {
             request.url = request.url?.appending(queryItems: query)
         }
         let (data, response) = try await perform(request)
-        if [404, 405].contains(response.statusCode), !Self.carriesARunCode(data) { return .unsupported }
         try checkStatus(response, data: data)
-        return .started(try decode(RunInfo.self, from: data))
+        return try decode(RunInfo.self, from: data)
     }
 
     /// `GET runs/{id}/events?after=N`, read until `event: run` or the end.
@@ -152,12 +151,5 @@ extension OpenAICompatibleProvider: RunProvider {
         case .decoding: .refused(error)
         case .server, .stream, .transport, .invalidResponse: .dropped(error)
         }
-    }
-
-    /// Whether an error body names one of the runs routes' own codes.
-    static func carriesARunCode(_ body: Data) -> Bool {
-        guard let parsed = try? JSONDecoder().decode(APIErrorBody.self, from: body), let code = parsed.error.code
-        else { return false }
-        return RunCode.all.contains(code)
     }
 }

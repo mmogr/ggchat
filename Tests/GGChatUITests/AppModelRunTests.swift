@@ -47,21 +47,26 @@ final class AppModelRunTests: XCTestCase {
         XCTAssertEqual(server.with { $0.chats.count }, 1)
     }
 
-    /// A hub that answers as an older gglib is sent the reply the old way
-    /// with nothing shown, and is not asked again while the app runs.
+    /// A Mac whose gglib says nothing of itself, one from before 0.35.0, or
+    /// says it serves no runs, is sent the reply through the chat route with
+    /// nothing shown, and is never sent a run. Its list is read before the
+    /// first reply.
     @MainActor
-    func testAHubWithoutRunsIsAskedOnceAndTheReplyGoesTheOldWay() async throws {
-        let hub = hub()
-        hub.with { $0.start = .unsupported }
-        let (model, _) = try await Self.makeModel(behind: hub)
-        try await XCTUnwrap(model.send("one")).value
-        try await XCTUnwrap(model.send("two")).value
-        XCTAssertEqual(hub.with { $0.starts.count }, 1, "the fallback was paid for more than once")
-        XCTAssertEqual(hub.with { $0.chats.count }, 2)
-        let messages = try XCTUnwrap(model.selectedConversation?.messages)
-        XCTAssertEqual(messages.map(\.content), ["one", "the old way", "two", "the old way"])
-        XCTAssertTrue(messages.allSatisfy { $0.failure == nil && !$0.isPartial })
-        XCTAssertNil(model.lastError)
+    func testAMacWhoseGGLibServesNoRunsIsSentTheReplyThroughTheChatRoute() async throws {
+        for gglib in [nil, GGLibServer.serving("0.35.0", [.chats, .drawing, .status])] {
+            let hub = hub()
+            hub.with { $0.gglib = gglib }
+            let (model, config) = try await Self.makeModel(behind: hub)
+            try await XCTUnwrap(model.send("one")).value
+            try await XCTUnwrap(model.send("two")).value
+            XCTAssertEqual(hub.with { $0.starts.count }, 0, "a run was put: \(String(describing: gglib))")
+            XCTAssertEqual(hub.with { $0.chats.count }, 2)
+            XCTAssertEqual(model.gglibAnswers[config.id], gglib.map(GGLibAnswer.server) ?? .silent)
+            let messages = try XCTUnwrap(model.selectedConversation?.messages)
+            XCTAssertEqual(messages.map(\.content), ["one", "the old way", "two", "the old way"])
+            XCTAssertTrue(messages.allSatisfy { $0.failure == nil && !$0.isPartial })
+            XCTAssertNil(model.lastError)
+        }
     }
 
     /// Any other refusal of the run is today's failure on the question.

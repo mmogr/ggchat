@@ -69,7 +69,12 @@ extension AppModel {
 
     /// Starts reading on from one detached reply, unless its hub cannot be
     /// reached now. A run whose `PUT` was never answered is asked for again
-    /// under its id first.
+    /// under its id first. A hub whose gglib has not said it serves runs is
+    /// not asked: one not known yet lists its models first, and is read on
+    /// from once it has said; one that says it has none, a Mac to be
+    /// updated, gives the reply up, since this build cannot read its run and
+    /// an update drops it. What arrived keeps Continue, and an empty reply
+    /// keeps Retry.
     private func readOn(_ message: Message, in conversation: Conversation) {
         let live = LiveReply(conversationID: conversation.id, continuingMessageID: message.id)
         live.runID = message.runID
@@ -84,6 +89,16 @@ extension AppModel {
             return
         }
         guard let hub = reachableHub(for: config) else { return }
+        guard hasRuns(config) else {
+            guard gglibAnswers[config.id] == nil else {
+                return giveUp(live, saying: "needs gglib 0.35.0 or later, so the rest of this reply cannot be read.")
+            }
+            Task { [weak self] in
+                await self?.learnGGLib(config)
+                if self?.gglibAnswers[config.id] != nil { self?.readOnDetachedRuns(preferring: message.id) }
+            }
+            return
+        }
         var request: ChatRequest?
         do {
             request = live.started ? nil : try sentRequest(for: message, in: conversation, config: config)
@@ -97,7 +112,7 @@ extension AppModel {
         liveReplies[conversation.id] = live
         live.task = Task { [weak self] in
             if let request {
-                await self?.putRun(request, on: hub, for: config, live: live)
+                await self?.putRun(request, on: hub, live: live)
             } else {
                 await self?.readRun(on: hub, live: live)
             }

@@ -83,7 +83,7 @@ final class DrawingWireTests: XCTestCase {
     /// model when it can, and gglib's code and reason when it cannot. A
     /// gglib from before drawing has no such route, and its 404 reads as a
     /// hub that cannot draw; any other failure is the error it is.
-    func testAHubSaysWhetherItCanDrawAndAnOlderOneCannot() async throws {
+    func testAHubSaysWhetherItCanDrawAndAFailedAskIsAnError() async throws {
         let path = "/v1/images/drawing"
         ChatsHub.serve(.init(body: #"{"available":true,"model":"flux-dev"}"#), at: path, on: "can.drawing.test")
         let can = try await ChatsHub.provider(at: "can.drawing.test").drawing()
@@ -99,10 +99,16 @@ final class DrawingWireTests: XCTestCase {
         XCTAssertEqual(
             cannot, Drawing(available: false, code: "drawing_unavailable", reason: "there is no image model"))
 
-        // Some other path is served, so this host answers, and 404s this one.
+        // Some other path is served, so this host answers, and 404s this
+        // one: an error like any other, since only a gglib that says it
+        // serves drawing is asked.
         ChatsHub.serve(.init(body: "{}"), at: "/v1/models", on: "older.drawing.test")
-        let older = try await ChatsHub.provider(at: "older.drawing.test").drawing()
-        XCTAssertEqual(older, Drawing(available: false))
+        do {
+            let older = try await ChatsHub.provider(at: "older.drawing.test").drawing()
+            XCTFail("a 404 read as \(older)")
+        } catch {
+            guard case .server(404, nil, _) = error else { return XCTFail("a 404 was \(error)") }
+        }
 
         ChatsHub.serve(.init(status: 503, body: "busy", type: "text/plain"), at: path, on: "busy.drawing.test")
         do {

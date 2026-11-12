@@ -1,14 +1,5 @@
 import Foundation
 
-/// How a hub answered a request to start a run.
-public enum RunStart: Sendable, Equatable {
-    /// The run exists, new or already there under this id.
-    case started(RunInfo)
-    /// The hub has no runs: an older gglib, or another server. The request
-    /// goes the old way, through `chat/completions`.
-    case unsupported
-}
-
 /// What reading a run's events yields.
 ///
 /// Every stream that is not cancelled ends with exactly one of `.ended`,
@@ -42,13 +33,14 @@ public enum RunEvent: Sendable, Equatable {
 /// A provider whose hub can own a reply, so the reply goes on without this
 /// device and is read back from where it stopped. gglib's `runs` routes.
 public protocol RunProvider: Provider {
-    /// Starts the run `id` with the request `send` would stream. The id is
-    /// this device's: 1 to 64 of `[A-Za-z0-9_-]`, a UUID string fitting.
+    /// Starts the run `id` with the request `send` would stream, and answers
+    /// it, new or already there under this id. The id is this device's: 1
+    /// to 64 of `[A-Za-z0-9_-]`, a UUID string fitting.
     /// A request that draws (`ChatRequest.draws`) or names MCP servers
     /// (`ChatRequest.toolServers`) starts a chat run that carries gglib's
     /// tools, those servers' and with Draw the drawing tool, whose events
     /// are an agent's (`ChatRequest.runsAgentLoop`).
-    func startRun(id: String, _ request: ChatRequest) async throws(ProviderError) -> RunStart
+    func startRun(id: String, _ request: ChatRequest) async throws(ProviderError) -> RunInfo
     /// The events of the run `id` numbered above `after`, each read as
     /// `frames` says the run writes them, then its end.
     func runEvents(id: String, after: UInt32, frames: RunFrames) -> AsyncStream<RunEvent>
@@ -73,7 +65,6 @@ public enum RunCode {
     public static let invalidRequest = "invalid_request"
     public static let conflict = "conflict"
 
-    /// Every one of them. A 404 or 405 to a `PUT` carrying none of these is
-    /// a hub with no runs route.
+    /// Every one of them.
     public static let all: Set<String> = [notFound, tooManyRuns, invalidRequest, conflict]
 }

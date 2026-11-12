@@ -50,7 +50,7 @@ extension AppModel {
         let previous = providers[index]
         let config = forgettingTheDefault(of: config, ifMovedFrom: previous)
         providers[index] = config
-        forgetProxyStatus(ifMovedFrom: previous, to: config)
+        forgetTheOldMachine(ifMovedFrom: previous, to: config)
         do {
             try store.save(provider: config)
         } catch {
@@ -97,7 +97,7 @@ extension AppModel {
         }
         let previous = providers[index]
         providers[index] = config
-        forgetProxyStatus(ifMovedFrom: previous, to: config)
+        forgetTheOldMachine(ifMovedFrom: previous, to: config)
     }
 
     /// Forgets a provider: the durable record first, then its credentials.
@@ -149,8 +149,7 @@ extension AppModel {
 
     /// Everything kept about a provider, by its id, once it is removed: when
     /// it was heard, its Mac's chats, what it can draw, its models and what
-    /// its gglib said of itself, its status pane and runs, and whether it is
-    /// followed. A conversation
+    /// its gglib said of itself, and whether it is followed. A conversation
     /// opening on it is called off. Ids are never reused, so what is left
     /// behind shows nowhere, but it is kept for as long as the app runs, and
     /// an answer that arrives later must find nothing to write into.
@@ -161,9 +160,7 @@ extension AppModel {
         imageChoiceAnswers[id] = nil
         modelsByProvider[id] = nil
         gglibAnswers[id] = nil
-        proxyStatusAvailability[id] = nil
-        providersWithoutRuns.remove(id)
-        probeGeneration[id] = nil
+        modelListing[id] = nil
         followed.remove(id)
         opening.removeValue(forKey: id)?.cancel()
     }

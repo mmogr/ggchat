@@ -4,20 +4,20 @@ import XCTest
 
 @testable import GGChatUI
 
-/// gglib for these tests: answers `GET /v1/proxy/status` with the status set
-/// for its host, 404 when none is, or holds it at a host told to hold; and a
-/// chat request with one word, keeping the body each chat request carried.
-/// Each test uses its own hosts.
+/// gglib for these tests: answers `GET /v1/models` with a list that says it
+/// is gglib at a host told so, and says nothing at any other, or holds it at
+/// a host told to hold; and a chat request with one word, keeping the body
+/// each chat request carried. Each test uses its own hosts.
 private final class ProgressServer: URLProtocol, @unchecked Sendable {
-    private static let statuses = Mutex<[String: Int]>([:])
+    private static let gglibHosts = Mutex<Set<String>>([])
     private static let bodies = Mutex<[String: [Data]]>([:])
     private static let held = Mutex<[String: [ProgressServer]]>([:])
 
-    static func answerStatus(_ status: Int, at host: String) {
-        statuses.withLock { $0[host] = status }
+    static func saysGGLib(at host: String) {
+        gglibHosts.withLock { _ = $0.insert(host) }
     }
 
-    /// Holds each status request at `host` until `release(at:with:)`.
+    /// Holds each model list at `host` until `release(at:)`.
     static func hold(at host: String) {
         held.withLock { $0[host] = [] }
     }
@@ -26,12 +26,12 @@ private final class ProgressServer: URLProtocol, @unchecked Sendable {
         held.withLock { !($0[host] ?? []).isEmpty }
     }
 
-    static func release(at host: String, with status: Int) {
+    static func release(at host: String) {
         let waiting = held.withLock { held -> [ProgressServer] in
             defer { held[host] = nil }
             return held[host] ?? []
         }
-        for server in waiting { server.respond(status, body: "{}") }
+        for server in waiting { server.respondWithModels(at: host) }
     }
 
     static func chatBodies(at host: String) -> [Data] {
@@ -51,15 +51,13 @@ private final class ProgressServer: URLProtocol, @unchecked Sendable {
 
     override func startLoading() {
         guard let url = request.url, let host = url.host() else { return }
-        // A gglib from before the hub's chats, which lists none.
-        if url.path().hasSuffix("/chats") { return respond(404, body: "") }
-        if url.path().hasSuffix("/proxy/status") {
+        if url.path().hasSuffix("/models") {
             let isHeld = Self.held.withLock { held -> Bool in
                 guard let waiting = held[host] else { return false }
                 held[host] = waiting + [self]
                 return true
             }
-            if !isHeld { respond(Self.statuses.withLock { $0[host] } ?? 404, body: "{}") }
+            if !isHeld { respondWithModels(at: host) }
             return
         }
         let body = Self.body(of: request)
@@ -79,6 +77,12 @@ private final class ProgressServer: URLProtocol, @unchecked Sendable {
             data.append(buffer, count: count)
         }
         return data
+    }
+
+    private func respondWithModels(at host: String) {
+        let gglib = Self.gglibHosts.withLock { $0.contains(host) }
+        let said = gglib ? #","gglib":{"version":"0.35.0","features":["chats","runs","drawing","status"]}"# : ""
+        respond(200, body: #"{"object":"list","data":[{"id":"Qwen3.8-27B"}]"# + said + "}")
     }
 
     private func respond(_ status: Int, body: String) {
@@ -149,30 +153,30 @@ final class AppModelPromptProgressTests: XCTestCase {
         return try XCTUnwrap(JSONSerialization.jsonObject(with: try XCTUnwrap(bodies.first)) as? [String: Any])
     }
 
-    /// A pipe is asked even when its probe said no, since its far side is
-    /// gglib. A server is asked once it has answered the probe, and not when
-    /// the probe was refused or has not been made.
+    /// A pipe is asked even when its list says nothing of gglib, since its
+    /// far side is gglib. A server is asked once its list has said it is
+    /// gglib, and not when the list said nothing or has not been read.
     @MainActor
-    func testOnlyAPipeOrAServerThatAnsweredTheStatusProbeIsAskedForProgress() async throws {
+    func testOnlyAPipeOrAServerWhoseListSaidGGLibIsAskedForProgress() async throws {
         let (piped, pipe) = try makeModel(
             .pipe(ticketDigest: Ticket.digest(ticket)), pipe: ProgressServer.provider(at: "pipe.progress.test"))
         await piped.connectPipe(for: pipe)
-        await piped.probeProxyStatus(for: pipe)
+        await piped.refreshModels(for: pipe)
         XCTAssertFalse(piped.proxyStatusAvailable(for: pipe.id))
         try await XCTUnwrap(piped.send("hi")).value
         XCTAssertEqual(try sentRequest(at: "pipe.progress.test")["return_progress"] as? Bool, true)
 
         let servers = [
-            (host: "gglib.progress.test", status: 200, probed: true, asked: true),
-            (host: "other.progress.test", status: 404, probed: true, asked: false),
-            (host: "unprobed.progress.test", status: 200, probed: false, asked: false),
+            (host: "gglib.progress.test", gglib: true, listed: true, asked: true),
+            (host: "other.progress.test", gglib: false, listed: true, asked: false),
+            (host: "unlisted.progress.test", gglib: true, listed: false, asked: false),
         ]
         for server in servers {
-            ProgressServer.answerStatus(server.status, at: server.host)
+            if server.gglib { ProgressServer.saysGGLib(at: server.host) }
             let url = try XCTUnwrap(URL(string: "http://\(server.host)/v1"))
             let (model, config) = try makeModel(
                 .openAICompatible(baseURL: url), server: ProgressServer.provider(at: server.host))
-            if server.probed { await model.probeProxyStatus(for: config) }
+            if server.listed { await model.refreshModels(for: config) }
             try await XCTUnwrap(model.send("hi")).value
             let sent = try sentRequest(at: server.host)
             if server.asked {
@@ -183,49 +187,48 @@ final class AppModelPromptProgressTests: XCTestCase {
         }
     }
 
-    /// An edit that moves a server to another address forgets the old one's
-    /// answer to the probe, and drops an answer still on its way from it, so
-    /// a server there that is not gglib is not asked. A rename keeps it.
+    /// An edit that moves a server to another address forgets what the old
+    /// one's list said, and drops a list still on its way from it, so a
+    /// server there that is not gglib is not asked. A rename keeps it.
     @MainActor
     func testAServerMovedAwayFromGGLibIsNotAskedForProgress() async throws {
         let hosts = ["moved-gglib", "moved-other", "held-gglib", "held-other"].map { "\($0).progress.test" }
         let urls = try hosts.map { try XCTUnwrap(URL(string: "http://\($0)/v1")) }
-        ProgressServer.answerStatus(200, at: hosts[0])
-        ProgressServer.answerStatus(404, at: hosts[1])
-        ProgressServer.answerStatus(404, at: hosts[3])
+        ProgressServer.saysGGLib(at: hosts[0])
+        ProgressServer.saysGGLib(at: hosts[2])
         ProgressServer.hold(at: hosts[2])
 
         let (answered, config) = try makeModel(
             .openAICompatible(baseURL: urls[0]), server: ProgressServer.provider(at: hosts[0]))
         answered.registry.register(ProgressServer.provider(at: hosts[1]), at: urls[1])
-        await answered.probeProxyStatus(for: config)
+        await answered.refreshModels(for: config)
         var edited = config
         edited.name = "renamed"
         try answered.updateProvider(edited, credentials: [:])
-        XCTAssertTrue(answered.proxyStatusAvailable(for: config.id), "a rename forgot the probe's answer")
+        XCTAssertTrue(answered.proxyStatusAvailable(for: config.id), "a rename forgot what the list said")
         edited.kind = .openAICompatible(baseURL: urls[1])
         try answered.updateProvider(edited, credentials: [:])
-        await answered.probeProxyStatus(for: edited)
+        await answered.refreshModels(for: edited)
         try await XCTUnwrap(answered.send("hi")).value
         XCTAssertNil(try sentRequest(at: hosts[1])["return_progress"], "a moved server kept gglib's answer")
 
-        // Moved while the probe of the old address is held, then answered.
+        // Moved while the list of the old address is held, then answered.
         let (waiting, heldConfig) = try makeModel(
             .openAICompatible(baseURL: urls[2]), server: ProgressServer.provider(at: hosts[2]))
         waiting.registry.register(ProgressServer.provider(at: hosts[3]), at: urls[3])
-        let probe = Task { await waiting.probeProxyStatus(for: heldConfig) }
+        let list = Task { await waiting.refreshModels(for: heldConfig) }
         for _ in 0..<5_000 where !ProgressServer.isHolding(at: hosts[2]) {
             try await Task.sleep(for: .milliseconds(1))
         }
-        XCTAssertTrue(ProgressServer.isHolding(at: hosts[2]), "the probe never reached the server")
+        XCTAssertTrue(ProgressServer.isHolding(at: hosts[2]), "the list never reached the server")
         var moved = heldConfig
         moved.kind = .openAICompatible(baseURL: urls[3])
         waiting.updateProvider(moved)
-        ProgressServer.release(at: hosts[2], with: 200)
-        await probe.value
-        await waiting.probeProxyStatus(for: moved)
+        ProgressServer.release(at: hosts[2])
+        await list.value
+        await waiting.refreshModels(for: moved)
         try await XCTUnwrap(waiting.send("hi")).value
-        XCTAssertNil(try sentRequest(at: hosts[3])["return_progress"], "a probe in flight to the old address was kept")
+        XCTAssertNil(try sentRequest(at: hosts[3])["return_progress"], "a list in flight to the old address was kept")
     }
 
     /// The live reply holds the latest frame while it waits. A reply that
