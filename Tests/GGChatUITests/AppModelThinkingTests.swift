@@ -207,7 +207,7 @@ final class AppModelThinkingTests: XCTestCase {
     }
 
     /// The switch is offered only where it can do something: the provider is
-    /// gglib, a pipe or a server that answered the status probe, and its
+    /// gglib, a pipe or a server whose list said it is gglib, and its
     /// list names the conversation's model, or the provider's default when
     /// it has none of its own, as one that thinks. A model that does not
     /// think, one the list does not name, a list not read, an older gglib

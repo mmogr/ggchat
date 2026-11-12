@@ -1400,10 +1400,8 @@ Each claim names the test that keeps it true.
   <!-- test: RedactedDescriptionTests.testAReadPairingPrintsItsDigestAndNeverItsTicket -->
   <!-- test: PairedDescriptionTests.testPairedPrintsItsDeviceAndNeverItsKey -->
   <!-- test: RedactedDescriptionTests.testAProviderPrintsItsAddressAndNeverItsKey -->
-- gglib's proxy status endpoint decodes when it answers, and a 404 is an
-  error like any other. A loop-guard trip is read under the key gglib sends,
+- A loop-guard trip in gglib's status is read under the key gglib sends,
   and under the one an older hub sent.
-  <!-- test: OpenAICompatibleProviderTests.testProxyStatusDecodesOn200AndA404IsAnError -->
   <!-- test: ProxyStatusHelperTests.testTheLoopGuardIsReadUnderTheKeyGGLibSendsAndTheOldOne -->
 - A server's model list says what its gglib serves, as gglib 0.35.0 writes it
   beside `machine_name`: `"gglib": {"version": "0.35.0", "features":
@@ -1431,7 +1429,7 @@ Each claim names the test that keeps it true.
   <!-- test: HubImagesProviderTests.testAnImageIsUploadedAsItsBytesAndNamedAsTheHubAnswers -->
   <!-- test: RunProviderTests.testAPutStartsARunAndAnyRefusalIsAFailure -->
   <!-- test: DrawingWireTests.testAHubSaysWhetherItCanDrawAndAFailedAskIsAnError -->
-  <!-- test: OpenAICompatibleProviderTests.testProxyStatusDecodesOn200AndA404IsAnError -->
+  <!-- test: PromptProgressTests.testAChatStreamsOnTheStreamingSessionAndNothingElseDoes -->
 - Opening a conversation hands its provider to the model, which dials it if
   it is down and lists its models once the pipe is up, which say what its
   gglib serves; a server added by address is asked at once. The work is the model's
@@ -2178,7 +2176,7 @@ Each claim names the test that keeps it true.
 - With `GGCHAT_LIVE_BASE_URL` set, the app model adds that server by URL,
   lists its models, streams a complete reply and reads whether its list
   offers the status pane.
-  <!-- test: LiveAppModelTests.testAddByURLListModelsStreamAndProbeStatus -->
+  <!-- test: LiveAppModelTests.testAddByURLListModelsStreamAndStatus -->
 - Connecting a pipe provider walks the status to direct, fires the one
   haptic once, records the ticket's digest, and streams through the
   session's loopback URL with the token as the key; a forced close shows

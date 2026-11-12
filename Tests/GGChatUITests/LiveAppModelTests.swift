@@ -7,7 +7,7 @@ import XCTest
 /// with `GGCHAT_LIVE_BASE_URL` set. Skipped otherwise.
 final class LiveAppModelTests: XCTestCase {
     @MainActor
-    func testAddByURLListModelsStreamAndProbeStatus() async throws {
+    func testAddByURLListModelsStreamAndStatus() async throws {
         guard let raw = ProcessInfo.processInfo.environment["GGCHAT_LIVE_BASE_URL"],
             let url = ProviderConfig.normalizedBaseURL(from: raw)
         else { throw XCTSkip("GGCHAT_LIVE_BASE_URL is not set") }

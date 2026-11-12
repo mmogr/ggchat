@@ -1042,7 +1042,11 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # three of This iPhone's engine are one. A Mac to be updated asked for its
 # chats, a run or a picture, or a reply read on from it, fails nothing else,
 # so the new ones and their markers are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1152
+#
+# 2026-11-12: 1152 -> 1151. The one-shot status request had no caller left
+# once the pane follows the stream alone, so it went with its test; the
+# stream's own tests stay.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1151
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 46
 floor "README test markers" "${markers:-0}" 1052
 

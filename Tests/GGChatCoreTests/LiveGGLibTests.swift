@@ -56,6 +56,6 @@ final class LiveGGLibTests: XCTestCase {
     func testLiveProxyStatusAnswersWhenItsListSaysItServesIt() async throws {
         let provider = try liveProvider()
         guard try await provider.modelList().gglib?.serves(.status) == true else { return }
-        _ = try await provider.proxyStatus()
+        for try await _ in provider.proxyStatusStream() { break }
     }
 }

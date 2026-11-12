@@ -5,8 +5,8 @@ import Foundation
 #endif
 
 /// The only real provider. URLSession, SSE, bearer auth when a key is set.
-/// gglib's proxy status lives here too, as plain endpoints that any server
-/// may or may not answer.
+/// gglib's status stream lives here too, asked only of a gglib whose model
+/// list says it serves the pane (`GGLibFeature.status`).
 public struct OpenAICompatibleProvider: Provider {
     public let baseURL: URL
     let apiKey: String?
@@ -47,15 +47,6 @@ public struct OpenAICompatibleProvider: Provider {
         try checkStatus(response, data: data)
         let answer = try decode(ModelsResponse.self, from: data)
         return ModelList(models: answer.data, gglib: answer.gglib)
-    }
-
-    /// One snapshot of gglib's status, for a gglib that says it serves the
-    /// pane (`GGLibFeature.status`).
-    public func proxyStatus() async throws -> ProxyStatus {
-        let request = makeRequest(path: "gglib/proxy/status", method: "GET", body: nil)
-        let (data, response) = try await perform(request)
-        try checkStatus(response, data: data)
-        return try decode(ProxyStatus.self, from: data)
     }
 
     // MARK: - Requests

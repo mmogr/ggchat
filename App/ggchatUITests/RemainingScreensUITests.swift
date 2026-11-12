@@ -40,7 +40,7 @@ final class RemainingScreensUITests: XCTestCase {
         let statusButton = app.buttons["Server status"].firstMatch
         XCTAssertTrue(
             statusButton.waitForExistence(timeout: 30),
-            "gglib answers the status endpoint, so the pane should be offered")
+            "gglib's model list says it serves the pane, so the pane should be offered")
         statusButton.tap()
 
         XCTAssertTrue(app.staticTexts["Slots"].waitForExistence(timeout: 20), "the pane never filled in")
@@ -49,8 +49,8 @@ final class RemainingScreensUITests: XCTestCase {
         app.buttons["Done"].firstMatch.tap()
     }
 
-    /// The mock provider does not answer the status endpoint, so the button
-    /// must not be there at all.
+    /// The mock provider's model list does not say it serves the pane, so
+    /// the button must not be there at all.
     @MainActor
     func testTheStatusPaneIsHiddenForAServerThatDoesNotReport() {
         launch()
