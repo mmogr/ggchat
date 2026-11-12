@@ -7,7 +7,7 @@ import Foundation
 // gglib's runs routes, beside the chat route they replace for a hub that has
 // them. Same base URL, same key.
 extension OpenAICompatibleProvider: RunProvider {
-    /// `PUT runs/{id}` with the body `chat/completions` would be sent, to a
+    /// `PUT gglib/runs/{id}` with the body `chat/completions` would be sent, to a
     /// gglib that says it serves runs (`GGLibFeature.runs`).
     ///
     /// A request that names MCP servers (`toolServers`) or draws
@@ -31,7 +31,7 @@ extension OpenAICompatibleProvider: RunProvider {
         } catch {
             throw .decoding("could not encode the request: \(error)")
         }
-        var request = makeRequest(path: "runs/\(id)", method: "PUT", body: body)
+        var request = makeRequest(path: "gglib/runs/\(id)", method: "PUT", body: body)
         if chatRequest.runsAgentLoop {
             var query = [
                 URLQueryItem(name: "kind", value: "chat"), URLQueryItem(name: "tools", value: chatRequest.toolsWord),
@@ -49,7 +49,7 @@ extension OpenAICompatibleProvider: RunProvider {
         return try decode(RunInfo.self, from: data)
     }
 
-    /// `GET runs/{id}/events?after=N`, read until `event: run` or the end.
+    /// `GET gglib/runs/{id}/events?after=N`, read until `event: run` or the end.
     public func runEvents(id: String, after: UInt32, frames: RunFrames) -> AsyncStream<RunEvent> {
         events(ofRun: id, after: after, as: frames)
     }
@@ -67,9 +67,9 @@ extension OpenAICompatibleProvider: RunProvider {
         }
     }
 
-    /// `POST runs/{id}/cancel`.
+    /// `POST gglib/runs/{id}/cancel`.
     public func cancelRun(id: String) async throws(ProviderError) -> RunInfo {
-        let request = makeRequest(path: "runs/\(id)/cancel", method: "POST", body: nil)
+        let request = makeRequest(path: "gglib/runs/\(id)/cancel", method: "POST", body: nil)
         let (data, response) = try await perform(request)
         try checkStatus(response, data: data)
         return try decode(RunInfo.self, from: data)
@@ -88,7 +88,7 @@ extension OpenAICompatibleProvider: RunProvider {
     private func readRun(
         _ id: String, after: UInt32, as frames: RunFrames, into continuation: AsyncStream<RunEvent>.Continuation
     ) async -> RunEvent? {
-        var request = makeRequest(path: "runs/\(id)/events", method: "GET", body: nil)
+        var request = makeRequest(path: "gglib/runs/\(id)/events", method: "GET", body: nil)
         request.url = request.url?.appending(queryItems: [URLQueryItem(name: "after", value: String(after))])
         var cursor = after
         var reply = ReplyState()

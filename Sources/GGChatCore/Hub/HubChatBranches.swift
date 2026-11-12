@@ -15,7 +15,7 @@ import Foundation
 // keeps the branch (ADR 0007).
 
 /// A change this device asks a Mac to make to one of its chats, as
-/// `POST /v1/chats/{id}/changes` takes it: the body the Mac's own page sends.
+/// `POST /v1/gglib/chats/{id}/changes` takes it: the body the Mac's own page sends.
 public struct HubChatChange: Encodable, Sendable, Equatable {
     public let change: ChatChange<Int64>
 
@@ -127,7 +127,7 @@ extension HubChatOpen {
 }
 
 extension OpenAICompatibleProvider {
-    /// `POST chats/{id}/changes`. A refusal says why in the Mac's own words.
+    /// `POST gglib/chats/{id}/changes`. A refusal says why in the Mac's own words.
     public func changeChat(id: Int64, change: HubChatChange) async throws(HubChatsFailure) -> HubChatChanged {
         let body: Data
         do {
@@ -135,6 +135,6 @@ extension OpenAICompatibleProvider {
         } catch {
             throw .refused(.decoding("could not encode the change: \(error)"))
         }
-        return try await callHub(HubChatChanged.self, at: "chats/\(id)/changes", method: "POST", body: body)
+        return try await callHub(HubChatChanged.self, at: "gglib/chats/\(id)/changes", method: "POST", body: body)
     }
 }

@@ -137,8 +137,8 @@ final class PromptProgressTests: XCTestCase {
         let url = try XCTUnwrap(URL(string: "http://\(host)/v1"))
         stub(try Fixtures.data("gglib-stream-reasoning.sse"), host: host)
         let others = [
-            "models": "gglib-models.json", "proxy/status": "gglib-proxy-status.json",
-            "proxy/status/stream": "gglib-proxy-status-stream.sse",
+            "models": "gglib-models.json", "gglib/proxy/status": "gglib-proxy-status.json",
+            "gglib/proxy/status/stream": "gglib-proxy-status-stream.sse",
         ]
         for (path, fixture) in others {
             StubURLProtocol.register(

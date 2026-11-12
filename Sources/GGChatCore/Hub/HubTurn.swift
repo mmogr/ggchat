@@ -17,7 +17,7 @@ public struct HubTurn: Codable, Sendable, Equatable {
     /// The text, which may be empty when the turn carries images.
     public let content: String
     /// The ids of the images the turn carries, in order, each one the hub
-    /// already holds from `POST attachments`. Left out of the body when there
+    /// already holds from `POST gglib/attachments`. Left out of the body when there
     /// are none, so a turn of text alone is the two keys it always was.
     public let images: [String]
     /// The chat's Thinking choice, said only on the turn that changes it.

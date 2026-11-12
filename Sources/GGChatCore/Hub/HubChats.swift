@@ -12,7 +12,7 @@ import Foundation
 // whether its key is absent or `null`, and keys this build does not know are
 // passed over.
 
-/// One of the hub's chats, as `GET /v1/chats` lists it.
+/// One of the hub's chats, as `GET /v1/gglib/chats` lists it.
 public struct HubChatSummary: Codable, Sendable, Equatable, Hashable, Identifiable {
     /// The conversation's id on the hub.
     public let id: Int64
@@ -197,7 +197,7 @@ public struct HubMessage: Codable, Sendable, Equatable, Identifiable {
     public let createdAt: String
     public let metadata: HubMessageMetadata?
     /// The images a user's message carries, by reference, in order: each is
-    /// read by its id from `GET attachments/{id}` when it is drawn. Nil when
+    /// read by its id from `GET gglib/attachments/{id}` when it is drawn. Nil when
     /// the row carries none.
     public let images: [ImageRef]?
 

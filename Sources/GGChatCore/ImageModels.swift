@@ -5,7 +5,7 @@
 // records with the list, `contracts/images/drawing.json` there, are copied
 // as `gglib-images-drawing.json` and replayed by `ImageModelWireTests`.
 
-/// One image model on a hub, as `GET /v1/images/drawing` lists it. The id
+/// One image model on a hub, as `GET /v1/gglib/images/drawing` lists it. The id
 /// is that machine's own catalogue id and names nothing on another.
 public struct ImageModelRow: Decodable, Sendable, Equatable, Identifiable {
     public let id: UInt64

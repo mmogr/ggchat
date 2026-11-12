@@ -10,7 +10,7 @@ import Foundation
 // refused.
 
 /// Whether a message sent with Draw pressed can be drawn on a hub now, as
-/// gglib's `GET /v1/images/drawing` answers it (`DrawingAvailability` there):
+/// gglib's `GET /v1/gglib/images/drawing` answers it (`DrawingAvailability` there):
 /// the image model that would draw when it can, and when it cannot, why, in
 /// words that say what would fix it. A paired Mac's answer also names the
 /// MCP servers whose tools a run from this device is offered.
@@ -93,16 +93,16 @@ extension DrawingProvider {
 }
 
 extension OpenAICompatibleProvider: DrawingProvider {
-    /// `GET images/drawing`, asked only of a gglib that says it serves
+    /// `GET gglib/images/drawing`, asked only of a gglib that says it serves
     /// drawing (`GGLibFeature.drawing`).
     ///
-    /// With `imageModel` it is `GET images/drawing?image_model=<id>`: the
+    /// With `imageModel` it is `GET gglib/images/drawing?image_model=<id>`: the
     /// same question about a message that names that model, which gglib
     /// judges as it would the message. The answer is then about that model
     /// alone, and says `model_not_found`, `not_an_image_model` or
     /// `image_model_incomplete` when that is why not.
     public func drawing(judging imageModel: UInt64?) async throws(ProviderError) -> Drawing {
-        var request = makeRequest(path: "images/drawing", method: "GET", body: nil)
+        var request = makeRequest(path: "gglib/images/drawing", method: "GET", body: nil)
         if let imageModel {
             request.url = request.url?.appending(queryItems: [
                 URLQueryItem(name: "image_model", value: String(imageModel))

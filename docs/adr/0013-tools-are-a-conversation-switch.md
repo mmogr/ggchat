@@ -76,3 +76,7 @@ tools on again, or updating gglib, is the way out.
   default per provider, which a conversation's own choice still overrides.
 - gglib deciding per turn whether tools are worth offering: then this
   switch is the off switch beside that, and nothing more is added here.
+
+> **Note, 2026-11-12.** gglib 0.35.0 serves its own routes under
+> `/v1/gglib/`: each `/v1/…` route of gglib's named above is now
+> `/v1/gglib/…`, with the same suffix.

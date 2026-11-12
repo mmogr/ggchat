@@ -242,7 +242,7 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingWireTests.testTheModelListSaysWhichModelDrawsAndWhichCanChat -->
   <!-- test: DrawingModelListTests.testTheModelListOffersOnlyModelsThatCanChat -->
   <!-- test: DrawingModelListTests.testTheDefaultModelIsTheFirstThatCanChat -->
-- Whether a hub can draw is asked of it, `GET /v1/images/drawing`, and never
+- Whether a hub can draw is asked of it, `GET /v1/gglib/images/drawing`, and never
   guessed: when a chat opens on it and each time its pipe comes up, for a
   paired Mac whose gglib says it serves drawing and for no other server.
   gglib draws only for a device it has paired, so a gglib reached by its
@@ -410,7 +410,7 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingPreviewTests.testARunThatEndsMidPictureLeavesNoLook -->
 - A conversation kept on this device draws too, and runs a paired Mac's
   tools. A message sent with Draw on, to a hub that said it can draw, is
-  put as `PUT /v1/runs/{id}?kind=chat&tools=none&draw=true` when it names
+  put as `PUT /v1/gglib/runs/{id}?kind=chat&tools=none&draw=true` when it names
   no server, which leaves it gglib's drawing tool alone, or with the
   servers' ids in place of `none`; a hub that cannot draw, is too old or
   was never heard from is sent it as one that does not draw. A paired Mac
@@ -419,7 +419,7 @@ Each claim names the test that keeps it true.
   said whether or not it can draw) has every question, drawing or not,
   put naming the servers its conversation picked that the Mac still
   offers, by id, sorted and joined by a bare comma, as
-  `PUT /v1/runs/{id}?kind=chat&tools=3,7`, Retry included, so its reply
+  `PUT /v1/gglib/runs/{id}?kind=chat&tools=3,7`, Retry included, so its reply
   can call their tools; gglib starts only those of them it opens to
   devices. A new conversation picks none, so its questions are plain runs
   until a server is picked, and a pick made while a reply is being written
@@ -511,7 +511,7 @@ Each claim names the test that keeps it true.
   for as long as the rows stay. A branch keeps what its conversation has
   shown. Off, a question is put as a plain run,
   with no query, and one sent with Draw is put as
-  `PUT /v1/runs/{id}?kind=chat&tools=none&draw=true`, with the chosen
+  `PUT /v1/gglib/runs/{id}?kind=chat&tools=none&draw=true`, with the chosen
   image model after it, which leaves it gglib's drawing tool and no other;
   the picks are kept, and turning the switch on again names them again.
   The body is the one it always was. The choice is the conversation's,
@@ -758,7 +758,7 @@ Each claim names the test that keeps it true.
   ends with neither says "The render ended without a picture." Each stage has
   its sentence, in the locale's digits. A reader that leaves closes the
   request, which is what stops the render. A picture is kept in a Mac's chat with
-  `POST /v1/chats/{id}/pictures` and the two ids, `from` and `image`. gglib
+  `POST /v1/gglib/chats/{id}/pictures` and the two ids, `from` and `image`. gglib
   has recorded none of these bodies, so the tests are written from the
   contract both sides are built to.
   <!-- test: PictureRedrawWireTests.testAFixSendsThePictureItsMaskItsStrengthAndItsModelAsText -->
@@ -820,8 +820,8 @@ Each claim names the test that keeps it true.
   <!-- test: PictureEditorLifeTests.testTheEditorIsTheModelsAndOutlivesTheRowThatOpenedIt -->
 - Keep puts the newer picture in the chat after the one it came from, and
   the editor closes. In a Mac's chat it is sent to the Mac as a turn's image
-  is, `POST /v1/attachments`, then named with the picture it came from to
-  `POST /v1/chats/{id}/pictures`; the chat is read again and shows it last
+  is, `POST /v1/gglib/attachments`, then named with the picture it came from to
+  `POST /v1/gglib/chats/{id}/pictures`; the chat is read again and shows it last
   on that reply, drawn from the bytes this phone already holds, and nothing
   of it is written here (ADR 0007). A read that fails after the Mac kept it
   is not a failed Keep. In a conversation kept here its bytes go into this
@@ -1423,6 +1423,15 @@ Each claim names the test that keeps it true.
   <!-- test: SpeaksGGLibTests.testAReplyIsARunOnlyWhereTheGGLibSaysItServesRuns -->
   <!-- test: AppModelOpeningTests.testThePaneIsAskedAboutWhenAFollowedPipeComesUp -->
   <!-- test: AppModelOpeningTests.testAPipeNotAnsweringYetWhenTheConversationOpensListsItsModelsOnceItIs -->
+- gglib's own routes are asked for under `/v1/gglib/`: its chats and their
+  pictures, attachments, runs, whether it can draw, and its status. The
+  OpenAI routes, `/v1/models` and `/v1/chat/completions`, stay where they
+  are. A desktop needs gglib 0.35.0 or later for them.
+  <!-- test: HubChatsProviderTests.testTheListIsReadFromChatsWithTheKey -->
+  <!-- test: HubImagesProviderTests.testAnImageIsUploadedAsItsBytesAndNamedAsTheHubAnswers -->
+  <!-- test: RunProviderTests.testAPutStartsARunAndAnyRefusalIsAFailure -->
+  <!-- test: DrawingWireTests.testAHubSaysWhetherItCanDrawAndAFailedAskIsAnError -->
+  <!-- test: OpenAICompatibleProviderTests.testProxyStatusDecodesOn200AndA404IsAnError -->
 - Opening a conversation hands its provider to the model, which dials it if
   it is down and lists its models once the pipe is up, which say what its
   gglib serves; a server added by address is asked at once. The work is the model's
@@ -1907,10 +1916,10 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatHeldRunsTests.testAStoreOpensAcrossTheHeldRunsChangeInBothDirections -->
 - A turn to a Mac's chat can carry images, picked, pasted or dropped through
   the same downscale as this phone's own, with text or alone. Each is sent to
-  the Mac first, its bytes the whole body of `POST /v1/attachments`, and the
+  the Mac first, its bytes the whole body of `POST /v1/gglib/attachments`, and the
   turn names them by the ids the Mac answers, as `images` beside
   `conversation_id` and `content`; a turn without images is the two keys it
-  always was. The Mac's images are read by id from `GET /v1/attachments/{id}`
+  always was. The Mac's images are read by id from `GET /v1/gglib/attachments/{id}`
   as their rows are drawn, with nothing cached and on a session with no cache,
   held in memory only and dropped when the chat is left: no image of a Mac's
   chat, its own or one this phone sent, is written by this app to the store,

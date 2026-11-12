@@ -255,11 +255,10 @@ final class OpenAICompatibleProviderTests: XCTestCase {
 
     /// gglib's status decodes when it answers, and a 404 is an error.
     func testProxyStatusDecodesOn200AndA404IsAnError() async throws {
-        StubURLProtocol.register(
-            host: "noproxy.test", path: "/v1/proxy/status", .init(status: 404, chunks: [Data("not found".utf8)]))
-        StubURLProtocol.register(
-            host: "proxy.test", path: "/v1/proxy/status",
-            .init(status: 200, chunks: [try Fixtures.data("gglib-proxy-status.json")]))
+        let path = "/v1/gglib/proxy/status"
+        StubURLProtocol.register(host: "noproxy.test", path: path, .init(status: 404, chunks: [Data("no".utf8)]))
+        let body = try Fixtures.data("gglib-proxy-status.json")
+        StubURLProtocol.register(host: "proxy.test", path: path, .init(status: 200, chunks: [body]))
         let none = try? await provider(host: "noproxy.test").proxyStatus()
         XCTAssertNil(none, "a 404 was read as a status")
         let status = try await provider(host: "proxy.test").proxyStatus()
@@ -282,7 +281,8 @@ final class OpenAICompatibleProviderTests: XCTestCase {
             host: "redact.test", path: "/v1/models",
             .init(status: 200, chunks: [try Fixtures.data("gglib-models.json")]))
         StubURLProtocol.register(
-            host: "redact.test", path: "/v1/proxy/status", .init(status: 500, chunks: [Data("boom \(token)".utf8)]))
+            host: "redact.test", path: "/v1/gglib/proxy/status",
+            .init(status: 500, chunks: [Data("boom \(token)".utf8)]))
         let provider = provider(host: "redact.test", apiKey: token, log: log)
         _ = try await provider.models()
         _ = await collect(provider)

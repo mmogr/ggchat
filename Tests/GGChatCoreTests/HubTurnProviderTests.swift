@@ -62,7 +62,7 @@ final class HubTurnProviderTests: XCTestCase {
             RunInfo(id: id, kind: .agent, status: .queued, createdAtMs: 1_790_000_000_000, lastSeq: 0))
         let put = try XCTUnwrap(RunHub.requests(at: host).first)
         XCTAssertEqual(put.httpMethod, "PUT")
-        XCTAssertEqual(put.url?.path(), "/v1/runs/\(id)")
+        XCTAssertEqual(put.url?.path(), "/v1/gglib/runs/\(id)")
         XCTAssertEqual(put.url?.query(), "kind=agent")
         XCTAssertEqual(put.value(forHTTPHeaderField: "Authorization"), "Bearer hub-key")
         let body = try XCTUnwrap(put.httpBody ?? put.bodyStreamData)
@@ -179,7 +179,7 @@ final class HubTurnProviderTests: XCTestCase {
                 RunInfo(
                     id: id, kind: .agent, status: .completed, createdAtMs: 1_790_000_000_000, lastSeq: UInt32(count))))
         let asked = try XCTUnwrap(RunHub.requests(at: host).first?.url)
-        XCTAssertEqual(asked.path(), "/v1/runs/\(id)/events")
+        XCTAssertEqual(asked.path(), "/v1/gglib/runs/\(id)/events")
         XCTAssertEqual(asked.query(), "after=0")
     }
 
@@ -284,6 +284,6 @@ final class HubTurnProviderTests: XCTestCase {
         XCTAssertEqual(info.kind, .agent)
         let cancel = try XCTUnwrap(RunHub.requests(at: host).first)
         XCTAssertEqual(cancel.httpMethod, "POST")
-        XCTAssertEqual(cancel.url?.path(), "/v1/runs/\(id)/cancel")
+        XCTAssertEqual(cancel.url?.path(), "/v1/gglib/runs/\(id)/cancel")
     }
 }

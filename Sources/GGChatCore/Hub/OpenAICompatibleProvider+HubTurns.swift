@@ -7,7 +7,7 @@ import Foundation
 // A turn on one of the hub's chats: gglib's runs routes, with the run an
 // agent run the hub saves to the chat. Same base URL, same key.
 extension OpenAICompatibleProvider {
-    /// `PUT runs/{id}?kind=agent` with the turn as its whole body. A turn
+    /// `PUT gglib/runs/{id}?kind=agent` with the turn as its whole body. A turn
     /// with images refused as `invalid_request` is taken for a gglib from
     /// before images, which refuses `images` as a key it does not know.
     public func startTurn(runID: String, turn: HubTurn) async throws(HubTurnFailure) -> RunInfo {
@@ -17,7 +17,7 @@ extension OpenAICompatibleProvider {
         } catch {
             throw .refused(.decoding("could not encode the turn: \(error)"))
         }
-        var request = makeRequest(path: "runs/\(runID)", method: "PUT", body: body)
+        var request = makeRequest(path: "gglib/runs/\(runID)", method: "PUT", body: body)
         request.url = request.url?.appending(queryItems: [URLQueryItem(name: "kind", value: "agent")])
         let answer: (Data, HTTPURLResponse)
         do {
@@ -40,12 +40,12 @@ extension OpenAICompatibleProvider {
         }
     }
 
-    /// `GET runs/{id}/events?after=N`, each event read as an agent's.
+    /// `GET gglib/runs/{id}/events?after=N`, each event read as an agent's.
     public func turnEvents(runID: String, after: UInt32) -> AsyncStream<RunEvent> {
         events(ofRun: runID, after: after, as: .agent)
     }
 
-    /// `POST runs/{id}/cancel`.
+    /// `POST gglib/runs/{id}/cancel`.
     public func cancelTurn(runID: String) async throws(ProviderError) -> RunInfo {
         try await cancelRun(id: runID)
     }

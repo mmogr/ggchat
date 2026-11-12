@@ -84,7 +84,7 @@ final class DrawingWireTests: XCTestCase {
     /// gglib from before drawing has no such route, and its 404 reads as a
     /// hub that cannot draw; any other failure is the error it is.
     func testAHubSaysWhetherItCanDrawAndAFailedAskIsAnError() async throws {
-        let path = "/v1/images/drawing"
+        let path = "/v1/gglib/images/drawing"
         ChatsHub.serve(.init(body: #"{"available":true,"model":"flux-dev"}"#), at: path, on: "can.drawing.test")
         let can = try await ChatsHub.provider(at: "can.drawing.test").drawing()
         XCTAssertEqual(can, Drawing(available: true, model: "flux-dev"))

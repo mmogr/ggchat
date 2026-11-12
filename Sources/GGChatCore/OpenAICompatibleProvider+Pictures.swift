@@ -53,7 +53,7 @@ extension OpenAICompatibleProvider: PictureProvider {
         }
     }
 
-    /// `POST chats/{id}/pictures` with `{from, image}`: the hub links the
+    /// `POST gglib/chats/{id}/pictures` with `{from, image}`: the hub links the
     /// stored picture `image` to the tool row that carries `from`, after the
     /// images that row has, and answers the row's images, oldest first.
     /// Anything but a 200 that reads is the error it is.
@@ -65,7 +65,7 @@ extension OpenAICompatibleProvider: PictureProvider {
             throw .decoding("could not encode the request: \(error)")
         }
         let (data, response) = try await perform(
-            makeRequest(path: "chats/\(chatID)/pictures", method: "POST", body: body))
+            makeRequest(path: "gglib/chats/\(chatID)/pictures", method: "POST", body: body))
         guard response.statusCode == 200 else { throw Self.serverError(status: response.statusCode, body: data) }
         return try decode([ImageRef].self, from: data)
     }

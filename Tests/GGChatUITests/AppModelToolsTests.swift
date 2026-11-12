@@ -185,7 +185,7 @@ final class AppModelToolsTests: XCTestCase {
             baseURL: URL(string: "http://relaunch.tools.test/v1")!, session: URLSession(configuration: configuration))
         _ = try? await wire.startRun(id: put.id, put.request)
         let asked = QueryRecorder.asked.withLock { $0.first { $0.host() == "relaunch.tools.test" } }
-        XCTAssertEqual(asked?.path(), "/v1/runs/r")
+        XCTAssertEqual(asked?.path(), "/v1/gglib/runs/r")
         XCTAssertEqual(asked?.query(), "kind=chat&tools=3&draw=true")
     }
 }

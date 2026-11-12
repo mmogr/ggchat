@@ -2,7 +2,7 @@ import Foundation
 import GGChatCore
 
 // A turn to a Mac's chat with images. Each image is sent to the Mac first,
-// `POST attachments`, and the turn names them by the ids the Mac answers.
+// `POST gglib/attachments`, and the turn names them by the ids the Mac answers.
 // Their bytes are held in memory only, by the reply until its run ends and by
 // a draft given back, and the Mac's own images are read into memory as its
 // rows are drawn: nothing of either is written to this phone (ADR 0007).

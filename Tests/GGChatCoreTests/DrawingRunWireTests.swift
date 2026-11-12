@@ -47,7 +47,7 @@ final class DrawingRunWireTests: XCTestCase {
             started, RunInfo(id: "run-d", kind: .chat, status: .queued, createdAtMs: 1, lastSeq: 0, frames: .agent))
         let put = try XCTUnwrap(RunHub.requests(at: "draws.runs.test").first)
         XCTAssertEqual(put.httpMethod, "PUT")
-        XCTAssertEqual(put.url?.path(), "/v1/runs/run-d")
+        XCTAssertEqual(put.url?.path(), "/v1/gglib/runs/run-d")
         XCTAssertEqual(put.url?.query(), "kind=chat&tools=none&draw=true")
 
         script.put = (201, RunHub.report("run-d", "queued", lastSeq: 0))
@@ -56,7 +56,7 @@ final class DrawingRunWireTests: XCTestCase {
         XCTAssertNil(plain.frames, "a run of chunks said how its frames are written")
         let plainPut = try XCTUnwrap(RunHub.requests(at: "plain.runs.test").first)
         XCTAssertNil(plainPut.url?.query(), "a request that does not draw gained a query")
-        XCTAssertEqual(plainPut.url?.absoluteString, "http://plain.runs.test/v1/runs/run-d")
+        XCTAssertEqual(plainPut.url?.absoluteString, "http://plain.runs.test/v1/gglib/runs/run-d")
         // Keys sorted, since an encoder does not promise their order.
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys

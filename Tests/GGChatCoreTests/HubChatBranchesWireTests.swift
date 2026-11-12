@@ -115,7 +115,7 @@ final class HubChatBranchesWireTests: XCTestCase {
             (400, "not_a_reply"), (400, "unchanged"), (404, "message_not_found"), (409, "nothing_to_answer"),
         ] {
             let body = #"{"error":{"message":"no","type":"invalid_request_error","code":"\#(code)"}}"#
-            ChatsHub.serve(.init(status: status, body: body), at: "/v1/chats/12/changes", on: host)
+            ChatsHub.serve(.init(status: status, body: body), at: "/v1/gglib/chats/12/changes", on: host)
             do {
                 _ = try await provider.changeChat(id: 12, change: HubChatChange(.regenerate(messageID: 41)))
                 XCTFail("\(code) was taken for a change made")

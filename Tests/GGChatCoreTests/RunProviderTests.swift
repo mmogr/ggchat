@@ -57,7 +57,7 @@ final class RunProviderTests: XCTestCase {
             result, RunInfo(id: id, kind: .chat, status: .queued, createdAtMs: 1_790_000_000_000, lastSeq: 0))
         let put = try XCTUnwrap(RunHub.requests(at: "put.runs.test").first)
         XCTAssertEqual(put.httpMethod, "PUT")
-        XCTAssertEqual(put.url?.path(), "/v1/runs/\(id)")
+        XCTAssertEqual(put.url?.path(), "/v1/gglib/runs/\(id)")
         XCTAssertEqual(put.value(forHTTPHeaderField: "Authorization"), "Bearer hub-key")
         // Compared as JSON: the encoder's key order is not fixed.
         let sent = try JSONSerialization.jsonObject(with: try XCTUnwrap(put.httpBody ?? put.bodyStreamData))
@@ -110,7 +110,7 @@ final class RunProviderTests: XCTestCase {
         XCTAssertEqual(reply(of: events).text, "ok")
         XCTAssertFalse(reply(of: events).reasoning.isEmpty, "the reasoning was not read")
         let asked = try XCTUnwrap(RunHub.requests(at: "events.runs.test").first?.url)
-        XCTAssertEqual(asked.path(), "/v1/runs/run-a/events")
+        XCTAssertEqual(asked.path(), "/v1/gglib/runs/run-a/events")
         XCTAssertEqual(asked.query(), "after=0")
     }
 
@@ -242,7 +242,7 @@ final class RunProviderTests: XCTestCase {
         XCTAssertEqual(info.status, .cancelled)
         let post = try XCTUnwrap(RunHub.requests(at: "cancel.runs.test").first)
         XCTAssertEqual(post.httpMethod, "POST")
-        XCTAssertEqual(post.url?.path(), "/v1/runs/run-stop/cancel")
+        XCTAssertEqual(post.url?.path(), "/v1/gglib/runs/run-stop/cancel")
     }
 
     /// A run's id reaches the hub on every route and no log line.
@@ -263,8 +263,8 @@ final class RunProviderTests: XCTestCase {
             XCTAssertFalse(line.contains(id), "a run's id in a log line: \(line)")
         }
         XCTAssertEqual(
-            Redaction.describe(try XCTUnwrap(URL(string: "http://h:1/v1/runs/\(id)/events?after=3"))),
-            "http://h:1/v1/runs/<run>/events")
+            Redaction.describe(try XCTUnwrap(URL(string: "http://h:1/v1/gglib/runs/\(id)/events?after=3"))),
+            "http://h:1/v1/gglib/runs/<run>/events")
     }
 }
 

@@ -199,7 +199,7 @@ public protocol PictureProvider: Provider {
     func redraw(_ redraw: PictureRedraw) -> AsyncStream<RedrawEvent>
 }
 
-/// What `POST chats/{id}/pictures` is sent: the picture a newer one was made
+/// What `POST gglib/chats/{id}/pictures` is sent: the picture a newer one was made
 /// from and the newer one, both by their ids in the hub's store.
 public struct KeptPicture: Sendable, Equatable, Encodable {
     public var from: String

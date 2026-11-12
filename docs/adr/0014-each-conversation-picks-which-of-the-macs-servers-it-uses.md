@@ -121,3 +121,7 @@ it uses, under a stored master switch. A new conversation picks none.**
   taken up again by a decision of its own.
 - gglib refusing a closed id instead of dropping it: then stale picks would
   need pruning against the offer, which this rules out today.
+
+> **Note, 2026-11-12.** gglib 0.35.0 serves its own routes under
+> `/v1/gglib/`: each `/v1/…` route of gglib's named above is now
+> `/v1/gglib/…`, with the same suffix.

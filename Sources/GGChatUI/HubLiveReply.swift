@@ -57,7 +57,7 @@ public final class HubLiveReply {
     /// The last of the run's events this reply holds.
     var cursor: UInt32 = 0
     /// The ids the Mac holds the images under, once each was answered by
-    /// `POST attachments`. A turn put again sends them only when it does not.
+    /// `POST gglib/attachments`. A turn put again sends them only when it does not.
     @ObservationIgnored var uploaded: [String]?
     /// Whether the Mac has answered the turn's `PUT`. Until it has, the run
     /// may not exist, and the next read sends the `PUT` again under its id.

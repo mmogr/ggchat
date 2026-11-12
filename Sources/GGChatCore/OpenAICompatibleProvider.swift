@@ -52,7 +52,7 @@ public struct OpenAICompatibleProvider: Provider {
     /// One snapshot of gglib's status, for a gglib that says it serves the
     /// pane (`GGLibFeature.status`).
     public func proxyStatus() async throws -> ProxyStatus {
-        let request = makeRequest(path: "proxy/status", method: "GET", body: nil)
+        let request = makeRequest(path: "gglib/proxy/status", method: "GET", body: nil)
         let (data, response) = try await perform(request)
         try checkStatus(response, data: data)
         return try decode(ProxyStatus.self, from: data)

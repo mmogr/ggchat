@@ -92,3 +92,7 @@ opened. Coming back to the foreground dials each of them again once, as
 - The launch's dials costing more than the list is worth, a battery reading
   or the owner saying so: then a section lists only when a pull or an open
   asks for it.
+
+> **Note, 2026-11-12.** gglib 0.35.0 serves its own routes under
+> `/v1/gglib/`: each `/v1/…` route of gglib's named above is now
+> `/v1/gglib/…`, with the same suffix.

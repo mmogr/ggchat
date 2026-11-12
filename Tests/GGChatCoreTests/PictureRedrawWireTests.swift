@@ -192,17 +192,17 @@ final class PictureRedrawWireTests: XCTestCase {
         let row =
             #"[{"id":"aa","mime":"image/png","width":64,"height":32},"#
             + #"{"id":"bb","mime":"image/png","width":64,"height":32}]"#
-        ChatsHub.serve(.init(body: row), at: "/v1/chats/12/pictures", on: host)
+        ChatsHub.serve(.init(body: row), at: "/v1/gglib/chats/12/pictures", on: host)
         let refusal =
             #"{"error":{"message":"no such image","type":"invalid_request_error","#
             + #""code":"attachment_not_found"}}"#
-        ChatsHub.serve(.init(status: 400, body: refusal), at: "/v1/chats/13/pictures", on: host)
+        ChatsHub.serve(.init(status: 400, body: refusal), at: "/v1/gglib/chats/13/pictures", on: host)
         let hub = ChatsHub.provider(at: host)
         let images = try await hub.keepPicture(chatID: 12, KeptPicture(from: "aa", image: "bb"))
         XCTAssertEqual(images.map(\.id), ["aa", "bb"])
         let request = try XCTUnwrap(ChatsHub.requests(at: host).first)
         XCTAssertEqual(request.httpMethod, "POST")
-        XCTAssertEqual(request.url?.path(), "/v1/chats/12/pictures")
+        XCTAssertEqual(request.url?.path(), "/v1/gglib/chats/12/pictures")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer hub-key")
         let sent = try JSONSerialization.jsonObject(with: try XCTUnwrap(request.httpBody ?? request.bodyStreamData))
         XCTAssertEqual(sent as? [String: String], ["from": "aa", "image": "bb"])
