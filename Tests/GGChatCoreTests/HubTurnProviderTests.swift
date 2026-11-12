@@ -234,12 +234,20 @@ final class HubTurnProviderTests: XCTestCase {
             blind, .failure(.refused(.server(status: 400, code: "model_cannot_read_images", message: "refused"))))
     }
 
-    /// An error the run reports is passed on, and an event this build
-    /// cannot read is passed over.
+    /// An error the run reports is passed on, with the code of the refusal
+    /// it carries when it carries one, and an event this build cannot read
+    /// is passed over.
     func testAnErrorIsPassedOnAndAnEventThatCannotBeReadIsPassedOver() {
         XCTAssertEqual(
             OpenAICompatibleProvider.agentEvents(SSEEvent(data: #"{"type":"error","message":"it broke"}"#)),
             [.error(.stream(code: nil, message: "it broke"))])
+        let refused = #"{"type":"error","code":"model_cannot_read_images","message":"no eyes"}"#
+        XCTAssertEqual(
+            OpenAICompatibleProvider.agentEvents(SSEEvent(data: refused)),
+            [.error(.stream(code: "model_cannot_read_images", message: "no eyes"))], "the refusal's code was lost")
+        XCTAssertEqual(
+            OpenAICompatibleProvider.agentEvents(SSEEvent(data: #"{"type":"error","code":7,"message":"odd"}"#)),
+            [.error(.stream(code: nil, message: "odd"))], "a code that does not read lost the error")
         XCTAssertEqual(OpenAICompatibleProvider.agentEvents(SSEEvent(data: "not json")), [])
         XCTAssertEqual(OpenAICompatibleProvider.agentEvents(SSEEvent(data: #"{"type":"text_delta"}"#)), [])
         XCTAssertEqual(OpenAICompatibleProvider.agentEvents(SSEEvent(data: "")), [])

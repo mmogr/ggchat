@@ -68,7 +68,8 @@ extension OpenAICompatibleProvider {
     /// it calls and the call itself, how far that
     /// tool has got, that it finished, what it answered and the images it
     /// made, a wait for something else, what a
-    /// finished model call counted, and an error it reports. The rest, and an
+    /// finished model call counted, and an error it reports, with the code of
+    /// the refusal it carries when it carries one. The rest, and an
     /// event this build cannot read, mean nothing here: the run's last
     /// report says how it ended, and the hub saves the reply.
     ///
@@ -101,7 +102,10 @@ extension OpenAICompatibleProvider {
         case "prompt_progress": return read(PromptProgress.self, data).map { [.progress($0)] } ?? []
         case "tool_progress": return read(ToolProgress.self, data).map { [.toolProgress($0)] } ?? []
         case "waiting": return read(RunWait.self, data).map { [.waiting($0)] } ?? []
-        case "error": return [.error(.stream(code: nil, message: agent.message ?? "the reply failed"))]
+        case "error":
+            // A code that does not read is none, not an error that does not.
+            let code = read(RefusalCode.self, data)?.code
+            return [.error(.stream(code: code, message: agent.message ?? "the reply failed"))]
         default: return []
         }
     }
@@ -202,4 +206,10 @@ private struct AgentEvent: Decodable {
         case message
         case finishReason = "finish_reason"
     }
+}
+
+/// The code an agent's `error` event carries when the run's model's server
+/// refused it, as gglib 0.35.0 writes it.
+private struct RefusalCode: Decodable {
+    let code: String
 }

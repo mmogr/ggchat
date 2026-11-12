@@ -31,7 +31,7 @@ final class ErrorTests: XCTestCase {
 
     /// The vocabulary is two published lists, each vendored byte for byte and
     /// pinned by its digest: modelpipe's `docs/error-codes-v0.json` at v0.6.0,
-    /// and gglib's `docs/error-codes.json` at v0.28.0. The lists say where the
+    /// and gglib's `docs/error-codes.json` at v0.35.0. The lists say where the
     /// vocabulary's codes come from, not who can write one in the wild:
     /// `invalid_pairing_code` is in modelpipe's list because its edge answers
     /// the pairing route from 0.6. gglib's own proxy route,
@@ -62,7 +62,7 @@ final class ErrorTests: XCTestCase {
     /// and gglib's write it, and both stand on the serving machine.
     func testGglibsHalfOfTheVocabularyIsGglibsOwnList() throws {
         let modelpipe = try codes(in: "modelpipe-error-codes-v0.json", from: "modelpipe v0.6.0")
-        let gglib = try codes(in: "gglib-error-codes-v0.json", from: "gglib v0.28.0")
+        let gglib = try codes(in: "gglib-error-codes-v0.json", from: "gglib v0.35.0")
         let vocabulary = Set(ProviderError.Code.allCases.map(\.rawValue))
         // Codes ggchat matches by string outside the vocabulary, read from
         // the constants themselves: the hub's chats routes, its runs routes
@@ -89,6 +89,10 @@ final class ErrorTests: XCTestCase {
             "agent_error", "chats_unavailable", "folder_missing", "folder_unusable", "log_full", "max_iterations",
             "not_yours", "origin_not_allowed", "proxy_not_running", "run_panicked", "runs_unavailable",
             "shutting_down", "too_many_tool_calls", "transcript_not_saved", "turn_too_long",
+            // A path or method no route takes, and a stop with no daemon to
+            // stop. Against gglib's own routes the first two mean a gglib of
+            // another version, which its model list already says.
+            "unknown_route", "method_not_allowed", "no_daemon_to_stop",
         ]
         for code in gglib.subtracting(vocabulary).subtracting(answeredElsewhere).subtracting(notShownHere).sorted() {
             XCTFail(
@@ -119,7 +123,7 @@ final class ErrorTests: XCTestCase {
         #if canImport(CryptoKit)
             let digests = [
                 "modelpipe-error-codes-v0.json": "3bac9cebc2a933e2f663272e62d6d2cae296b7471358ca306405ebc1c993f5bc",
-                "gglib-error-codes-v0.json": "2cf3b4c6c21dbe6a140ca7d3cbe16feec6a4fc96fe60988f0452fc263faa88a1",
+                "gglib-error-codes-v0.json": "5f1b2894af92f77bffe616b92a3a1ac8da1acb2954ed83668dae78eb07fdd5dd",
             ]
             let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
             XCTAssertEqual(

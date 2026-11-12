@@ -20,13 +20,10 @@ final class DrawingWireTests: XCTestCase {
         .imageModelIncomplete:
             "The image model is missing a file it needs. The server's sentence names it and the command that links "
             + "it on the serving machine.",
-        .imageModelDoesNotFit:
-            "The image model needs more memory than is free while another reply is being written there. Ask again "
-            + "when that reply has ended.",
         .notAnImageModel: "The model chosen to draw with is not an image model. Pick another image model.",
     ]
 
-    /// The eight codes gglib's drawing writes, and the one it refuses a
+    /// The seven codes gglib's drawing writes, and the one it refuses a
     /// chosen model that does not draw with, spelt as `docs/error-codes.json`
     /// spells them, each with a line of its own that a saved failure draws
     /// too, and the two a run can now end with, which name a side. Where
@@ -38,7 +35,7 @@ final class DrawingWireTests: XCTestCase {
             [
                 "image_model_cannot_chat", "drawing_unavailable", "invalid_image_size", "image_generation_failed",
                 "image_render_stalled", "image_runtime_not_installed", "image_model_incomplete",
-                "image_model_does_not_fit", "not_an_image_model",
+                "not_an_image_model",
             ])
         for (code, hint) in Self.hints {
             XCTAssertEqual(code.hint, hint, code.rawValue)
@@ -49,7 +46,7 @@ final class DrawingWireTests: XCTestCase {
             .imageModelCannotChat: .request, .invalidImageSize: .request, .notAnImageModel: .request,
             .drawingUnavailable: .servingSide, .imageGenerationFailed: .servingSide,
             .imageRuntimeNotInstalled: .servingSide, .imageModelIncomplete: .servingSide,
-            .imageRenderStalled: .waitAndRetry, .imageModelDoesNotFit: .waitAndRetry,
+            .imageRenderStalled: .waitAndRetry,
             .modelUnavailable: .servingSide, .unavailable: .waitAndRetry,
         ]
         for (code, side) in sides {

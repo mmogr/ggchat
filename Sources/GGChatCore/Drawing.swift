@@ -156,9 +156,6 @@ extension ProviderError.Code {
         case .imageModelIncomplete:
             "The image model is missing a file it needs. The server's sentence names it and the command that "
                 + "links it on the serving machine."
-        case .imageModelDoesNotFit:
-            "The image model needs more memory than is free while another reply is being written there. Ask "
-                + "again when that reply has ended."
         case .notAnImageModel:
             "The model chosen to draw with is not an image model. Pick another image model."
         default:
