@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.19.0](https://github.com/mmogr/ggchat/compare/v0.18.0...v0.19.0) (2026-11-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* **core:** ggchat needs gglib 0.35.0 or later on the desktop, and asks for gglib's own routes under /v1/gglib. A paired Mac on an older gglib says it needs updating and has no chats, runs, drawing or status pane until it is; replies to it go through /v1/chat/completions. A gglib reached by address that is older than 0.35.0 is treated as a plain OpenAI-compatible server: no progress, Thinking switch, runs or status pane. Update ggchat on the laptop and the phone before updating gglib on the Mac.
+
+### What the app now does
+
+* **core:** gglib's own routes under /v1/gglib, and what a gglib serves read from its model list ([#309](https://github.com/mmogr/ggchat/issues/309)) ([1a85e1d](https://github.com/mmogr/ggchat/commit/1a85e1d86bd35bf0147804483fde7ef411a40d2c))
+
 ## [0.18.0](https://github.com/mmogr/ggchat/compare/v0.17.0...v0.18.0) (2026-11-10)
 
 
