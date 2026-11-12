@@ -56,6 +56,7 @@ extension AppModel {
         guard previous.kind != config.kind else { return }
         let keyedByID = keysByID(config.id)
         modelsByProvider[config.id] = nil
+        gglibAnswers[config.id] = nil
         proxyStatusAvailability[config.id] = nil
         providersWithoutRuns.remove(config.id)
         drawings[config.id] = nil

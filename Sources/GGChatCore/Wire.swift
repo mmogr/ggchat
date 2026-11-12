@@ -57,6 +57,17 @@ public struct ModelInfo: Codable, Sendable, Equatable, Hashable, Identifiable {
 
 struct ModelsResponse: Decodable {
     var data: [ModelInfo]
+    /// What a gglib says of itself. One that does not read is none, so it
+    /// never costs the list.
+    var gglib: GGLibServer?
+
+    enum CodingKeys: String, CodingKey { case data, gglib }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        data = try container.decode([ModelInfo].self, forKey: .data)
+        gglib = try? container.decodeIfPresent(GGLibServer.self, forKey: .gglib)
+    }
 }
 
 /// What one model call counted. `contextSize` and `trimmedMessages` are

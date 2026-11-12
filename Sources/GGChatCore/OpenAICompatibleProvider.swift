@@ -37,10 +37,16 @@ public struct OpenAICompatibleProvider: Provider {
     }
 
     public func models() async throws -> [ModelInfo] {
+        try await modelList().models
+    }
+
+    /// `GET models`, with what a gglib says of itself beside the list.
+    public func modelList() async throws -> ModelList {
         let request = makeRequest(path: "models", method: "GET", body: nil)
         let (data, response) = try await perform(request)
         try checkStatus(response, data: data)
-        return try decode(ModelsResponse.self, from: data).data
+        let answer = try decode(ModelsResponse.self, from: data)
+        return ModelList(models: answer.data, gglib: answer.gglib)
     }
 
     /// nil when the server answers 404: the pane is hidden for that provider.

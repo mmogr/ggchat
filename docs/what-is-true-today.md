@@ -1102,6 +1102,10 @@ Each claim names the test that keeps it true.
   <!-- test: SettingsCarriedVersionsTests.testTheRowReadsTheLinkedFramework -->
   <!-- test: LinkedGGLibTests.testTheLinkedFrameworkIsTheOneTheVendoredBindingNames -->
   <!-- test: ScreenGalleryUITests.testTheProvidersListAndTheTicketCountInSettings -->
+- Below it, Settings names the gglib each server runs, say "home runs gglib
+  0.35.0", once that server's model list has said so. A server whose list
+  says nothing has no line.
+  <!-- test: SettingsServerVersionsTests.testALineNamesTheGGLibEachServerSaidItRuns -->
 - The mock is DEBUG-only. A build without one refuses a perfectly good
   ticket with a sentence about the build, instead of mocking a pipe that
   is not there.

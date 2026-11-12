@@ -34,6 +34,9 @@ public struct MockProvider: Provider {
     /// about drawing would, that it opens to this device, so a UI walk has
     /// a wrench to pick from; nil says nothing, as every other mock does.
     public var offered: [OfferedServer]?
+    /// What its model list says of its gglib; nil says nothing, as a server
+    /// that is not gglib does.
+    public var gglib: GGLibServer?
 
     public init(
         models: [ModelInfo] = MockProvider.sampleModels,
@@ -43,7 +46,8 @@ public struct MockProvider: Provider {
         failAfterTokens: Int? = nil,
         failure: ProviderError? = nil,
         contextSize: Int? = 4_096,
-        offered: [OfferedServer]? = nil
+        offered: [OfferedServer]? = nil,
+        gglib: GGLibServer? = nil
     ) {
         self.modelList = models
         self.scripts = scripts
@@ -53,10 +57,15 @@ public struct MockProvider: Provider {
         self.failure = failure
         self.contextSize = contextSize
         self.offered = offered
+        self.gglib = gglib
     }
 
     public func models() async throws -> [ModelInfo] {
         modelList
+    }
+
+    public func modelList() async throws -> ModelList {
+        ModelList(models: modelList, gglib: gglib)
     }
 
     public func stream(_ request: ChatRequest) -> AsyncStream<ChatEvent> {

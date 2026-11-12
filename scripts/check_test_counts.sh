@@ -1030,8 +1030,14 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # over the chat on an open Duo. A browser that goes back to a sheet there,
 # or one Back leaves open, fails nothing else, so this walk, the closing it
 # rests on and their markers are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1152
+#
+# 2026-11-12: 1152 -> 1157 and 1049 -> 1050 for what a server's model list
+# says of its gglib. A list that stops reading the `gglib` object, or lets a
+# bad one cost the models, and a Settings line that stops naming the
+# version, fail nothing else, so these five and their marker are the whole
+# of that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1157
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 46
-floor "README test markers" "${markers:-0}" 1049
+floor "README test markers" "${markers:-0}" 1050
 
 exit $status

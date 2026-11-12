@@ -83,7 +83,16 @@ public struct ChatRequest: Sendable, Equatable {
 /// URL was minted on the device.
 public protocol Provider: Sendable {
     func models() async throws -> [ModelInfo]
+    /// The models, with what a gglib says of itself beside them. A provider
+    /// that is no gglib server says nothing.
+    func modelList() async throws -> ModelList
     /// Never throws; failures arrive as a terminal `.error` event. Cancelling
     /// the consuming task ends the stream without a terminal event.
     func stream(_ request: ChatRequest) -> AsyncStream<ChatEvent>
+}
+
+extension Provider {
+    public func modelList() async throws -> ModelList {
+        ModelList(models: try await models())
+    }
 }

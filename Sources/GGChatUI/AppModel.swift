@@ -55,6 +55,9 @@ public final class AppModel {
     /// dial that lands in between hangs itself up.
     var isAway = false
     var proxyStatusAvailability: [UUID: Bool] = [:]
+    /// What each provider's model list last said of its gglib, for as long
+    /// as the app runs; see `AppModel+GGLib`.
+    var gglibAnswers: [UUID: GGLibAnswer] = [:]
     /// The gglib hubs that answered a run's `PUT` as a server without runs,
     /// for as long as the app runs; see `AppModel+Runs`.
     var providersWithoutRuns: Set<UUID> = []
