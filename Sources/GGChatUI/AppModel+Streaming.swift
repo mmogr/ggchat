@@ -136,8 +136,11 @@ extension AppModel {
             var connected = ready
             if connected == nil { connected = await self?.providerOnceConnected(config, for: live) }
             guard let provider = connected else { return }
+            // A paired Mac's reply is a run once its gglib says it serves
+            // them, which is read first when it is not known yet.
+            if config.isPairedMac { await self?.learnGGLib(config) }
             if let hub = self?.runHub(provider, for: config) {
-                await self?.startRun(request, on: hub, for: config, live: live)
+                await self?.startRun(request, on: hub, live: live)
             } else {
                 await self?.streamChat(request, on: provider, live: live)
             }
@@ -146,8 +149,8 @@ extension AppModel {
         return task
     }
 
-    /// Streams the reply from `chat/completions`, the way every reply went
-    /// before runs, and every reply to a hub without them still goes.
+    /// Streams the reply from `chat/completions`, the way every reply to a
+    /// server without runs goes.
     func streamChat(_ request: ChatRequest, on provider: any Provider, live: LiveReply) async {
         var finished = false
         for await event in provider.stream(request) {

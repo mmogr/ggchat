@@ -182,7 +182,7 @@ extension AppModel {
 
     /// How a picture of the Mac's chat open is drawn again and kept: its
     /// bytes are the ones held in memory, the result is sent to the Mac as
-    /// a turn's image is, and `POST chats/{id}/pictures` puts it beside the
+    /// a turn's image is, and `POST gglib/chats/{id}/pictures` puts it beside the
     /// one it came from. The chat is then read again, as it is after a
     /// reply; a read that fails takes nothing back, since the Mac kept it.
     private func hubWork(_ image: ImageRef, in open: OpenHubChat) -> PictureWork {

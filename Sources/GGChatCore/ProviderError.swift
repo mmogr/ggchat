@@ -158,7 +158,6 @@ extension ProviderError {
         case imageRenderStalled = "image_render_stalled"
         case imageRuntimeNotInstalled = "image_runtime_not_installed"
         case imageModelIncomplete = "image_model_incomplete"
-        case imageModelDoesNotFit = "image_model_does_not_fit"
         case notAnImageModel = "not_an_image_model"
         case modelUnavailable = "model_unavailable"
         case unavailable
@@ -214,11 +213,8 @@ extension ProviderError.Code {
 
         // Nothing is wrong yet: a model still loading, a queue that did not
         // reach this request in time, a first byte that has not arrived.
-        // A picture that stalled was stopped and can be asked for again, and
-        // an image model that does not fit will once the reply in its way
-        // has ended.
-        case .admissionTimeout, .modelLoading, .upstreamTimeout, .imageRenderStalled, .imageModelDoesNotFit,
-            .unavailable:
+        // A picture that stalled was stopped and can be asked for again.
+        case .admissionTimeout, .modelLoading, .upstreamTimeout, .imageRenderStalled, .unavailable:
             .waitAndRetry
         }
     }
@@ -272,8 +268,7 @@ extension ProviderError.Code {
             "The images in this conversation are over the 16 MiB one request to a model may carry. Start a "
                 + "new conversation to send more."
         case .imageModelCannotChat, .drawingUnavailable, .invalidImageSize, .imageGenerationFailed,
-            .imageRenderStalled, .imageRuntimeNotInstalled, .imageModelIncomplete, .imageModelDoesNotFit,
-            .notAnImageModel:
+            .imageRenderStalled, .imageRuntimeNotInstalled, .imageModelIncomplete, .notAnImageModel:
             drawingHint
         case .badRequest, .badGateway, .backendUnreachable, .incompleteRequest,
             .admissionTimeout, .contextLengthExceeded, .deviceNotPaired, .embeddingModelCannotChat,

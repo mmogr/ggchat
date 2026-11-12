@@ -29,15 +29,24 @@ public enum PipeConnectorFactory {
     /// retains public symbols.
     public static func make() -> any PipeConnector {
         #if DEBUG
-            MockPipeConnector(
-                sleeper: ContinuousClockSleeper(), stepDelay: .milliseconds(900),
-                provider: MockProvider(offered: mockServers(UserDefaults.standard.string(forKey: mockServersKey))))
+            mockPipe(offering: mockServers(UserDefaults.standard.string(forKey: mockServersKey)))
         #else
             ModelpipeConnector()
         #endif
     }
 
     #if DEBUG
+        /// The mock pipe: a gglib with chats, so its Mac has a section as a
+        /// real one does, though it lists none, and drawing, whose answer
+        /// names `offered`, when it opens any servers. It says it has no
+        /// runs and no status pane, which it does not serve.
+        static func mockPipe(offering offered: [OfferedServer]?) -> MockPipeConnector {
+            let gglib = GGLibServer.serving("0.35.0", offered == nil ? [.chats] : [.chats, .drawing])
+            return MockPipeConnector(
+                sleeper: ContinuousClockSleeper(), stepDelay: .milliseconds(900),
+                provider: MockProvider(offered: offered, gglib: gglib))
+        }
+
         /// The default a UI walk sets, `-ggchat-mock-mcp-servers 3:tavily`,
         /// to have the mock pipe say it opens those MCP servers.
         static let mockServersKey = "ggchat-mock-mcp-servers"

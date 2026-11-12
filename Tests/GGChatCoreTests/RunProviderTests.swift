@@ -45,32 +45,35 @@ final class RunProviderTests: XCTestCase {
     }
 
     /// A 201 starts the run with the body the chat route is sent, at the id
-    /// this device minted. A 404 or 405 carrying no run code is a hub with no
-    /// runs; a run code, or any other refusal, is a failure.
-    func testAPutStartsARunAndAHubWithoutTheRouteIsUnsupported() async throws {
+    /// this device minted. Any refusal is a failure, a 404 or a 405 with no
+    /// code among them: only a gglib that says it serves runs is sent one.
+    func testAPutStartsARunAndAnyRefusalIsAFailure() async throws {
         let id = "0B7C5E1A-9D2F-4C33-8E11-2A6F0D4B9C71"
         var started = try script(id)
         started.put = (201, RunHub.report(id, "queued", lastSeq: 0))
         RunHub.serve(started, at: "put.runs.test")
         let result = try await RunHub.provider(at: "put.runs.test").startRun(id: id, request)
         XCTAssertEqual(
-            result, .started(RunInfo(id: id, kind: .chat, status: .queued, createdAtMs: 1_790_000_000_000, lastSeq: 0)))
+            result, RunInfo(id: id, kind: .chat, status: .queued, createdAtMs: 1_790_000_000_000, lastSeq: 0))
         let put = try XCTUnwrap(RunHub.requests(at: "put.runs.test").first)
         XCTAssertEqual(put.httpMethod, "PUT")
-        XCTAssertEqual(put.url?.path(), "/v1/runs/\(id)")
+        XCTAssertEqual(put.url?.path(), "/v1/gglib/runs/\(id)")
         XCTAssertEqual(put.value(forHTTPHeaderField: "Authorization"), "Bearer hub-key")
         // Compared as JSON: the encoder's key order is not fixed.
         let sent = try JSONSerialization.jsonObject(with: try XCTUnwrap(put.httpBody ?? put.bodyStreamData))
         let chat = try JSONSerialization.jsonObject(with: try JSONEncoder().encode(ChatCompletionRequest(request)))
         XCTAssertEqual(sent as? NSDictionary, chat as? NSDictionary, "the run was not sent the chat request")
 
-        let older = [(404, ""), (405, ""), (404, #"{"error":{"code":"model_not_found","message":"no"}}"#)]
-        for (index, (status, body)) in older.enumerated() {
+        for (index, status) in [404, 405].enumerated() {
             var answer = try script(id)
-            answer.put = (status, body)
-            RunHub.serve(answer, at: "older-\(index).runs.test")
-            let result = try await RunHub.provider(at: "older-\(index).runs.test").startRun(id: id, request)
-            XCTAssertEqual(result, .unsupported, "\(status) \(body) was not read as a hub without runs")
+            answer.put = (status, "")
+            RunHub.serve(answer, at: "bare-\(index).runs.test")
+            do {
+                let result = try await RunHub.provider(at: "bare-\(index).runs.test").startRun(id: id, request)
+                XCTFail("a bare \(status) started as \(result)")
+            } catch {
+                guard case .server(status, _, _) = error else { return XCTFail("a bare \(status) was \(error)") }
+            }
         }
         let refusals = [(429, RunCode.tooManyRuns), (404, RunCode.notFound), (409, RunCode.conflict), (400, "x")]
         for (index, (status, code)) in refusals.enumerated() {
@@ -107,7 +110,7 @@ final class RunProviderTests: XCTestCase {
         XCTAssertEqual(reply(of: events).text, "ok")
         XCTAssertFalse(reply(of: events).reasoning.isEmpty, "the reasoning was not read")
         let asked = try XCTUnwrap(RunHub.requests(at: "events.runs.test").first?.url)
-        XCTAssertEqual(asked.path(), "/v1/runs/run-a/events")
+        XCTAssertEqual(asked.path(), "/v1/gglib/runs/run-a/events")
         XCTAssertEqual(asked.query(), "after=0")
     }
 
@@ -239,7 +242,7 @@ final class RunProviderTests: XCTestCase {
         XCTAssertEqual(info.status, .cancelled)
         let post = try XCTUnwrap(RunHub.requests(at: "cancel.runs.test").first)
         XCTAssertEqual(post.httpMethod, "POST")
-        XCTAssertEqual(post.url?.path(), "/v1/runs/run-stop/cancel")
+        XCTAssertEqual(post.url?.path(), "/v1/gglib/runs/run-stop/cancel")
     }
 
     /// A run's id reaches the hub on every route and no log line.
@@ -260,8 +263,8 @@ final class RunProviderTests: XCTestCase {
             XCTAssertFalse(line.contains(id), "a run's id in a log line: \(line)")
         }
         XCTAssertEqual(
-            Redaction.describe(try XCTUnwrap(URL(string: "http://h:1/v1/runs/\(id)/events?after=3"))),
-            "http://h:1/v1/runs/<run>/events")
+            Redaction.describe(try XCTUnwrap(URL(string: "http://h:1/v1/gglib/runs/\(id)/events?after=3"))),
+            "http://h:1/v1/gglib/runs/<run>/events")
     }
 }
 

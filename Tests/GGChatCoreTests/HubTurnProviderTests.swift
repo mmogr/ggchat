@@ -37,7 +37,7 @@ final class HubTurnProviderTests: XCTestCase {
         return script
     }
 
-    private typealias Started = Result<RunStart, HubTurnFailure>
+    private typealias Started = Result<RunInfo, HubTurnFailure>
 
     private func start(_ put: (Int, String), at host: String, turn: HubTurn? = nil) async throws -> Started {
         RunHub.serve(try script(put: put), at: host)
@@ -59,10 +59,10 @@ final class HubTurnProviderTests: XCTestCase {
         let started = try await start((201, RunHub.report(id, "queued", lastSeq: 0, kind: "agent")), at: host)
         XCTAssertEqual(
             try started.get(),
-            .started(RunInfo(id: id, kind: .agent, status: .queued, createdAtMs: 1_790_000_000_000, lastSeq: 0)))
+            RunInfo(id: id, kind: .agent, status: .queued, createdAtMs: 1_790_000_000_000, lastSeq: 0))
         let put = try XCTUnwrap(RunHub.requests(at: host).first)
         XCTAssertEqual(put.httpMethod, "PUT")
-        XCTAssertEqual(put.url?.path(), "/v1/runs/\(id)")
+        XCTAssertEqual(put.url?.path(), "/v1/gglib/runs/\(id)")
         XCTAssertEqual(put.url?.query(), "kind=agent")
         XCTAssertEqual(put.value(forHTTPHeaderField: "Authorization"), "Bearer hub-key")
         let body = try XCTUnwrap(put.httpBody ?? put.bodyStreamData)
@@ -72,8 +72,7 @@ final class HubTurnProviderTests: XCTestCase {
         XCTAssertEqual(sent["content"] as? String, "And how do I fix it?")
 
         let again = try await start((200, RunHub.report(id, "in_progress", lastSeq: 4, kind: "agent")), at: host)
-        guard case .started(let info) = try again.get() else { return XCTFail("a repeated id did not start") }
-        XCTAssertEqual(info.status, .inProgress)
+        XCTAssertEqual(try again.get().status, .inProgress, "a repeated id did not start")
     }
 
     /// A turn that says the Thinking choice is put with it, as the word.
@@ -100,8 +99,8 @@ final class HubTurnProviderTests: XCTestCase {
     }
 
     /// Every other answer the hub gives a turn is a refusal carrying its
-    /// sentence, a hub with no runs route is one without runs, and no answer
-    /// at all is a turn that may have started.
+    /// sentence, a bare 404 or 405 among them, and no answer at all is a turn
+    /// that may have started.
     func testEveryOtherAnswerMeansWhatItShould() async throws {
         let refused = [
             (400, "invalid_request"), (403, "device_not_named"), (429, "agent_busy"), (503, "runs_unavailable"),
@@ -113,9 +112,10 @@ final class HubTurnProviderTests: XCTestCase {
                 result, .failure(.refused(.server(status: status, code: code, message: "refused"))), "\(status) \(code)"
             )
         }
-        for (index, answer) in [(404, ""), (405, "")].enumerated() {
-            let result = try await start(answer, at: "turn-older-\(index).test")
-            XCTAssertEqual(result, .success(.unsupported), "\(answer)")
+        for (index, status) in [404, 405].enumerated() {
+            let result = try await start((status, ""), at: "turn-bare-\(index).test")
+            let sentence = "The server answered with HTTP \(status)."
+            XCTAssertEqual(result, .failure(.refused(.server(status: status, code: nil, message: sentence))))
         }
         let odd = try await start((201, "{}"), at: "turn-odd.test")
         guard case .failure(.refused(.decoding)) = odd else { return XCTFail("an unreadable run started: \(odd)") }
@@ -179,7 +179,7 @@ final class HubTurnProviderTests: XCTestCase {
                 RunInfo(
                     id: id, kind: .agent, status: .completed, createdAtMs: 1_790_000_000_000, lastSeq: UInt32(count))))
         let asked = try XCTUnwrap(RunHub.requests(at: host).first?.url)
-        XCTAssertEqual(asked.path(), "/v1/runs/\(id)/events")
+        XCTAssertEqual(asked.path(), "/v1/gglib/runs/\(id)/events")
         XCTAssertEqual(asked.query(), "after=0")
     }
 
@@ -234,12 +234,20 @@ final class HubTurnProviderTests: XCTestCase {
             blind, .failure(.refused(.server(status: 400, code: "model_cannot_read_images", message: "refused"))))
     }
 
-    /// An error the run reports is passed on, and an event this build
-    /// cannot read is passed over.
+    /// An error the run reports is passed on, with the code of the refusal
+    /// it carries when it carries one, and an event this build cannot read
+    /// is passed over.
     func testAnErrorIsPassedOnAndAnEventThatCannotBeReadIsPassedOver() {
         XCTAssertEqual(
             OpenAICompatibleProvider.agentEvents(SSEEvent(data: #"{"type":"error","message":"it broke"}"#)),
             [.error(.stream(code: nil, message: "it broke"))])
+        let refused = #"{"type":"error","code":"model_cannot_read_images","message":"no eyes"}"#
+        XCTAssertEqual(
+            OpenAICompatibleProvider.agentEvents(SSEEvent(data: refused)),
+            [.error(.stream(code: "model_cannot_read_images", message: "no eyes"))], "the refusal's code was lost")
+        XCTAssertEqual(
+            OpenAICompatibleProvider.agentEvents(SSEEvent(data: #"{"type":"error","code":7,"message":"odd"}"#)),
+            [.error(.stream(code: nil, message: "odd"))], "a code that does not read lost the error")
         XCTAssertEqual(OpenAICompatibleProvider.agentEvents(SSEEvent(data: "not json")), [])
         XCTAssertEqual(OpenAICompatibleProvider.agentEvents(SSEEvent(data: #"{"type":"text_delta"}"#)), [])
         XCTAssertEqual(OpenAICompatibleProvider.agentEvents(SSEEvent(data: "")), [])
@@ -284,6 +292,6 @@ final class HubTurnProviderTests: XCTestCase {
         XCTAssertEqual(info.kind, .agent)
         let cancel = try XCTUnwrap(RunHub.requests(at: host).first)
         XCTAssertEqual(cancel.httpMethod, "POST")
-        XCTAssertEqual(cancel.url?.path(), "/v1/runs/\(id)/cancel")
+        XCTAssertEqual(cancel.url?.path(), "/v1/gglib/runs/\(id)/cancel")
     }
 }

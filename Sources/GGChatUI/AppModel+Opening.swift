@@ -2,11 +2,11 @@ import Foundation
 import GGChatCore
 
 /// What a conversation on screen needs from its provider: a pipe that is up,
-/// a list of models, and an answer about the status pane. The model does it,
+/// and a list of models, with what its gglib serves. The model does it,
 /// in a task of its own, so no view can call it off.
 ///
 /// It used to be the views' own work. The composer dialled and listed the
-/// models inside a `.task(id:)`, and the chat view probed the pane inside
+/// models inside a `.task(id:)`, and the chat view asked about the pane inside
 /// another, keyed on the connected pulse. On iOS 27.0, with the split view
 /// collapsed as it is on a phone, a conversation opened from the list after
 /// going back from one, or started from the list's toolbar then, is shown,
@@ -47,10 +47,11 @@ extension AppModel {
         return task
     }
 
-    /// Lists the provider's models if it has none, or again when `relisting`,
-    /// asks about its status pane, and asks a gglib whether it can draw
-    /// (`AppModel+Drawing`), for a provider that can answer now: one whose
-    /// session is up (`sessionIsUp`).
+    /// Lists the provider's models if it has none or what its gglib serves
+    /// is not known, or again when `relisting`, and asks a gglib whether it
+    /// can draw (`AppModel+Drawing`), for a provider that can answer now: one
+    /// whose session is up (`sessionIsUp`). The list says whether it is
+    /// gglib and what it serves, the status pane among it (`AppModel+GGLib`).
     ///
     /// A pipe that is not connected is left alone, and its pulse catches it up
     /// instead. `connect` returns once the local port is bound, before the far
@@ -79,10 +80,9 @@ extension AppModel {
     ///     A list that fails keeps the one before.
     func catchUp(_ providerID: UUID, quietly: Bool = false, relisting: Bool = false) async {
         guard let config = providers.first(where: { $0.id == providerID }), sessionIsUp(config) else { return }
-        if relisting || models(for: config.id).isEmpty {
-            await refreshModels(for: config, quietly: quietly)
+        if relisting || models(for: config.id).isEmpty || gglibAnswers[config.id] == nil {
+            await listModels(of: config, quietly: quietly)
         }
-        await probeProxyStatus(for: config)
         await askAboutDrawing(config)
     }
 }

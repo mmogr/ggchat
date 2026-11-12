@@ -37,6 +37,11 @@ final class RecordingProvider: Provider {
         return try await inner.models()
     }
 
+    func modelList() async throws -> ModelList {
+        let inner = state.withLock { $0.inner }
+        return try await inner.modelList()
+    }
+
     func stream(_ request: ChatRequest) -> AsyncStream<ChatEvent> {
         let inner = state.withLock { state -> any Provider in
             state.requests.append(request)

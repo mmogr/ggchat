@@ -9,30 +9,28 @@ import GGChatCore
 // gives the run up.
 extension AppModel {
     /// The provider as a hub to start a run on, or nil when this reply goes
-    /// the old way: the provider is not gglib, or has said it has no runs.
+    /// through `chat/completions`: its gglib has not said it serves runs.
     func runHub(_ provider: any Provider, for config: ProviderConfig) -> (any RunProvider)? {
         guard hasRuns(config) else { return nil }
         return provider as? any RunProvider
     }
 
     /// Starts the reply as a run under an id minted here, and reads it.
-    func startRun(_ request: ChatRequest, on hub: any RunProvider, for config: ProviderConfig, live: LiveReply) async {
+    func startRun(_ request: ChatRequest, on hub: any RunProvider, live: LiveReply) async {
         // Set before the request, so a reply put down while it is on its way
         // still names the run it may have started.
         live.runID = UUID().uuidString
-        await putRun(request, on: hub, for: config, live: live)
+        await putRun(request, on: hub, live: live)
     }
 
     /// Sends the run's `PUT` and reads the run. Sent again under the same id
     /// when an earlier one was never answered: a hub that has the run answers
-    /// 200 and starts nothing. A hub that answers as one without runs is
-    /// remembered, and this reply and the rest to it go the old way, with
-    /// nothing shown.
-    func putRun(_ request: ChatRequest, on hub: any RunProvider, for config: ProviderConfig, live: LiveReply) async {
+    /// 200 and starts nothing.
+    func putRun(_ request: ChatRequest, on hub: any RunProvider, live: LiveReply) async {
         guard let id = live.runID else { return }
-        let start: RunStart
+        let info: RunInfo
         do {
-            start = try await hub.startRun(id: id, request)
+            info = try await hub.startRun(id: id, request)
         } catch {
             guard !Task.isCancelled else { return await putDown(live, on: hub) }
             // Lost on the way, and it may have arrived: the id is kept, and
@@ -44,22 +42,15 @@ extension AppModel {
         }
         live.started = true
         guard !Task.isCancelled else { return await putDown(live, on: hub) }
-        switch start {
-        case .started(let info) where info.frames == .unknown:
+        if info.frames == .unknown {
             // A later gglib's way of writing events: the run is stopped and
             // the reply given up, since reading it would show nothing.
             cancelRun(id, on: hub)
             live.runID = nil
-            giveUp(live, saying: "is writing this reply in a way this version of the app cannot read.")
-        case .started(let info):
-            live.frames = info.frames ?? .openai
-            await readRun(on: hub, live: live)
-        case .unsupported:
-            log.log(.info, "\(config.name) has no runs, so replies to it stream as they did")
-            providersWithoutRuns.insert(config.id)
-            live.runID = nil
-            await streamChat(request, on: hub, live: live)
+            return giveUp(live, saying: "is writing this reply in a way this version of the app cannot read.")
         }
+        live.frames = info.frames ?? .openai
+        await readRun(on: hub, live: live)
     }
 
     /// Reads the run's events after the reply's cursor, applying each frame

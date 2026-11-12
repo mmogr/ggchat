@@ -7,19 +7,17 @@ import Foundation
 // A turn on one of the hub's chats: gglib's runs routes, with the run an
 // agent run the hub saves to the chat. Same base URL, same key.
 extension OpenAICompatibleProvider {
-    /// `PUT runs/{id}?kind=agent` with the turn as its whole body. A 404 or a
-    /// 405 with neither a run code nor `conversation_not_found` is a hub with
-    /// no runs route. A turn with images refused as `invalid_request` is
-    /// taken for a gglib from before images, which refuses `images` as a key
-    /// it does not know.
-    public func startTurn(runID: String, turn: HubTurn) async throws(HubTurnFailure) -> RunStart {
+    /// `PUT gglib/runs/{id}?kind=agent` with the turn as its whole body. A turn
+    /// with images refused as `invalid_request` is taken for a gglib from
+    /// before images, which refuses `images` as a key it does not know.
+    public func startTurn(runID: String, turn: HubTurn) async throws(HubTurnFailure) -> RunInfo {
         let body: Data
         do {
             body = try JSONEncoder().encode(turn)
         } catch {
             throw .refused(.decoding("could not encode the turn: \(error)"))
         }
-        var request = makeRequest(path: "runs/\(runID)", method: "PUT", body: body)
+        var request = makeRequest(path: "gglib/runs/\(runID)", method: "PUT", body: body)
         request.url = request.url?.appending(queryItems: [URLQueryItem(name: "kind", value: "agent")])
         let answer: (Data, HTTPURLResponse)
         do {
@@ -30,29 +28,24 @@ extension OpenAICompatibleProvider {
         let (data, response) = answer
         guard (200..<300).contains(response.statusCode) else {
             let error = Self.serverError(status: response.statusCode, body: data)
-            if [404, 405].contains(response.statusCode), !Self.carriesARunCode(data),
-                error.code != HubChatsCode.conversationNotFound
-            {
-                return .unsupported
-            }
             if !turn.images.isEmpty, case .server(400, ProviderError.Code.invalidRequest.rawValue, _) = error {
                 throw .takesNoImages
             }
             throw Self.turnFailure(error)
         }
         do {
-            return .started(try decode(RunInfo.self, from: data))
+            return try decode(RunInfo.self, from: data)
         } catch {
             throw .refused(error)
         }
     }
 
-    /// `GET runs/{id}/events?after=N`, each event read as an agent's.
+    /// `GET gglib/runs/{id}/events?after=N`, each event read as an agent's.
     public func turnEvents(runID: String, after: UInt32) -> AsyncStream<RunEvent> {
         events(ofRun: runID, after: after, as: .agent)
     }
 
-    /// `POST runs/{id}/cancel`.
+    /// `POST gglib/runs/{id}/cancel`.
     public func cancelTurn(runID: String) async throws(ProviderError) -> RunInfo {
         try await cancelRun(id: runID)
     }
@@ -75,7 +68,8 @@ extension OpenAICompatibleProvider {
     /// it calls and the call itself, how far that
     /// tool has got, that it finished, what it answered and the images it
     /// made, a wait for something else, what a
-    /// finished model call counted, and an error it reports. The rest, and an
+    /// finished model call counted, and an error it reports, with the code of
+    /// the refusal it carries when it carries one. The rest, and an
     /// event this build cannot read, mean nothing here: the run's last
     /// report says how it ended, and the hub saves the reply.
     ///
@@ -108,7 +102,10 @@ extension OpenAICompatibleProvider {
         case "prompt_progress": return read(PromptProgress.self, data).map { [.progress($0)] } ?? []
         case "tool_progress": return read(ToolProgress.self, data).map { [.toolProgress($0)] } ?? []
         case "waiting": return read(RunWait.self, data).map { [.waiting($0)] } ?? []
-        case "error": return [.error(.stream(code: nil, message: agent.message ?? "the reply failed"))]
+        case "error":
+            // A code that does not read is none, not an error that does not.
+            let code = read(RefusalCode.self, data)?.code
+            return [.error(.stream(code: code, message: agent.message ?? "the reply failed"))]
         default: return []
         }
     }
@@ -209,4 +206,10 @@ private struct AgentEvent: Decodable {
         case message
         case finishReason = "finish_reason"
     }
+}
+
+/// The code an agent's `error` event carries when the run's model's server
+/// refused it, as gglib 0.35.0 writes it.
+private struct RefusalCode: Decodable {
+    let code: String
 }

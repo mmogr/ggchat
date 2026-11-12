@@ -154,7 +154,7 @@ final class ImageModelWireTests: XCTestCase {
     /// answer is then gglib's judgement of a message that names it. With
     /// none the request has no query, as it always had.
     func testTheQuestionCanNameAnImageModelToBeJudged() async throws {
-        let path = "/v1/images/drawing"
+        let path = "/v1/gglib/images/drawing"
         let refusal =
             #"{"available":false,"code":"image_model_incomplete","reason":"qwen lacks its llm","models":[]}"#
         ChatsHub.serve(.init(body: refusal), at: path, on: "judged.drawing.test")

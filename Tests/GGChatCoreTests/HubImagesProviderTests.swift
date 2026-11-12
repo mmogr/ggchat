@@ -39,28 +39,30 @@ final class HubImagesProviderTests: XCTestCase {
     /// and the hub's answer names it.
     func testAnImageIsUploadedAsItsBytesAndNamedAsTheHubAnswers() async throws {
         let host = "images-upload.test"
-        ChatsHub.serve(.init(body: try recorded("upload")), at: "/v1/attachments", on: host)
+        ChatsHub.serve(.init(body: try recorded("upload")), at: "/v1/gglib/attachments", on: host)
         let named = try await upload(at: host).get()
         XCTAssertEqual(named.id, "8d5c68b0badbe2691f67bbaa4a8bfba6ff015a4c0e31860ceb388de709e6a84c")
         XCTAssertEqual([named.width, named.height], [1280, 720])
         let request = try XCTUnwrap(ChatsHub.requests(at: host).first)
         XCTAssertEqual(request.httpMethod, "POST")
-        XCTAssertEqual(request.url?.path(), "/v1/attachments")
+        XCTAssertEqual(request.url?.path(), "/v1/gglib/attachments")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer hub-key")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "image/png")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/json")
         XCTAssertEqual(request.httpBody ?? request.bodyStreamData, image)
     }
 
-    /// A gglib with no `attachments` route is one from before images; any
-    /// other refusal carries its sentence, and no answer is a lost one.
-    func testAnUploadToAGglibWithoutImagesTakesNoImagesAndTheRestAreRefusals() async throws {
-        let older = "images-upload-older.test"
-        ChatsHub.serve(.init(status: 404, body: "", type: "text/plain"), at: "/v1/attachments/x", on: older)
-        let olderResult = await upload(at: older)
-        XCTAssertEqual(olderResult, .failure(.takesNoImages))
+    /// A refusal carries its sentence, a bare 404 among them, and no answer
+    /// is a lost one.
+    func testAnUploadRefusalCarriesItsSentenceAndNoAnswerIsALostOne() async throws {
+        let bare = "images-upload-bare.test"
+        ChatsHub.serve(.init(status: 404, body: "", type: "text/plain"), at: "/v1/gglib/attachments/x", on: bare)
+        let bareResult = await upload(at: bare)
+        XCTAssertEqual(
+            bareResult,
+            .failure(.refused(.server(status: 404, code: nil, message: "The server answered with HTTP 404."))))
         let large = "images-upload-large.test"
-        ChatsHub.serve(.init(status: 413, body: refusal("image_too_large")), at: "/v1/attachments", on: large)
+        ChatsHub.serve(.init(status: 413, body: refusal("image_too_large")), at: "/v1/gglib/attachments", on: large)
         let largeResult = await upload(at: large)
         XCTAssertEqual(
             largeResult, .failure(.refused(.server(status: 413, code: "image_too_large", message: "refused"))))
@@ -73,12 +75,12 @@ final class HubImagesProviderTests: XCTestCase {
     /// they were sent.
     func testAnImageIsFetchedAsItsBytes() async throws {
         let host = "images-fetch.test"
-        ChatsHub.serve(.init(body: "", type: "image/png", bytes: image), at: "/v1/attachments/abc", on: host)
+        ChatsHub.serve(.init(body: "", type: "image/png", bytes: image), at: "/v1/gglib/attachments/abc", on: host)
         let fetched = try await fetch("abc", at: host).get()
         XCTAssertEqual(fetched, image)
         let request = try XCTUnwrap(ChatsHub.requests(at: host).first)
         XCTAssertEqual(request.httpMethod, "GET")
-        XCTAssertEqual(request.url?.path(), "/v1/attachments/abc")
+        XCTAssertEqual(request.url?.path(), "/v1/gglib/attachments/abc")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer hub-key")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "image/png, image/jpeg")
     }
@@ -88,8 +90,8 @@ final class HubImagesProviderTests: XCTestCase {
     func testAFetchTheHubCannotAnswerIsNotFoundOrADrop() async throws {
         let host = "images-fetch-refused.test"
         ChatsHub.serve(
-            .init(status: 404, body: refusal("attachment_not_found")), at: "/v1/attachments/gone", on: host)
-        ChatsHub.serve(.init(body: "<html>", type: "text/html"), at: "/v1/attachments/page", on: host)
+            .init(status: 404, body: refusal("attachment_not_found")), at: "/v1/gglib/attachments/gone", on: host)
+        ChatsHub.serve(.init(body: "<html>", type: "text/html"), at: "/v1/gglib/attachments/page", on: host)
         let gone = await fetch("gone", at: host)
         XCTAssertEqual(gone, .failure(.notFound))
         let page = await fetch("page", at: host)
@@ -104,7 +106,7 @@ final class HubImagesProviderTests: XCTestCase {
         let host = "images-fetch-cache.test"
         let cache = URLCache(memoryCapacity: 4 << 20, diskCapacity: 0)
         let cacheable = ChatsHub.Answer(body: "", type: "image/png", bytes: image, cacheable: true)
-        ChatsHub.serve(cacheable, at: "/v1/attachments/abc", on: host)
+        ChatsHub.serve(cacheable, at: "/v1/gglib/attachments/abc", on: host)
         ChatsHub.serve(cacheable, at: "/v1/kept", on: host)
         let provider = ChatsHub.provider(at: host, cache: cache)
 

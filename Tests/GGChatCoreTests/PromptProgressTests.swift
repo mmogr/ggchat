@@ -130,15 +130,14 @@ final class PromptProgressTests: XCTestCase {
         return nil
     }
 
-    /// A chat reply goes over the streaming session; a model list, a status
-    /// request and the status stream go over the other.
+    /// A chat reply goes over the streaming session; a model list and the
+    /// status stream go over the other.
     func testAChatStreamsOnTheStreamingSessionAndNothingElseDoes() async throws {
         let host = "two-sessions.test"
         let url = try XCTUnwrap(URL(string: "http://\(host)/v1"))
         stub(try Fixtures.data("gglib-stream-reasoning.sse"), host: host)
         let others = [
-            "models": "gglib-models.json", "proxy/status": "gglib-proxy-status.json",
-            "proxy/status/stream": "gglib-proxy-status-stream.sse",
+            "models": "gglib-models.json", "gglib/proxy/status/stream": "gglib-proxy-status-stream.sse",
         ]
         for (path, fixture) in others {
             StubURLProtocol.register(
@@ -148,10 +147,8 @@ final class PromptProgressTests: XCTestCase {
             baseURL: url, session: RefusingURLProtocol.makeSession(), streamingSession: StubURLProtocol.makeSession())
         guard case .finished? = await collect(chatOnly).last else { return XCTFail("the chat did not stream") }
         let models = try? await chatOnly.models()
-        let status = try? await chatOnly.proxyStatus()
         let snapshot = try? await firstSnapshot(chatOnly)
         XCTAssertNil(models, "a model list went over the streaming session")
-        XCTAssertNil(status, "a status request went over the streaming session")
         XCTAssertNil(snapshot, "the status stream went over the streaming session")
 
         let allButChat = OpenAICompatibleProvider(
@@ -159,10 +156,8 @@ final class PromptProgressTests: XCTestCase {
         guard case .error(.transport)? = await collect(allButChat).last
         else { return XCTFail("the chat went over the other session") }
         let listed = try await allButChat.models()
-        let answered = try await allButChat.proxyStatus()
         let streamed = try await firstSnapshot(allButChat)
         XCTAssertEqual(listed.count, 6)
-        XCTAssertNotNil(answered)
         XCTAssertNotNil(streamed)
     }
 }

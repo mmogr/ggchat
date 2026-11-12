@@ -50,7 +50,7 @@ extension AppModel {
         let previous = providers[index]
         let config = forgettingTheDefault(of: config, ifMovedFrom: previous)
         providers[index] = config
-        forgetProxyStatus(ifMovedFrom: previous, to: config)
+        forgetTheOldMachine(ifMovedFrom: previous, to: config)
         do {
             try store.save(provider: config)
         } catch {
@@ -97,7 +97,7 @@ extension AppModel {
         }
         let previous = providers[index]
         providers[index] = config
-        forgetProxyStatus(ifMovedFrom: previous, to: config)
+        forgetTheOldMachine(ifMovedFrom: previous, to: config)
     }
 
     /// Forgets a provider: the durable record first, then its credentials.
@@ -148,8 +148,8 @@ extension AppModel {
     }
 
     /// Everything kept about a provider, by its id, once it is removed: when
-    /// it was heard, its Mac's chats, what it can draw, its models, its
-    /// status pane and runs, and whether it is followed. A conversation
+    /// it was heard, its Mac's chats, what it can draw, its models and what
+    /// its gglib said of itself, and whether it is followed. A conversation
     /// opening on it is called off. Ids are never reused, so what is left
     /// behind shows nowhere, but it is kept for as long as the app runs, and
     /// an answer that arrives later must find nothing to write into.
@@ -159,9 +159,8 @@ extension AppModel {
         drawings[id] = nil
         imageChoiceAnswers[id] = nil
         modelsByProvider[id] = nil
-        proxyStatusAvailability[id] = nil
-        providersWithoutRuns.remove(id)
-        probeGeneration[id] = nil
+        gglibAnswers[id] = nil
+        modelListing[id] = nil
         followed.remove(id)
         opening.removeValue(forKey: id)?.cancel()
     }
@@ -211,13 +210,15 @@ extension AppModel {
     public func refreshModels(for config: ProviderConfig, quietly: Bool = false) async {
         guard let provider = makeProvider(for: config) else { return }
         do {
-            let models = try await provider.models()
+            let list = try await provider.modelList()
+            let models = list.models
             // A list that comes back for a provider removed, or moved to
             // another machine, while it was asked for is not kept.
             guard let current = providers.first(where: { $0.id == config.id }), current.kind == config.kind
             else { return }
             heard(config.id)
             modelsByProvider[config.id] = models
+            gglibAnswers[config.id] = list.gglib.map(GGLibAnswer.server) ?? .silent
             // The first that can chat: an image model or an embeddings model
             // listed first is never chosen for a conversation. Chosen for a
             // provider with no default, and for a gglib machine's keyed by

@@ -20,13 +20,10 @@ final class DrawingWireTests: XCTestCase {
         .imageModelIncomplete:
             "The image model is missing a file it needs. The server's sentence names it and the command that links "
             + "it on the serving machine.",
-        .imageModelDoesNotFit:
-            "The image model needs more memory than is free while another reply is being written there. Ask again "
-            + "when that reply has ended.",
         .notAnImageModel: "The model chosen to draw with is not an image model. Pick another image model.",
     ]
 
-    /// The eight codes gglib's drawing writes, and the one it refuses a
+    /// The seven codes gglib's drawing writes, and the one it refuses a
     /// chosen model that does not draw with, spelt as `docs/error-codes.json`
     /// spells them, each with a line of its own that a saved failure draws
     /// too, and the two a run can now end with, which name a side. Where
@@ -38,7 +35,7 @@ final class DrawingWireTests: XCTestCase {
             [
                 "image_model_cannot_chat", "drawing_unavailable", "invalid_image_size", "image_generation_failed",
                 "image_render_stalled", "image_runtime_not_installed", "image_model_incomplete",
-                "image_model_does_not_fit", "not_an_image_model",
+                "not_an_image_model",
             ])
         for (code, hint) in Self.hints {
             XCTAssertEqual(code.hint, hint, code.rawValue)
@@ -49,7 +46,7 @@ final class DrawingWireTests: XCTestCase {
             .imageModelCannotChat: .request, .invalidImageSize: .request, .notAnImageModel: .request,
             .drawingUnavailable: .servingSide, .imageGenerationFailed: .servingSide,
             .imageRuntimeNotInstalled: .servingSide, .imageModelIncomplete: .servingSide,
-            .imageRenderStalled: .waitAndRetry, .imageModelDoesNotFit: .waitAndRetry,
+            .imageRenderStalled: .waitAndRetry,
             .modelUnavailable: .servingSide, .unavailable: .waitAndRetry,
         ]
         for (code, side) in sides {
@@ -83,8 +80,8 @@ final class DrawingWireTests: XCTestCase {
     /// model when it can, and gglib's code and reason when it cannot. A
     /// gglib from before drawing has no such route, and its 404 reads as a
     /// hub that cannot draw; any other failure is the error it is.
-    func testAHubSaysWhetherItCanDrawAndAnOlderOneCannot() async throws {
-        let path = "/v1/images/drawing"
+    func testAHubSaysWhetherItCanDrawAndAFailedAskIsAnError() async throws {
+        let path = "/v1/gglib/images/drawing"
         ChatsHub.serve(.init(body: #"{"available":true,"model":"flux-dev"}"#), at: path, on: "can.drawing.test")
         let can = try await ChatsHub.provider(at: "can.drawing.test").drawing()
         XCTAssertEqual(can, Drawing(available: true, model: "flux-dev"))
@@ -99,10 +96,16 @@ final class DrawingWireTests: XCTestCase {
         XCTAssertEqual(
             cannot, Drawing(available: false, code: "drawing_unavailable", reason: "there is no image model"))
 
-        // Some other path is served, so this host answers, and 404s this one.
+        // Some other path is served, so this host answers, and 404s this
+        // one: an error like any other, since only a gglib that says it
+        // serves drawing is asked.
         ChatsHub.serve(.init(body: "{}"), at: "/v1/models", on: "older.drawing.test")
-        let older = try await ChatsHub.provider(at: "older.drawing.test").drawing()
-        XCTAssertEqual(older, Drawing(available: false))
+        do {
+            let older = try await ChatsHub.provider(at: "older.drawing.test").drawing()
+            XCTFail("a 404 read as \(older)")
+        } catch {
+            guard case .server(404, nil, _) = error else { return XCTFail("a 404 was \(error)") }
+        }
 
         ChatsHub.serve(.init(status: 503, body: "busy", type: "text/plain"), at: path, on: "busy.drawing.test")
         do {

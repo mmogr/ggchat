@@ -2,7 +2,8 @@ import GGChatCore
 import GGChatLocal
 import SwiftUI
 
-/// About, with the gglib and llama.cpp this build carries, when it stops
+/// About, with the gglib and llama.cpp this build carries, the gglib each
+/// server runs when its model list said so, when it stops
 /// opening, how many distinct tickets this device has connected to and,
 /// where it runs models, what they take, which leads to the model browser,
 /// and then each pipe and what it says about itself. A sheet with a stack
@@ -45,6 +46,7 @@ struct SettingsView: View {
             Section("About") {
                 LabeledContent("Version", value: Self.version)
                 Text(Self.carriedLine(Self.carried))
+                ForEach(model.serverGGLibLines, id: \.self) { Text($0) }
                 if let line = Self.expiryLine(buildExpiry, locale: locale, calendar: calendar) {
                     Text(line)
                 }

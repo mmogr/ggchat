@@ -5,8 +5,8 @@ import Foundation
 #endif
 
 /// The only real provider. URLSession, SSE, bearer auth when a key is set.
-/// gglib's proxy status lives here too, as plain endpoints that any server
-/// may or may not answer.
+/// gglib's status stream lives here too, asked only of a gglib whose model
+/// list says it serves the pane (`GGLibFeature.status`).
 public struct OpenAICompatibleProvider: Provider {
     public let baseURL: URL
     let apiKey: String?
@@ -37,19 +37,16 @@ public struct OpenAICompatibleProvider: Provider {
     }
 
     public func models() async throws -> [ModelInfo] {
+        try await modelList().models
+    }
+
+    /// `GET models`, with what a gglib says of itself beside the list.
+    public func modelList() async throws -> ModelList {
         let request = makeRequest(path: "models", method: "GET", body: nil)
         let (data, response) = try await perform(request)
         try checkStatus(response, data: data)
-        return try decode(ModelsResponse.self, from: data).data
-    }
-
-    /// nil when the server answers 404: the pane is hidden for that provider.
-    public func proxyStatus() async throws -> ProxyStatus? {
-        let request = makeRequest(path: "proxy/status", method: "GET", body: nil)
-        let (data, response) = try await perform(request)
-        if response.statusCode == 404 { return nil }
-        try checkStatus(response, data: data)
-        return try decode(ProxyStatus.self, from: data)
+        let answer = try decode(ModelsResponse.self, from: data)
+        return ModelList(models: answer.data, gglib: answer.gglib)
     }
 
     // MARK: - Requests

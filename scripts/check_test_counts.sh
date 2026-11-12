@@ -1030,8 +1030,24 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # over the chat on an open Duo. A browser that goes back to a sheet there,
 # or one Back leaves open, fails nothing else, so this walk, the closing it
 # rests on and their markers are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1152
+#
+# 2026-11-12: 1152 -> 1157 and 1049 -> 1050 for what a server's model list
+# says of its gglib. A list that stops reading the `gglib` object, or lets a
+# bad one cost the models, and a Settings line that stops naming the
+# version, fail nothing else, so these five and their marker are the whole
+# of that guard.
+#
+# 2026-11-12: 1157 -> 1152 and 1050 -> 1052 for what a gglib serves, read
+# from that list. The seven tests of the status probe went with it, and the
+# three of This iPhone's engine are one. A Mac to be updated asked for its
+# chats, a run or a picture, or a reply read on from it, fails nothing else,
+# so the new ones and their markers are the whole of that guard.
+#
+# 2026-11-12: 1152 -> 1151. The one-shot status request had no caller left
+# once the pane follows the stream alone, so it went with its test; the
+# stream's own tests stay.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1151
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 46
-floor "README test markers" "${markers:-0}" 1049
+floor "README test markers" "${markers:-0}" 1052
 
 exit $status

@@ -4,8 +4,9 @@ import XCTest
 @testable import GGChatUI
 
 /// Which model a Mac's chat runs on, and what that Mac's model list says of
-/// it: the list is read when a chat is opened and again each time the pipe
-/// comes up, and it decides the Thinking switch and whether images are sent.
+/// it: the list is read before the Mac's chats are, since it says whether
+/// its gglib serves them, and again each time the pipe comes up once a chat
+/// is open, and it decides the Thinking switch and whether images are sent.
 @MainActor
 final class HubChatModelListTests: XCTestCase {
     private typealias Runs = AppModelRunTests
@@ -135,19 +136,20 @@ final class HubChatModelListTests: XCTestCase {
         XCTAssertTrue(model.hubChatOffersThinking, "the list row's model id was not looked up")
     }
 
-    /// Opening one of a Mac's chats lists that Mac's models when this phone
-    /// has none, and not again when it has. A chat opened while the pipe is
-    /// down asks nothing then, and lists once the pipe is up.
-    func testOpeningAChatListsTheMacsModels() async throws {
+    /// A Mac's models are listed before its chats, once, and opening one of
+    /// its chats finds them in hand and lists nothing more. A chat opened
+    /// while the pipe is down asks nothing then, and lists once the pipe is
+    /// up.
+    func testTheMacsModelsAreListedWithItsChatsAndNotAgainOnOpening() async throws {
         let hub = Thinking.hub()
         let (model, config) = try await Runs.makeModel(behind: hub)
         try await until("the list") { model.hubChats[config.id] != nil && model.hubListing.isEmpty }
         await settle()
-        XCTAssertEqual(hub.with(\.modelLists), 0, "the models were listed before anything was opened")
+        XCTAssertEqual(hub.with(\.modelLists), 1, "the chats were listed without the models first")
+        XCTAssertEqual(model.models(for: config.id), Thinking.models)
         XCTAssertFalse(model.hubChatOffersThinking)
 
         model.selection = .hub(providerID: config.id, chatID: 12)
-        try await until("the models") { model.models(for: config.id) == Thinking.models }
         try await until("the rows") { model.openedHubChat?.state.showsRows == true }
         XCTAssertTrue(model.hubChatOffersThinking)
         XCTAssertEqual(hub.with(\.modelLists), 1)
@@ -162,29 +164,35 @@ final class HubChatModelListTests: XCTestCase {
         await other.disconnectPipe(for: home.id, leaving: .closed)
         other.selection = .hub(providerID: home.id, chatID: 12)
         await settle()
-        XCTAssertEqual(away.with(\.modelLists), 0, "a Mac out of reach was asked for its models")
+        XCTAssertEqual(away.with(\.modelLists), 1, "a Mac out of reach was asked for its models")
         XCTAssertFalse(other.hubChatOffersThinking)
         await other.connectPipe(for: home)
-        try await until("the models") { other.models(for: home.id) == Thinking.models }
+        try await until("the models") { away.with(\.modelLists) == 2 }
         try await until("the rows") { other.openedHubChat?.state.showsRows == true }
         XCTAssertTrue(other.hubChatOffersThinking, "the pipe came up and the switch did not")
-        XCTAssertEqual(away.with(\.modelLists), 1)
     }
 
-    /// The list asked for by opening a chat is one nobody asked for, so one
-    /// that fails raises no alert, and the chat opens without a switch.
-    func testAListThatFailsOnOpeningAChatRaisesNoAlert() async throws {
+    /// The list read before a Mac's chats is one nobody asked for, so one
+    /// that fails raises no alert. Its chats wait for a list that works, and
+    /// a chat opened meanwhile says to try again.
+    func testAListThatFailsBeforeTheChatsRaisesNoAlertAndTheChatsWait() async throws {
         let hub = Thinking.hub()
         hub.with { $0.losesModelLists = true }
         let (model, config) = try await Runs.makeModel(behind: hub)
-        try await until("the list") { model.hubChats[config.id] != nil && model.hubListing.isEmpty }
+        try await until("the list that fails") { hub.with(\.modelLists) == 1 && model.hubListing.isEmpty }
         model.selection = .hub(providerID: config.id, chatID: 12)
-        try await until("the list that fails") { hub.with(\.modelLists) == 1 }
-        try await until("the rows") { model.openedHubChat?.state.showsRows == true }
+        let line = "home did not send this chat. Try again in a moment."
+        try await until("the chat") { model.openedHubChat?.state == .unavailable(line) }
         await settle()
         XCTAssertNil(model.lastError, "a list nobody asked for raised an alert when it failed")
         XCTAssertTrue(model.models(for: config.id).isEmpty)
-        XCTAssertFalse(model.hubChatOffersThinking)
+        XCTAssertEqual(hub.with(\.lists), 0)
+        XCTAssertEqual(hub.with(\.opens), [])
+
+        hub.with { $0.losesModelLists = false }
+        model.selection = nil
+        await model.refreshHubChats()
+        XCTAssertEqual(model.hubChats[config.id], FakeChatsHub.summaries)
     }
 
     /// A pipe that comes back lists its Mac's models again, since a model

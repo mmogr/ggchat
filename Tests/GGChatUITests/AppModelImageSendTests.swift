@@ -46,7 +46,7 @@ final class AppModelImageSendTests: XCTestCase {
         XCTAssertTrue(model.canSee(conversation), "a model the list does not name was taken to be blind")
 
         list(model, config, capabilities: nil)
-        model.proxyStatusAvailability[config.id] = false
+        model.gglibAnswers[config.id] = .silent
         XCTAssertFalse(model.speaksGGLib(config))
         XCTAssertTrue(model.canSee(conversation), "a server not known to be gglib was taken to be blind")
     }

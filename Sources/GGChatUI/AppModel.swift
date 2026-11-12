@@ -54,16 +54,15 @@ public final class AppModel {
     /// Set on the way to the background and cleared on the way back, so a
     /// dial that lands in between hangs itself up.
     var isAway = false
-    var proxyStatusAvailability: [UUID: Bool] = [:]
-    /// The gglib hubs that answered a run's `PUT` as a server without runs,
-    /// for as long as the app runs; see `AppModel+Runs`.
-    var providersWithoutRuns: Set<UUID> = []
+    /// What each provider's model list last said of its gglib, for as long
+    /// as the app runs; see `AppModel+GGLib`.
+    var gglibAnswers: [UUID: GGLibAnswer] = [:]
+    /// Each provider's model list on its way, for a step to wait for rather
+    /// than ask again; see `AppModel+GGLib`.
+    var modelListing: [UUID: Task<Void, Never>] = [:]
     /// How many times each reply still being written has been read on in a
     /// row without an event arriving; see `AppModel+ReadingOn`.
     var readOnAttempts: [UUID: Int] = [:]
-    /// Moved on by every new probe and by every pipe that comes up, so an
-    /// answer from before either is discarded rather than kept.
-    var probeGeneration: [UUID: Int] = [:]
     /// The providers a conversation has been opened on, and each one's
     /// opening still under way; see `AppModel+Opening`.
     var followed: Set<UUID> = []

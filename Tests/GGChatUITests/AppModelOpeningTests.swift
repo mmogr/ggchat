@@ -125,9 +125,9 @@ final class AppModelOpeningTests: XCTestCase {
 
         await model.open(config).value
         sleeper.release()
-        // The pane is asked about only once the list's refusal is back, so
-        // any alert it raised has been written by then.
-        await waitUntil { ModelsServer.statusRequests(at: host) == 1 }
+        // Once the list's refusal is back, any alert it raised has been
+        // written.
+        await waitUntil { ModelsServer.modelRequests(at: host) == 1 && model.modelListing[config.id] == nil }
         XCTAssertEqual(ModelsServer.modelRequests(at: host), 1, "the pipe came up and nobody asked for the list")
         XCTAssertTrue(listed(model, config).isEmpty)
         XCTAssertNil(model.lastError, "a list nobody asked for raised an alert when it failed")
@@ -141,7 +141,7 @@ final class AppModelOpeningTests: XCTestCase {
 
         ModelsServer.answer(.refusing, at: host)
         try await dropAndReconnect(config, of: model)
-        await waitUntil { model.proxyStatusAvailable(for: config.id) }
+        await waitUntil { ModelsServer.modelRequests(at: host) == 3 && model.modelListing[config.id] == nil }
         XCTAssertEqual(ModelsServer.modelRequests(at: host), 3, "the pipe came back and its list was not asked again")
         XCTAssertEqual(listed(model, config), ModelsServer.listed, "a list that failed took the one before with it")
         XCTAssertNil(model.lastError)
@@ -159,8 +159,9 @@ final class AppModelOpeningTests: XCTestCase {
     }
 
     /// A server added by address has no pipe to wait for: opening its
-    /// conversation lists its models and asks about its pane at once.
-    /// Opened again with that list in hand, it is not asked for another.
+    /// conversation lists its models at once, and the list says it has a
+    /// status pane. Opened again with that list in hand, it is not asked for
+    /// another.
     @MainActor
     func testAServerAddedByAddressListsItsModelsAndIsAskedAboutItsPane() async throws {
         let host = "address.models.test"
@@ -170,7 +171,6 @@ final class AppModelOpeningTests: XCTestCase {
         await model.open(config).value
 
         XCTAssertEqual(listed(model, config), ModelsServer.listed)
-        XCTAssertEqual(ModelsServer.statusRequests(at: host), 1)
         XCTAssertTrue(model.proxyStatusAvailable(for: config.id))
         XCTAssertNil(model.lastError)
 
@@ -211,10 +211,12 @@ final class AppModelOpeningTests: XCTestCase {
         try add(config, to: model)
         await model.connectPipe(for: config)
         await waitUntil { model.pipeStatus(for: config.id) == .direct }
+        // The list its chats wait for, held as well.
+        await waitUntil { ModelsServer.modelRequests(at: host) == 1 }
 
         let refresh = Task { await model.refreshModels(for: config) }
-        await waitUntil { ModelsServer.modelRequests(at: host) == 1 }
-        XCTAssertEqual(ModelsServer.modelRequests(at: host), 1, "the refresh never reached the server")
+        await waitUntil { ModelsServer.modelRequests(at: host) == 2 }
+        XCTAssertEqual(ModelsServer.modelRequests(at: host), 2, "the refresh never reached the server")
         refresh.cancel()
         await refresh.value
 
@@ -269,8 +271,9 @@ final class AppModelOpeningTests: XCTestCase {
         XCTAssertEqual(listed(model, config), ModelsServer.listed)
     }
 
-    /// The status pane, asked about again once a pipe a conversation is open
-    /// on comes up, by the model and with no view involved.
+    /// The status pane, shown once a pipe a conversation is open on comes up
+    /// and its list says it serves one, by the model and with no view
+    /// involved.
     @MainActor
     func testThePaneIsAskedAboutWhenAFollowedPipeComesUp() async throws {
         let host = "pane.models.test"
@@ -281,13 +284,13 @@ final class AppModelOpeningTests: XCTestCase {
         try add(config, to: model)
 
         await model.open(config).value
-        XCTAssertEqual(ModelsServer.statusRequests(at: host), 0)
+        XCTAssertEqual(ModelsServer.modelRequests(at: host), 0)
         XCTAssertFalse(model.proxyStatusAvailable(for: config.id))
 
         sleeper.release()
         await waitUntil { model.proxyStatusAvailable(for: config.id) }
 
-        XCTAssertTrue(model.proxyStatusAvailable(for: config.id), "the pipe came up and the pane was not asked about")
-        XCTAssertEqual(ModelsServer.statusRequests(at: host), 1)
+        XCTAssertTrue(model.proxyStatusAvailable(for: config.id), "the pipe came up and the pane did not show")
+        XCTAssertEqual(ModelsServer.modelRequests(at: host), 1)
     }
 }

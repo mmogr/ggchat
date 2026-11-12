@@ -145,7 +145,7 @@ nonisolated enum ThisChatPart: Equatable {
         // MARK: - Pieces
 
         /// The provider whose status the panel follows: the open chat's,
-        /// when it answers gglib's status endpoint.
+        /// when its gglib says it serves the status pane.
         private var statusProvider: ProviderConfig? {
             let id =
                 model.selectedConversation.flatMap { model.provider(for: $0)?.id } ?? model.openedHubChat?.providerID

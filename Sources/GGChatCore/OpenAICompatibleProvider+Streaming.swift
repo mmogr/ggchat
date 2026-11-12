@@ -15,13 +15,13 @@ extension OpenAICompatibleProvider {
         }
     }
 
-    /// gglib's `GET /v1/proxy/status/stream`: a full snapshot first, then
+    /// gglib's `GET /v1/gglib/proxy/status/stream`: a full snapshot first, then
     /// about once a second.
     public func proxyStatusStream() -> AsyncThrowingStream<ProxyStatus, any Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    let request = makeRequest(path: "proxy/status/stream", method: "GET", body: nil)
+                    let request = makeRequest(path: "gglib/proxy/status/stream", method: "GET", body: nil)
                     for try await item in try await eventStream(request, over: session) {
                         guard case .event(let event) = item else { continue }
                         continuation.yield(try decode(ProxyStatus.self, from: Data(event.data.utf8)))

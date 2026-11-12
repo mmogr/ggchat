@@ -96,7 +96,7 @@ final class ToolsOfferedWireTests: XCTestCase {
             _ = try await RunHub.provider(at: row.host).startRun(id: "run-t", sent)
             let put = try XCTUnwrap(RunHub.requests(at: row.host).first)
             XCTAssertEqual(put.httpMethod, "PUT", row.host)
-            XCTAssertEqual(put.url?.path(), "/v1/runs/run-t", row.host)
+            XCTAssertEqual(put.url?.path(), "/v1/gglib/runs/run-t", row.host)
             XCTAssertEqual(put.url?.query(), row.query, row.host)
             XCTAssertEqual(try encoder.encode(try ChatCompletionRequest(sent)), plainBody, row.host)
         }

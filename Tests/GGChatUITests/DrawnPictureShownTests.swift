@@ -177,7 +177,7 @@ final class DrawnPictureShownTests: XCTestCase {
             wrapping: MockProvider(models: Self.sees, scripts: [.init(text: "You are welcome.")]))
         let store = InMemoryStore()
         let (model, config) = try await Runs.makeModel(behind: recorder, store: store, direct: true)
-        model.proxyStatusAvailability[config.id] = false
+        model.gglibAnswers[config.id] = .silent
         XCTAssertFalse(model.speaksGGLib(config))
         model.modelsByProvider[config.id] = Self.sees
         let id = try XCTUnwrap(model.selectedConversationID)

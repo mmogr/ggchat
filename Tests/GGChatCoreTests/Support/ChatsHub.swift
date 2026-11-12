@@ -27,7 +27,7 @@ final class ChatsHub: URLProtocol, @unchecked Sendable {
     /// The host whose held answer this load is, until it is stopped.
     private let held = Mutex<String?>(nil)
 
-    /// Answers `path`, such as `/v1/chats/12`, at `host` with `answer`.
+    /// Answers `path`, such as `/v1/gglib/chats/12`, at `host` with `answer`.
     static func serve(_ answer: Answer, at path: String, on host: String) {
         answers.withLock { $0[host, default: [:]][path] = answer }
     }

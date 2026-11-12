@@ -29,8 +29,36 @@ extension AppModel {
         }
     }
 
+    /// The provider as a hub whose chats can be read now: a paired Mac whose
+    /// pipe is up.
+    func reachableHubChats(for config: ProviderConfig) -> (any HubChatsProvider)? {
+        guard config.isPairedMac, hubIsReachable(config.id) else { return nil }
+        return makeProvider(for: config) as? any HubChatsProvider
+    }
+
+    /// Says why the open chat is not read when its Mac's gglib has not said
+    /// it serves chats: one from before 0.35.0 needs updating, and one whose
+    /// list could not be read is asked again later.
+    func showUnserved(_ open: OpenHubChat, on config: ProviderConfig) {
+        guard openedHubChat?.providerID == open.providerID, openedHubChat?.chatID == open.chatID else { return }
+        hubReading = nil
+        if open.state.showsRows, !needsUpdating(config) { return }
+        let line = chatsUnservedLine(config) ?? "\(config.name) did not send this chat. Try again in a moment."
+        openedHubChat?.state = .unavailable(line)
+        openedHubChat?.context = nil
+    }
+
     func unpairedLine(_ config: ProviderConfig) -> String {
         "\(config.name) is not paired with this phone any more. Pair again from the Mac."
+    }
+
+    /// Why a Mac's chats are not read, when its gglib has said it does not
+    /// serve them: one from before 0.35.0 needs updating. Nil when it serves
+    /// them or has not said.
+    func chatsUnservedLine(_ config: ProviderConfig) -> String? {
+        if needsUpdating(config) { return "The gglib on \(config.name) needs updating to share its chats." }
+        guard let server = gglib(of: config.id), !server.serves(.chats) else { return nil }
+        return "\(config.name) does not share its chats with this phone."
     }
 
     /// A Mac's chat is marked Writing while this phone holds a reply the Mac
@@ -44,12 +72,13 @@ extension AppModel {
     }
 
     /// The line under a Mac's section, when there is something to say: that
-    /// this device is no longer paired with it, that it does not share its
-    /// chats, when its titles were last seen while they cannot be read live,
-    /// or that it has none.
+    /// this device is no longer paired with it, that its gglib needs
+    /// updating, that it does not share its chats, when its titles were last
+    /// seen while they cannot be read live, or that it has none.
     public func hubLine(for providerID: UUID, locale: Locale, calendar: Calendar) -> String? {
         guard let config = providers.first(where: { $0.id == providerID }) else { return nil }
         if !hubIsReachable(providerID), hubIsUnpaired(providerID) { return unpairedLine(config) }
+        if let line = chatsUnservedLine(config) { return line }
         if hubListOutcome[providerID] == .notShared {
             return "\(config.name) does not share its chats with this phone."
         }

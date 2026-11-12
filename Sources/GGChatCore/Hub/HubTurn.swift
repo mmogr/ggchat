@@ -17,7 +17,7 @@ public struct HubTurn: Codable, Sendable, Equatable {
     /// The text, which may be empty when the turn carries images.
     public let content: String
     /// The ids of the images the turn carries, in order, each one the hub
-    /// already holds from `POST attachments`. Left out of the body when there
+    /// already holds from `POST gglib/attachments`. Left out of the body when there
     /// are none, so a turn of text alone is the two keys it always was.
     public let images: [String]
     /// The chat's Thinking choice, said only on the turn that changes it.
@@ -101,8 +101,8 @@ public enum HubTurnFailure: Error, Sendable, Equatable {
     /// attachment_not_found`. The refusal started no run, so the same turn,
     /// its images sent again, can be put under the same id.
     case imageGone
-    /// The hub's gglib is from before images: it has no `attachments` route,
-    /// or refuses a turn's `images` as a key it does not know.
+    /// The hub's gglib is from before images: it refuses a turn's `images`
+    /// as a key it does not know.
     case takesNoImages
     /// Any other refusal, a 5xx, or an answer that cannot be read.
     case refused(ProviderError)

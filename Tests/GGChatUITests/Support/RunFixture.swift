@@ -32,8 +32,8 @@ final class ReadOnSleeper: Sleeper {
 
 extension AppModelRunTests {
     /// A model on `hub`, and a conversation open on it: through a pipe,
-    /// dialled, or with `direct`, at an address that answered the status
-    /// probe as gglib.
+    /// dialled, or with `direct`, at an address whose list said it is a
+    /// gglib that serves everything.
     @MainActor
     static func makeModel(
         behind hub: any Provider, store: any Store = InMemoryStore(), log: any LogSink = NoopLogSink(),
@@ -53,7 +53,7 @@ extension AppModelRunTests {
         if direct {
             registry.register(hub, at: url)
             try model.addProvider(config, credentials: [:])
-            model.proxyStatusAvailability[config.id] = true
+            model.gglibAnswers[config.id] = .server(.serving("0.35.0"))
         } else {
             try model.addProvider(config, credentials: [.ticket: ticket, .token: "secret-token"])
             await model.connectPipe(for: config)

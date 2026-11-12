@@ -332,3 +332,11 @@ is read as agent events, which carry no "Reading N of M tokens" line.
 > Kill criterion: a chat whose Mac lists several image models and whose
 > composer shows no way to pick one while Draw is on, read from the
 > `draws-with` element in a UI walk.
+
+> **Note, 2026-11-12.** A Mac is asked whether it can draw only when its
+> model list says its gglib serves drawing, as gglib 0.35.0 writes it beside
+> `machine_name` on `GET /v1/models`; one whose list says nothing needs
+> updating, and no 404 is read as an answer. "An address that answered the
+> status probe" above is now an address whose list says it is gglib. The
+> routes named above are under `/v1/gglib/` from gglib 0.35.0:
+> `/v1/gglib/images/drawing`, `/v1/gglib/runs` and `/v1/gglib/chats`.

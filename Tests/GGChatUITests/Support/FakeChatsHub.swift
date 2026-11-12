@@ -66,6 +66,9 @@ final class FakeChatsHub: HubChatsProvider, DrawingProvider {
         var models = MockProvider.sampleModels
         var modelLists = 0
         var losesModelLists = false
+        /// What its list says of its gglib: one that serves everything, as
+        /// it stands.
+        var gglib: GGLibServer? = .serving("0.35.0")
     }
 
     let state: Mutex<State>
@@ -127,6 +130,10 @@ final class FakeChatsHub: HubChatsProvider, DrawingProvider {
         return models
     }
 
+    func modelList() async throws -> ModelList {
+        ModelList(models: try await models(), gglib: with(\.gglib))
+    }
+
     func stream(_ request: ChatRequest) -> AsyncStream<ChatEvent> {
         AsyncStream { $0.finish() }
     }
@@ -159,7 +166,7 @@ final class FakeChatsHub: HubChatsProvider, DrawingProvider {
         return try answer.get()
     }
 
-    func startTurn(runID: String, turn: HubTurn) async throws(HubTurnFailure) -> RunStart {
+    func startTurn(runID: String, turn: HubTurn) async throws(HubTurnFailure) -> RunInfo {
         if with({ $0.turnsHeldUntilCancelled > 0 }) {
             with { $0.turnsHeldUntilCancelled -= 1 }
             while !Task.isCancelled { await Task.yield() }
@@ -192,7 +199,7 @@ final class FakeChatsHub: HubChatsProvider, DrawingProvider {
         }
         if let failure { throw failure }
         if lost { throw .lost(.transport("the answer was lost")) }
-        return .started(info)
+        return info
     }
 
     func turnEvents(runID: String, after: UInt32) -> AsyncStream<RunEvent> {

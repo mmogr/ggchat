@@ -207,7 +207,7 @@ final class AppModelThinkingTests: XCTestCase {
     }
 
     /// The switch is offered only where it can do something: the provider is
-    /// gglib, a pipe or a server that answered the status probe, and its
+    /// gglib, a pipe or a server whose list said it is gglib, and its
     /// list names the conversation's model, or the provider's default when
     /// it has none of its own, as one that thinks. A model that does not
     /// think, one the list does not name, a list not read, an older gglib
@@ -233,9 +233,9 @@ final class AppModelThinkingTests: XCTestCase {
         model.modelsByProvider[config.id] = MockProvider.sampleModels
         XCTAssertTrue(model.offersThinking(for: conversation))
 
-        model.proxyStatusAvailability[config.id] = false
+        model.gglibAnswers[config.id] = .silent
         XCTAssertFalse(model.offersThinking(for: conversation), "a server that is not gglib was offered the switch")
-        model.proxyStatusAvailability[config.id] = nil
+        model.gglibAnswers[config.id] = nil
         XCTAssertFalse(model.offersThinking(for: conversation), "a server not probed yet was offered the switch")
         conversation.providerID = UUID()
         XCTAssertFalse(model.offersThinking(for: conversation), "a conversation with no provider was offered it")

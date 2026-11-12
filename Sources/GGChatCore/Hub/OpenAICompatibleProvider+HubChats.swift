@@ -6,14 +6,14 @@ import Foundation
 
 // gglib's chats routes, beside its runs routes. Same base URL, same key.
 extension OpenAICompatibleProvider: HubChatsProvider {
-    /// `GET chats`.
+    /// `GET gglib/chats`.
     public func listChats() async throws(HubChatsFailure) -> HubChatList {
-        try await callHub(HubChatList.self, at: "chats")
+        try await callHub(HubChatList.self, at: "gglib/chats")
     }
 
-    /// `GET chats/{id}`.
+    /// `GET gglib/chats/{id}`.
     public func openChat(id: Int64) async throws(HubChatsFailure) -> HubChatOpen {
-        try await callHub(HubChatOpen.self, at: "chats/\(id)")
+        try await callHub(HubChatOpen.self, at: "gglib/chats/\(id)")
     }
 
     func callHub<T: Decodable>(

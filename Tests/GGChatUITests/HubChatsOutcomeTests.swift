@@ -70,18 +70,42 @@ final class HubChatsOutcomeTests: XCTestCase {
         XCTAssertEqual(model.hubChats[config.id], [FakeChatsHub.summaries[1]])
     }
 
-    /// A gglib with no chats route has no section, and is still asked on a
-    /// pull, so an updated one gets its section back.
-    func testAnOlderGglibHasNoSectionUntilItLists() async throws {
+    /// A Mac whose list says nothing of its gglib, one from before 0.35.0, is
+    /// never asked for its chats: its section says it needs updating, and so
+    /// does a chat of it opened from the titles last seen. A pull asks its
+    /// list again, so an updated one lists.
+    func testAMacWhoseGGLibSaysNothingNeedsUpdatingUntilItSays() async throws {
         let hub = FakeChatsHub()
-        hub.with { $0.list = .failure(.notFound) }
+        hub.with { $0.gglib = nil }
         let (model, config) = try await AppModelRunTests.makeModel(behind: hub)
-        try await AppModelRunTests.until("the 404") { model.hubListOutcome[config.id] == .tooOld }
-        XCTAssertEqual(model.hubProviders, [])
-        hub.with { $0.list = .success(HubChatList(chats: FakeChatsHub.summaries)) }
-        await model.refreshHubChats()
+        try await AppModelRunTests.until("its list") { model.gglibAnswers[config.id] == .silent }
+        let line = "The gglib on home needs updating to share its chats."
         XCTAssertEqual(model.hubProviders.map(\.id), [config.id])
+        XCTAssertEqual(self.line(model, config.id), line)
+        model.selection = .hub(providerID: config.id, chatID: 12)
+        try await AppModelRunTests.until("the chat") { model.openedHubChat?.state == .unavailable(line) }
+        XCTAssertEqual(hub.with(\.lists), 0)
+        XCTAssertEqual(hub.with(\.opens), [])
+        XCTAssertFalse(model.proxyStatusAvailable(for: config.id))
+        XCTAssertFalse(model.hasRuns(config))
+
+        model.selection = nil
+        hub.with { $0.gglib = .serving("0.35.0") }
+        await model.refreshHubChats()
         XCTAssertEqual(model.hubChats[config.id], FakeChatsHub.summaries)
+        XCTAssertNil(self.line(model, config.id))
+    }
+
+    /// A Mac whose gglib says it serves no chats has no section, and is
+    /// never asked for them.
+    func testAMacWhoseGGLibServesNoChatsHasNoSection() async throws {
+        let hub = FakeChatsHub()
+        hub.with { $0.gglib = .serving("0.35.0", [.runs, .drawing, .status]) }
+        let (model, config) = try await AppModelRunTests.makeModel(behind: hub)
+        try await AppModelRunTests.until("its list") { model.gglibAnswers[config.id] != nil }
+        XCTAssertEqual(model.hubProviders, [])
+        await model.refreshHubChats()
+        XCTAssertEqual(hub.with(\.lists), 0)
     }
 
     /// With its ticket gone from the Keychain the Mac is not unreachable: the

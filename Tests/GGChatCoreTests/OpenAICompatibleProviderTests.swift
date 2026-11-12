@@ -253,18 +253,6 @@ final class OpenAICompatibleProviderTests: XCTestCase {
         XCTAssertNil(StubURLProtocol.requests(host: "nokey.test").last?.value(forHTTPHeaderField: "Authorization"))
     }
 
-    func testProxyStatusIsNilOn404AndDecodesOn200() async throws {
-        StubURLProtocol.register(
-            host: "noproxy.test", path: "/v1/proxy/status", .init(status: 404, chunks: [Data("not found".utf8)]))
-        StubURLProtocol.register(
-            host: "proxy.test", path: "/v1/proxy/status",
-            .init(status: 200, chunks: [try Fixtures.data("gglib-proxy-status.json")]))
-        let none = try await provider(host: "noproxy.test").proxyStatus()
-        XCTAssertNil(none)
-        let status = try await provider(host: "proxy.test").proxyStatus()
-        XCTAssertEqual(status?.slots.count, 1)
-    }
-
     func testUnreachableHostIsATransportError() async {
         let events = await collect(provider(host: "nowhere.test"))
         guard case .error(.transport)? = events.last else { return XCTFail("\(events)") }
@@ -281,11 +269,12 @@ final class OpenAICompatibleProviderTests: XCTestCase {
             host: "redact.test", path: "/v1/models",
             .init(status: 200, chunks: [try Fixtures.data("gglib-models.json")]))
         StubURLProtocol.register(
-            host: "redact.test", path: "/v1/proxy/status", .init(status: 500, chunks: [Data("boom \(token)".utf8)]))
+            host: "redact.test", path: "/v1/gglib/proxy/status/stream",
+            .init(status: 500, chunks: [Data("boom \(token)".utf8)]))
         let provider = provider(host: "redact.test", apiKey: token, log: log)
         _ = try await provider.models()
         _ = await collect(provider)
-        _ = try? await provider.proxyStatus()
+        do { for try await _ in provider.proxyStatusStream() { break } } catch {}
         _ = await collect(self.provider(host: "unreachable.test", apiKey: token, log: log))
         let sent = StubURLProtocol.requests(host: "redact.test").compactMap {
             $0.value(forHTTPHeaderField: "Authorization")

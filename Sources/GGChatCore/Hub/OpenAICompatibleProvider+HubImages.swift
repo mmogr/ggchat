@@ -8,12 +8,11 @@ import Foundation
 // chats routes. Same base URL, same key. Neither body is JSON: an upload is
 // the image's bytes, and a fetch answers them.
 extension OpenAICompatibleProvider {
-    /// `POST attachments` with the image as the whole body. gglib reads the
+    /// `POST gglib/attachments` with the image as the whole body. gglib reads the
     /// type from the first bytes and answers its `AttachmentInfo`, whose
-    /// `image_tokens` is passed over here. A 404 is a gglib from before
-    /// images, with no such route.
+    /// `image_tokens` is passed over here.
     public func uploadImage(_ data: Data, mime: String) async throws(HubTurnFailure) -> ImageRef {
-        var request = rawRequest(path: "attachments", method: "POST", accept: "application/json")
+        var request = rawRequest(path: "gglib/attachments", method: "POST", accept: "application/json")
         request.httpBody = data
         request.setValue(mime, forHTTPHeaderField: "Content-Type")
         let answer: Answer
@@ -24,7 +23,6 @@ extension OpenAICompatibleProvider {
         }
         let (body, response) = answer
         guard (200..<300).contains(response.statusCode) else {
-            if response.statusCode == 404 { throw .takesNoImages }
             throw Self.turnFailure(Self.serverError(status: response.statusCode, body: body))
         }
         do {
@@ -34,7 +32,7 @@ extension OpenAICompatibleProvider {
         }
     }
 
-    /// `GET attachments/{id}`: the image's bytes. Asked with nothing cached
+    /// `GET gglib/attachments/{id}`: the image's bytes. Asked with nothing cached
     /// and on a session with no cache, so the bytes are never written to
     /// this device's disk, whatever the answer's headers say. An id the hub
     /// does not hold is a 404, and so is one gglib cannot read as an id.
@@ -64,7 +62,7 @@ extension OpenAICompatibleProvider {
     /// asked for.
     func imageRequest(id: String) -> URLRequest {
         var request = rawRequest(
-            path: "attachments/\(id)", method: "GET", accept: "\(ImageRef.png), \(ImageRef.jpeg)")
+            path: "gglib/attachments/\(id)", method: "GET", accept: "\(ImageRef.png), \(ImageRef.jpeg)")
         request.cachePolicy = .reloadIgnoringLocalCacheData
         return request
     }

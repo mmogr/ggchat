@@ -2,7 +2,7 @@ import Foundation
 import GGChatCore
 
 // A turn to a Mac's chat with images. Each image is sent to the Mac first,
-// `POST attachments`, and the turn names them by the ids the Mac answers.
+// `POST gglib/attachments`, and the turn names them by the ids the Mac answers.
 // Their bytes are held in memory only, by the reply until its run ends and by
 // a draft given back, and the Mac's own images are read into memory as its
 // rows are drawn: nothing of either is written to this phone (ADR 0007).
@@ -80,7 +80,7 @@ extension AppModel {
     /// turn naming them. A turn refused because the Mac no longer holds one
     /// of them started no run: they are sent again from the bytes held here,
     /// and the turn is put again under the same id, once.
-    func startTurn(_ reply: HubLiveReply, on hub: any HubChatsProvider) async throws(HubTurnFailure) -> RunStart {
+    func startTurn(_ reply: HubLiveReply, on hub: any HubChatsProvider) async throws(HubTurnFailure) -> RunInfo {
         do throws(HubTurnFailure) {
             return try await hub.startTurn(runID: reply.runID, turn: turn(of: reply, hub))
         } catch .imageGone where !reply.images.isEmpty {

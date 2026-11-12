@@ -52,8 +52,10 @@ final class LiveGGLibTests: XCTestCase {
         XCTAssertTrue(reply.uppercased().contains("PINEAPPLE"), "the prompt did not reach the reply: \(reply)")
     }
 
-    func testLiveProxyStatusAnswersOrIsAbsent() async throws {
+    /// Asked only of a gglib whose list says it serves the pane.
+    func testLiveProxyStatusAnswersWhenItsListSaysItServesIt() async throws {
         let provider = try liveProvider()
-        _ = try await provider.proxyStatus()
+        guard try await provider.modelList().gglib?.serves(.status) == true else { return }
+        for try await _ in provider.proxyStatusStream() { break }
     }
 }
