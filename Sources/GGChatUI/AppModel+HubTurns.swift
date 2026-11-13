@@ -177,10 +177,15 @@ extension AppModel {
     /// The Mac now starts the run before it loads the model, so a refusal
     /// can be how the run ends, and then it saved no row. gglib names three
     /// such codes (`hub_turn.rs`): `model_unavailable`, `unavailable` and
-    /// `conflict`. The other two it answers on the `PUT`, before any run;
-    /// they are taken the same way here should a run ever end with one.
+    /// `conflict`. From gglib 0.36.0 `agent_busy` is a fourth: a device's
+    /// turn that finds every agent slot taken waits in line for one, and
+    /// its run ends with the code after two minutes there. A full line, and
+    /// an older gglib, still answer the `PUT` 429 with it. The other two
+    /// gglib answers on the `PUT`, before any run; they are taken the same
+    /// way here should a run ever end with one.
     static let turnRefusals: Set<String> = [
         ProviderError.Code.modelUnavailable.rawValue, ProviderError.Code.unavailable.rawValue, RunCode.conflict,
+        ProviderError.Code.agentBusy.rawValue,
         ProviderError.Code.drawingUnavailable.rawValue, ProviderError.Code.imageModelCannotChat.rawValue,
     ]
 

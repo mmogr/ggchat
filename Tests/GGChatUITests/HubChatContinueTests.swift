@@ -121,6 +121,53 @@ final class HubChatContinueTests: XCTestCase {
         XCTAssertEqual(hub.with(\.turns).count, cases.count)
     }
 
+    /// A turn that waited in line for one of the Mac's agent slots and gave
+    /// up, which gglib 0.36.0 ends failed with `agent_busy` and no row
+    /// saved, is said as the 429 it used to be: the Mac did not take the
+    /// message, with the line that says to try again. The text is given
+    /// back, no run is kept, the rows are not read again, and the next send
+    /// starts another run.
+    func testATurnThatGaveUpWaitingForAnAgentSlotGivesItsTextBack() async throws {
+        let busy = "all agent loop slots are in use; try again later"
+        let waits = (1...3).map { (second: UInt64) in
+            let said = "Waiting for a free agent slot, 1 in line\u{2026} \(second) s"
+            return [ChatEvent.waiting(RunWait(reason: .other, position: 1, elapsedMS: second * 1_000, said: said))]
+        }
+        let store = InMemoryStore()
+        let hub = FakeChatsHub(reply: waits)
+        hub.runs.with {
+            $0.ending = .failed
+            $0.error = RunError(code: "agent_busy", message: busy)
+        }
+        let (model, config) = try await Self.opened(hub, store: store)
+        model.sendToHubChat(question)
+        try await until("the refusal") { model.openedHubChat?.unsent != nil }
+        XCTAssertEqual(
+            model.openedHubChat?.notice,
+            "home did not take this message. \(busy) "
+                + "The serving machine is busy or still starting; try again in a moment.")
+        XCTAssertEqual(model.hubReplies.count, 0)
+        XCTAssertFalse(model.openHubChatIsWriting)
+        XCTAssertEqual(try store.loadHubRuns(forProvider: config.id), [], "the run was kept to read on")
+        XCTAssertEqual(hub.with(\.opens), [12], "rows were read for a turn that saved none")
+        XCTAssertEqual(model.takeUnsentHubDraft()?.text, question, "the text was not given back")
+
+        hub.runs.with {
+            $0.frames = FakeChatsHub.reply
+            $0.ending = .completed
+            $0.error = nil
+        }
+        let asked = question
+        hub.with { $0.chats[12] = FakeChatsHub.saved(asked, "Pin the version.") }
+        model.sendToHubChat(question)
+        try await until("the reply's end") {
+            model.hubReplies.isEmpty && Self.shown(model).last == "Pin the version."
+        }
+        XCTAssertNil(model.openedHubChat?.notice)
+        XCTAssertNil(model.openedHubChat?.unsent)
+        XCTAssertEqual(Set(hub.with { $0.turns.map(\.runID) }).count, 2, "the next send started no run of its own")
+    }
+
     /// While the Mac writes a reply the phone sent for, a second send is
     /// refused here, in the words the Mac would use.
     func testASecondSendWhileTheMacWritesIsRefusedHere() async throws {

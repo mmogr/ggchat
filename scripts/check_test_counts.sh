@@ -1056,8 +1056,14 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # all taken. `agent_busy` with no line of its own fails nothing else: the
 # question still gets gglib's sentence, and nothing says to try again. On a
 # conversation kept here this one and its marker are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1154
+#
+# 2026-11-13: 1154 -> 1155 and 1055 -> 1056 for a turn on a Mac's chat that
+# gave up waiting for an agent slot. Read as a reply that stopped, it fails
+# nothing else, and the message typed is gone: gglib saved no row and the
+# composer was not given it back. This one, with its marker, is the guard
+# that reads the run as gglib ends it, after its waits.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1155
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 46
-floor "README test markers" "${markers:-0}" 1055
+floor "README test markers" "${markers:-0}" 1056
 
 exit $status

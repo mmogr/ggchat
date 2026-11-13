@@ -100,17 +100,20 @@ final class HubChatDrawTests: XCTestCase {
 
     /// The Mac starts a turn's run before it loads the model, so it can
     /// refuse the turn by ending the run: failed, with `model_unavailable`,
-    /// `unavailable` or `conflict`, and no row saved. Each, and the two
-    /// codes a `PUT` answers should a run ever end with one, is said as a
-    /// refused turn is, with the code's own line when it has one; the draft
-    /// comes back with Draw as it was, the run is not kept as one to read
-    /// on, and the Mac's rows are not read again. A run that fails any other
-    /// way, or after something of the reply came, ends as a reply that
-    /// stopped, and gives nothing back.
+    /// `unavailable`, `conflict` or `agent_busy`, and no row saved. Each,
+    /// and the two codes a `PUT` answers should a run ever end with one, is
+    /// said as a refused turn is, with the code's own line when it has one;
+    /// the draft comes back with Draw as it was, the run is not kept as one
+    /// to read on, and the Mac's rows are not read again. A run that fails
+    /// any other way, or after something of the reply came, ends as a reply
+    /// that stopped, and gives nothing back.
     func testARunThatEndsAsARefusalGivesTheDraftBack() async throws {
         XCTAssertEqual(
             AppModel.turnRefusals,
-            ["model_unavailable", "unavailable", "conflict", "drawing_unavailable", "image_model_cannot_chat"])
+            [
+                "model_unavailable", "unavailable", "conflict", "agent_busy", "drawing_unavailable",
+                "image_model_cannot_chat",
+            ])
         let store = InMemoryStore()
         let hub = FakeChatsHub(reply: [])
         hub.runs.with {

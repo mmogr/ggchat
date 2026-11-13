@@ -360,7 +360,10 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatDrawTests.testARefusedTurnKeepsItsSwitchAndALostOneIsPutAgainWithIt -->
 - A Mac can refuse a turn after it has started the turn's run, since it now
   starts the run before it loads the model: the run ends failed with
-  `model_unavailable`, `unavailable` or `conflict`, and no row saved. With
+  `model_unavailable`, `unavailable` or `conflict`, and no row saved. From
+  gglib 0.36.0 `agent_busy` is one more: a turn that finds every agent slot
+  taken waits in line for one, and its run ends with the code after two
+  minutes there, where the `PUT` used to be refused with it. With
   nothing of a reply read, each is said as a refused turn is, with the
   code's own line when it has one, the run is no longer kept as one to read
   on, the Mac's rows are not read again, and the text and images go back
@@ -370,6 +373,7 @@ Each claim names the test that keeps it true.
   fails any other way, or after something of its reply came, ends as a
   reply that stopped.
   <!-- test: HubChatDrawTests.testARunThatEndsAsARefusalGivesTheDraftBack -->
+  <!-- test: HubChatContinueTests.testATurnThatGaveUpWaitingForAnAgentSlotGivesItsTextBack -->
 - While a picture is drawn its run says how far it has got, and a reply held
   up behind one says what it waits for: gglib's `tool_progress` and `waiting`
   events, read as gglib records them, with the counts it reported and no
