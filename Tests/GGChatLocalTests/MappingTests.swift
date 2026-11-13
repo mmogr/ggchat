@@ -70,11 +70,12 @@ final class MappingTests: XCTestCase {
             GGChatCore.InstalledModel(
                 GGLib.InstalledModel(
                     id: 4, name: "Test model", listedId: "Test model@Q4_K_M", quantization: "Q4_K_M",
-                    repo: "someone/test-GGUF", bytes: 6, trainedCtx: 40_960, capabilities: ["reasoning"],
-                    verdict: .unknown(missing: .budget, cutOff: false))),
+                    variantLabel: "test-Q4_K_M", repo: "someone/test-GGUF", bytes: 6, trainedCtx: 40_960,
+                    capabilities: ["reasoning"], verdict: .unknown(missing: .budget, cutOff: false))),
             GGChatCore.InstalledModel(
-                id: 4, name: "Test model", quantization: "Q4_K_M", repo: "someone/test-GGUF", bytes: 6,
-                trainedCtx: 40_960, capabilities: ["reasoning"], verdict: .unknown(missing: .budget, cutOff: false)))
+                id: 4, name: "Test model", quantization: "Q4_K_M", variantLabel: "test-Q4_K_M",
+                repo: "someone/test-GGUF", bytes: 6, trainedCtx: 40_960, capabilities: ["reasoning"],
+                verdict: .unknown(missing: .budget, cutOff: false)))
     }
 
     /// What a variant's header says it is, case for case.
