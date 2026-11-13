@@ -26,6 +26,22 @@ final class OnThisIPhoneMarksTests: XCTestCase {
         XCTAssertEqual(OnThisIPhoneSection.removalQuestion(for: labelled), "Remove Qwen3 4B · UD-Q4_K_XL?")
     }
 
+    /// A one-file repository calls its variant by the file's name, where
+    /// gglib shows the model by its header's type: the mark goes by the
+    /// label the download asked for, and by the shown type only where gglib
+    /// kept no label.
+    func testAVariantIsMarkedByTheLabelItsDownloadAskedFor() {
+        let repo = "someone/stories-GGUF"
+        let oneFile = InstalledModel(
+            id: 5, name: "Stories", quantization: "Q8_0", variantLabel: "stories260K-Q8_0", repo: repo, bytes: 1,
+            trainedCtx: nil, capabilities: [], verdict: .fits(ctx: 4_096))
+        XCTAssertTrue(oneFile.isDownload(of: repo, "stories260K-Q8_0"))
+        XCTAssertFalse(oneFile.isDownload(of: repo, "Q8_0"), "marked by the shown type though gglib kept its label")
+        var older = oneFile
+        older.variantLabel = nil
+        XCTAssertTrue(older.isDownload(of: repo, "Q8_0"))
+    }
+
     /// Two variants of the phone's repository installed before this launch,
     /// with no download followed in it, are each marked as on this iPhone,
     /// and the others are not. Removing one unmarks it and forgets its
@@ -62,5 +78,14 @@ final class OnThisIPhoneMarksTests: XCTestCase {
         XCTAssertFalse(model.isOnThisIPhone(small, of: phoneRepo), "the variant removed is still marked")
         XCTAssertTrue(model.isOnThisIPhone(large, of: phoneRepo), "the variant left lost its mark")
         XCTAssertEqual(model.onDevice.downloads, [largeChoice: done], "the removal forgot another download")
+
+        // The one left, as gglib lists a model it shows by its header's type
+        // and labels by what its download asked for: its download is
+        // forgotten by the label.
+        var relabelled = try XCTUnwrap(model.onDevice.installed?.first)
+        relabelled.quantization = "F16"
+        relabelled.variantLabel = large.label
+        await model.removeInstalled(relabelled)
+        XCTAssertTrue(model.onDevice.downloads.isEmpty, "the removal went by the shown type, not the label")
     }
 }
