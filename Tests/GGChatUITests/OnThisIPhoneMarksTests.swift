@@ -78,5 +78,14 @@ final class OnThisIPhoneMarksTests: XCTestCase {
         XCTAssertFalse(model.isOnThisIPhone(small, of: phoneRepo), "the variant removed is still marked")
         XCTAssertTrue(model.isOnThisIPhone(large, of: phoneRepo), "the variant left lost its mark")
         XCTAssertEqual(model.onDevice.downloads, [largeChoice: done], "the removal forgot another download")
+
+        // The one left, as gglib lists a model it shows by its header's type
+        // and labels by what its download asked for: its download is
+        // forgotten by the label.
+        var relabelled = try XCTUnwrap(model.onDevice.installed?.first)
+        relabelled.quantization = "F16"
+        relabelled.variantLabel = large.label
+        await model.removeInstalled(relabelled)
+        XCTAssertTrue(model.onDevice.downloads.isEmpty, "the removal went by the shown type, not the label")
     }
 }

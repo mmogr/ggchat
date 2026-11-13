@@ -57,8 +57,8 @@ extension AppModel {
             onDevice.installedFailure = error.localizedDescription
             return
         }
-        if let repo = installed.repo, let quantization = installed.quantization {
-            onDevice.downloads[QuantChoice(repo: repo, quantization: quantization)] = nil
+        if let repo = installed.repo, let label = installed.offeredLabel {
+            onDevice.downloads[QuantChoice(repo: repo, quantization: label)] = nil
         }
         if let id = thisIPhoneID { modelsByProvider[id]?.removeAll { $0.gglibID == installed.id } }
         await refreshInstalled()
