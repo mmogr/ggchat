@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.19.1](https://github.com/mmogr/ggchat/compare/v0.19.0...v0.19.1) (2026-11-13)
+
+
+### What the app stopped getting wrong
+
+* **core:** a run that waits for an agent slot says so, and one that gives up says to try again ([#311](https://github.com/mmogr/ggchat/issues/311)) ([2f9c604](https://github.com/mmogr/ggchat/commit/2f9c6044f43cf88e4b1729c79d74b0a736a95dc7))
+* **core:** a variant is marked as on this iPhone by the label its download asked for ([#314](https://github.com/mmogr/ggchat/issues/314)) ([03c9583](https://github.com/mmogr/ggchat/commit/03c9583ba0cade252ce0fd9215475a493504fd93))
+
 ## [0.19.0](https://github.com/mmogr/ggchat/compare/v0.18.0...v0.19.0) (2026-11-12)
 
 
