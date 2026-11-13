@@ -370,8 +370,11 @@ Each claim names the test that keeps it true.
   up behind one says what it waits for: gglib's `tool_progress` and `waiting`
   events, read as gglib records them, with the counts it reported and no
   others. A tool's end is read by its call's id, ahead of the images it
-  made, and an image list that does not read still ends the call. A stage or
-  a reason this build does not know means nothing, and the reply reads on.
+  made, and an image list that does not read still ends the call. A stage
+  this build does not know means nothing, and the reply reads on. A wait
+  whose reason this build does not know, as gglib 0.36.0's `agent_slot`, a
+  run waiting for a free agent slot, still shows its sentence, and is
+  "Waiting…" if it came without one.
   The reply holds the latest word in memory and nothing of it is kept: one
   line for it, "Drawing: step 12 of 20" in the locale's digits, with the
   picture's number from the second on and the place in line when it is not
@@ -393,6 +396,8 @@ Each claim names the test that keeps it true.
   <!-- test: ToolWorkTests.testEachStageOfAPictureHasItsLine -->
   <!-- test: ToolWorkTests.testAWaitSaysWhatIsInTheWay -->
   <!-- test: ToolWorkTests.testTheLatestWordIsShownUntilItsToolEnds -->
+  <!-- test: ToolProgressWireTests.testAWaitForAReasonThisBuildDoesNotKnowKeepsItsSentence -->
+  <!-- test: ToolWorkTests.testAWaitForAReasonThisBuildDoesNotKnowShowsItsSentence -->
   <!-- test: ToolWorkTests.testAMacsReplyShowsTheWorkItsRunReportsUntilTheRunEnds -->
 - The look at a picture being drawn travels beside its run's numbered events
   and is not one of them: gglib's `event: preview`, a small PNG with no

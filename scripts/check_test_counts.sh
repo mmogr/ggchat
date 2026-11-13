@@ -1046,8 +1046,13 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # 2026-11-12: 1152 -> 1151. The one-shot status request had no caller left
 # once the pane follows the stream alone, so it went with its test; the
 # stream's own tests stay.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1151
+#
+# 2026-11-13: 1151 -> 1153 and 1052 -> 1054 for a wait whose reason this
+# build does not know. A wait that stops reading, or stops showing its
+# sentence, fails nothing else: the reply still arrives, with nothing said
+# while it waits. These two and their markers are the whole of that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1153
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 46
-floor "README test markers" "${markers:-0}" 1052
+floor "README test markers" "${markers:-0}" 1054
 
 exit $status

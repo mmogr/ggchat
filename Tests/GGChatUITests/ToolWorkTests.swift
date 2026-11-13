@@ -105,6 +105,22 @@ final class ToolWorkTests: XCTestCase {
         XCTAssertEqual(line(try Self.recordedWait("model_load", said: false)), "Loading Qwen3-4B\u{2026} 1 s")
     }
 
+    /// A wait for a reason this build does not know, gglib 0.36.0's
+    /// `agent_slot`, shows the sentence its frame carries, and one that
+    /// came without a sentence is "Waiting…".
+    func testAWaitForAReasonThisBuildDoesNotKnowShowsItsSentence() throws {
+        let frame =
+            #"{"reason":"agent_slot","step":0,"total":0,"position":2,"elapsed_ms":5000,"#
+            + #""said":"Waiting for a free agent slot, 2 in line\#u{2026} 5 s"}"#
+        var work = ToolWork()
+        work.apply(.waiting(try JSONDecoder().decode(RunWait.self, from: Data(frame.utf8))))
+        XCTAssertEqual(work.line(in: Self.british), "Waiting for a free agent slot, 2 in line\u{2026} 5 s")
+        XCTAssertEqual(ToolWork.line(for: RunWait(reason: .other), in: Self.british), "Waiting\u{2026}")
+        XCTAssertEqual(
+            ToolWork.line(for: RunWait(reason: .other, position: 2, elapsedMS: 5000), in: Self.british),
+            "Waiting\u{2026}")
+    }
+
     /// The latest word of a tool is the one shown, a wait gives way to
     /// whatever comes next, and a tool's progress goes when its own call
     /// ends and not when another's does.

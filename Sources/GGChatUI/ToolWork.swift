@@ -99,7 +99,10 @@ struct ToolWork: Equatable {
     /// and when gglib sent none, and "the model" when it named none, the
     /// seconds in plain digits as gglib prints them; a picture as "Waiting
     /// for a picture to be drawn, at step 3 of 20, place 2 in line". This
-    /// fallback goes once ggchat's minimum gglib carries `said`.
+    /// fallback goes once ggchat's minimum gglib carries `said`. A reason
+    /// this build does not know comes from a gglib that sends `said`; one
+    /// that came without it is "Waiting…", so the reply still says it is
+    /// held up.
     static func line(for wait: RunWait, in locale: Locale) -> String {
         if let said = wait.said { return said }
         func number(_ value: some BinaryInteger) -> String { Int(clamping: value).formatted(.number.locale(locale)) }
@@ -113,6 +116,8 @@ struct ToolWork: Equatable {
             let line = "Loading \(wait.model ?? "the model")\u{2026}"
             guard let seconds = wait.elapsedMS.map({ $0 / 1000 }), seconds > 0 else { return line }
             return "\(line) \(seconds) s"
+        case .other:
+            return "Waiting\u{2026}"
         }
     }
 }
