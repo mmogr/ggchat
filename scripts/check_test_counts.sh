@@ -1062,8 +1062,14 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # nothing else, and the message typed is gone: gglib saved no row and the
 # composer was not given it back. This one, with its marker, is the guard
 # that reads the run as gglib ends it, after its waits.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1155
+#
+# 2026-11-14: 1155 -> 1156 and 1056 -> 1057 for a variant marked by the
+# label its download asked for. A mark that goes by the shown type alone
+# fails nothing else: a one-file repository's model, on this iPhone, is
+# offered again as a download. This one and its marker are the whole of
+# that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1156
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 46
-floor "README test markers" "${markers:-0}" 1056
+floor "README test markers" "${markers:-0}" 1057
 
 exit $status

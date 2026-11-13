@@ -169,6 +169,10 @@ public struct InstalledModel: Sendable, Equatable, Hashable, Identifiable {
     public var name: String
     /// The label of its type (`Q4_K_M`), when gglib knows one.
     public var quantization: String?
+    /// The label its download asked for, as `repo` lists its variants
+    /// (`UD-Q4_K_XL`, or a one-file repository's file name), when gglib
+    /// kept one. An offer of `repo` is this model when its label is this.
+    public var variantLabel: String?
     /// The Hugging Face repository it was downloaded from, when it came
     /// from one.
     public var repo: String?
@@ -180,12 +184,13 @@ public struct InstalledModel: Sendable, Equatable, Hashable, Identifiable {
     public var verdict: FitVerdict
 
     public init(
-        id: Int64, name: String, quantization: String? = nil, repo: String? = nil, bytes: UInt64,
-        trainedCtx: UInt64?, capabilities: [String], verdict: FitVerdict
+        id: Int64, name: String, quantization: String? = nil, variantLabel: String? = nil, repo: String? = nil,
+        bytes: UInt64, trainedCtx: UInt64?, capabilities: [String], verdict: FitVerdict
     ) {
         self.id = id
         self.name = name
         self.quantization = quantization
+        self.variantLabel = variantLabel
         self.repo = repo
         self.bytes = bytes
         self.trainedCtx = trainedCtx

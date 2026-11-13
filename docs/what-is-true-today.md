@@ -1235,9 +1235,10 @@ Each claim names the test that keeps it true.
   iPhone" the same download is one line, the model, its bar, how far it
   has come and a cross that calls it off; once done, its row on the
   repository's page is marked as on this iPhone, as is every variant
-  installed from that repository, by the repository and the quantization
-  gglib says each installed model came from, so the marks outlast a
-  launch. Removing a model unmarks its variant alone.
+  installed from that repository, by the repository and the label each
+  installed model's download asked for, or the quantization it is shown
+  by where the library gives no label, so the marks outlast a launch.
+  Removing a model unmarks its variant alone.
   Going to the background pauses every download beside the replies, the row
   saying "Paused, resumes when ggchat is open", and coming back resumes them
   from the bytes they had; the library hears the pauses and resumes in the
@@ -1273,6 +1274,7 @@ Each claim names the test that keeps it true.
   <!-- test: AppModelDownloadTests.testAFinishedDownloadJoinsThisIPhonesModels -->
   <!-- test: OnThisIPhoneMarksTests.testAModelOnThisIPhoneIsShownWithItsQuantization -->
   <!-- test: OnThisIPhoneMarksTests.testTheBrowserMarksWhatIsInstalledAndARemovalUnmarksItAlone -->
+  <!-- test: OnThisIPhoneMarksTests.testAVariantIsMarkedByTheLabelItsDownloadAskedFor -->
   <!-- test: AppModelDownloadTests.testADownloadThereIsNoRoomForIsRefused -->
   <!-- test: ModelsDirectoryTests.testTheDirectoryIsPrivateAndOutOfTheBackup -->
   <!-- test: ModelsDirectoryTests.testTheLaunchMarksADirectoryMadeWithoutTheMark -->

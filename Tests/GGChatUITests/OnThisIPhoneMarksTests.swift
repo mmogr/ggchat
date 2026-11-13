@@ -26,6 +26,22 @@ final class OnThisIPhoneMarksTests: XCTestCase {
         XCTAssertEqual(OnThisIPhoneSection.removalQuestion(for: labelled), "Remove Qwen3 4B · UD-Q4_K_XL?")
     }
 
+    /// A one-file repository calls its variant by the file's name, where
+    /// gglib shows the model by its header's type: the mark goes by the
+    /// label the download asked for, and by the shown type only where gglib
+    /// kept no label.
+    func testAVariantIsMarkedByTheLabelItsDownloadAskedFor() {
+        let repo = "someone/stories-GGUF"
+        let oneFile = InstalledModel(
+            id: 5, name: "Stories", quantization: "Q8_0", variantLabel: "stories260K-Q8_0", repo: repo, bytes: 1,
+            trainedCtx: nil, capabilities: [], verdict: .fits(ctx: 4_096))
+        XCTAssertTrue(oneFile.isDownload(of: repo, "stories260K-Q8_0"))
+        XCTAssertFalse(oneFile.isDownload(of: repo, "Q8_0"), "marked by the shown type though gglib kept its label")
+        var older = oneFile
+        older.variantLabel = nil
+        XCTAssertTrue(older.isDownload(of: repo, "Q8_0"))
+    }
+
     /// Two variants of the phone's repository installed before this launch,
     /// with no download followed in it, are each marked as on this iPhone,
     /// and the others are not. Removing one unmarks it and forgets its

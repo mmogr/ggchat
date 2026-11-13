@@ -134,8 +134,10 @@ extension InstalledModel {
         return "\(name) · \(quantization)"
     }
 
-    /// Whether this is `quantization` of `repo` as the browser offers it.
-    func isDownload(of repo: String, _ quantization: String) -> Bool {
-        self.repo == repo && self.quantization == quantization
+    /// Whether this is the variant `label` of `repo` as the browser offers
+    /// it: by the label its download asked for, and by its shown type where
+    /// gglib kept no label.
+    func isDownload(of repo: String, _ label: String) -> Bool {
+        self.repo == repo && (variantLabel ?? quantization) == label
     }
 }
