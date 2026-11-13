@@ -1051,8 +1051,13 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # build does not know. A wait that stops reading, or stops showing its
 # sentence, fails nothing else: the reply still arrives, with nothing said
 # while it waits. These two and their markers are the whole of that guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1153
+#
+# 2026-11-13: 1153 -> 1154 and 1054 -> 1055 for a Mac whose agent slots are
+# all taken. `agent_busy` with no line of its own fails nothing else: the
+# question still gets gglib's sentence, and nothing says to try again. On a
+# conversation kept here this one and its marker are the whole of that guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1154
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 46
-floor "README test markers" "${markers:-0}" 1054
+floor "README test markers" "${markers:-0}" 1055
 
 exit $status

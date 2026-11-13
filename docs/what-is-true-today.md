@@ -27,7 +27,10 @@ Each claim names the test that keeps it true.
   the serving machine no longer admits says so, and the line after it says
   where a new key comes from, which depends on the kind of provider: a pipe
   pairs again with `gglib remote invite`, and a server's key is checked in
-  its settings.
+  its settings. A Mac whose agent slots are all taken, `agent_busy`, says to
+  wait and try again, whether it refused the question at once or, from
+  gglib 0.36.0, the question's run waited in line for a slot and gave up;
+  nothing of a reply is kept, and Retry asks again.
   <!-- test: ErrorTests.testAKeyTheServingMachineNoLongerAdmitsSaysSo -->
   <!-- test: AppModelRefusalTests.testTheAdviceUnderARefusalFollowsTheKindOfProvider -->
   <!-- test: ErrorTests.testServerMessageIsRenderedVerbatim -->
@@ -36,6 +39,7 @@ Each claim names the test that keeps it true.
   <!-- test: ErrorTests.testGglibsHalfOfTheVocabularyIsGglibsOwnList -->
   <!-- test: ErrorTests.testTheSideNamedIsTheSideThatWroteTheRefusal -->
   <!-- test: ErrorTests.testAMachineThatIsMerelyBusySaysToWaitRatherThanNamingASide -->
+  <!-- test: AppModelRunTests.testARunThatGaveUpWaitingForAnAgentSlotSaysToTryAgain -->
 - A message carries its images by reference: the SHA-256 of the bytes,
   their type and size, which is how gglib names a stored image. A request
   reads the bytes from this device's store, once per image, in one place

@@ -116,6 +116,7 @@ extension ProviderError {
         // gglib, published as `docs/error-codes.json` and checked against a vendored
         // copy by ErrorTests, which also names each code there that is not here.
         case admissionTimeout = "admission_timeout"
+        case agentBusy = "agent_busy"
         case contextLengthExceeded = "context_length_exceeded"
         case deviceNotPaired = "device_not_paired"
         case embeddingModelCannotChat = "embedding_model_cannot_chat"
@@ -214,7 +215,10 @@ extension ProviderError.Code {
         // Nothing is wrong yet: a model still loading, a queue that did not
         // reach this request in time, a first byte that has not arrived.
         // A picture that stalled was stopped and can be asked for again.
-        case .admissionTimeout, .modelLoading, .upstreamTimeout, .imageRenderStalled, .unavailable:
+        // `agent_busy` is every agent slot taken: a `PUT`'s 429, and from
+        // gglib 0.36.0 how a device's run ends once it has waited two
+        // minutes in line for one.
+        case .admissionTimeout, .agentBusy, .modelLoading, .upstreamTimeout, .imageRenderStalled, .unavailable:
             .waitAndRetry
         }
     }
@@ -271,7 +275,7 @@ extension ProviderError.Code {
             .imageRenderStalled, .imageRuntimeNotInstalled, .imageModelIncomplete, .notAnImageModel:
             drawingHint
         case .badRequest, .badGateway, .backendUnreachable, .incompleteRequest,
-            .admissionTimeout, .contextLengthExceeded, .deviceNotPaired, .embeddingModelCannotChat,
+            .admissionTimeout, .agentBusy, .contextLengthExceeded, .deviceNotPaired, .embeddingModelCannotChat,
             .hostNotAllowed, .internalError, .invalidPairingCode, .invalidRequest, .loopDetected,
             .mcpNotAllowedOverTunnel, .modelFileNotFound, .modelLoading, .modelNotFound, .modelDoesNotFit,
             .notAnEmbeddingModel, .pinnedModelMismatch, .profileNotFound, .stagnationDetected,

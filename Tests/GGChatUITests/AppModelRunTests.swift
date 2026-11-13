@@ -82,6 +82,45 @@ final class AppModelRunTests: XCTestCase {
         XCTAssertEqual(hub.with { $0.chats.count }, 0)
     }
 
+    /// A run that waited in line for one of the Mac's agent slots and gave
+    /// up, which gglib 0.36.0 ends failed with `agent_busy` and nothing
+    /// written, leaves the question with gglib's sentence and the line that
+    /// says to try again, and Retry starts another run. A full line still
+    /// answers the `PUT` 429, and that says the same.
+    @MainActor
+    func testARunThatGaveUpWaitingForAnAgentSlotSaysToTryAgain() async throws {
+        let busy = "all agent loop slots are in use; try again later"
+        let said = "Waiting for a free agent slot, 1 in line\u{2026} 2 s"
+        let hub = FakeRunHub(
+            frames: [[.waiting(RunWait(reason: .other, position: 1, elapsedMS: 2_000, said: said))]])
+        hub.with {
+            $0.ending = .failed
+            $0.error = RunError(code: "agent_busy", message: busy)
+        }
+        let (model, _) = try await Self.makeModel(behind: hub)
+        try await XCTUnwrap(model.send("go")).value
+        var question = try Self.last(model)
+        XCTAssertEqual(question.role, .user, "a reply that never started was kept")
+        XCTAssertEqual(question.failure?.message, "The reply stopped: \(busy)")
+        XCTAssertEqual(question.failure?.hint, "The serving machine is busy or still starting; try again in a moment.")
+        XCTAssertTrue(Self.settled(model))
+
+        hub.with {
+            $0.frames = FakeRunHub.frames(ofText: Self.text, reasoning: "")
+            $0.ending = .completed
+            $0.error = nil
+        }
+        try await XCTUnwrap(model.retry()).value
+        XCTAssertEqual(try Self.last(model).content, Self.text)
+        XCTAssertEqual(hub.with { $0.starts.count }, 2, "Retry started no second run")
+
+        hub.with { $0.start = .refused(.server(status: 429, code: "agent_busy", message: busy)) }
+        try await XCTUnwrap(model.send("again")).value
+        question = try Self.last(model)
+        XCTAssertEqual(question.failure?.message, busy)
+        XCTAssertEqual(question.failure?.hint, WhereToLook.waitAndRetry.hint)
+    }
+
     /// Stop cancels the run on the hub and keeps what arrived as a stopped
     /// reply; the background, on the same reply, cancels nothing.
     @MainActor
