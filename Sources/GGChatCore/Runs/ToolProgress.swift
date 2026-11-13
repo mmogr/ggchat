@@ -67,8 +67,10 @@ public struct RunWait: Decodable, Sendable, Equatable {
         case other
 
         /// A word this build does not know reads as `.other`, so its wait
-        /// still reads: a reader ignores words it does not know, as gglib's
-        /// `docs/compatibility.md` asks of its clients.
+        /// still reads. gglib's `docs/compatibility.md` asks a reader to
+        /// ignore any field it does not know, and any feature name in the
+        /// model list's `gglib.features`; this takes a `reason` it does not
+        /// know the same way.
         public init(from decoder: any Decoder) throws {
             self = Self(rawValue: try decoder.singleValueContainer().decode(String.self)) ?? .other
         }
