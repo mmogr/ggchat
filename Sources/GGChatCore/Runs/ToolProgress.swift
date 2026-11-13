@@ -61,6 +61,19 @@ public struct RunWait: Decodable, Sendable, Equatable {
         case imageRender = "image_render"
         /// The model is loading.
         case modelLoad = "model_load"
+        /// A reason from a later gglib, such as 0.36.0's `agent_slot`, a
+        /// device's run waiting for a free agent slot. Its sentence, `said`,
+        /// is shown as for any other wait.
+        case other
+
+        /// A word this build does not know reads as `.other`, so its wait
+        /// still reads. gglib's `docs/compatibility.md` asks a reader to
+        /// ignore any field it does not know, and any feature name in the
+        /// model list's `gglib.features`; this takes a `reason` it does not
+        /// know the same way.
+        public init(from decoder: any Decoder) throws {
+            self = Self(rawValue: try decoder.singleValueContainer().decode(String.self)) ?? .other
+        }
     }
 
     public var reason: Reason

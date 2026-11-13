@@ -1046,8 +1046,24 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # 2026-11-12: 1152 -> 1151. The one-shot status request had no caller left
 # once the pane follows the stream alone, so it went with its test; the
 # stream's own tests stay.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1151
+#
+# 2026-11-13: 1151 -> 1153 and 1052 -> 1054 for a wait whose reason this
+# build does not know. A wait that stops reading, or stops showing its
+# sentence, fails nothing else: the reply still arrives, with nothing said
+# while it waits. These two and their markers are the whole of that guard.
+#
+# 2026-11-13: 1153 -> 1154 and 1054 -> 1055 for a Mac whose agent slots are
+# all taken. `agent_busy` with no line of its own fails nothing else: the
+# question still gets gglib's sentence, and nothing says to try again. On a
+# conversation kept here this one and its marker are the whole of that guard.
+#
+# 2026-11-13: 1154 -> 1155 and 1055 -> 1056 for a turn on a Mac's chat that
+# gave up waiting for an agent slot. Read as a reply that stopped, it fails
+# nothing else, and the message typed is gone: gglib saved no row and the
+# composer was not given it back. This one, with its marker, is the guard
+# that reads the run as gglib ends it, after its waits.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1155
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 46
-floor "README test markers" "${markers:-0}" 1052
+floor "README test markers" "${markers:-0}" 1056
 
 exit $status

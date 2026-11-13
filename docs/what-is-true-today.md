@@ -27,7 +27,10 @@ Each claim names the test that keeps it true.
   the serving machine no longer admits says so, and the line after it says
   where a new key comes from, which depends on the kind of provider: a pipe
   pairs again with `gglib remote invite`, and a server's key is checked in
-  its settings.
+  its settings. A Mac whose agent slots are all taken, `agent_busy`, says to
+  wait and try again, whether it refused the question at once or, from
+  gglib 0.36.0, the question's run waited in line for a slot and gave up;
+  nothing of a reply is kept, and Retry asks again.
   <!-- test: ErrorTests.testAKeyTheServingMachineNoLongerAdmitsSaysSo -->
   <!-- test: AppModelRefusalTests.testTheAdviceUnderARefusalFollowsTheKindOfProvider -->
   <!-- test: ErrorTests.testServerMessageIsRenderedVerbatim -->
@@ -36,6 +39,7 @@ Each claim names the test that keeps it true.
   <!-- test: ErrorTests.testGglibsHalfOfTheVocabularyIsGglibsOwnList -->
   <!-- test: ErrorTests.testTheSideNamedIsTheSideThatWroteTheRefusal -->
   <!-- test: ErrorTests.testAMachineThatIsMerelyBusySaysToWaitRatherThanNamingASide -->
+  <!-- test: AppModelRunTests.testARunThatGaveUpWaitingForAnAgentSlotSaysToTryAgain -->
 - A message carries its images by reference: the SHA-256 of the bytes,
   their type and size, which is how gglib names a stored image. A request
   reads the bytes from this device's store, once per image, in one place
@@ -356,7 +360,10 @@ Each claim names the test that keeps it true.
   <!-- test: HubChatDrawTests.testARefusedTurnKeepsItsSwitchAndALostOneIsPutAgainWithIt -->
 - A Mac can refuse a turn after it has started the turn's run, since it now
   starts the run before it loads the model: the run ends failed with
-  `model_unavailable`, `unavailable` or `conflict`, and no row saved. With
+  `model_unavailable`, `unavailable` or `conflict`, and no row saved. From
+  gglib 0.36.0 `agent_busy` is one more: a turn that finds every agent slot
+  taken waits in line for one, and its run ends with the code after two
+  minutes there, where the `PUT` used to be refused with it. With
   nothing of a reply read, each is said as a refused turn is, with the
   code's own line when it has one, the run is no longer kept as one to read
   on, the Mac's rows are not read again, and the text and images go back
@@ -366,12 +373,16 @@ Each claim names the test that keeps it true.
   fails any other way, or after something of its reply came, ends as a
   reply that stopped.
   <!-- test: HubChatDrawTests.testARunThatEndsAsARefusalGivesTheDraftBack -->
+  <!-- test: HubChatContinueTests.testATurnThatGaveUpWaitingForAnAgentSlotGivesItsTextBack -->
 - While a picture is drawn its run says how far it has got, and a reply held
   up behind one says what it waits for: gglib's `tool_progress` and `waiting`
   events, read as gglib records them, with the counts it reported and no
   others. A tool's end is read by its call's id, ahead of the images it
-  made, and an image list that does not read still ends the call. A stage or
-  a reason this build does not know means nothing, and the reply reads on.
+  made, and an image list that does not read still ends the call. A stage
+  this build does not know means nothing, and the reply reads on. A wait
+  whose reason this build does not know, as gglib 0.36.0's `agent_slot`, a
+  run waiting for a free agent slot, still shows its sentence, and is
+  "Waiting…" if it came without one.
   The reply holds the latest word in memory and nothing of it is kept: one
   line for it, "Drawing: step 12 of 20" in the locale's digits, with the
   picture's number from the second on and the place in line when it is not
@@ -393,6 +404,8 @@ Each claim names the test that keeps it true.
   <!-- test: ToolWorkTests.testEachStageOfAPictureHasItsLine -->
   <!-- test: ToolWorkTests.testAWaitSaysWhatIsInTheWay -->
   <!-- test: ToolWorkTests.testTheLatestWordIsShownUntilItsToolEnds -->
+  <!-- test: ToolProgressWireTests.testAWaitForAReasonThisBuildDoesNotKnowKeepsItsSentence -->
+  <!-- test: ToolWorkTests.testAWaitForAReasonThisBuildDoesNotKnowShowsItsSentence -->
   <!-- test: ToolWorkTests.testAMacsReplyShowsTheWorkItsRunReportsUntilTheRunEnds -->
 - The look at a picture being drawn travels beside its run's numbered events
   and is not one of them: gglib's `event: preview`, a small PNG with no

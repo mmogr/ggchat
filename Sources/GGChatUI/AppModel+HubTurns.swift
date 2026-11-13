@@ -177,10 +177,15 @@ extension AppModel {
     /// The Mac now starts the run before it loads the model, so a refusal
     /// can be how the run ends, and then it saved no row. gglib names three
     /// such codes (`hub_turn.rs`): `model_unavailable`, `unavailable` and
-    /// `conflict`. The other two it answers on the `PUT`, before any run;
-    /// they are taken the same way here should a run ever end with one.
+    /// `conflict`. From gglib 0.36.0 `agent_busy` is a fourth: a device's
+    /// turn that finds every agent slot taken waits in line for one, and
+    /// its run ends with the code after two minutes there. A full line, and
+    /// an older gglib, still answer the `PUT` 429 with it. The other two
+    /// gglib answers on the `PUT`, before any run; they are taken the same
+    /// way here should a run ever end with one.
     static let turnRefusals: Set<String> = [
         ProviderError.Code.modelUnavailable.rawValue, ProviderError.Code.unavailable.rawValue, RunCode.conflict,
+        ProviderError.Code.agentBusy.rawValue,
         ProviderError.Code.drawingUnavailable.rawValue, ProviderError.Code.imageModelCannotChat.rawValue,
     ]
 
@@ -198,8 +203,18 @@ extension AppModel {
         readOnAttempts[reply.key] = nil
         let hint = ProviderError.hint(forCode: error.code, on: .unknown)
         let line = "\(config.name) did not take this message. \(error.message)"
-        refuse(reply, [line, hint].compactMap(\.self).joined(separator: " "), config)
+        refuse(reply, Self.joined(line, hint), config)
         keepHubRuns(reply.providerID)
+    }
+
+    /// `line`, then `hint` when there is one. gglib writes most of its
+    /// sentences with no full stop, so one that does not end itself is
+    /// given a stop before the hint, and the two do not run together.
+    static func joined(_ line: String, _ hint: String?) -> String {
+        let said = line.trimmingCharacters(in: .whitespaces)
+        guard let hint else { return said }
+        let ends = said.last.map { ".!?\u{2026}".contains($0) } ?? true
+        return "\(said)\(ends ? "" : ".") \(hint)"
     }
 
     /// Drops the ended replies of a chat, whose rows now hold them.

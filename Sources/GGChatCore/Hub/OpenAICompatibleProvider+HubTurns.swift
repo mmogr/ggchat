@@ -120,7 +120,8 @@ extension OpenAICompatibleProvider {
     }
 
     /// One event's data as `type`, or nil when it does not read as one: a
-    /// stage or a reason this build does not know means nothing here.
+    /// stage this build does not know means nothing here. A wait's reason
+    /// it does not know still reads, as `RunWait.Reason.other`.
     private static func read<T: Decodable>(_ type: T.Type, _ data: Data) -> T? {
         try? JSONDecoder().decode(type, from: data)
     }

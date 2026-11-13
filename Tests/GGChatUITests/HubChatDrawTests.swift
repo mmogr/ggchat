@@ -100,17 +100,21 @@ final class HubChatDrawTests: XCTestCase {
 
     /// The Mac starts a turn's run before it loads the model, so it can
     /// refuse the turn by ending the run: failed, with `model_unavailable`,
-    /// `unavailable` or `conflict`, and no row saved. Each, and the two
-    /// codes a `PUT` answers should a run ever end with one, is said as a
-    /// refused turn is, with the code's own line when it has one; the draft
-    /// comes back with Draw as it was, the run is not kept as one to read
-    /// on, and the Mac's rows are not read again. A run that fails any other
-    /// way, or after something of the reply came, ends as a reply that
-    /// stopped, and gives nothing back.
+    /// `unavailable`, `conflict` or `agent_busy`, and no row saved. Each,
+    /// and the two codes a `PUT` answers should a run ever end with one, is
+    /// said as a refused turn is, with the code's own line when it has one,
+    /// after a full stop when gglib's sentence does not end itself;
+    /// the draft comes back with Draw as it was, the run is not kept as one
+    /// to read on, and the Mac's rows are not read again. A run that fails
+    /// any other way, or after something of the reply came, ends as a reply
+    /// that stopped, and gives nothing back.
     func testARunThatEndsAsARefusalGivesTheDraftBack() async throws {
         XCTAssertEqual(
             AppModel.turnRefusals,
-            ["model_unavailable", "unavailable", "conflict", "drawing_unavailable", "image_model_cannot_chat"])
+            [
+                "model_unavailable", "unavailable", "conflict", "agent_busy", "drawing_unavailable",
+                "image_model_cannot_chat",
+            ])
         let store = InMemoryStore()
         let hub = FakeChatsHub(reply: [])
         hub.runs.with {
@@ -123,11 +127,9 @@ final class HubChatDrawTests: XCTestCase {
             hub.runs.with { $0.error = RunError(code: code, message: "it was refused") }
             model.sendToHubChat("a fox in snow", draws: true)
             try await until("the refusal with \(code)") { model.openedHubChat?.unsent != nil }
-            let hint = ProviderError.hint(forCode: code, on: .unknown)
-            XCTAssertEqual(
-                model.openedHubChat?.notice,
-                ["home did not take this message. it was refused", hint].compactMap(\.self).joined(separator: " "),
-                code)
+            // A code with a line of its own has it after a full stop.
+            let hint = ProviderError.hint(forCode: code, on: .unknown).map { ". \($0)" } ?? ""
+            XCTAssertEqual(model.openedHubChat?.notice, "home did not take this message. it was refused\(hint)", code)
             XCTAssertEqual(model.hubReplies.count, 0, code)
             XCTAssertEqual(try store.loadHubRuns(forProvider: config.id), [], "\(code): the run was kept to read on")
             XCTAssertEqual(hub.with(\.opens), [12], "\(code): rows were read for a turn that saved none")
@@ -135,6 +137,15 @@ final class HubChatDrawTests: XCTestCase {
             XCTAssertEqual(back.text, "a fox in snow", code)
             XCTAssertTrue(back.draws, code)
         }
+
+        // A sentence that ends itself is given no second stop.
+        hub.runs.with { $0.error = RunError(code: "model_unavailable", message: "The model could not be loaded.") }
+        model.sendToHubChat("a fox in snow", draws: true)
+        try await until("the refusal that ends itself") { model.openedHubChat?.unsent != nil }
+        XCTAssertEqual(
+            model.openedHubChat?.notice,
+            "home did not take this message. The model could not be loaded. "
+                + "Look at the machine that is serving the model.")
 
         hub.runs.with { $0.error = RunError(code: "upstream_error", message: "the model server stopped") }
         model.sendToHubChat("a fox in snow", draws: true)

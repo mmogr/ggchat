@@ -81,11 +81,6 @@ final class ErrorTests: XCTestCase {
         // shown with no hint of its own. Filing a code here is a decision
         // someone made, not a gap nobody saw.
         let notShownHere: Set<String> = [
-            // gglib publishes this as 429, "every agent loop slot is in use;
-            // retry later". It stays unmapped on purpose: gglib #1528 may make
-            // a device's run wait instead of refusing, and ggchat #217 tracks
-            // the hint until then.
-            "agent_busy",
             "agent_error", "chats_unavailable", "folder_missing", "folder_unusable", "log_full", "max_iterations",
             "not_yours", "origin_not_allowed", "proxy_not_running", "run_panicked", "runs_unavailable",
             "shutting_down", "too_many_tool_calls", "transcript_not_saved", "turn_too_long",
@@ -162,15 +157,28 @@ final class ErrorTests: XCTestCase {
         XCTAssertEqual(ProviderError.whereToLook(forCode: "device_not_paired"), .servingSide)
     }
 
-    /// A model still loading and a queue that never reached the request are
-    /// not a machine to go and look at. Sending someone to inspect a machine
-    /// that is doing its job is worse than saying nothing.
+    /// A model still loading, a queue that never reached the request and a
+    /// machine whose agent slots are all taken are not a machine to go and
+    /// look at. Sending someone to inspect a machine that is doing its job
+    /// is worse than saying nothing. `agent_busy` says to wait both ways it
+    /// arrives: as a `PUT`'s 429, and as the error of a run that waited in
+    /// line for a slot and gave up, which gglib 0.36.0 ends a device's run
+    /// with.
     func testAMachineThatIsMerelyBusySaysToWaitRatherThanNamingASide() {
-        for code in [ProviderError.Code.modelLoading, .admissionTimeout, .upstreamTimeout] {
+        for code in [ProviderError.Code.modelLoading, .admissionTimeout, .upstreamTimeout, .agentBusy] {
             XCTAssertEqual(code.whereToLook, .waitAndRetry, code.rawValue)
         }
         let loading = ProviderError.server(status: 503, code: "model_loading", message: "Model is loading, retry")
         XCTAssertEqual(loading.whereToLook, .waitAndRetry)
+        let busy = "all agent loop slots are in use; try again later"
+        let refused = ProviderError.server(status: 429, code: "agent_busy", message: busy)
+        let gaveUp = ProviderError.stream(code: "agent_busy", message: busy)
+        for error in [refused, gaveUp] {
+            XCTAssertEqual(error.whereToLook, .waitAndRetry)
+            XCTAssertEqual(error.hint, "The serving machine is busy or still starting; try again in a moment.")
+            XCTAssertEqual(Failure(error).hint, error.hint, "a saved failure draws the same line")
+        }
+        XCTAssertEqual(gaveUp.errorDescription, "The reply stopped: \(busy)")
     }
 
     func testServerMessageIsRenderedVerbatim() {
