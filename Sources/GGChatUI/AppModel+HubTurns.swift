@@ -203,8 +203,18 @@ extension AppModel {
         readOnAttempts[reply.key] = nil
         let hint = ProviderError.hint(forCode: error.code, on: .unknown)
         let line = "\(config.name) did not take this message. \(error.message)"
-        refuse(reply, [line, hint].compactMap(\.self).joined(separator: " "), config)
+        refuse(reply, Self.joined(line, hint), config)
         keepHubRuns(reply.providerID)
+    }
+
+    /// `line`, then `hint` when there is one. gglib writes most of its
+    /// sentences with no full stop, so one that does not end itself is
+    /// given a stop before the hint, and the two do not run together.
+    static func joined(_ line: String, _ hint: String?) -> String {
+        let said = line.trimmingCharacters(in: .whitespaces)
+        guard let hint else { return said }
+        let ends = said.last.map { ".!?\u{2026}".contains($0) } ?? true
+        return "\(said)\(ends ? "" : ".") \(hint)"
     }
 
     /// Drops the ended replies of a chat, whose rows now hold them.

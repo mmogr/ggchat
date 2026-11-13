@@ -144,7 +144,7 @@ final class HubChatContinueTests: XCTestCase {
         try await until("the refusal") { model.openedHubChat?.unsent != nil }
         XCTAssertEqual(
             model.openedHubChat?.notice,
-            "home did not take this message. \(busy) "
+            "home did not take this message. \(busy). "
                 + "The serving machine is busy or still starting; try again in a moment.")
         XCTAssertEqual(model.hubReplies.count, 0)
         XCTAssertFalse(model.openHubChatIsWriting)
