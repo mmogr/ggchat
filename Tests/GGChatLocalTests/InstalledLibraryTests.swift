@@ -125,9 +125,9 @@ final class InstalledLibraryTests: XCTestCase {
             listed,
             [
                 InstalledModel(
-                    id: id, name: "Test model", quantization: "Q4_K_M", repo: "test-owner/Test-GGUF",
-                    bytes: UInt64(header.count), trainedCtx: 40_960, capabilities: [],
-                    verdict: .unknown(missing: .budget, cutOff: false))
+                    id: id, name: "Test model", quantization: "Q4_K_M", variantLabel: "Q4_K_M",
+                    repo: "test-owner/Test-GGUF", bytes: UInt64(header.count), trainedCtx: 40_960,
+                    capabilities: [], verdict: .unknown(missing: .budget, cutOff: false))
             ])
 
         _ = try await library.suggested(

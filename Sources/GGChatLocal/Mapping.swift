@@ -95,8 +95,8 @@ extension GGChatCore.VariantRole {
 extension GGChatCore.InstalledModel {
     init(_ model: GGLib.InstalledModel) {
         self.init(
-            id: model.id, name: model.name, quantization: model.quantization, repo: model.repo, bytes: model.bytes,
-            trainedCtx: model.trainedCtx, capabilities: model.capabilities,
+            id: model.id, name: model.name, quantization: model.quantization, variantLabel: model.variantLabel,
+            repo: model.repo, bytes: model.bytes, trainedCtx: model.trainedCtx, capabilities: model.capabilities,
             verdict: GGChatCore.FitVerdict(model.verdict))
     }
 }
