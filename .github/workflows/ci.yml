@@ -339,9 +339,16 @@ jobs:
       - name: Say which tests ran and why any failed
         if: always()
         run: |
+          # No test cases means one of two things, and they send the reader
+          # opposite ways: a build that failed, or a build that succeeded and
+          # ran nothing because the project no longer lists the tests. The
+          # build's own result says which. A link that failed on #320 read as
+          # a stale project, and the undefined symbols were left to be found
+          # in the log. A result that cannot be read is said to be unread
+          # rather than guessed at.
           xcrun xcresulttool get test-results tests --path "$BUNDLE" --format json \
             | python3 -c "
-          import json, sys
+          import json, os, subprocess, sys
           cases, failures = [], []
           def walk(nodes, case=None, failing=False):
               for n in nodes:
@@ -354,14 +361,55 @@ jobs:
                   if n.get('nodeType') == 'Failure Message' and failing:
                       failures.append((case, n.get('name')))
                   walk(n.get('children', []), case, failing)
-          walk(json.load(sys.stdin).get('testNodes', []))
+          # Results that cannot be read are not results that are empty, and
+          # only empty ones say anything about the project.
+          try:
+              walk(json.load(sys.stdin).get('testNodes', []))
+              read = True
+          except (ValueError, AttributeError):
+              read = False
           for result, name in cases:
               print(f'{result}\t{name}')
           for case, message in failures:
               print(f'::error::{case}: {message}')
-          if not cases:
+          if cases:
+              sys.exit(0)
+          # The build's status and its errors, or None for a build whose
+          # result could not be read, which says nothing either way. A test
+          # that failed leaves the build succeeded and without errors.
+          def build_result():
+              try:
+                  out = subprocess.run(
+                      ['xcrun', 'xcresulttool', 'get', 'build-results', '--path', os.environ['BUNDLE']],
+                      capture_output=True, text=True, check=True).stdout
+                  result = json.loads(out)
+                  errors = result.get('errors')
+                  if not isinstance(errors, list):
+                      return None
+                  return result.get('status'), [e.get('message', '') for e in errors if isinstance(e, dict)]
+              except (OSError, subprocess.CalledProcessError, ValueError, AttributeError):
+                  return None
+          build = build_result()
+          if build is None and not read:
+              print('::error::neither the test results nor the build result could be read; the lines above say why')
+          elif build is None:
+              print('::error::no tests ran, and the build result could not be read; the xcodebuild step above says why')
+          elif build[1]:
+              errors = build[1]
+              print('::error::no tests ran because the build failed')
+              # GitHub shows ten error annotations a step; the rest are in
+              # the xcodebuild step above.
+              for message in errors[:8]:
+                  print(f'::error::the build failed: {message}')
+              if len(errors) > 8:
+                  print(f'::error::and {len(errors) - 8} more build errors in the xcodebuild step above')
+          elif build[0] != 'succeeded':
+              print(f'::error::no tests ran, and the build ended {build[0]} without naming an error; the xcodebuild step above says why')
+          elif not read:
+              print('::error::the build succeeded, and its test results could not be read; the lines above say why')
+          else:
               print('::error::no tests ran; the Xcode project is probably stale, run make project')
-              sys.exit(1)
+          sys.exit(1)
           "
       - name: Upload the screenshots it took
         if: always()
