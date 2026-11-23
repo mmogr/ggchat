@@ -1,13 +1,13 @@
 {
-  "originHash" : "0791a68fc2c618e4d3542fefadd002649c533b82704f5f4fe3ece76be37faa2a",
+  "originHash" : "f3a8effa11ba1c350544eab3438e8b9881cf6654c0ad025cea65a7985556a974",
   "pins" : [
     {
       "identity" : "modelpipe-ffi",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mmogr/modelpipe-ffi.git",
       "state" : {
-        "revision" : "604da1c90e76c16145129899285199d3c0fb028d",
-        "version" : "0.4.4"
+        "revision" : "9397b5723503607c6c6a92b8bfcd53f6a903dc49",
+        "version" : "0.4.5"
       }
     },
     {
