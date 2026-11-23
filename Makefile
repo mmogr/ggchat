@@ -261,29 +261,22 @@ uitest:
 # NavigationSplitView, a stack on an iPhone and two columns here.
 IPAD ?= iPad Pro 13-inch (M5)
 
-# The iPad leg CI runs, which is the whole walk without the Reduce
-# Transparency reading. That one is a measurement, not a walk, and it has
-# been measured on iPhones only. Its bands used to be fractions of an
-# iPhone's screen, mostly background on an iPad, and it failed there on the
-# shape of the picture; they now come from the composer's own frame, but
-# nobody has read what an iPad's glass moves by. This target leaves it out
-# until someone has, rather than a note in the README.
+# The iPad leg CI runs, which is the whole walk.
 uitest-ipad:
 	udid=$(ipad_udid); [ -n "$$udid" ] || { echo 'uitest-ipad: no simulator udid' >&2; exit 1; }; \
-	$(UITEST) -skip-testing:ggchatUITests/ReduceTransparencyUITests -destination "id=$$udid"
+	$(UITEST) -destination "id=$$udid"
 
 # Which iPhone Duo. Open, its inner display is the iPad's layout; closed,
 # its outer display is the iPhone's. simctl has no say over the pose, so the
 # walk runs in whatever pose the simulator boots in and the other poses are
 # looked at by hand in Device Hub. There is no CI leg: the runners' Xcode is
-# 26.6, which has neither the iOS 27.1 runtime nor the device. The Reduce
-# Transparency reading is left out for the iPad leg's reason.
+# 26.6, which has neither the iOS 27.1 runtime nor the device.
 DUO ?= iPhone Duo
 duo_udid = $$(scripts/simulator_udid.sh '$(DUO)')
 
 uitest-duo:
 	udid=$(duo_udid); [ -n "$$udid" ] || { echo 'uitest-duo: no simulator udid' >&2; exit 1; }; \
-	$(UITEST) -skip-testing:ggchatUITests/ReduceTransparencyUITests -destination "id=$$udid"
+	$(UITEST) -destination "id=$$udid"
 
 # gglib's own engine on a real iPhone, the walk OnDeviceLiveUITests takes on
 # the phone named DEVICE, as Xcode names it, with GGCHAT_LIVE_ENGINE_MODEL

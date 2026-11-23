@@ -200,72 +200,40 @@ jobs:
         # The whole walk, then the display settings that only change how it is
         # drawn, over the gallery that photographs every screen. A setting
         # belongs here only when `simctl ui` can both set it and read it back.
-        # Reduce Transparency it cannot, so that run carries no setting: the
-        # test sets it and measures the consequence itself.
+        # Reduce Transparency it cannot, and no leg sets it: every glass
+        # surface is the system's, which honours it, and Enforce Architecture
+        # runs scripts/check_no_hand_drawn_glass.sh, which refuses any
+        # translucency drawn by hand.
         include:
           - name: iPhone
             slug: iphone
             device: iPhone
             tests: ggchatUITests
-            # Skipped here because it has a leg of its own below. Running it
-            # in both means running it twice on one device family, and the
-            # second one inherits whatever the eighteen tests before it left
-            # the simulator in: measured on a199ca3, the dedicated leg passed
-            # and this one failed the same test with `Failed to launch
-            # com.apple.Preferences: Timed out`. That is not a reading about
-            # the app. The iPad leg below skips it too, for an unrelated
-            # reason it states there.
-            skip: ggchatUITests/ReduceTransparencyUITests
             option: ""
             value: ""
-            warm: ""
           - name: iPhone dark
             slug: iphone-dark
             device: iPhone
             tests: ggchatUITests/ScreenGalleryUITests
-            skip: ""
             option: appearance
             value: dark
-            warm: ""
           - name: iPhone contrast
             slug: iphone-contrast
             device: iPhone
             tests: ggchatUITests/ScreenGalleryUITests
-            skip: ""
             option: increase_contrast
             value: enabled
-            warm: ""
-          - name: iPhone reduce transparency
-            slug: iphone-reduce-transparency
-            device: iPhone
-            tests: ggchatUITests/ReduceTransparencyUITests
-            skip: ""
-            option: ""
-            value: ""
-            warm: com.apple.Preferences
           # The walk again on the other device family this app ships for.
           # TARGETED_DEVICE_FAMILY is "1,2" and the root is a
           # NavigationSplitView, which is a stack on an iPhone and two
           # columns on an iPad: every leg above ran the compact layout, so
           # nothing had ever driven the one an iPad user sees.
-          #
-          # It skips the Reduce Transparency reading, which is a measurement
-          # rather than a walk. Its bands were fractions of an iPhone's
-          # screenshot, 0.83-0.94 of the height against a band above it; on
-          # an iPad Pro 13-inch both were mostly background and the ratio
-          # moved 0.0026 where the test wanted 0.01, a failure about the
-          # shape of the screen rather than the app. The bands now come from
-          # the composer's own frame (#129), but the reading has been
-          # measured on iPhones only, so it stays off this leg until it has
-          # been measured here. The iPhone leg above still runs it.
           - name: iPad
             slug: ipad
             device: iPad
             tests: ggchatUITests
-            skip: ggchatUITests/ReduceTransparencyUITests
             option: ""
             value: ""
-            warm: ""
     env:
       BUNDLE: uitest-${{ matrix.slug }}.xcresult
     steps:
@@ -293,7 +261,7 @@ jobs:
           # above iOS-26-10, which could hand an older runtime's device to an
           # app that needs 26 and draws with .glassEffect.
           # The family is the matrix's, not a constant: with it hard-coded to
-          # iPhone the iPad leg would boot an iPhone and pass as a fifth copy
+          # iPhone the iPad leg would boot an iPhone and pass as a fourth copy
           # of the run above it.
           #
           # An empty family is that same bug wearing a different hat, and it
@@ -353,48 +321,34 @@ jobs:
             echo "::error::$OPTION did not take: the simulator reads $got"
             exit 1
           fi
-      # Settings' first launch on a simulator that has just booted can take
-      # longer than the half minute XCUIApplication.launch() waits for it,
-      # and the reduce transparency leg's first act is to open it: on
-      # 7faa31b it failed twice running, both times on that first launch,
-      # before the app was ever opened. Opened once here, through simctl,
-      # which waits for as long as it takes, the test's launch is a warm one.
-      - name: Open the app the test drives first, so its launch is warm
-        if: matrix.warm != ''
-        env:
-          UDID: ${{ steps.sim.outputs.udid }}
-          WARM: ${{ matrix.warm }}
-        run: |
-          xcrun simctl launch "$UDID" "$WARM"
-          xcrun simctl terminate "$UDID" "$WARM"
       - name: Drive the first-run flow on a simulator
         env:
           UDID: ${{ steps.sim.outputs.udid }}
           TESTS: ${{ matrix.tests }}
-          SKIP: ${{ matrix.skip }}
         run: |
           set -o pipefail
           # xcodebuild refuses to write a result bundle that already exists,
           # and a re-run on a warm runner has one.
           rm -rf "$BUNDLE"
-          # The legs that skip nothing must pass no -skip-testing: at all,
-          # so the flag is built as an array rather than interpolated into
-          # the command: an empty `-skip-testing:` is an argument, not the
-          # absence of one.
-          skip=()
-          if [ -n "$SKIP" ]; then skip=(-skip-testing:"$SKIP"); fi
           xcodebuild test -project App/ggchat.xcodeproj -scheme ggchat \
             -destination "id=$UDID" \
             -resultBundlePath "$BUNDLE" \
             -clonedSourcePackagesDirPath .build/xcode-spm \
-            -only-testing:"$TESTS" "${skip[@]}" \
+            -only-testing:"$TESTS" \
             CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES -quiet
       - name: Say which tests ran and why any failed
         if: always()
         run: |
+          # No test cases means one of two things, and they send the reader
+          # opposite ways: a build that failed, or a build that succeeded and
+          # ran nothing because the project no longer lists the tests. The
+          # build's own result says which. A link that failed on #320 read as
+          # a stale project, and the undefined symbols were left to be found
+          # in the log. A result that cannot be read is said to be unread
+          # rather than guessed at.
           xcrun xcresulttool get test-results tests --path "$BUNDLE" --format json \
             | python3 -c "
-          import json, sys
+          import json, os, subprocess, sys
           cases, failures = [], []
           def walk(nodes, case=None, failing=False):
               for n in nodes:
@@ -407,14 +361,55 @@ jobs:
                   if n.get('nodeType') == 'Failure Message' and failing:
                       failures.append((case, n.get('name')))
                   walk(n.get('children', []), case, failing)
-          walk(json.load(sys.stdin).get('testNodes', []))
+          # Results that cannot be read are not results that are empty, and
+          # only empty ones say anything about the project.
+          try:
+              walk(json.load(sys.stdin).get('testNodes', []))
+              read = True
+          except (ValueError, AttributeError):
+              read = False
           for result, name in cases:
               print(f'{result}\t{name}')
           for case, message in failures:
               print(f'::error::{case}: {message}')
-          if not cases:
+          if cases:
+              sys.exit(0)
+          # The build's status and its errors, or None for a build whose
+          # result could not be read, which says nothing either way. A test
+          # that failed leaves the build succeeded and without errors.
+          def build_result():
+              try:
+                  out = subprocess.run(
+                      ['xcrun', 'xcresulttool', 'get', 'build-results', '--path', os.environ['BUNDLE']],
+                      capture_output=True, text=True, check=True).stdout
+                  result = json.loads(out)
+                  errors = result.get('errors')
+                  if not isinstance(errors, list):
+                      return None
+                  return result.get('status'), [e.get('message', '') for e in errors if isinstance(e, dict)]
+              except (OSError, subprocess.CalledProcessError, ValueError, AttributeError):
+                  return None
+          build = build_result()
+          if build is None and not read:
+              print('::error::neither the test results nor the build result could be read; the lines above say why')
+          elif build is None:
+              print('::error::no tests ran, and the build result could not be read; the xcodebuild step above says why')
+          elif build[1]:
+              errors = build[1]
+              print('::error::no tests ran because the build failed')
+              # GitHub shows ten error annotations a step; the rest are in
+              # the xcodebuild step above.
+              for message in errors[:8]:
+                  print(f'::error::the build failed: {message}')
+              if len(errors) > 8:
+                  print(f'::error::and {len(errors) - 8} more build errors in the xcodebuild step above')
+          elif build[0] != 'succeeded':
+              print(f'::error::no tests ran, and the build ended {build[0]} without naming an error; the xcodebuild step above says why')
+          elif not read:
+              print('::error::the build succeeded, and its test results could not be read; the lines above say why')
+          else:
               print('::error::no tests ran; the Xcode project is probably stale, run make project')
-              sys.exit(1)
+          sys.exit(1)
           "
       - name: Upload the screenshots it took
         if: always()

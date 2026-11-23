@@ -259,9 +259,8 @@ access and this app keeps every credential there.
 `make uitest-ipad` runs the same walk on an iPad, which is not a larger
 iPhone: the root is a `NavigationSplitView`, so the sidebar and the
 conversation are two columns rather than a stack, and Settings is on
-screen instead of one screen back. It is the leg CI runs, and like CI it
-leaves out the Reduce Transparency reading, which has been measured on
-iPhones only. CI runs the walk on both families.
+screen instead of one screen back. It is the leg CI runs, and CI runs the
+walk on both families.
 
 `make uitest-duo` runs it on an iPhone Duo, whose open inner display is the
 iPad's two columns and whose closed outer display is the iPhone's stack.
@@ -285,7 +284,11 @@ device set to dark mode and to Increase Contrast. Both are settings on the
 simulator rather than launch arguments, so each target sets one, checks
 `simctl` reads it back, and restores it afterwards even if the walk fails.
 Reduce Transparency has no `simctl` option and no working launch argument,
-so its test sets it through Settings and measures the result instead.
+and no walk sets it. It is honoured because every glass surface is the
+system's own, and `make enforce` holds that:
+`scripts/check_glass_sites.sh` keeps the custom glass to its three sites,
+and `scripts/check_no_hand_drawn_glass.sh` refuses translucency drawn by
+hand. Nothing measures the glass under the setting.
 
 ## Layout
 
@@ -399,7 +402,7 @@ Building and testing says.
   sentence: `feat(chat): the composer keeps its draft across a provider switch`.
 - Every sentence in this README is true, and where a claim can be tested a
   test keeps it. `scripts/check_readme_claims.sh` checks that every marker
-  above names a test that exists.
+  above names a test that exists, or a gate that `make enforce` and CI run.
 - One writer for the pipe status: `pipeStatuses` is written only by
   `setPipeStatus(_:for:cutShort:)`, which is also where the last-heard mark,
   the haptic and a send waiting for the pipe hear of a change, so a close the

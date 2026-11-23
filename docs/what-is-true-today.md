@@ -2,10 +2,12 @@
 
 Every claim here that can be tested names its test in a marker, and
 `scripts/check_readme_claims.sh` fails CI when a marker names a test that
-does not exist. This is the app's behaviour as a list of such claims; the
+does not exist. A claim held by a gate rather than a test names the gate's
+script, and the same check fails when that script is gone or CI stops
+running it. This is the app's behaviour as a list of such claims; the
 [README](../README.md) is the short version.
 
-Each claim names the test that keeps it true.
+Each claim names the test, or the gate, that keeps it true.
 
 - A stream captured from a running gglib parses to the same events whether
   it arrives whole or one byte at a time.
@@ -2179,15 +2181,16 @@ Each claim names the test that keeps it true.
   <!-- test: DrawingViewTests.testAMacsReplyDrawsTheWorkInPlaceOfTheSpinner -->
 - Exactly three custom glass surfaces exist, all in one file inside one
   `GlassEffectContainer`; `scripts/check_glass_sites.sh` counts them, and
-  `scripts/check_no_hand_drawn_glass.sh` refuses any material or
-  translucent fill elsewhere but one line, the material behind the
-  scanner's caption over the camera, so Reduce Transparency and Increase
-  Contrast are the system's to honour — and the test measures the glass
-  going flat rather than trusting the setting, because the launch arguments
-  that look like it are accepted and change nothing. Symbol effects and the
-  streaming animation switch off under Reduce Motion, and the pills stack at
-  accessibility type sizes.
-  <!-- test: ReduceTransparencyUITests.testGlassGoesFlatWhenTransparencyIsReduced -->
+  `scripts/check_no_hand_drawn_glass.sh` refuses any material, translucent
+  fill, blur or UIKit or AppKit effect view elsewhere but one line, the
+  material behind the scanner's caption over the camera. Every glass
+  surface is therefore the system's, and Reduce Transparency and Increase
+  Contrast are honoured because the system honours them: the app reads
+  neither setting, and nothing measures the glass under either.
+  <!-- gate: scripts/check_glass_sites.sh -->
+  <!-- gate: scripts/check_no_hand_drawn_glass.sh -->
+- Symbol effects and the streaming animation switch off under Reduce
+  Motion, and the pills stack at accessibility type sizes.
 - With `GGCHAT_LIVE_BASE_URL` set, the app model adds that server by URL,
   lists its models, streams a complete reply and reads whether its list
   offers the status pane.

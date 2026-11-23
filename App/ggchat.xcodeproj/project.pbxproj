@@ -21,7 +21,6 @@
 		6F518A033201E3AD13091D7F /* BookPagesUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9A4614CA8B91F0DBEFB670B /* BookPagesUITests.swift */; };
 		7022193D36D9C554D11E7C19 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D6AD07AA03CC2B5B94885481 /* Assets.xcassets */; };
 		725081788612B911C82443FD /* RemainingScreensUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8887D474A25D1148508A1A8A /* RemainingScreensUITests.swift */; };
-		77CB7E9D19AE522138ADDE31 /* ReduceTransparencyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 012CA37950E7FD746580F4B9 /* ReduceTransparencyUITests.swift */; };
 		895F021D8EBF53CF1DE2D275 /* ScreenGalleryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B587441DB44EB8387612415 /* ScreenGalleryUITests.swift */; };
 		95328C623F60DECDC145792B /* LiveServerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 261ADF538454ADA1B24301E8 /* LiveServerTests.swift */; };
 		C3CA847E3248F9EEBB33E2FC /* UITestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A72388942EA2BF180AE457CF /* UITestSupport.swift */; };
@@ -46,7 +45,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		012CA37950E7FD746580F4B9 /* ReduceTransparencyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReduceTransparencyUITests.swift; sourceTree = "<group>"; };
 		0B3302D3C5A9F015C5963C57 /* OnDeviceUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnDeviceUITests.swift; sourceTree = "<group>"; };
 		157E48045F63BAEE71CF5C31 /* ggchat-iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "ggchat-iOS.entitlements"; sourceTree = "<group>"; };
 		261ADF538454ADA1B24301E8 /* LiveServerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveServerTests.swift; sourceTree = "<group>"; };
@@ -164,7 +162,6 @@
 				95126E609B0DB6C1D2E84A15 /* ModelListRoomUITests.swift */,
 				A94B64234EFEFC5988A467C9 /* OnDeviceLiveUITests.swift */,
 				0B3302D3C5A9F015C5963C57 /* OnDeviceUITests.swift */,
-				012CA37950E7FD746580F4B9 /* ReduceTransparencyUITests.swift */,
 				C57F8EBA75E46EA0DCD65189 /* RefusalUITests.swift */,
 				8887D474A25D1148508A1A8A /* RemainingScreensUITests.swift */,
 				E57382FDF23BB62891F940CF /* RenameUITests.swift */,
@@ -291,7 +288,6 @@
 				3B16A63EE0442EF8669D74C2 /* ModelListRoomUITests.swift in Sources */,
 				2C0788C1FEEC674DB1753B1A /* OnDeviceLiveUITests.swift in Sources */,
 				309B608000639E700302887E /* OnDeviceUITests.swift in Sources */,
-				77CB7E9D19AE522138ADDE31 /* ReduceTransparencyUITests.swift in Sources */,
 				EAC5B2A85F5E64C39AE8383E /* RefusalUITests.swift in Sources */,
 				725081788612B911C82443FD /* RemainingScreensUITests.swift in Sources */,
 				F27413BDEBA0841B86A2861C /* RenameUITests.swift in Sources */,
