@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 # Every claim in README.md, docs/what-is-true-today.md or docs/contributing.md that can be tested names its test in a marker:
 #   <!-- test: ClassName.testName -->
-# Each marker must name a test that exists. Each `make <target>` the README
-# mentions must be a Makefile target.
+# Each marker must name a test that exists. A claim a gate holds rather than
+# a test names the gate's script instead:
+#   <!-- gate: scripts/check_name.sh -->
+# Each such marker must name a script that exists and that both `make
+# enforce` and the Enforce Architecture job run. Each `make <target>` the
+# README mentions must be a Makefile target.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -75,6 +79,26 @@ for marker in markers:
         failed = True
 sys.exit(1 if failed else 0)
 PY
+
+# A gate that is deleted, or that `make enforce` or CI stops running, holds
+# nothing, and the claims naming it would go on reading as held.
+enforce_recipe=$(sed -n '/^enforce:/,/^$/p' "$ROOT/Makefile")
+enforce_job=$(sed -n '/^  enforcement:/,/^  [a-z]/p' "$ROOT/.github/workflows/ci.yml")
+while IFS= read -r gate; do
+    if [ ! -x "$ROOT/$gate" ]; then
+        echo "readme: marker names no gate: $gate" >&2
+        status=1
+        continue
+    fi
+    if ! grep -qxF $'\t'"$gate" <<<"$enforce_recipe"; then
+        echo "readme: make enforce does not run $gate" >&2
+        status=1
+    fi
+    if ! grep -qE "^ +run: $gate\$" <<<"$enforce_job"; then
+        echo "readme: the Enforce Architecture job does not run $gate" >&2
+        status=1
+    fi
+done < <(grep -ohE '<!-- gate: scripts/[A-Za-z0-9_]+\.sh -->' "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs/contributing.md" | sed -E 's/<!-- gate: (.*) -->/\1/' | sort -u)
 
 while IFS= read -r target; do
     if ! grep -qE "^$target:" "$ROOT/Makefile"; then

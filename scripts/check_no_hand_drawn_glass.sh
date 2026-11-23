@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 # The transcript is flat and the glass is the system's. No view may fake
-# glass or a bubble with a material or a translucent fill: Reduce
-# Transparency and Increase Contrast are honoured by the glass modifiers,
-# and anything hand-drawn would have to honour them by hand.
+# glass or a bubble with a material, a translucent fill, a blur or a UIKit
+# or AppKit effect view: Reduce Transparency and Increase Contrast are
+# honoured by the glass modifiers, and anything hand-drawn would have to
+# honour them by hand. The app reads neither setting.
+#
+# This and check_glass_sites.sh are what hold the claim, in
+# docs/what-is-true-today.md, that Reduce Transparency is honoured. Nothing
+# measures the glass under the setting any more: the walk that did had to
+# turn it on in Settings, and nearly every time it failed it failed there.
 #
 # One line is let through: the caption over the scanner's live camera
 # picture, which sits on a material capsule so it can be read against
@@ -15,6 +21,9 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source-path=SCRIPTDIR source=lib/scan.sh
 . "$ROOT/scripts/lib/scan.sh"
 pattern='\.(ultraThinMaterial|thinMaterial|regularMaterial|thickMaterial|ultraThickMaterial)|\.opacity\(0\.[0-9]+\)\s*$|Color\([^)]*opacity'
+# A blur over what is behind is glass drawn by hand as surely as a material
+# is, and so is an effect view wrapped for SwiftUI.
+pattern+='|\.blur\(|UIVisualEffectView|UIBlurEffect|UIVibrancyEffect|NSVisualEffectView'
 caption_file="$ROOT/Sources/GGChatUI/ScanTicketView.swift"
 caption_line='.background(.regularMaterial, in: .capsule)'
 

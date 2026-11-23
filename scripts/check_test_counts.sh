@@ -1068,6 +1068,14 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # fails nothing else: a one-file repository's model, on this iPhone, is
 # offered again as a download. This one and its marker are the whole of
 # that guard.
+#
+# 2026-11-23: the Reduce Transparency walk goes, and with it one XCUITest
+# case, 49 -> 48, and its marker, 1061 -> 1060. It measured the composer's
+# glass after turning the setting on in Settings, and nearly every time it
+# failed it failed in Settings rather than in the app. The claim it backed
+# is held now by the two glass gates, named in `gate:` markers, which the
+# marker count here does not include. Both counts stay above their floors,
+# 46 and 1057, so neither floor moves.
 floor "package test cases" "$(test_cases "$ROOT/Tests")" 1156
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 46
 floor "README test markers" "${markers:-0}" 1057
