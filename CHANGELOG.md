@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.2](https://github.com/mmogr/ggchat/compare/v0.19.1...v0.19.2) (2026-11-23)
+
+
+### What the app stopped getting wrong
+
+* **deps:** the app ships gglib 0.39.1 and modelpipe-ffi 0.4.6 ([#323](https://github.com/mmogr/ggchat/issues/323)) ([864254c](https://github.com/mmogr/ggchat/commit/864254cffe69827eea8db2ea7810732aed600c8d))
+
 ## [0.19.1](https://github.com/mmogr/ggchat/compare/v0.19.0...v0.19.1) (2026-11-13)
 
 
