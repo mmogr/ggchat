@@ -1088,8 +1088,11 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # or the words VoiceOver hears fails nothing else: the reply still arrives
 # and the rows under it still come once it has finished. These eight are
 # the whole of that guard, on both doors.
+#
+# 2026-11-28: the marker floor 1057 -> 1067 for the live tool rows' claim,
+# whose ten markers name the whole of its guard.
 floor "package test cases" "$(test_cases "$ROOT/Tests")" 1165
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 46
-floor "README test markers" "${markers:-0}" 1057
+floor "README test markers" "${markers:-0}" 1067
 
 exit $status

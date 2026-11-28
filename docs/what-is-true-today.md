@@ -690,7 +690,7 @@ Each claim names the test, or the gate, that keeps it true.
   in the locale's digits. A call nothing answered says it was not
   answered. Both can be selected. It is the same for every tool. A
   question has no rows, and nor has a reply still being written, here or
-  on the Mac: one written here shows its tool lines as it did, and the
+  on the Mac: one being written shows its live tool rows, below, and these
   rows come once it has finished.
   <!-- test: ToolExchangeDisplayTests.testAHeadingNamesTheToolAndWhoseItIs -->
   <!-- test: ToolExchangeDisplayTests.testTheArgumentsAreLaidOutWhenTheyAreJSON -->
@@ -731,13 +731,13 @@ Each claim names the test, or the gate, that keeps it true.
   with a bar while the steps are counted and the latest look at the
   picture, drawn from the frame as it came and scaled up smoothly; bytes
   that are not a picture draw nothing. A reply kept on this device also
-  shows a line for each tool it calls, and under it the pictures made, read
-  from this device's store. While the model is still writing a call, a
-  reply here and one on a Mac's chat show one line for it, such as
+  shows a row for each tool it calls, below, and under it the pictures
+  made, read from this device's store. While the model is still writing a
+  call, a reply here and one on a Mac's chat show one row for it, such as
   “Writing Generate Image… 512 tokens” with the count in the locale's
   digits, from gglib's `tool_call_writing`; each later count, and then the
-  call's own line, takes its place. When a run ends with such a line still
-  showing, cut off or failed, the line goes with it: an ended reply shows no
+  call's own line, takes its place. When a run ends with such a row still
+  showing, cut off or failed, the row goes with it: an ended reply shows no
   call still being written.
   <!-- test: DrawingViewTests.testTheDrawSwitchSaysItsStateAndAPressSaysWhyItCannotDraw -->
   <!-- test: DrawingViewTests.testAMacsReplyDrawsTheWorkInPlaceOfTheSpinner -->
@@ -747,6 +747,32 @@ Each claim names the test, or the gate, that keeps it true.
   <!-- test: HubChatContinueTests.testARunThatEndsWhileACallIsWrittenLeavesNoWritingLine -->
   <!-- test: ToolCallWritingWireTests.testTheCountIsInTheLocalesDigitsAndAFrameWithoutANameIsNothing -->
   <!-- test: ToolLinesTests.testACallBeingWrittenIsOneLineThatItsCallTakesThePlaceOf -->
+- While a reply is written, here or on one of the Mac's chats, each tool
+  it calls is a row that says its state: running, from the call's
+  `tool_call_start`; then, from its `tool_call_complete`, done, with how
+  long it took in gglib's own words, its `duration_display` as it came,
+  such as "3ms", or failed when `result.success` is false, with "failed"
+  after its text. A call whose end says neither is done, with no time.
+  Each row is one line: a mark for its state, the tool's line, and the
+  time or "failed" after it. The rows come in the order the calls did, and
+  a call's row is changed in place by its call's id when the call ends,
+  never taken out and put back, so a call that ends while one before it
+  still runs settles only its own row. Each state has its own mark, a
+  dotted circle, a tick and #220's warning mark, so none is the colour
+  alone, and VoiceOver hears it in words, as gglib's window says them:
+  "Read File: Cargo.lock done." with the time, or "… failed.". Nothing of
+  the time is kept, and nothing sent to gglib changes: the rows under the
+  finished reply are #220's.
+  <!-- test: LiveRowsTests.testEachCallIsARowThatRunsThenIsDoneOrFailedOnBothDoors -->
+  <!-- test: LiveRowsTests.testARowIsSettledByItsOwnCallAndNoOther -->
+  <!-- test: LiveRowsTests.testACallBeingWrittenBecomesItsCallsRowInPlace -->
+  <!-- test: LiveRowsTests.testEachStateHasItsMarkAndItsWords -->
+  <!-- test: LiveRowsTests.testAMacsReplyDrawsItsRowsAsTheOneList -->
+  <!-- test: LiveRowsTests.testAReplyKeptHereDrawsItsRowsAsTheOneList -->
+  <!-- test: LiveRowViewTests.testEveryRowIsOneLineOfItsMarkItsTextAndItsDetail -->
+  <!-- test: LiveRowViewTests.testVoiceOverHearsEachRowsStateInWords -->
+  <!-- test: ToolExchangeWireTests.testACallsDurationIsGglibsWordsAndIsNotKept -->
+  <!-- test: HubTurnProviderTests.testAnAgentRunsEventsAreItsTextReasoningAndToolLines -->
 - Draw can be pressed for a second message in the same chat. A press that
   changes nothing of a draft but the switch is a change to it, which is
   what SwiftUI asks of a composer's draft before it draws the composer
