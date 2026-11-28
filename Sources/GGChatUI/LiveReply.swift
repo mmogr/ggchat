@@ -22,17 +22,20 @@ public final class LiveReply {
     /// what the reply waits for: shown while it is so, and never kept
     /// (`ToolWork`).
     var work = ToolWork()
-    /// A line for each tool the reply called, while it is read here, and
-    /// for one the model is still writing until that call's own line
-    /// (`ToolLines`).
-    public var tools: [String] { toolLines.lines }
-    var toolLines = ToolLines()
+    /// A row for each tool the reply called, while it is read here, with
+    /// whether it runs, is done or failed, and for one the model is still
+    /// writing until that call's own line (`LiveRows`), in the order they
+    /// came. The reply's view draws these.
+    var rows: [LiveRow] { liveRows.rows }
+    var liveRows = LiveRows()
+    /// The rows' text, in order.
+    public var tools: [String] { liveRows.lines }
     /// The images the reply's tools made, in order, by reference. Their
     /// bytes are in this device's store by the time one is named here, and
     /// `finish` names them on the reply's message.
     public internal(set) var made: [ImageRef] = []
     /// The tools the reply called and what each answered, in order. Not
-    /// drawn while the reply is written, which has `tools` for that;
+    /// drawn while the reply is written, which has `rows` for that;
     /// `finish` keeps them on the reply's message, under which they are
     /// drawn, and a reply read on starts with the ones its message holds,
     /// so an answer that arrives then finds its call.

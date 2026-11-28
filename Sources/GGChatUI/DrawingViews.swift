@@ -189,18 +189,6 @@ struct DrawsWithLine: View {
     }
 }
 
-/// A line for a tool the reply called, in either kind of chat.
-struct ToolLine: View {
-    let line: String
-
-    var body: some View {
-        Label(line, systemImage: "wrench.and.screwdriver")
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-    }
-}
-
 /// What a reply shows while a picture is drawn for it, or while it waits
 /// behind one: a line that says the stage and the step, a bar for the steps
 /// while they are counted, and the latest look at the picture, a small frame

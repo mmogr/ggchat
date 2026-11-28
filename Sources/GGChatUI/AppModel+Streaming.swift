@@ -167,12 +167,15 @@ extension AppModel {
     /// chat route says it as it finishes, and a run in a frame of its own.
     /// A run with gglib's tools, one that draws or one with a Mac's MCP
     /// servers, also says what each tool was called with and answered,
-    /// which `finish` keeps with the reply; one that draws also says how far
+    /// which `finish` keeps with the reply, and its row shows while the
+    /// reply is written, running, done or failed (`LiveRows`), which nothing
+    /// keeps; one that draws also says how far
     /// its picture has got (`ToolWork`) and names the images it made, whose
     /// bytes `keepImages` has stored by the time they are named here, and
     /// which call made them, which is kept on that call's exchange.
     func apply(_ event: ChatEvent, to live: LiveReply) {
         live.work.apply(event)
+        live.liveRows.take(event)
         live.progress = event.promptProgress
         switch event {
         case .delta(let text): live.content += text
@@ -187,9 +190,8 @@ extension AppModel {
         case .images(let images, _):
             live.made += images.filter { image in !live.made.contains { $0.id == image.id } }
             live.exchanges.take(event)
-        case .tool(let line, let writing): live.toolLines.take(line, writing: writing)
         case .toolCalled, .toolAnswered: live.exchanges.take(event)
-        case .progress, .toolProgress, .toolEnded, .waiting: break
+        case .tool, .progress, .toolProgress, .toolEnded, .waiting: break
         }
     }
 

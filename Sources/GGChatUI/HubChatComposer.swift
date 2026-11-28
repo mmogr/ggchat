@@ -3,7 +3,8 @@ import SwiftUI
 
 /// The reply a Mac is writing to its chat open, under the chat's rows: the
 /// question this phone sent, with its images, until the rows read from the
-/// Mac hold it, then the reply as it arrives, a line for each tool it calls,
+/// Mac hold it, then the reply as it arrives, a row for each tool it calls
+/// that says whether it runs, is done or failed (`LiveRowsView`),
 /// how far a picture being drawn has got with the latest look at it, and
 /// under the reply's text the images its tools made, as the Mac's own page
 /// draws them.
@@ -21,9 +22,7 @@ struct HubLiveReplyRows: View {
             if !reply.reasoning.isEmpty {
                 ReasoningRow(text: reply.reasoning, isThinking: reply.content.isEmpty && !reply.ended)
             }
-            ForEach(Array(reply.tools.enumerated()), id: \.offset) { _, line in
-                ToolLine(line: line)
-            }
+            LiveRowsView(rows: reply.rows)
             if let progress = reply.promptBeingRead {
                 PromptReading(progress: progress)
             } else if reply.awaitsFirstToken {

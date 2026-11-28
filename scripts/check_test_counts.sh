@@ -1081,7 +1081,14 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # stops being read, or that is kept on the call, fails nothing else: the
 # reply still arrives and its rows still draw. This one is the whole of that
 # guard.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1157
+#
+# 2026-11-28: 1157 -> 1165 for the live tool rows. A row that stops
+# settling, settles another call's row, drops gglib's duration, is drawn
+# from text again or by one door alone, wraps, or loses its mark, its time
+# or the words VoiceOver hears fails nothing else: the reply still arrives
+# and the rows under it still come once it has finished. These eight are
+# the whole of that guard, on both doors.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1165
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 46
 floor "README test markers" "${markers:-0}" 1057
 
