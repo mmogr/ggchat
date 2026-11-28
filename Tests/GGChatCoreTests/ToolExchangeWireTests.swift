@@ -114,6 +114,34 @@ final class ToolExchangeWireTests: XCTestCase {
         XCTAssertEqual(held.first?.images, ["a1", "a2", "a3"], "a second answer forgot the images")
     }
 
+    /// How long a call took is gglib's `duration_display` as it came, none
+    /// when the frame has none or one that is not text, and the call's
+    /// answer is read the same either way. It is never put on the call's
+    /// exchange, so nothing of it is kept with the reply.
+    func testACallsDurationIsGglibsWordsAndIsNotKept() throws {
+        func answer(_ duration: String) -> [ChatEvent] {
+            OpenAICompatibleProvider.agentEvents(
+                SSEEvent(
+                    data: #"{"type":"tool_call_complete","result":{"tool_call_id":"c1","content":"fine","#
+                        + #""success":true}\#(duration)}"#))
+        }
+        func answered(_ duration: String?) -> [ChatEvent] {
+            [.toolEnded("c1"), .toolAnswered(callID: "c1", text: "fine", failed: false, duration: duration)]
+        }
+        XCTAssertEqual(answer(#","duration_display":"1.2s""#), answered("1.2s"))
+        XCTAssertEqual(answer(""), answered(nil))
+        XCTAssertEqual(answer(#","duration_display":12"#), answered(nil))
+
+        var timed = [ToolExchange(callID: "c1", name: "t", arguments: "{}")]
+        var untimed = timed
+        for event in answer(#","duration_display":"1.2s""#) { timed.take(event) }
+        for event in answer("") { untimed.take(event) }
+        XCTAssertEqual(timed, untimed)
+        let kept = String(decoding: try JSONEncoder().encode(try recorded()), as: UTF8.self)
+        XCTAssertFalse(kept.contains("3ms"), kept)
+        XCTAssertFalse(kept.contains("duration"), kept)
+    }
+
     /// A list kept before calls kept their images has no `images` key, and
     /// it does not read: it is not read as calls that made none, which
     /// would pass another tool's image off as the drawn picture. A store

@@ -1076,7 +1076,12 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # is held now by the two glass gates, named in `gate:` markers, which the
 # marker count here does not include. Both counts stay above their floors,
 # 46 and 1057, so neither floor moves.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1156
+#
+# 2026-11-28: 1156 -> 1157 for how long a tool call took. A duration that
+# stops being read, or that is kept on the call, fails nothing else: the
+# reply still arrives and its rows still draw. This one is the whole of that
+# guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1157
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 46
 floor "README test markers" "${markers:-0}" 1057
 

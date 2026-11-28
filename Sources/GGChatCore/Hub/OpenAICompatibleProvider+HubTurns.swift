@@ -128,18 +128,22 @@ extension OpenAICompatibleProvider {
 
     /// A finished tool: that its call ended, by `result.tool_call_id`, what
     /// it answered, `result.content`, as it came, with whether it failed,
-    /// the opposite of `result.success`, and then the images it made,
+    /// the opposite of `result.success`, and how long it took, the frame's
+    /// `duration_display` as gglib wrote it, and then the images it made,
     /// `result.images`, gglib's `AttachmentInfo` each, under the same call
     /// id, which gglib leaves out when there are none. Images that cannot
-    /// be read are passed over and the call has still ended; a result with
-    /// no call id means nothing here.
+    /// be read are passed over and the call has still ended, and a duration
+    /// that does not read is none; a result with no call id means nothing
+    /// here.
     private static func finishedTool(_ data: Data) -> [ChatEvent] {
         guard let complete = try? JSONDecoder().decode(ToolCallComplete.self, from: data) else { return [] }
         let images = complete.result.images ?? []
         let id = complete.result.callID
         let failed = complete.result.success.map { !$0 }
         let answer =
-            complete.result.content.map { [ChatEvent.toolAnswered(callID: id, text: $0, failed: failed)] } ?? []
+            complete.result.content.map {
+                [ChatEvent.toolAnswered(callID: id, text: $0, failed: failed, duration: complete.duration)]
+            } ?? []
         return [.toolEnded(id)] + answer + (images.isEmpty ? [] : [.images(images, callID: id)])
     }
 }
@@ -169,6 +173,19 @@ private struct ToolCallComplete: Decodable {
     }
 
     let result: Result
+    /// How long the call took, in gglib's words: shown as it came.
+    let duration: String?
+
+    enum CodingKeys: String, CodingKey {
+        case result
+        case duration = "duration_display"
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        result = try container.decode(Result.self, forKey: .result)
+        duration = try? container.decodeIfPresent(String.self, forKey: .duration)
+    }
 }
 
 /// The part of gglib's `tool_call_writing` this device reads: the tool's

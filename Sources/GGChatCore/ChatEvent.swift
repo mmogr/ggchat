@@ -19,8 +19,11 @@ public enum ChatEvent: Sendable, Equatable {
     case toolCalled(ToolExchange)
     /// What a tool the reply called answered, word for word, by its call's
     /// id, to keep with the reply, and whether the tool said it failed: nil
-    /// when the answer does not say. Sent after the call's end.
-    case toolAnswered(callID: String, text: String, failed: Bool? = nil)
+    /// when the answer does not say, and how long the call took, in gglib's
+    /// own words (`duration_display`, as "3ms"), nil when it does not say.
+    /// Sent after the call's end. The duration is shown while the reply is
+    /// written and never kept.
+    case toolAnswered(callID: String, text: String, failed: Bool? = nil, duration: String? = nil)
     /// The images a tool the reply called made, in the order it made them,
     /// by reference: the bytes are the hub's, read by id when drawn. Only a
     /// hub's agent run sends one, and it names the call that made them by
