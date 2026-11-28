@@ -56,7 +56,7 @@ extension [ToolExchange] {
     public mutating func take(_ event: ChatEvent) {
         switch event {
         case .toolCalled(let call): self.merge([call])
-        case .toolAnswered(let callID, let text, let failed):
+        case .toolAnswered(let callID, let text, let failed, _):
             guard let index = lastIndex(where: { $0.callID == callID }) else { return }
             self[index].result = text
             self[index].failed = failed

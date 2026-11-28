@@ -36,10 +36,14 @@ public final class HubLiveReply {
     /// How much of the prompt has been read, when that is the latest the
     /// reply has heard (`ChatEvent.promptProgress`), never kept.
     var progress: PromptProgress?
-    /// A line for each tool the reply called, and for one the model is
-    /// still writing until that call's own line (`ToolLines`).
-    public var tools: [String] { toolLines.lines }
-    var toolLines = ToolLines()
+    /// A row for each tool the reply called, with whether it runs, is done
+    /// or failed, and for one the model is still writing until that call's
+    /// own line (`LiveRows`), in the order they came. The reply's view
+    /// draws these.
+    var rows: [LiveRow] { liveRows.rows }
+    var liveRows = LiveRows()
+    /// The rows' text, in order.
+    public var tools: [String] { liveRows.lines }
     /// The images the reply's tools made, in order, by reference: each is
     /// read from the Mac by id as it is drawn, into memory like the chat's
     /// other images.
@@ -116,23 +120,25 @@ public final class HubLiveReply {
     }
 
     /// Adds one event of the run to the reply. How much of its prompt has
-    /// been read, its text, its reasoning, its tool calls and the images
+    /// been read, its text, its reasoning, its tool calls, each with whether
+    /// it runs, is done or failed, and the images
     /// they made are drawn, with how far a tool at work has got and what the
     /// reply waits for (`ToolWork`), and what a finished call counted is
     /// kept, the last one over any before it; the run's last report says how
     /// it ended.
     func apply(_ event: ChatEvent) {
         work.apply(event)
+        liveRows.take(event)
         progress = event.promptProgress
         switch event {
         case .delta(let text): content += text
         case .reasoning(let text): reasoning += text
-        case .tool(let line, let writing): toolLines.take(line, writing: writing)
         case .images(let images, _): made += images
         case .usage(let counted, let reason):
             usage = counted
             finishReason = reason
-        case .progress, .error, .finished, .toolProgress, .toolEnded, .waiting, .toolCalled, .toolAnswered: break
+        case .progress, .error, .finished, .tool, .toolCalled, .toolEnded, .toolAnswered, .toolProgress, .waiting:
+            break
         }
     }
 }

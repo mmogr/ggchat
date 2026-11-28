@@ -168,14 +168,10 @@ struct ChatView: View {
     }
 }
 
-/// Observes only the live reply, so each token redraws this row alone. The
-/// model is read only while the reply waits for its pipe or the engine, for
-/// the line that names the provider.
+/// Observes only the live reply, so each token redraws this row alone; the
+/// model is read only by its words (`LiveReplyText`).
 struct LiveReplyRow: View {
-    @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.locale) private var locale
-    @Environment(\.calendar) private var calendar
     let live: LiveReply
 
     var body: some View {
@@ -184,30 +180,43 @@ struct LiveReplyRow: View {
             if !live.reasoning.isEmpty {
                 ReasoningRow(text: live.reasoning, isThinking: live.content.isEmpty)
             }
-            ForEach(Array(live.tools.enumerated()), id: \.offset) { _, line in
-                ToolLine(line: line)
-            }
-            if let waiting = model.waitingLine(for: live, locale: locale, calendar: calendar) {
-                // Plain text, which VoiceOver reads as it is shown. Stop is the
-                // composer's button, as for any reply in flight.
-                Text(waiting)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            } else if let progress = live.promptBeingRead {
-                PromptReading(progress: progress)
-            } else if live.awaitsFirstToken {
-                ProgressView()
-                    .controlSize(.small)
-                    .accessibilityLabel("Waiting for the first token")
-            } else {
-                MarkdownBlocksView(blocks: live.blocks)
-            }
+            LiveRowsView(rows: live.rows)
+            LiveReplyText(live: live)
             LiveReplyWork(live: live)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: live.content.count)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.updatesFrequently)
+    }
+}
+
+/// A live reply's words as they arrive, or what stands in their place until
+/// they do: the line that names the provider while the reply waits for its
+/// pipe or the engine, the prompt being read, or the spinner. The model is
+/// read only here, so the row around it reads the reply alone.
+struct LiveReplyText: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.locale) private var locale
+    @Environment(\.calendar) private var calendar
+    let live: LiveReply
+
+    var body: some View {
+        if let waiting = model.waitingLine(for: live, locale: locale, calendar: calendar) {
+            // Plain text, which VoiceOver reads as it is shown. Stop is the
+            // composer's button, as for any reply in flight.
+            Text(waiting)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+        } else if let progress = live.promptBeingRead {
+            PromptReading(progress: progress)
+        } else if live.awaitsFirstToken {
+            ProgressView()
+                .controlSize(.small)
+                .accessibilityLabel("Waiting for the first token")
+        } else {
+            MarkdownBlocksView(blocks: live.blocks)
+        }
     }
 }
 

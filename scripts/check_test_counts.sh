@@ -1076,8 +1076,23 @@ markers=$({ cat "$ROOT/README.md" "$ROOT/docs/what-is-true-today.md" "$ROOT/docs
 # is held now by the two glass gates, named in `gate:` markers, which the
 # marker count here does not include. Both counts stay above their floors,
 # 46 and 1057, so neither floor moves.
-floor "package test cases" "$(test_cases "$ROOT/Tests")" 1156
+#
+# 2026-11-28: 1156 -> 1157 for how long a tool call took. A duration that
+# stops being read, or that is kept on the call, fails nothing else: the
+# reply still arrives and its rows still draw. This one is the whole of that
+# guard.
+#
+# 2026-11-28: 1157 -> 1165 for the live tool rows. A row that stops
+# settling, settles another call's row, drops gglib's duration, is drawn
+# from text again or by one door alone, wraps, or loses its mark, its time
+# or the words VoiceOver hears fails nothing else: the reply still arrives
+# and the rows under it still come once it has finished. These eight are
+# the whole of that guard, on both doors.
+#
+# 2026-11-28: the marker floor 1057 -> 1067 for the live tool rows' claim,
+# whose ten markers name the whole of its guard.
+floor "package test cases" "$(test_cases "$ROOT/Tests")" 1165
 floor "XCUITest cases" "$(test_cases "$ROOT/App/ggchatUITests")" 46
-floor "README test markers" "${markers:-0}" 1057
+floor "README test markers" "${markers:-0}" 1067
 
 exit $status
