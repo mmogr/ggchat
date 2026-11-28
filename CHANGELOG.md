@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.0](https://github.com/mmogr/ggchat/compare/v0.19.2...v0.20.0) (2026-11-28)
+
+
+### What the app now does
+
+* **chat:** a live reply's tool rows say whether each call runs, is done, with how long it took, or failed ([#328](https://github.com/mmogr/ggchat/issues/328)) ([04cadea](https://github.com/mmogr/ggchat/commit/04cadea8c1f67307cd0612f215f2cec5bbd0e3d4))
+
 ## [0.19.2](https://github.com/mmogr/ggchat/compare/v0.19.1...v0.19.2) (2026-11-23)
 
 
